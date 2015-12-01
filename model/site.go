@@ -1,4 +1,4 @@
-/* ArkeoGIS - The Arkeolog Geographical Information Server Program
+/* ArkeoGIS - The Geographic Information System for Archaeologists
  * Copyright (C) 2015-2016 CROLL SAS
  *
  * Authors :

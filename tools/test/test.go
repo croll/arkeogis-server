@@ -1,4 +1,4 @@
-/* ArkeoGIS - The Arkeolog Geographical Information Server Program
+/* ArkeoGIS - The Geographic Information System for Archaeologists
  * Copyright (C) 2015-2016 CROLL SAS
  *
  * Authors :
@@ -18,7 +18,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-/* ArkeoGIS - The Arkeolog Geographical Information Server Program
+/* ArkeoGIS - The Geographic Information System for Archaeologists
  * Copyright (C) 2015-2016 CROLL SAS
  *
  * Authors :
@@ -38,7 +38,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-/* ArkeoGIS - The Arkeolog Geographical Information Server Program
+/* ArkeoGIS - The Geographic Information System for Archaeologists
  * Copyright (C) 2015-2016 CROLL SAS
  *
  * Authors :
@@ -58,7 +58,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-/* ArkeoGIS - The Arkeolog Geographical Information Server Program
+/* ArkeoGIS - The Geographic Information System for Archaeologists
  * Copyright (C) 2015-2016 CROLL SAS
  *
  * Authors :
@@ -78,7 +78,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-/* ArkeoGIS - The Arkeolog Geographical Information Server Program
+/* ArkeoGIS - The Geographic Information System for Archaeologists
  * Copyright (C) 2015-2016 CROLL SAS
  *
  * Authors :
@@ -98,7 +98,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-/* ArkeoGIS - The Arkeolog Geographical Information Server Program
+/* ArkeoGIS - The Geographic Information System for Archaeologists
  * Copyright (C) 2015-2016 CROLL SAS
  *
  * Authors :
