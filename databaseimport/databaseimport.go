@@ -57,6 +57,8 @@ type SiteRangeFullInfos struct {
 	model.Site_range
 	model.Site_range_translation
 	Caracterisations []int
+	NoStartDate      bool
+	NoEndDate        bool
 }
 
 // SiteFullInfos is a meta struct which stores all the informations about a site
@@ -213,6 +215,8 @@ func (di *DatabaseImport) ProcessRecord(f *Fields) {
 	// Init the site range if necessary
 	if di.CurrentSite.NbSiteRanges == 0 {
 		di.CurrentSite.CurrentSiteRange = SiteRangeFullInfos{}
+		di.CurrentSite.CurrentSiteRange.NoStartDate = true
+		di.CurrentSite.CurrentSiteRange.NoEndDate = true
 	}
 
 	// Process site range infos
@@ -408,15 +412,18 @@ func (di *DatabaseImport) processSiteRangeInfos(f *Fields) {
 		if (strings.ToLower(f.START_DATE) == di.lowerTranslation("IMPORT.CSVFIELD_ALL.T_CHECK_UNDEFINED")) || strings.ToLower(f.START_DATE) == "null" {
 			// Set an crazy date to store "undefined" value
 			di.CurrentSite.CurrentSiteRange.Start_date = 999999
+			di.CurrentSite.CurrentSiteRange.NoStartDate = false
 		} else {
 			f.START_DATE = strings.Replace(f.START_DATE, "+", "", 1)
 			if di.CurrentSite.CurrentSiteRange.End_date, err = strconv.Atoi(f.START_DATE); err != nil {
 				di.AddError(f.START_DATE, "IMPORT.CSVFIELD_START_DATE.T_CHECK_INVALID", "START_DATE")
+			} else {
+				di.CurrentSite.CurrentSiteRange.NoStartDate = false
 			}
 		}
 	} else {
-		if strconv.Itoa(di.CurrentSite.CurrentSiteRange.Start_date) == "" {
-			di.AddError("", "IMPORT.CSVFIELD_START_DATE_QUALIFIER.T_CHECK_EMPTY", "START_DATE")
+		if di.CurrentSite.CurrentSiteRange.NoStartDate {
+			di.AddError("", "IMPORT.CSVFIELD_START_DATE.T_CHECK_EMPTY", "START_DATE")
 		}
 	}
 
@@ -441,15 +448,18 @@ func (di *DatabaseImport) processSiteRangeInfos(f *Fields) {
 		if (strings.ToLower(f.END_DATE) == di.lowerTranslation("IMPORT.CSVFIELD_ALL.T_CHECK_UNDEFINED")) || strings.ToLower(f.END_DATE) == "null" {
 			// Set an crazy date to store "undefined" value
 			di.CurrentSite.CurrentSiteRange.End_date = 999999
+			di.CurrentSite.CurrentSiteRange.NoEndDate = false
 		} else {
 			f.END_DATE = strings.Replace(f.END_DATE, "+", "", 1)
 			if di.CurrentSite.CurrentSiteRange.End_date, err = strconv.Atoi(f.END_DATE); err != nil {
 				di.AddError(f.END_DATE, "IMPORT.CSVFIELD_END_DATE.T_CHECK_INVALID", "END_DATE")
+			} else {
+				di.CurrentSite.CurrentSiteRange.NoEndDate = false
 			}
 		}
 	} else {
-		if strconv.Itoa(di.CurrentSite.CurrentSiteRange.End_date) == "" {
-			di.AddError("", "IMPORT.CSVFIELD_END_DATE_QUALIFIER.T_CHECK_EMPTY", "END_DATE")
+		if di.CurrentSite.CurrentSiteRange.NoEndDate {
+			di.AddError("", "IMPORT.CSVFIELD_END_DATE.T_CHECK_EMPTY", "END_DATE")
 		}
 	}
 
