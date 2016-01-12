@@ -76,6 +76,8 @@ func parseFile(p string, trans map[string]string) {
 		}
 		trans[m] = "#!#" + m
 	}
+
+	log.Println("- ", p, " : ", len(matched))
 }
 
 func parseDir(p string, ignores []string, trans map[string]string) {
@@ -120,7 +122,7 @@ func rebuildLang(lang string, domain string) {
 	if domain == "web" {
 		parsepath = config.CurWebPath
 	} else if domain == "server" {
-		parsepath = config.DevDistPath + "/src/git.croll.fr"
+		parsepath = config.DevDistPath + "/src/github.com/croll/arkeogis-server"
 	}
 
 	newTrans := make(map[string]string)
