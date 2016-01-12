@@ -32,13 +32,14 @@ import (
 	//"strconv"
 	"strings"
 
+	"mime"
+	"mime/multipart"
+
 	db "github.com/croll/arkeogis-server/db"
 	"github.com/croll/arkeogis-server/model"
 	session "github.com/croll/arkeogis-server/webserver/session"
 	"github.com/gorilla/mux"
 	"github.com/lib/pq"
-	"mime"
-	"mime/multipart"
 )
 
 // Route structure that is used for registering a new Arkeogis Route

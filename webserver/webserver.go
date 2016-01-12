@@ -21,12 +21,38 @@
 
 package webserver
 
+/*
 import (
 	"fmt"
 	"net/http"
 	"strconv"
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 	config "github.com/croll/arkeogis-server/config"
+
+
+
+
+
 	rest "github.com/croll/arkeogis-server/webserver/rest"
 	routes "github.com/croll/arkeogis-server/webserver/routes"
 	"github.com/codegangsta/negroni"
@@ -43,7 +69,7 @@ func StartServer() {
 		negroni.NewStatic(http.Dir(config.WebPath)),
 	)
 	Negroni.UseHandler(routes.MuxRouter)
-	Negroni.Run(":" + strconv.Itoa(config.Main.Server.Port))
+	Negroni.Run()
 }
 
 func crossDomainMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
@@ -64,4 +90,49 @@ func authMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFun
 
 func getUserFromAuth(code string) interface{} {
 	return nil
+}
+*/
+
+import (
+	"fmt"
+	config "github.com/croll/arkeogis-server/config"
+	"github.com/emicklei/go-restful"
+	"log"
+	"net/http"
+	"path"
+	"strconv"
+)
+
+// StartServer start the http server
+func StartServer() {
+	fmt.Println("starting web server using go-restful...")
+
+	wsContainer := restful.DefaultContainer
+	//wsContainer := restful.NewContainer()
+	//wsContainer.Router(restful.CurlyRouter{})
+
+	// register all rests functions
+	//rest.Register(wsContainer)
+
+	// register static files
+	ws := new(restful.WebService)
+	ws.Route(ws.GET("{subpath:*}").To(staticFromPathParam))
+	wsContainer.Add(ws)
+
+	log.Printf("start listening on localhost:%d", config.Main.Server.Port)
+	server := &http.Server{Addr: ":" + strconv.Itoa(config.Main.Server.Port), Handler: wsContainer}
+	log.Fatal(server.ListenAndServe())
+}
+
+func staticFromPathParam(req *restful.Request, resp *restful.Response) {
+	w := resp.ResponseWriter
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Credentials", "true")
+
+	actual := path.Join(config.WebPath, req.PathParameter("subpath"))
+	fmt.Printf("serving %s ... (from %s)\n", actual, req.PathParameter("subpath"))
+	http.ServeFile(
+		resp.ResponseWriter,
+		req.Request,
+		actual)
 }

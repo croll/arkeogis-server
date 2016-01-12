@@ -29,7 +29,33 @@ import (
 	//routes "github.com/croll/arkeogis-server/webserver/routes"
 	"log"
 	"net/http"
+
+	"github.com/emicklei/go-restful"
 )
+
+// Rest is the interface to implement for registering new rest routes
+type Rest interface {
+	Name() string
+	Register(container *restful.Container)
+}
+
+var rests = []Rest{}
+
+// Register all the routes from this rest package
+func Register(container *restful.Container) {
+	for _, rest := range rests {
+		log.Println("REST init : " + rest.Name())
+		rest.Register(container)
+	}
+}
+
+func register(rest Rest) {
+	rests = append(rests, rest)
+}
+
+/*
+ * errors
+ */
 
 /*
 type ArkeoError struct {
