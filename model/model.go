@@ -22,468 +22,416 @@
 package model
 
 import (
-	"time"
 	"database/sql"
+	"time"
 )
 
 type Caracterisation struct {
-	Id	int	`db:"id"`
-	Parent_id	int	`db:"parent_id"`
-	Order	int	`db:"order"`
-	Author_user_id	int	`db:"author_user_id"`	// User.Id
-	Created_at	time.Time	`db:"created_at"`
-	Updated_at	time.Time	`db:"updated_at"`
+	Id             int       `db:"id" json:"id"`
+	Parent_id      int       `db:"parent_id" json:"parent_id"`
+	Order          int       `db:"order" json:"order"`
+	Author_user_id int       `db:"author_user_id" json:"author_user_id"` // User.Id
+	Created_at     time.Time `db:"created_at" json:"created_at"`
+	Updated_at     time.Time `db:"updated_at" json:"updated_at"`
 }
-
 
 type Caracterisation_translation struct {
-	Lang_id	int	`db:"lang_id"`	// Lang.Id
-	Caracterisation_id	int	`db:"caracterisation_id"`	// Caracterisation.Id
-	Name	string	`db:"name"`
-	Description	sql.NullString	`db:"description"`
+	Lang_id            int            `db:"lang_id" json:"lang_id"`                       // Lang.Id
+	Caracterisation_id int            `db:"caracterisation_id" json:"caracterisation_id"` // Caracterisation.Id
+	Name               string         `db:"name" json:"name"`
+	Description        sql.NullString `db:"description" json:"description"`
 }
-
 
 type Chronology struct {
-	Id	int	`db:"id"`
-	Owner_id	int	`db:"owner_id"`	// User.Id
-	Parent_id	int	`db:"parent_id"`	// Chronology.Id
-	Start_date	int	`db:"start_date"`
-	End_date	int	`db:"end_date"`
-	Color	string	`db:"color"`
-	Created_at	time.Time	`db:"created_at"`
-	Updated_at	time.Time	`db:"updated_at"`
+	Id         int       `db:"id" json:"id"`
+	Owner_id   int       `db:"owner_id" json:"owner_id"`   // User.Id
+	Parent_id  int       `db:"parent_id" json:"parent_id"` // Chronology.Id
+	Start_date int       `db:"start_date" json:"start_date"`
+	End_date   int       `db:"end_date" json:"end_date"`
+	Color      string    `db:"color" json:"color"`
+	Created_at time.Time `db:"created_at" json:"created_at"`
+	Updated_at time.Time `db:"updated_at" json:"updated_at"`
 }
-
 
 type Chronology_translation struct {
-	Lang_id	int	`db:"lang_id"`	// Lang.Id
-	Chronology_id	int	`db:"chronology_id"`	// Chronology.Id
-	Name	string	`db:"name"`
-	Description	sql.NullString	`db:"description"`
+	Lang_id       int            `db:"lang_id" json:"lang_id"`             // Lang.Id
+	Chronology_id int            `db:"chronology_id" json:"chronology_id"` // Chronology.Id
+	Name          string         `db:"name" json:"name"`
+	Description   sql.NullString `db:"description" json:"description"`
 }
-
 
 type City struct {
-	Geonameid	int	`db:"geonameid"`
-	Country_geonameid	int	`db:"country_geonameid"`	// Country.Geonameid
-	Geom	sql.NullString	`db:"geom"`
-	Geom_centroid	sql.NullString	`db:"geom_centroid"`
+	Geonameid         int            `db:"geonameid" json:"geonameid"`
+	Country_geonameid int            `db:"country_geonameid" json:"country_geonameid"` // Country.Geonameid
+	Geom              sql.NullString `db:"geom" json:"geom"`
+	Geom_centroid     sql.NullString `db:"geom_centroid" json:"geom_centroid"`
 }
-
 
 type City_translation struct {
-	City_geonameid	int	`db:"city_geonameid"`	// City.Geonameid
-	Lang_id	int	`db:"lang_id"`	// Lang.Id
-	Name	string	`db:"name"`
-	Name_ascii	string	`db:"name_ascii"`
+	City_geonameid int    `db:"city_geonameid" json:"city_geonameid"` // City.Geonameid
+	Lang_id        int    `db:"lang_id" json:"lang_id"`               // Lang.Id
+	Name           string `db:"name" json:"name"`
+	Name_ascii     string `db:"name_ascii" json:"name_ascii"`
 }
-
 
 type Company struct {
-	Id	int	`db:"id"`
-	Name	string	`db:"name"`
-	City_geonameid	int	`db:"city_geonameid"`	// City.Geonameid
+	Id             int    `db:"id" json:"id"`
+	Name           string `db:"name" json:"name"`
+	City_geonameid int    `db:"city_geonameid" json:"city_geonameid"` // City.Geonameid
 }
-
 
 type Continent struct {
-	Geonameid	int	`db:"geonameid"`
-	Iso_code	string	`db:"iso_code"`
-	Geom	sql.NullString	`db:"geom"`
-	Created_at	time.Time	`db:"created_at"`
-	Updated_at	time.Time	`db:"updated_at"`
+	Geonameid  int            `db:"geonameid" json:"geonameid"`
+	Iso_code   string         `db:"iso_code" json:"iso_code"`
+	Geom       sql.NullString `db:"geom" json:"geom"`
+	Created_at time.Time      `db:"created_at" json:"created_at"`
+	Updated_at time.Time      `db:"updated_at" json:"updated_at"`
 }
-
 
 type Continent_translation struct {
-	Continent_geonameid	int	`db:"continent_geonameid"`
-	Lang_id	int	`db:"lang_id"`	// Lang.Id
-	Name	string	`db:"name"`
-	Name_ascii	string	`db:"name_ascii"`
+	Continent_geonameid int    `db:"continent_geonameid" json:"continent_geonameid"`
+	Lang_id             int    `db:"lang_id" json:"lang_id"` // Lang.Id
+	Name                string `db:"name" json:"name"`
+	Name_ascii          string `db:"name_ascii" json:"name_ascii"`
 }
-
 
 type Country struct {
-	Geonameid	int	`db:"geonameid"`
-	Iso_code	sql.NullString	`db:"iso_code"`
-	Geom	sql.NullString	`db:"geom"`
-	Created_at	time.Time	`db:"created_at"`
-	Updated_at	time.Time	`db:"updated_at"`
+	Geonameid  int            `db:"geonameid" json:"geonameid"`
+	Iso_code   sql.NullString `db:"iso_code" json:"iso_code"`
+	Geom       sql.NullString `db:"geom" json:"geom"`
+	Created_at time.Time      `db:"created_at" json:"created_at"`
+	Updated_at time.Time      `db:"updated_at" json:"updated_at"`
 }
-
 
 type Country_translation struct {
-	Country_geonameid	int	`db:"country_geonameid"`	// Country.Geonameid
-	Lang_id	int	`db:"lang_id"`	// Lang.Id
-	Name	string	`db:"name"`
-	Name_ascii	sql.NullString	`db:"name_ascii"`
+	Country_geonameid int            `db:"country_geonameid" json:"country_geonameid"` // Country.Geonameid
+	Lang_id           int            `db:"lang_id" json:"lang_id"`                     // Lang.Id
+	Name              string         `db:"name" json:"name"`
+	Name_ascii        sql.NullString `db:"name_ascii" json:"name_ascii"`
 }
-
 
 type Database struct {
-	Id	int	`db:"id"`
-	Name	string	`db:"name"`
-	Scale_resolution	string	`db:"scale_resolution"`
-	Geographical_extent	string	`db:"geographical_extent"`
-	Type	string	`db:"type"`
-	Owner	int	`db:"owner"`	// User.Id
-	Source_creation_date	time.Time	`db:"source_creation_date"`
-	Data_set	string	`db:"data_set"`
-	Identifier	string	`db:"identifier"`
-	Source	string	`db:"source"`
-	Source_url	string	`db:"source_url"`
-	Publisher	string	`db:"publisher"`
-	Contributor	string	`db:"contributor"`
-	Default_language	int	`db:"default_language"`	// Lang.Id
-	Relation	string	`db:"relation"`
-	Coverage	string	`db:"coverage"`
-	Copyright	string	`db:"copyright"`
-	State	string	`db:"state"`
-	Published	bool	`db:"published"`
-	License_id	int	`db:"license_id"`	// License.Id
-	Created_at	time.Time	`db:"created_at"`
-	Updated_at	time.Time	`db:"updated_at"`
+	Id                   int       `db:"id" json:"id"`
+	Name                 string    `db:"name" json:"name"`
+	Scale_resolution     string    `db:"scale_resolution" json:"scale_resolution"`
+	Geographical_extent  string    `db:"geographical_extent" json:"geographical_extent"`
+	Type                 string    `db:"type" json:"type"`
+	Owner                int       `db:"owner" json:"owner"` // User.Id
+	Source_creation_date time.Time `db:"source_creation_date" json:"source_creation_date"`
+	Data_set             string    `db:"data_set" json:"data_set"`
+	Identifier           string    `db:"identifier" json:"identifier"`
+	Source               string    `db:"source" json:"source"`
+	Source_url           string    `db:"source_url" json:"source_url"`
+	Publisher            string    `db:"publisher" json:"publisher"`
+	Contributor          string    `db:"contributor" json:"contributor"`
+	Default_language     int       `db:"default_language" json:"default_language"` // Lang.Id
+	Relation             string    `db:"relation" json:"relation"`
+	Coverage             string    `db:"coverage" json:"coverage"`
+	Copyright            string    `db:"copyright" json:"copyright"`
+	State                string    `db:"state" json:"state"`
+	Published            bool      `db:"published" json:"published"`
+	License_id           int       `db:"license_id" json:"license_id"` // License.Id
+	Created_at           time.Time `db:"created_at" json:"created_at"`
+	Updated_at           time.Time `db:"updated_at" json:"updated_at"`
 }
-
 
 type Database__authors struct {
-	Database_id	int	`db:"database_id"`	// Database.Id
-	User_id	int	`db:"user_id"`	// User.Id
+	Database_id int `db:"database_id" json:"database_id"` // Database.Id
+	User_id     int `db:"user_id" json:"user_id"`         // User.Id
 }
-
 
 type Database__continent struct {
-	Id_database	int	`db:"id_database"`	// Database.Id
-	Continent_geonameid	int	`db:"continent_geonameid"`	// Continent.Geonameid
+	Id_database         int `db:"id_database" json:"id_database"`                 // Database.Id
+	Continent_geonameid int `db:"continent_geonameid" json:"continent_geonameid"` // Continent.Geonameid
 }
-
 
 type Database__country struct {
-	Database_id	int	`db:"database_id"`	// Database.Id
-	Country_geonameid	int	`db:"country_geonameid"`	// Country.Geonameid
+	Database_id       int `db:"database_id" json:"database_id"`             // Database.Id
+	Country_geonameid int `db:"country_geonameid" json:"country_geonameid"` // Country.Geonameid
 }
-
 
 type Database__handle struct {
-	Id	int	`db:"id"`
-	Handle_id	int	`db:"handle_id"`	// Handle.Id
-	Database_id	int	`db:"database_id"`	// Database.Id
-	Value	string	`db:"value"`
-	Created_at	time.Time	`db:"created_at"`
+	Id          int       `db:"id" json:"id"`
+	Handle_id   int       `db:"handle_id" json:"handle_id"`     // Handle.Id
+	Database_id int       `db:"database_id" json:"database_id"` // Database.Id
+	Value       string    `db:"value" json:"value"`
+	Created_at  time.Time `db:"created_at" json:"created_at"`
 }
-
 
 type Database_translation struct {
-	Database_id	int	`db:"database_id"`	// Database.Id
-	Lang_id	int	`db:"lang_id"`	// Lang.Id
-	Subject	string	`db:"subject"`
-	Description	sql.NullString	`db:"description"`
-	Geographical_limit	sql.NullString	`db:"geographical_limit"`
-	Bibliography	sql.NullString	`db:"bibliography"`
+	Database_id        int            `db:"database_id" json:"database_id"` // Database.Id
+	Lang_id            int            `db:"lang_id" json:"lang_id"`         // Lang.Id
+	Subject            string         `db:"subject" json:"subject"`
+	Description        sql.NullString `db:"description" json:"description"`
+	Geographical_limit sql.NullString `db:"geographical_limit" json:"geographical_limit"`
+	Bibliography       sql.NullString `db:"bibliography" json:"bibliography"`
 }
-
 
 type Geographical_zone struct {
-	Id	int	`db:"id"`
-	Name	sql.NullString	`db:"name"`
-	Geom	string	`db:"geom"`
+	Id   int            `db:"id" json:"id"`
+	Name sql.NullString `db:"name" json:"name"`
+	Geom string         `db:"geom" json:"geom"`
 }
-
 
 type Global_project struct {
-	Project_id	int	`db:"project_id"`	// Project.Id
+	Project_id int `db:"project_id" json:"project_id"` // Project.Id
 }
-
 
 type Group struct {
-	Id	int	`db:"id"`
-	Created_at	time.Time	`db:"created_at"`
-	Udpated_at	time.Time	`db:"udpated_at"`
+	Id         int       `db:"id" json:"id"`
+	Created_at time.Time `db:"created_at" json:"created_at"`
+	Udpated_at time.Time `db:"udpated_at" json:"udpated_at"`
 }
-
 
 type Group__permission struct {
-	Group_id	int	`db:"group_id"`	// Group.Id
-	Permission_id	int	`db:"permission_id"`	// Permission.Id
-	Created_at	time.Time	`db:"created_at"`
-	Updated_at	time.Time	`db:"updated_at"`
+	Group_id      int       `db:"group_id" json:"group_id"`           // Group.Id
+	Permission_id int       `db:"permission_id" json:"permission_id"` // Permission.Id
+	Created_at    time.Time `db:"created_at" json:"created_at"`
+	Updated_at    time.Time `db:"updated_at" json:"updated_at"`
 }
-
 
 type Group_translation struct {
-	Group_id	int	`db:"group_id"`	// Group.Id
-	Lang_id	int	`db:"lang_id"`	// Lang.Id
-	Name	string	`db:"name"`
-	Description	sql.NullString	`db:"description"`
+	Group_id    int            `db:"group_id" json:"group_id"` // Group.Id
+	Lang_id     int            `db:"lang_id" json:"lang_id"`   // Lang.Id
+	Name        string         `db:"name" json:"name"`
+	Description sql.NullString `db:"description" json:"description"`
 }
-
 
 type Handle struct {
-	Id	int	`db:"id"`
-	Name	string	`db:"name"`
-	Url	string	`db:"url"`
+	Id   int    `db:"id" json:"id"`
+	Name string `db:"name" json:"name"`
+	Url  string `db:"url" json:"url"`
 }
-
 
 type Import struct {
-	Id	int	`db:"id"`
-	Database_id	int	`db:"database_id"`	// Database.Id
-	User_id	int	`db:"user_id"`	// User.Id
-	Filename	string	`db:"filename"`
-	Created_at	time.Time	`db:"created_at"`
+	Id          int       `db:"id" json:"id"`
+	Database_id int       `db:"database_id" json:"database_id"` // Database.Id
+	User_id     int       `db:"user_id" json:"user_id"`         // User.Id
+	Filename    string    `db:"filename" json:"filename"`
+	Created_at  time.Time `db:"created_at" json:"created_at"`
 }
-
 
 type Lang struct {
-	Id	int	`db:"id"`
-	Iso_code	string	`db:"iso_code"`
-	Active	bool	`db:"active"`
+	Id       int    `db:"id" json:"id"`
+	Iso_code string `db:"iso_code" json:"iso_code"`
+	Active   bool   `db:"active" json:"active"`
 }
-
 
 type License struct {
-	Id	int	`db:"id"`
-	Name	string	`db:"name"`
-	Url	string	`db:"url"`
+	Id   int    `db:"id" json:"id"`
+	Name string `db:"name" json:"name"`
+	Url  string `db:"url" json:"url"`
 }
-
 
 type Permission struct {
-	Id	int	`db:"id"`
-	Created_at	time.Time	`db:"created_at"`
-	Updated_at	time.Time	`db:"updated_at"`
-	Name	string	`db:"name"`
+	Id         int       `db:"id" json:"id"`
+	Created_at time.Time `db:"created_at" json:"created_at"`
+	Updated_at time.Time `db:"updated_at" json:"updated_at"`
+	Name       string    `db:"name" json:"name"`
 }
-
 
 type Permission_translation struct {
-	Permission_id	int	`db:"permission_id"`	// Permission.Id
-	Lang_id	int	`db:"lang_id"`	// Lang.Id
-	Name	string	`db:"name"`
-	Description	sql.NullString	`db:"description"`
+	Permission_id int            `db:"permission_id" json:"permission_id"` // Permission.Id
+	Lang_id       int            `db:"lang_id" json:"lang_id"`             // Lang.Id
+	Name          string         `db:"name" json:"name"`
+	Description   sql.NullString `db:"description" json:"description"`
 }
-
 
 type Project struct {
-	Id	int	`db:"id"`
-	Name	string	`db:"name"`
-	User_id	int	`db:"user_id"`	// User.Id
-	Geographical_zone_id	int	`db:"geographical_zone_id"`	// Geographical_zone.Id
-	Created_at	time.Time	`db:"created_at"`
-	Updated_at	time.Time	`db:"updated_at"`
+	Id                   int       `db:"id" json:"id"`
+	Name                 string    `db:"name" json:"name"`
+	User_id              int       `db:"user_id" json:"user_id"`                           // User.Id
+	Geographical_zone_id int       `db:"geographical_zone_id" json:"geographical_zone_id"` // Geographical_zone.Id
+	Created_at           time.Time `db:"created_at" json:"created_at"`
+	Updated_at           time.Time `db:"updated_at" json:"updated_at"`
 }
-
 
 type Project__caracterisation struct {
-	Project__caracterisations_set_id	int	`db:"project__caracterisations_set_id"`	// Project__caracterisations_set.Id
-	Caracterisation_id	int	`db:"caracterisation_id"`	// Caracterisation.Id
+	Project__caracterisations_set_id int `db:"project__caracterisations_set_id" json:"project__caracterisations_set_id"` // Project__caracterisations_set.Id
+	Caracterisation_id               int `db:"caracterisation_id" json:"caracterisation_id"`                             // Caracterisation.Id
 }
-
 
 type Project__caracterisations_set struct {
-	Id	int	`db:"id"`
-	Project_id	int	`db:"project_id"`	// Project.Id
-	Copied_from_project__caracterisation_set_id	int	`db:"copied_from_project__caracterisation_set_id"`	// Project__caracterisations_set.Id
+	Id                                          int `db:"id" json:"id"`
+	Project_id                                  int `db:"project_id" json:"project_id"`                                                                   // Project.Id
+	Copied_from_project__caracterisation_set_id int `db:"copied_from_project__caracterisation_set_id" json:"copied_from_project__caracterisation_set_id"` // Project__caracterisations_set.Id
 }
-
 
 type Project__caracterisations_set_translation struct {
-	Project__caracterisations_set_id	int	`db:"project__caracterisations_set_id"`	// Project__caracterisations_set.Id
-	Lang_id	int	`db:"lang_id"`	// Lang.Id
-	Name	string	`db:"name"`
-	Description	sql.NullString	`db:"description"`
+	Project__caracterisations_set_id int            `db:"project__caracterisations_set_id" json:"project__caracterisations_set_id"` // Project__caracterisations_set.Id
+	Lang_id                          int            `db:"lang_id" json:"lang_id"`                                                   // Lang.Id
+	Name                             string         `db:"name" json:"name"`
+	Description                      sql.NullString `db:"description" json:"description"`
 }
-
 
 type Project__chronology struct {
-	Project_id	int	`db:"project_id"`	// Project.Id
-	Chronology_root_id	int	`db:"chronology_root_id"`	// Chronology.Id
-	Id_group	int	`db:"id_group"`	// Group.Id
+	Project_id         int `db:"project_id" json:"project_id"`                 // Project.Id
+	Chronology_root_id int `db:"chronology_root_id" json:"chronology_root_id"` // Chronology.Id
+	Id_group           int `db:"id_group" json:"id_group"`                     // Group.Id
 }
-
 
 type Project__chronology_translation struct {
-	Project__chronology_id	int	`db:"project__chronology_id"`
-	Lang_id	int	`db:"lang_id"`	// Lang.Id
-	Name	string	`db:"name"`
-	Description	sql.NullString	`db:"description"`
+	Project__chronology_id int            `db:"project__chronology_id" json:"project__chronology_id"`
+	Lang_id                int            `db:"lang_id" json:"lang_id"` // Lang.Id
+	Name                   string         `db:"name" json:"name"`
+	Description            sql.NullString `db:"description" json:"description"`
 }
-
 
 type Project__databases struct {
-	Project_id	int	`db:"project_id"`	// Project.Id
-	Database_id	int	`db:"database_id"`	// Database.Id
+	Project_id  int `db:"project_id" json:"project_id"`   // Project.Id
+	Database_id int `db:"database_id" json:"database_id"` // Database.Id
 }
-
 
 type Project__shapefile struct {
-	Project_id	int	`db:"project_id"`	// Project.Id
-	Shapefile_id	int	`db:"shapefile_id"`	// Shapefile.Id
+	Project_id   int `db:"project_id" json:"project_id"`     // Project.Id
+	Shapefile_id int `db:"shapefile_id" json:"shapefile_id"` // Shapefile.Id
 }
-
 
 type Project__wms_map struct {
-	Project_id	int	`db:"project_id"`	// Project.Id
-	Wms_map_id	int	`db:"wms_map_id"`	// Wms_map.Id
+	Project_id int `db:"project_id" json:"project_id"` // Project.Id
+	Wms_map_id int `db:"wms_map_id" json:"wms_map_id"` // Wms_map.Id
 }
-
 
 type Shapefile struct {
-	Id	int	`db:"id"`
-	Creator_user_id	int	`db:"creator_user_id"`	// User.Id
-	Source_creation_date	time.Time	`db:"source_creation_date"`
-	Filename	sql.NullString	`db:"filename"`
-	Geom	sql.NullString	`db:"geom"`
-	Min_scale	int	`db:"min_scale"`
-	Max_scale	int	`db:"max_scale"`
-	Start_date	int	`db:"start_date"`
-	Start_date_qualifier	string	`db:"start_date_qualifier"`
-	End_date	int	`db:"end_date"`
-	End_date_qualifier	string	`db:"end_date_qualifier"`
-	Published	bool	`db:"published"`
-	Created_at	time.Time	`db:"created_at"`
-	Updated_at	time.Time	`db:"updated_at"`
-	License_name	string	`db:"license_name"`
-	Odbl_license	bool	`db:"odbl_license"`
+	Id                   int            `db:"id" json:"id"`
+	Creator_user_id      int            `db:"creator_user_id" json:"creator_user_id"` // User.Id
+	Source_creation_date time.Time      `db:"source_creation_date" json:"source_creation_date"`
+	Filename             sql.NullString `db:"filename" json:"filename"`
+	Geom                 sql.NullString `db:"geom" json:"geom"`
+	Min_scale            int            `db:"min_scale" json:"min_scale"`
+	Max_scale            int            `db:"max_scale" json:"max_scale"`
+	Start_date           int            `db:"start_date" json:"start_date"`
+	Start_date_qualifier string         `db:"start_date_qualifier" json:"start_date_qualifier"`
+	End_date             int            `db:"end_date" json:"end_date"`
+	End_date_qualifier   string         `db:"end_date_qualifier" json:"end_date_qualifier"`
+	Published            bool           `db:"published" json:"published"`
+	Created_at           time.Time      `db:"created_at" json:"created_at"`
+	Updated_at           time.Time      `db:"updated_at" json:"updated_at"`
+	License_name         string         `db:"license_name" json:"license_name"`
+	Odbl_license         bool           `db:"odbl_license" json:"odbl_license"`
 }
-
 
 type Shapefile_authors struct {
-	Shapefile_id	int	`db:"shapefile_id"`	// Shapefile.Id
-	User_id	int	`db:"user_id"`	// User.Id
+	Shapefile_id int `db:"shapefile_id" json:"shapefile_id"` // Shapefile.Id
+	User_id      int `db:"user_id" json:"user_id"`           // User.Id
 }
-
 
 type Shapefile_translation struct {
-	Shapefile_id	int	`db:"shapefile_id"`	// Shapefile.Id
-	Lang_id	int	`db:"lang_id"`	// Lang.Id
-	Name	string	`db:"name"`
-	Description	sql.NullString	`db:"description"`
-	Attribution	sql.NullString	`db:"attribution"`
-	Bibiography	string	`db:"bibiography"`
+	Shapefile_id int            `db:"shapefile_id" json:"shapefile_id"` // Shapefile.Id
+	Lang_id      int            `db:"lang_id" json:"lang_id"`           // Lang.Id
+	Name         string         `db:"name" json:"name"`
+	Description  sql.NullString `db:"description" json:"description"`
+	Attribution  sql.NullString `db:"attribution" json:"attribution"`
+	Bibiography  string         `db:"bibiography" json:"bibiography"`
 }
-
 
 type Site struct {
-	Id	int	`db:"id"`
-	Code	string	`db:"code"`
-	Name	string	`db:"name"`
-	City_name	string	`db:"city_name"`
-	City_geonameid	int	`db:"city_geonameid"`
-	Geom	string	`db:"geom"`
-	Centroid	bool	`db:"centroid"`
-	Occupation	string	`db:"occupation"`
-	Database_id	int	`db:"database_id"`	// Database.Id
-	Created_at	time.Time	`db:"created_at"`
-	Updated_at	time.Time	`db:"updated_at"`
+	Id             int       `db:"id" json:"id"`
+	Code           string    `db:"code" json:"code"`
+	Name           string    `db:"name" json:"name"`
+	City_name      string    `db:"city_name" json:"city_name"`
+	City_geonameid int       `db:"city_geonameid" json:"city_geonameid"`
+	Geom           string    `db:"geom" json:"geom"`
+	Centroid       bool      `db:"centroid" json:"centroid"`
+	Occupation     string    `db:"occupation" json:"occupation"`
+	Database_id    int       `db:"database_id" json:"database_id"` // Database.Id
+	Created_at     time.Time `db:"created_at" json:"created_at"`
+	Updated_at     time.Time `db:"updated_at" json:"updated_at"`
 }
-
 
 type Site_range struct {
-	Id	int	`db:"id"`
-	Site_id	int	`db:"site_id"`	// Site.Id
-	Start_date	int	`db:"start_date"`
-	Start_date_qualifier	string	`db:"start_date_qualifier"`
-	End_date	int	`db:"end_date"`
-	End_date_qualifier	string	`db:"end_date_qualifier"`
-	Knowledge_type	string	`db:"knowledge_type"`
-	Depth	int	`db:"depth"`
-	Created_at	time.Time	`db:"created_at"`
-	Updated_at	time.Time	`db:"updated_at"`
+	Id                   int       `db:"id" json:"id"`
+	Site_id              int       `db:"site_id" json:"site_id"` // Site.Id
+	Start_date           int       `db:"start_date" json:"start_date"`
+	Start_date_qualifier string    `db:"start_date_qualifier" json:"start_date_qualifier"`
+	End_date             int       `db:"end_date" json:"end_date"`
+	End_date_qualifier   string    `db:"end_date_qualifier" json:"end_date_qualifier"`
+	Knowledge_type       string    `db:"knowledge_type" json:"knowledge_type"`
+	Depth                int       `db:"depth" json:"depth"`
+	Created_at           time.Time `db:"created_at" json:"created_at"`
+	Updated_at           time.Time `db:"updated_at" json:"updated_at"`
 }
-
 
 type Site_range__caracterisation struct {
-	Site_range_id	int	`db:"site_range_id"`	// Site_range.Id
-	Caracterisation_id	int	`db:"caracterisation_id"`	// Caracterisation.Id
-	Exceptional	bool	`db:"exceptional"`
+	Site_range_id      int  `db:"site_range_id" json:"site_range_id"`           // Site_range.Id
+	Caracterisation_id int  `db:"caracterisation_id" json:"caracterisation_id"` // Caracterisation.Id
+	Exceptional        bool `db:"exceptional" json:"exceptional"`
 }
-
 
 type Site_range_translation struct {
-	Site_range_id	int	`db:"site_range_id"`	// Site_range.Id
-	Lang_id	int	`db:"lang_id"`	// Lang.Id
-	Comment	string	`db:"comment"`
-	Bibliography	string	`db:"bibliography"`
+	Site_range_id int    `db:"site_range_id" json:"site_range_id"` // Site_range.Id
+	Lang_id       int    `db:"lang_id" json:"lang_id"`             // Lang.Id
+	Comment       string `db:"comment" json:"comment"`
+	Bibliography  string `db:"bibliography" json:"bibliography"`
 }
-
 
 type Site_translation struct {
-	Site_id	int	`db:"site_id"`	// Site.Id
-	Lang_id	int	`db:"lang_id"`	// Lang.Id
-	Description	string	`db:"description"`
+	Site_id     int    `db:"site_id" json:"site_id"` // Site.Id
+	Lang_id     int    `db:"lang_id" json:"lang_id"` // Lang.Id
+	Description string `db:"description" json:"description"`
 }
-
 
 type User struct {
-	Id	int	`db:"id"`
-	Username	string	`db:"username"`
-	Firstname	string	`db:"firstname"`
-	Lastname	string	`db:"lastname"`
-	Email	string	`db:"email"`
-	Password	string	`db:"password"`
-	Description	string	`db:"description"`
-	Active	bool	`db:"active"`
-	First_lang_id	int	`db:"first_lang_id"`	// Lang.Id
-	Second_lang_id	int	`db:"second_lang_id"`	// Lang.Id
-	City_geonameid	int	`db:"city_geonameid"`	// City.Geonameid
-	Created_at	time.Time	`db:"created_at"`
-	Updated_at	time.Time	`db:"updated_at"`
+	Id             int       `db:"id" json:"id"`
+	Username       string    `db:"username" json:"username"`
+	Firstname      string    `db:"firstname" json:"firstname"`
+	Lastname       string    `db:"lastname" json:"lastname"`
+	Email          string    `db:"email" json:"email"`
+	Password       string    `db:"password" json:"password"`
+	Description    string    `db:"description" json:"description"`
+	Active         bool      `db:"active" json:"active"`
+	First_lang_id  int       `db:"first_lang_id" json:"first_lang_id"`   // Lang.Id
+	Second_lang_id int       `db:"second_lang_id" json:"second_lang_id"` // Lang.Id
+	City_geonameid int       `db:"city_geonameid" json:"city_geonameid"` // City.Geonameid
+	Created_at     time.Time `db:"created_at" json:"created_at"`
+	Updated_at     time.Time `db:"updated_at" json:"updated_at"`
 }
-
 
 type User__company struct {
-	User_id	int	`db:"user_id"`	// User.Id
-	Company_id	int	`db:"company_id"`	// Company.Id
+	User_id    int `db:"user_id" json:"user_id"`       // User.Id
+	Company_id int `db:"company_id" json:"company_id"` // Company.Id
 }
-
 
 type User__group struct {
-	Group_id	int	`db:"group_id"`	// Group.Id
-	User_id	int	`db:"user_id"`	// User.Id
+	Group_id int `db:"group_id" json:"group_id"` // Group.Id
+	User_id  int `db:"user_id" json:"user_id"`   // User.Id
 }
-
 
 type User_preferences struct {
-	User_id	int	`db:"user_id"`	// User.Id
-	Key	string	`db:"key"`
-	Value	sql.NullString	`db:"value"`
+	User_id int            `db:"user_id" json:"user_id"` // User.Id
+	Key     string         `db:"key" json:"key"`
+	Value   sql.NullString `db:"value" json:"value"`
 }
-
 
 type User_project struct {
-	Project_id	int	`db:"project_id"`	// Project.Id
-	Start_date	int	`db:"start_date"`
-	End_date	int	`db:"end_date"`
+	Project_id int `db:"project_id" json:"project_id"` // Project.Id
+	Start_date int `db:"start_date" json:"start_date"`
+	End_date   int `db:"end_date" json:"end_date"`
 }
-
 
 type Wms_map struct {
-	Id	int	`db:"id"`
-	Creator_user_id	int	`db:"creator_user_id"`	// User.Id
-	Url	sql.NullString	`db:"url"`
-	Source_creation_date	time.Time	`db:"source_creation_date"`
-	Min_scale	int	`db:"min_scale"`
-	Max_scale	int	`db:"max_scale"`
-	Start_date	int	`db:"start_date"`
-	Start_date_qualifier	string	`db:"start_date_qualifier"`
-	End_date	int	`db:"end_date"`
-	End_date_qualifier	string	`db:"end_date_qualifier"`
-	Published	bool	`db:"published"`
-	Created_at	time.Time	`db:"created_at"`
-	Updated_at	time.Time	`db:"updated_at"`
+	Id                   int            `db:"id" json:"id"`
+	Creator_user_id      int            `db:"creator_user_id" json:"creator_user_id"` // User.Id
+	Url                  sql.NullString `db:"url" json:"url"`
+	Source_creation_date time.Time      `db:"source_creation_date" json:"source_creation_date"`
+	Min_scale            int            `db:"min_scale" json:"min_scale"`
+	Max_scale            int            `db:"max_scale" json:"max_scale"`
+	Start_date           int            `db:"start_date" json:"start_date"`
+	Start_date_qualifier string         `db:"start_date_qualifier" json:"start_date_qualifier"`
+	End_date             int            `db:"end_date" json:"end_date"`
+	End_date_qualifier   string         `db:"end_date_qualifier" json:"end_date_qualifier"`
+	Published            bool           `db:"published" json:"published"`
+	Created_at           time.Time      `db:"created_at" json:"created_at"`
+	Updated_at           time.Time      `db:"updated_at" json:"updated_at"`
 }
-
 
 type Wms_map_translation struct {
-	Wms_map_id	int	`db:"wms_map_id"`	// Wms_map.Id
-	Lang_id	int	`db:"lang_id"`	// Lang.Id
-	Name	string	`db:"name"`
-	Attribution	sql.NullString	`db:"attribution"`
-	Copyright	sql.NullString	`db:"copyright"`
+	Wms_map_id  int            `db:"wms_map_id" json:"wms_map_id"` // Wms_map.Id
+	Lang_id     int            `db:"lang_id" json:"lang_id"`       // Lang.Id
+	Name        string         `db:"name" json:"name"`
+	Attribution sql.NullString `db:"attribution" json:"attribution"`
+	Copyright   sql.NullString `db:"copyright" json:"copyright"`
 }
-
 
 const User_InsertStr = "\"username\", \"firstname\", \"lastname\", \"email\", \"password\", \"description\", \"active\", \"first_lang_id\", \"second_lang_id\", \"city_geonameid\", \"created_at\", \"updated_at\""
 const User_InsertValuesStr = ":username, :firstname, :lastname, :email, :password, :description, :active, :first_lang_id, :second_lang_id, :city_geonameid, now(), now()"

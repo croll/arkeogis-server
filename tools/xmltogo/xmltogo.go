@@ -136,7 +136,7 @@ func printPsql(sql Sql) {
 		for _, row := range table.Rows {
 			typestr := mysqlToPsqlType(row)
 
-			tablestr += fmt.Sprintf("\t%s\t%s\t`db:\"%s\"`", sqlToGoName(row.Name), typestr, row.Name)
+			tablestr += fmt.Sprintf("\t%s\t%s\t`db:\"%s\" json:\"%s\"`", sqlToGoName(row.Name), typestr, row.Name, row.Name)
 			insertrows = append(insertrows, row.Name)
 
 			for _, relation := range row.Relations {
