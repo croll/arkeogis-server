@@ -27,6 +27,7 @@ import (
 	"log"
 	"net/http"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 
@@ -109,6 +110,7 @@ func UserList(w http.ResponseWriter, r *http.Request, o interface{}, s *session.
 		return
 	}
 
+	// decode order...
 	order := r.FormValue("order")
 	orderdir := "ASC"
 	if strings.HasPrefix(order, "-") {
@@ -131,8 +133,31 @@ func UserList(w http.ResponseWriter, r *http.Request, o interface{}, s *session.
 		order = "u.id"
 		orderdir = "ASC"
 	}
+	/////
 
-	err = db.DB.Select(&answer.Data, "SELECT * FROM \"user\" u WHERE (u.username ILIKE $1 OR u.firstname ILIKE $1 OR u.lastname ILIKE $1 OR u.email ILIKE $1) ORDER BY "+order+" "+orderdir, "%"+r.FormValue("filter")+"%")
+	// decode limit / page
+	limit, err := strconv.Atoi(r.FormValue("limit"))
+	if err != nil {
+		limit = 10
+	}
+	switch {
+	case limit == 5,
+		limit == 10,
+		limit == 15:
+		// accepted
+	default:
+		limit = 10
+	}
+
+	page, err := strconv.Atoi(r.FormValue("page"))
+	if err != nil || page < 1 {
+		page = 1
+	}
+
+	offset := (page - 1) * limit
+	/////
+
+	err = db.DB.Select(&answer.Data, "SELECT * FROM \"user\" u WHERE (u.username ILIKE $1 OR u.firstname ILIKE $1 OR u.lastname ILIKE $1 OR u.email ILIKE $1) ORDER BY "+order+" "+orderdir+" OFFSET $2 LIMIT $3", "%"+r.FormValue("filter")+"%", offset, limit)
 	if err != nil {
 		log.Println("err: ", err)
 		return
