@@ -95,17 +95,28 @@ func init() {
 
 // UserList List of users. no filets, no args actually...
 func UserList(w http.ResponseWriter, r *http.Request, o interface{}, s *session.Session) {
-	users := []model.User{}
+	type Answer struct {
+		Data  []model.User
+		Count int
+	}
 
-	err := db.DB.Select(&users, "SELECT * FROM \"user\"")
+	answer := Answer{}
+
+	err := db.DB.Select(&answer.Data, "SELECT * FROM \"user\"")
+	if err != nil {
+		fmt.Println("err: ", err)
+		return
+	}
+
+	err = db.DB.Get(&answer.Count, "SELECT count(*) FROM \"user\"")
 	if err != nil {
 		fmt.Println("err: ", err)
 		return
 	}
 
 	//fmt.Println("users: ", users)
-	j, err := json.Marshal(users)
-	fmt.Fprint(w, (string)(j))
+	j, err := json.Marshal(answer)
+	w.Write(j)
 }
 
 // UserCreate Create a user, see usercreate struct inside this function for json content
