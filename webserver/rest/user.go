@@ -27,6 +27,7 @@ import (
 	"log"
 	"net/http"
 	"reflect"
+	"strings"
 	"time"
 
 	db "github.com/croll/arkeogis-server/db"
@@ -96,21 +97,50 @@ func init() {
 // UserList List of users. no filets, no args actually...
 func UserList(w http.ResponseWriter, r *http.Request, o interface{}, s *session.Session) {
 	type Answer struct {
-		Data  []model.User
-		Count int
+		Data  []model.User `json:"data"`
+		Count int          `json:"count"`
 	}
 
 	answer := Answer{}
 
-	err := db.DB.Select(&answer.Data, "SELECT * FROM \"user\"")
+	err := r.ParseForm()
 	if err != nil {
-		fmt.Println("err: ", err)
+		fmt.Println("ParseForm err: ", err)
+		return
+	}
+
+	order := r.FormValue("order")
+	orderdir := "ASC"
+	if strings.HasPrefix(order, "-") {
+		order = order[1:]
+		orderdir = "DESC"
+	}
+
+	switch {
+	case order == "u.username",
+		order == "u.id",
+		order == "u.created_at",
+		order == "u.updated_at",
+		order == "u.email",
+		order == "u.active":
+		// accepted
+	case order == "u.lastname, u.firstname":
+		order = "u.lastname " + orderdir + ", u.firstname"
+	default:
+		log.Println("rest(users.UsersList): order denied : ", order)
+		order = "u.id"
+		orderdir = "ASC"
+	}
+
+	err = db.DB.Select(&answer.Data, "SELECT * FROM \"user\" u WHERE (u.username ILIKE $1 OR u.firstname ILIKE $1 OR u.lastname ILIKE $1 OR u.email ILIKE $1) ORDER BY "+order+" "+orderdir, "%"+r.FormValue("filter")+"%")
+	if err != nil {
+		log.Println("err: ", err)
 		return
 	}
 
 	err = db.DB.Get(&answer.Count, "SELECT count(*) FROM \"user\"")
 	if err != nil {
-		fmt.Println("err: ", err)
+		log.Println("err: ", err)
 		return
 	}
 
