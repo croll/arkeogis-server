@@ -40,21 +40,21 @@ import (
 
 // Structures for create
 type Valuedisplay struct {
-	Value   int
-	Display string
+	Value   int    `json:"value"`
+	Display string `json:"display"`
 }
 
 type Company struct {
-	Name       Valuedisplay
-	SearchName string
-	City       Valuedisplay
+	Name       Valuedisplay `json:"data"`
+	SearchName string       `json:"searchname"`
+	City       Valuedisplay `json:"city"`
 }
 
 type Usercreate struct {
 	model.User
-	City     Valuedisplay
-	Company1 Company
-	Company2 Company
+	City     Valuedisplay `city`
+	Company1 Company      `company1`
+	Company2 Company      `company2`
 }
 
 func init() {
