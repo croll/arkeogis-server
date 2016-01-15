@@ -74,7 +74,7 @@ func CityList(w http.ResponseWriter, r *http.Request, o interface{}, s *session.
 
 	city := []res{}
 
-	err = db.DB.Select(&city, "SELECT geonameid,name FROM city JOIN city_translation ON city_translation.city_geonameid = city.geonameid LEFT JOIN lang ON city_translation.lang_id = lang.id WHERE (name_ascii ILIKE $1 OR name ILIKE $1) AND country_geonameid = $2 AND (lang.iso_code = $3 OR lang.iso_code = 'D')", r.FormValue("search")+"%", r.FormValue("id_country"), r.FormValue("lang"))
+	err = db.DB.Select(&city, "SELECT geonameid,name FROM city JOIN city_translation ON city_translation.city_geonameid = city.geonameid LEFT JOIN lang ON city_translation.lang_id = lang.id WHERE (name_ascii LIKE lower(f_unaccent($1)) OR lower(f_unaccent(name)) LIKE lower(f_unaccent($1))) AND country_geonameid = $2 AND (lang.iso_code = $3 OR lang.iso_code = 'D')", r.FormValue("search")+"%", r.FormValue("id_country"), r.FormValue("lang"))
 	if err != nil {
 		fmt.Println("err: ", err)
 		return
