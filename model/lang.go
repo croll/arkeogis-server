@@ -25,14 +25,10 @@ import (
 	db "github.com/croll/arkeogis-server/db"
 )
 
-type LangT struct {
-	Id      int    `json:"id"`
-	IsoCode string `json:"iso_code"`
-}
+// GetActiveLangs return an array of Lang object which are actives only
+func GetActiveLangs() ([]Lang, error) {
 
-func GetActiveLangs() ([]LangT, error) {
-
-	langs := []LangT{}
+	langs := []Lang{}
 	err := db.DB.Select(&langs, "SELECT id, iso_code AS isocode FROM lang WHERE active = true AND iso_code != 'D'")
 	if err != nil {
 		return langs, err
