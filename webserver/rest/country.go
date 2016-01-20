@@ -26,6 +26,7 @@ import (
 	"fmt"
 
 	db "github.com/croll/arkeogis-server/db"
+	"github.com/croll/arkeogis-server/model"
 	//model "github.com/croll/arkeogis-server/model"
 	routes "github.com/croll/arkeogis-server/webserver/routes"
 	"github.com/croll/arkeogis-server/webserver/session"
@@ -67,22 +68,20 @@ func CountryList(w http.ResponseWriter, r *http.Request, o interface{}, s *sessi
 		return
 	}
 
-	type res struct {
-		Geonameid  int    `json:"value"`
-		Name       string `json:"display"`
-		Name_Ascii string `json:"name_ascii"`
+	type row struct {
+		model.Country
+		model.Country_translation
 	}
 
-	country := []res{}
+	countries := []row{}
 
-	err = db.DB.Select(&country, "SELECT country.geonameid, country_translation.name, country_translation.name_ascii FROM \"country\" JOIN country_translation ON country_translation.country_geonameid = country.geonameid LEFT JOIN lang ON country_translation.lang_id = lang.id WHERE (lang.iso_code = $1 OR lang.iso_code = 'D') AND (name_ascii ILIKE $2 OR name ILIKE $2)", r.FormValue("lang"), r.FormValue("search")+"%")
+	err = db.DB.Select(&countries, "SELECT country.*, country_translation.* FROM \"country\" JOIN country_translation ON country_translation.country_geonameid = country.geonameid LEFT JOIN lang ON country_translation.lang_id = lang.id WHERE (lang.iso_code = $1 OR lang.iso_code = 'D') AND (name_ascii ILIKE $2 OR name ILIKE $2)", r.FormValue("lang"), r.FormValue("search")+"%")
 	if err != nil {
 		fmt.Println("err: ", err)
 		return
 	}
 
-	//fmt.Println("c: ", country)
-	j, err := json.Marshal(country)
+	j, err := json.Marshal(countries)
 	w.Write(j)
 }
 
