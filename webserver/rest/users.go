@@ -33,6 +33,7 @@ import (
 
 	db "github.com/croll/arkeogis-server/db"
 	model "github.com/croll/arkeogis-server/model"
+	"github.com/croll/arkeogis-server/webserver/filters"
 	routes "github.com/croll/arkeogis-server/webserver/routes"
 	"github.com/croll/arkeogis-server/webserver/session"
 	"github.com/lib/pq"
@@ -72,6 +73,19 @@ func init() {
 			Path:   "/api/users",
 			Func:   UserList,
 			Method: "GET",
+			Permissions: []string{
+				"PermUsersAdmin",
+			},
+			FormFilters: []filters.Filter{
+				filters.FormFilterIntBoundary{
+					FormFilter: filters.FormFilter{
+						FieldName:   "limit",
+						Permissions: []string{"PermUsersAdmin"},
+					},
+					Lower: 0,
+					Upper: 100,
+				},
+			},
 		},
 		&routes.Route{
 			Path:   "/api/users",

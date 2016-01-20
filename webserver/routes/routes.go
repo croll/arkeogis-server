@@ -32,13 +32,15 @@ import (
 	//"strconv"
 	"strings"
 
+	"mime"
+	"mime/multipart"
+
 	db "github.com/croll/arkeogis-server/db"
 	"github.com/croll/arkeogis-server/model"
+	"github.com/croll/arkeogis-server/webserver/filters"
 	session "github.com/croll/arkeogis-server/webserver/session"
 	"github.com/gorilla/mux"
 	"github.com/lib/pq"
-	"mime"
-	"mime/multipart"
 )
 
 // Route structure that is used for registering a new Arkeogis Route
@@ -49,6 +51,7 @@ type Route struct {
 	Queries     []string
 	Json        reflect.Type
 	Permissions []string
+	FormFilters []filters.Filter
 }
 
 // MuxRouter is the gorilla mux router initialized here for Arkeogis
@@ -100,7 +103,13 @@ func Register(myroute *Route) error {
 		log.Println("user is : ", user)
 		s.Values["user"] = user
 
-		// Close the session
+		// Check filters
+		permok := true
+		if !filters.CheckAll(myroute.FormFilters, rw, r, s) {
+			permok = false
+		}
+
+		// Close the transaction
 		err = tx.Commit()
 		if err != nil {
 			if err, ok := err.(*pq.Error); ok {
@@ -112,7 +121,10 @@ func Register(myroute *Route) error {
 		}
 
 		// Print a log
-		log.Printf("[%s] %s %s\n", user.Username, myroute.Method, myroute.Path)
+		log.Printf("[%s] %s %s ; authorized: %t\n", user.Username, myroute.Method, myroute.Path, permok)
+		if !permok {
+			return
+		}
 
 		// decode json from request
 		if myroute.Json != nil {
