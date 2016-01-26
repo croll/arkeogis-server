@@ -222,6 +222,9 @@ func (u *User) GetPermissions(tx *sqlx.Tx) (permissions []Permission, err error)
 
 // HavePermissions return true if the user have all the wanted permissions
 func (u *User) HavePermissions(tx *sqlx.Tx, permissions ...string) (ok bool, err error) {
+	if len(permissions) == 0 {
+		return true, nil
+	}
 	query, args, err := sqlx.In("SELECT count(distinct(p.id)) FROM permission p,user__group ug, group__permission gp WHERE ug.user_id = ? AND ug.group_id = gp.group_id AND gp.permission_id = p.id AND p.name in (?)", u.Id, permissions)
 	if err != nil {
 		return false, err
