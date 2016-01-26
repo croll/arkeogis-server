@@ -18,6 +18,7 @@ type Filter interface {
 }
 
 // CheckAll filters from a []Filter array
+// return false if check failed
 func CheckAll(tx *sqlx.Tx, filters []Filter, w http.ResponseWriter, r *http.Request, s *session.Session) (res bool, errormsg string) {
 	res = true
 	for _, filter := range filters {
@@ -106,8 +107,9 @@ func (ff ParamFilterIntBoundary) Check(tx *sqlx.Tx, w http.ResponseWriter, r *ht
 	vi, _ := strconv.Atoi(v)
 
 	if vi < ff.Lower || vi > ff.Upper {
-		return true
+		log.Println("error value : ", vi, ", should be between : ", ff.Lower, " and ", ff.Upper)
+		return false // error
 	}
 
-	return false
+	return true // no error
 }
