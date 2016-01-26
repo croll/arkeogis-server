@@ -74,13 +74,14 @@ func init() {
 			Func:   UserList,
 			Method: "GET",
 			Permissions: []string{
-				"PermUsersAdmin",
+				"AdminUsers",
 			},
 			ParamFilters: []filters.Filter{
 				filters.ParamFilterIntBoundary{
 					ParamFilter: filters.ParamFilter{
 						ParamType:   filters.ParamTypeForm,
 						ParamName:   "limit",
+						ErrorString: "limit over boundaries",
 						Permissions: []string{"AdminUsers"},
 					},
 					Lower: 0,

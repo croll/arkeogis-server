@@ -103,10 +103,25 @@ func Register(myroute *Route) error {
 		log.Println("user is : ", user)
 		s.Values["user"] = user
 
-		// Check filters
+		// Check global permsissions
 		permok := true
-		if !filters.CheckAll(tx, myroute.ParamFilters, rw, r, s) {
+		ok, err := user.HavePermissions(tx, myroute.Permissions...)
+		if err != nil {
+			log.Printf("user.HavePermissions failed : ", err)
 			permok = false
+		} else if ok == false {
+			log.Printf("user has no permissions : ", myroute.Permissions)
+			permok = false
+		}
+
+		// Check filters
+		errstr := ""
+		if permok {
+			ok, errstr = filters.CheckAll(tx, myroute.ParamFilters, rw, r, s)
+			if !ok {
+				permok = false
+				log.Printf("filters says no ! ", errstr)
+			}
 		}
 
 		// Close the transaction

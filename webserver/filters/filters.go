@@ -14,22 +14,23 @@ import (
 type Filter interface {
 	Check(tx *sqlx.Tx, w http.ResponseWriter, r *http.Request, s *session.Session) bool
 	CheckPerms(tx *sqlx.Tx, w http.ResponseWriter, r *http.Request, s *session.Session) bool
+	getErrorString() string
 }
 
 // CheckAll filters from a []Filter array
-func CheckAll(tx *sqlx.Tx, filters []Filter, w http.ResponseWriter, r *http.Request, s *session.Session) bool {
-	res := true
+func CheckAll(tx *sqlx.Tx, filters []Filter, w http.ResponseWriter, r *http.Request, s *session.Session) (res bool, errormsg string) {
+	res = true
 	for _, filter := range filters {
 		if filter.CheckPerms(tx, w, r, s) == false {
 			// do nothing, we are not concerned by this filter
 		} else {
 			res = filter.Check(tx, w, r, s)
 			if !res {
-				return false
+				return false, filter.getErrorString()
 			}
 		}
 	}
-	return res
+	return res, ""
 }
 
 /*
@@ -49,6 +50,10 @@ type ParamFilter struct {
 	ParamName   string
 	ErrorString string
 	Permissions []string
+}
+
+func (ff ParamFilter) getErrorString() string {
+	return ff.ErrorString
 }
 
 func (ff ParamFilter) CheckPerms(tx *sqlx.Tx, w http.ResponseWriter, r *http.Request, s *session.Session) bool {
