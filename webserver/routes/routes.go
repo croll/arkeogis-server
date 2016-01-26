@@ -45,13 +45,13 @@ import (
 
 // Route structure that is used for registering a new Arkeogis Route
 type Route struct {
-	Path        string
-	Func        func(rw http.ResponseWriter, r *http.Request, o interface{}, s *session.Session)
-	Method      string
-	Queries     []string
-	Json        reflect.Type
-	Permissions []string
-	FormFilters []filters.Filter
+	Path         string
+	Func         func(rw http.ResponseWriter, r *http.Request, o interface{}, s *session.Session)
+	Method       string
+	Queries      []string
+	Json         reflect.Type
+	Permissions  []string
+	ParamFilters []filters.Filter
 }
 
 // MuxRouter is the gorilla mux router initialized here for Arkeogis
@@ -105,7 +105,7 @@ func Register(myroute *Route) error {
 
 		// Check filters
 		permok := true
-		if !filters.CheckAll(myroute.FormFilters, rw, r, s) {
+		if !filters.CheckAll(tx, myroute.ParamFilters, rw, r, s) {
 			permok = false
 		}
 

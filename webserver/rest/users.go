@@ -66,7 +66,7 @@ func init() {
 			Method: "POST",
 			Json:   reflect.TypeOf(Usercreate{}),
 			Permissions: []string{
-				"PermUsersAdmin",
+				"AdminUsers",
 			},
 		},
 		&routes.Route{
@@ -76,11 +76,12 @@ func init() {
 			Permissions: []string{
 				"PermUsersAdmin",
 			},
-			FormFilters: []filters.Filter{
-				filters.FormFilterIntBoundary{
-					FormFilter: filters.FormFilter{
-						FieldName:   "limit",
-						Permissions: []string{"PermUsersAdmin"},
+			ParamFilters: []filters.Filter{
+				filters.ParamFilterIntBoundary{
+					ParamFilter: filters.ParamFilter{
+						ParamType:   filters.ParamTypeForm,
+						ParamName:   "limit",
+						Permissions: []string{"AdminUsers"},
 					},
 					Lower: 0,
 					Upper: 100,
