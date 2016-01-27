@@ -50,6 +50,7 @@ type Route struct {
 	Method       string
 	Queries      []string
 	Json         reflect.Type
+	Params       reflect.Type
 	Permissions  []string
 	ParamFilters []filters.Filter
 }
@@ -76,137 +77,147 @@ type File struct {
 	Content string
 }
 
+func decodeContent(myroute *Route, rw http.ResponseWriter, r *http.Request, s *session.Session) interface{} {
+	if myroute.Json == nil {
+		return nil
+	}
+
+	// decode json from request
+	fmt.Println("Json : ", myroute.Json)
+	v := reflect.New(myroute.Json)
+	o := v.Interface()
+	// Check if multipart
+	mt, params, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
+	if err != nil {
+		log.Println("error parsing header:", err)
+	}
+	if strings.HasPrefix(mt, "multipart/") {
+		mr := multipart.NewReader(r.Body, params["boundary"])
+		// For each part
+		for {
+			p, err := mr.NextPart()
+			if err == io.EOF {
+				// EOF we can stop here
+				return o
+			}
+			if err != nil {
+				log.Println("error getting part of multipart form", err)
+				return nil
+			}
+			j, err := ioutil.ReadAll(p)
+			if err != nil {
+				log.Println("error: unable to get content of the file")
+			}
+			// Is it a file ?
+			if p.FileName() != "" {
+				// Check if target interface has a FileName field
+				ta := reflect.Indirect(reflect.ValueOf(o)).FieldByName("File")
+				if !ta.IsValid() {
+					log.Println("error: target interface does not have File field")
+					return nil
+				}
+				// Check if target interface "File" field is type of routes.File
+				if ta.Type() != reflect.TypeOf(&File{}) {
+					log.Println("error: target interface field \"File\" is not of type routes.File")
+					return nil
+				}
+				// Assign file to structure
+				fs := reflect.New(reflect.TypeOf(File{}))
+				fsi := fs.Interface()
+				ee := reflect.Indirect(reflect.ValueOf(fsi))
+				ee.FieldByName("Name").SetString(p.FileName())
+				ee.FieldByName("Content").SetString(string(j[:]))
+				ta.Set(fs)
+			} else {
+				// Unmarshall datas into structure
+				json.Unmarshal(j, o)
+			}
+		}
+	} else {
+		decoder := json.NewDecoder(r.Body)
+		//fmt.Printf("t : %t\n", o)
+		//fmt.Println("o : ", o)
+		err := decoder.Decode(o)
+		if err != nil {
+			log.Panicln("decode failed", err)
+		}
+		return o
+	}
+}
+
+func handledRoute(myroute *Route, rw http.ResponseWriter, r *http.Request) {
+
+	// session
+	token := r.Header.Get("Authorization")
+	log.Println("token ", token)
+	s := session.GetSession(token)
+
+	log.Print("user id from session : ", s.GetIntDef("user_id", -1))
+
+	// Retrieve user id from session
+	user := model.User{}
+	user.Id = s.GetIntDef("user_id", 0)
+
+	// Open a transaction to load the user from db
+	tx, err := db.DB.Beginx()
+	if err != nil {
+		log.Panicln("Can't start transaction for creating a new user")
+		return
+	}
+
+	// Retrieve the user from db
+	user.Get(tx)
+	log.Println("user is : ", user)
+	s.Values["user"] = user
+
+	// Check global permsissions
+	permok := true
+	ok, err := user.HavePermissions(tx, myroute.Permissions...)
+	if err != nil {
+		log.Printf("user.HavePermissions failed : ", err)
+		permok = false
+	} else if ok == false {
+		log.Printf("user has no permissions : ", myroute.Permissions)
+		permok = false
+	}
+
+	// Check filters
+	errstr := ""
+	if permok {
+		ok, errstr = filters.CheckAll(tx, myroute.ParamFilters, rw, r, s)
+		if !ok {
+			permok = false
+			log.Printf("filters says no ! ", errstr)
+		}
+	}
+
+	// Close the transaction
+	err = tx.Commit()
+	if err != nil {
+		if err, ok := err.(*pq.Error); ok {
+			log.Println("commit while getting session user failed, pq error:", err.Code.Name())
+		} else {
+			log.Println("commit while getting session user failed !", err)
+		}
+		return
+	}
+
+	// Print a log
+	log.Printf("[%s] %s %s ; authorized: %t\n", user.Username, myroute.Method, myroute.Path, permok)
+	if !permok {
+		return
+	}
+
+	o := decodeContent(myroute, rw, r, s)
+	myroute.Func(rw, r, o, s)
+
+}
+
 // Register a new Arkeogis route
 func Register(myroute *Route) error {
 	// Setup the fonction that will handle the route request
 	m := MuxRouter.HandleFunc(myroute.Path, func(rw http.ResponseWriter, r *http.Request) {
-		// session
-		token := r.Header.Get("Authorization")
-		log.Println("token ", token)
-		s := session.GetSession(token)
-
-		log.Print("user id from session : ", s.GetIntDef("user_id", -1))
-
-		// Retrieve user id from session
-		user := model.User{}
-		user.Id = s.GetIntDef("user_id", 0)
-
-		// Open a transaction to load the user from db
-		tx, err := db.DB.Beginx()
-		if err != nil {
-			log.Panicln("Can't start transaction for creating a new user")
-			return
-		}
-
-		// Retrieve the user from db
-		user.Get(tx)
-		log.Println("user is : ", user)
-		s.Values["user"] = user
-
-		// Check global permsissions
-		permok := true
-		ok, err := user.HavePermissions(tx, myroute.Permissions...)
-		if err != nil {
-			log.Printf("user.HavePermissions failed : ", err)
-			permok = false
-		} else if ok == false {
-			log.Printf("user has no permissions : ", myroute.Permissions)
-			permok = false
-		}
-
-		// Check filters
-		errstr := ""
-		if permok {
-			ok, errstr = filters.CheckAll(tx, myroute.ParamFilters, rw, r, s)
-			if !ok {
-				permok = false
-				log.Printf("filters says no ! ", errstr)
-			}
-		}
-
-		// Close the transaction
-		err = tx.Commit()
-		if err != nil {
-			if err, ok := err.(*pq.Error); ok {
-				log.Println("commit while getting session user failed, pq error:", err.Code.Name())
-			} else {
-				log.Println("commit while getting session user failed !", err)
-			}
-			return
-		}
-
-		// Print a log
-		log.Printf("[%s] %s %s ; authorized: %t\n", user.Username, myroute.Method, myroute.Path, permok)
-		if !permok {
-			return
-		}
-
-		// decode json from request
-		if myroute.Json != nil {
-			fmt.Println("Json : ", myroute.Json)
-			v := reflect.New(myroute.Json)
-			o := v.Interface()
-			// Check if multipart
-			mt, params, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
-			if err != nil {
-				log.Println("error parsing header:", err)
-			}
-			if strings.HasPrefix(mt, "multipart/") {
-				mr := multipart.NewReader(r.Body, params["boundary"])
-				// For each part
-				for {
-					p, err := mr.NextPart()
-					if err == io.EOF {
-						// EOF we call the Func passed as argument
-						myroute.Func(rw, r, o, s)
-						return
-					}
-					if err != nil {
-						log.Println("error getting part of multipart form", err)
-						return
-					}
-					j, err := ioutil.ReadAll(p)
-					if err != nil {
-						log.Println("error: unable to get content of the file")
-					}
-					// Is it a file ?
-					if p.FileName() != "" {
-						// Check if target interface has a FileName field
-						ta := reflect.Indirect(reflect.ValueOf(o)).FieldByName("File")
-						if !ta.IsValid() {
-							log.Println("error: target interface does not have File field")
-							return
-						}
-						// Check if target interface "File" field is type of routes.File
-						if ta.Type() != reflect.TypeOf(&File{}) {
-							log.Println("error: target interface field \"File\" is not of type routes.File")
-							return
-						}
-						// Assign file to structure
-						fs := reflect.New(reflect.TypeOf(File{}))
-						fsi := fs.Interface()
-						ee := reflect.Indirect(reflect.ValueOf(fsi))
-						ee.FieldByName("Name").SetString(p.FileName())
-						ee.FieldByName("Content").SetString(string(j[:]))
-						ta.Set(fs)
-					} else {
-						// Unmarshall datas into structure
-						json.Unmarshal(j, o)
-					}
-				}
-			} else {
-				decoder := json.NewDecoder(r.Body)
-				//fmt.Printf("t : %t\n", o)
-				//fmt.Println("o : ", o)
-				err := decoder.Decode(o)
-				if err != nil {
-					log.Panicln("decode failed", err)
-				}
-				myroute.Func(rw, r, o, s)
-			}
-		} else {
-			myroute.Func(rw, r, nil, s)
-		}
+		handledRoute(myroute, rw, r)
 	})
 
 	// Setup the request method
