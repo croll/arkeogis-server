@@ -59,6 +59,11 @@ type Usercreate struct {
 }
 
 func init() {
+
+	type UserListParams struct {
+		Limit int `CheckLower:"0" CheckUpper:"100" CheckError:"limit over boundaries"`
+	}
+
 	Routes := []*routes.Route{
 		&routes.Route{
 			Path:   "/api/users",
@@ -76,6 +81,7 @@ func init() {
 			Permissions: []string{
 				"AdminUsers",
 			},
+			Params: reflect.TypeOf(UserListParams{}),
 			ParamFilters: []filters.Filter{
 				filters.ParamFilterIntBoundary{
 					ParamFilter: filters.ParamFilter{
