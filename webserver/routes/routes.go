@@ -55,26 +55,17 @@ type Route struct {
 	ParamFilters []filters.Filter
 }
 
+type File struct {
+	Name    string
+	Content string
+}
+
 // MuxRouter is the gorilla mux router initialized here for Arkeogis
 var MuxRouter *mux.Router
 
 func init() {
 	// router
 	MuxRouter = mux.NewRouter()
-}
-
-/*
-func Register(path string, f func(http.ResponseWriter, *http.Request), method string) error {
-	if path == "" || method == "" {
-		return errors.New("Unable to register route. Invalid params")
-	}
-	MuxRouter.HandleFunc(path, f).Methods(method)
-	return nil
-}
-*/
-type File struct {
-	Name    string
-	Content string
 }
 
 func decodeContent(myroute *Route, rw http.ResponseWriter, r *http.Request, s *session.Session) interface{} {
@@ -140,6 +131,9 @@ func decodeContent(myroute *Route, rw http.ResponseWriter, r *http.Request, s *s
 		err := decoder.Decode(o)
 		if err != nil {
 			log.Panicln("decode failed", err)
+		}
+		if o != nil {
+			filters.SanitizeStruct(o)
 		}
 		return o
 	}
