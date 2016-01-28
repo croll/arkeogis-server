@@ -26,10 +26,10 @@ import (
 	"net/http"
 	"strconv"
 
-	config "github.com/croll/arkeogis-server/config"
-	rest "github.com/croll/arkeogis-server/webserver/rest"
-	routes "github.com/croll/arkeogis-server/webserver/routes"
 	"github.com/codegangsta/negroni"
+	config "github.com/croll/arkeogis-server/config"
+	"github.com/croll/arkeogis-server/webserver/rest"
+	routes "github.com/croll/arkeogis-server/webserver/routes"
 )
 
 func StartServer() {
