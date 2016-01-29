@@ -61,7 +61,10 @@ type Usercreate struct {
 func init() {
 
 	type UserListParams struct {
-		Limit int `CheckLower:"0" CheckUpper:"100" CheckError:"limit over boundaries"`
+		Limit  int    `default:"10" min:"1" max:"100" error:"limit over boundaries"`
+		Page   int    `default:"1" min:"1" error:"page over boundaries"`
+		Order  string `default:"created_at" enum:"created_at,updated_at,username,firstname,lastname,email" error:"bad order"`
+		Filter string `default:""`
 	}
 
 	Routes := []*routes.Route{
