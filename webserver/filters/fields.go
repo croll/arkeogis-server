@@ -41,6 +41,8 @@ func SanitizeField(field reflect.StructField, value reflect.Value) {
 func SetFieldToDefault(field reflect.StructField, value reflect.Value) {
 	s_default := field.Tag.Get("default")
 
+	log.Println("setting", field.Name, "to default", s_default)
+
 	if len(s_default) == 0 {
 		return
 	}
