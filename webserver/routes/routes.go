@@ -46,13 +46,19 @@ import (
 // Route structure that is used for registering a new Arkeogis Route
 type Route struct {
 	Path         string
-	Func         func(rw http.ResponseWriter, r *http.Request, o interface{}, s *session.Session)
+	Func         func(rw http.ResponseWriter, r *http.Request, proute Proute)
 	Method       string
 	Queries      []string
 	Json         reflect.Type
 	Params       reflect.Type
 	Permissions  []string
 	ParamFilters []filters.Filter
+}
+
+type Proute struct {
+	Json    interface{}
+	Params  interface{}
+	Session *session.Session
 }
 
 type File struct {
@@ -203,7 +209,11 @@ func handledRoute(myroute *Route, rw http.ResponseWriter, r *http.Request) {
 	}
 
 	o := decodeContent(myroute, rw, r, s)
-	myroute.Func(rw, r, o, s)
+	proute := Proute{
+		Json:    o,
+		Session: s,
+	}
+	myroute.Func(rw, r, proute)
 
 }
 

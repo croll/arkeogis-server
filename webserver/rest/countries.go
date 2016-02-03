@@ -29,7 +29,6 @@ import (
 	"github.com/croll/arkeogis-server/model"
 	//model "github.com/croll/arkeogis-server/model"
 	routes "github.com/croll/arkeogis-server/webserver/routes"
-	"github.com/croll/arkeogis-server/webserver/session"
 	//"github.com/gorilla/mux"
 	"net/http"
 )
@@ -60,7 +59,7 @@ func init() {
 	routes.RegisterMultiple(Routes)
 }
 
-func CountryList(w http.ResponseWriter, r *http.Request, o interface{}, s *session.Session) {
+func CountryList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	err := r.ParseForm()
 	if err != nil {
@@ -85,19 +84,19 @@ func CountryList(w http.ResponseWriter, r *http.Request, o interface{}, s *sessi
 	w.Write(j)
 }
 
-func CountryCreate(w http.ResponseWriter, r *http.Request, o interface{}, s *session.Session) {
+func CountryCreate(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	fmt.Println("request :", r)
 }
 
-func CountryUpdate(w http.ResponseWriter, r *http.Request, o interface{}, s *session.Session) {
+func CountryUpdate(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	//params := mux.Vars(r)
 	//uid := params["id"]
 	//email := r.FormValue("email")
 }
 
-func CountryDelete(w http.ResponseWriter, r *http.Request, o interface{}, s *session.Session) {
+func CountryDelete(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 }
 
-func CountryInfos(w http.ResponseWriter, r *http.Request, o interface{}, s *session.Session) {
+func CountryInfos(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	w.Header().Set("Allow", "DELETE,GET,HEAD,OPTIONS,POST,PUT")
 }

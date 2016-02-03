@@ -30,7 +30,6 @@ import (
 
 	translate "github.com/croll/arkeogis-server/translate"
 	routes "github.com/croll/arkeogis-server/webserver/routes"
-	"github.com/croll/arkeogis-server/webserver/session"
 )
 
 func init() {
@@ -56,7 +55,7 @@ func init() {
 }
 
 // TranslatesList List root translations...
-func TranslatesList(w http.ResponseWriter, r *http.Request, o interface{}, s *session.Session) {
+func TranslatesList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	err := r.ParseForm()
 	if err != nil {
@@ -108,9 +107,9 @@ func TranslatesList(w http.ResponseWriter, r *http.Request, o interface{}, s *se
 }
 
 // UserCreate Create a user, see usercreate struct inside this function for json content
-func TranslatesSave(w http.ResponseWriter, r *http.Request, o interface{}, s *session.Session) {
+func TranslatesSave(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
-	newtrans := o.(*map[string]interface{})
+	newtrans := proute.Json.(*map[string]interface{})
 
 	err := r.ParseForm()
 	if err != nil {

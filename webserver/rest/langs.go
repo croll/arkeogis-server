@@ -28,7 +28,6 @@ import (
 
 	db "github.com/croll/arkeogis-server/db"
 	routes "github.com/croll/arkeogis-server/webserver/routes"
-	"github.com/croll/arkeogis-server/webserver/session"
 )
 
 func init() {
@@ -42,7 +41,7 @@ func init() {
 	routes.RegisterMultiple(Routes)
 }
 
-func LangList(w http.ResponseWriter, r *http.Request, o interface{}, s *session.Session) {
+func LangList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	langs := []struct {
 		Id      uint32 `json:"id"`

@@ -31,7 +31,6 @@ import (
 	"github.com/croll/arkeogis-server/model"
 
 	routes "github.com/croll/arkeogis-server/webserver/routes"
-	"github.com/croll/arkeogis-server/webserver/session"
 )
 
 func init() {
@@ -60,7 +59,7 @@ func init() {
 	routes.RegisterMultiple(Routes)
 }
 
-func CityList(w http.ResponseWriter, r *http.Request, o interface{}, s *session.Session) {
+func CityList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	err := r.ParseForm()
 	if err != nil {
@@ -85,19 +84,19 @@ func CityList(w http.ResponseWriter, r *http.Request, o interface{}, s *session.
 	w.Write(j)
 }
 
-func CityCreate(w http.ResponseWriter, r *http.Request, o interface{}, s *session.Session) {
+func CityCreate(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	fmt.Println("request :", r)
 }
 
-func CityUpdate(w http.ResponseWriter, r *http.Request, o interface{}, s *session.Session) {
+func CityUpdate(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	//params := mux.Vars(r)
 	//uid := params["id"]
 	//email := r.FormValue("email")
 }
 
-func CityDelete(w http.ResponseWriter, r *http.Request, o interface{}, s *session.Session) {
+func CityDelete(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 }
 
-func CityInfos(w http.ResponseWriter, r *http.Request, o interface{}, s *session.Session) {
+func CityInfos(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	w.Header().Set("Allow", "DELETE,GET,HEAD,OPTIONS,POST,PUT")
 }

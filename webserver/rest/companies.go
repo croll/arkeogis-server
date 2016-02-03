@@ -30,7 +30,6 @@ import (
 	"net/http"
 
 	routes "github.com/croll/arkeogis-server/webserver/routes"
-	"github.com/croll/arkeogis-server/webserver/session"
 )
 
 func init() {
@@ -59,7 +58,7 @@ func init() {
 	routes.RegisterMultiple(Routes)
 }
 
-func CompanyList(w http.ResponseWriter, r *http.Request, o interface{}, s *session.Session) {
+func CompanyList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	err := r.ParseForm()
 	if err != nil {
@@ -79,19 +78,19 @@ func CompanyList(w http.ResponseWriter, r *http.Request, o interface{}, s *sessi
 	w.Write(j)
 }
 
-func CompanyCreate(w http.ResponseWriter, r *http.Request, o interface{}, s *session.Session) {
+func CompanyCreate(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	fmt.Println("request :", r)
 }
 
-func CompanyUpdate(w http.ResponseWriter, r *http.Request, o interface{}, s *session.Session) {
+func CompanyUpdate(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	//params := mux.Vars(r)
 	//uid := params["id"]
 	//email := r.FormValue("email")
 }
 
-func CompanyDelete(w http.ResponseWriter, r *http.Request, o interface{}, s *session.Session) {
+func CompanyDelete(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 }
 
-func CompanyInfos(w http.ResponseWriter, r *http.Request, o interface{}, s *session.Session) {
+func CompanyInfos(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	w.Header().Set("Allow", "DELETE,GET,HEAD,OPTIONS,POST,PUT")
 }

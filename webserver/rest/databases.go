@@ -28,7 +28,6 @@ import (
 	db "github.com/croll/arkeogis-server/db"
 	"github.com/croll/arkeogis-server/model"
 	routes "github.com/croll/arkeogis-server/webserver/routes"
-	"github.com/croll/arkeogis-server/webserver/session"
 )
 
 func init() {
@@ -62,7 +61,7 @@ func init() {
 	routes.RegisterMultiple(Routes)
 }
 
-func DatabasesList(w http.ResponseWriter, r *http.Request, o interface{}, s *session.Session) {
+func DatabasesList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	databases := []model.Database{}
 	err := db.DB.Select(&databases, "SELECT * FROM \"database\"")
 	if err != nil {
@@ -74,11 +73,11 @@ func DatabasesList(w http.ResponseWriter, r *http.Request, o interface{}, s *ses
 	w.Write(l)
 }
 
-func DatabaseCreate(w http.ResponseWriter, r *http.Request, o interface{}, s *session.Session) {
+func DatabaseCreate(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 }
 
-func DatabaseUpdate(w http.ResponseWriter, r *http.Request, o interface{}, s *session.Session) {
+func DatabaseUpdate(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 }
 
-func DatabaseDelete(w http.ResponseWriter, r *http.Request, o interface{}, s *session.Session) {
+func DatabaseDelete(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 }

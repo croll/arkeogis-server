@@ -118,7 +118,7 @@ func init() {
 }
 
 // UserList List of users. no filets, no args actually...
-func UserList(w http.ResponseWriter, r *http.Request, o interface{}, s *session.Session) {
+func UserList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	type Answer struct {
 		Data  []model.User `json:"data"`
 		Count int          `json:"count"`
@@ -197,9 +197,9 @@ func UserList(w http.ResponseWriter, r *http.Request, o interface{}, s *session.
 }
 
 // UserCreate Create a user, see usercreate struct inside this function for json content
-func UserCreate(w http.ResponseWriter, r *http.Request, o interface{}, s *session.Session) {
+func UserCreate(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
-	u := o.(*Usercreate)
+	u := proute.Json.(*Usercreate)
 	// hack
 	u.City_geonameid = u.City.Value
 
@@ -233,19 +233,19 @@ func UserCreate(w http.ResponseWriter, r *http.Request, o interface{}, s *sessio
 }
 
 // UserUpdate update an user.
-func UserUpdate(w http.ResponseWriter, r *http.Request, o interface{}, s *session.Session) {
+func UserUpdate(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	//params := mux.Vars(r)
 	//uid := params["id"]
 	//email := r.FormValue("email")
 }
 
 // UserDelete delete an user.
-func UserDelete(w http.ResponseWriter, r *http.Request, o interface{}, s *session.Session) {
+func UserDelete(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	fmt.Println("delete")
 }
 
 // UserInfos return detailed infos on an user
-func UserInfos(w http.ResponseWriter, r *http.Request, o interface{}, s *session.Session) {
+func UserInfos(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	w.Header().Set("Allow", "DELETE,GET,HEAD,OPTIONS,POST,PUT")
 }
 
@@ -256,11 +256,11 @@ type Userlogin struct {
 }
 
 // UserLogin Check Login
-func UserLogin(w http.ResponseWriter, r *http.Request, o interface{}, s *session.Session) {
+func UserLogin(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	time.Sleep(1 * time.Second) // limit rate
 
-	l := o.(*Userlogin)
+	l := proute.Json.(*Userlogin)
 	user := model.User{
 		Username: l.Username,
 		Password: l.Password,

@@ -32,7 +32,6 @@ import (
 
 	"github.com/croll/arkeogis-server/databaseimport"
 	routes "github.com/croll/arkeogis-server/webserver/routes"
-	"github.com/croll/arkeogis-server/webserver/session"
 )
 
 func init() {
@@ -59,9 +58,9 @@ type ImportStep1T struct {
 	File               *routes.File
 }
 
-func ImportStep1(w http.ResponseWriter, r *http.Request, o interface{}, s *session.Session) {
+func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
-	l := o.(*ImportStep1T)
+	l := proute.Json.(*ImportStep1T)
 
 	filepath := "./uploaded/" + l.File.Name
 	outfile, err := os.Create(filepath)
