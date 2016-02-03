@@ -143,19 +143,22 @@ func decodeContent(myroute *Route, rw http.ResponseWriter, r *http.Request, s *s
 	}
 }
 
-func decodeParams(myroute *Route, rw http.ResponseWriter, r *http.Request) {
+func decodeParams(myroute *Route, rw http.ResponseWriter, r *http.Request) interface{} {
 	if myroute.Params == nil {
-		return
+		return nil
 	}
 
 	err := r.ParseForm()
 	if err != nil {
 		fmt.Println("ParseForm err: ", err)
-		return
+		return nil
 	}
 
 	v := reflect.New(myroute.Params)
 	params := v.Interface()
+
+	// set all defaults
+	filters.DefaultStruct(params)
 
 	st := reflect.TypeOf(params).Elem()
 	vt := reflect.ValueOf(params).Elem()
@@ -163,7 +166,6 @@ func decodeParams(myroute *Route, rw http.ResponseWriter, r *http.Request) {
 	for i := 0; i < st.NumField(); i++ {
 		field := st.Field(i)
 		value := vt.Field(i)
-		log.Println("i: ", i, field.Name)
 		paramval := r.FormValue(strings.ToLower(field.Name))
 
 		switch field.Type.Kind() {
@@ -180,7 +182,7 @@ func decodeParams(myroute *Route, rw http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	log.Println("result : ", v)
+	return params
 }
 
 func handledRoute(myroute *Route, rw http.ResponseWriter, r *http.Request) {
@@ -247,15 +249,20 @@ func handledRoute(myroute *Route, rw http.ResponseWriter, r *http.Request) {
 	}
 
 	o := decodeContent(myroute, rw, r, s)
-
 	if o != nil {
 		filters.SanitizeStruct(o)
 	}
 
-	decodeParams(myroute, rw, r)
+	params := decodeParams(myroute, rw, r)
+	if params != nil {
+		log.Println("params    : ", params)
+		filters.SanitizeStruct(params)
+		log.Println("Sanitized : ", params)
+	}
 
 	proute := Proute{
 		Json:    o,
+		Params:  params,
 		Session: s,
 	}
 	myroute.Func(rw, r, proute)
