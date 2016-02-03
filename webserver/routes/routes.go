@@ -67,6 +67,9 @@ type File struct {
 	Content string
 }
 
+// All routes added here are stored there. This is usefull for building REST doc
+var Routes []*Route = []*Route{}
+
 // MuxRouter is the gorilla mux router initialized here for Arkeogis
 var MuxRouter *mux.Router
 
@@ -271,6 +274,8 @@ func handledRoute(myroute *Route, rw http.ResponseWriter, r *http.Request) {
 
 // Register a new Arkeogis route
 func Register(myroute *Route) error {
+	Routes = append(Routes, myroute)
+
 	// Setup the fonction that will handle the route request
 	m := MuxRouter.HandleFunc(myroute.Path, func(rw http.ResponseWriter, r *http.Request) {
 		handledRoute(myroute, rw, r)
