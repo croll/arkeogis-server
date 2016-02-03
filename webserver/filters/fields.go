@@ -15,7 +15,7 @@ func SanitizeStruct(o interface{}) {
 		field := st.Field(i)
 		value := vt.Field(i)
 		fmt.Println("field", i, ":", field.Name)
-		SanitizeField(field, value)
+		sanitizeField(field, value)
 	}
 }
 
@@ -28,17 +28,17 @@ func DefaultStruct(o interface{}) {
 		field := st.Field(i)
 		value := vt.Field(i)
 		fmt.Println("field", i, ":", field.Name)
-		SetFieldToDefault(field, value)
+		setFieldToDefault(field, value)
 	}
 }
 
-func SanitizeField(field reflect.StructField, value reflect.Value) {
-	SanitizeFieldMin(field, value)
-	SanitizeFieldMax(field, value)
+func sanitizeField(field reflect.StructField, value reflect.Value) {
+	sanitizeFieldMin(field, value)
+	sanitizeFieldMax(field, value)
 }
 
-// SetFieldToDefault if there is a default value
-func SetFieldToDefault(field reflect.StructField, value reflect.Value) {
+// setFieldToDefault if there is a default value
+func setFieldToDefault(field reflect.StructField, value reflect.Value) {
 	s_default := field.Tag.Get("default")
 
 	log.Println("setting", field.Name, "to default", s_default)
@@ -59,8 +59,8 @@ func SetFieldToDefault(field reflect.StructField, value reflect.Value) {
 	}
 }
 
-// SanitizeFieldMin check if field value is bellow minimum. If true, true is returned
-func SanitizeFieldMin(field reflect.StructField, value reflect.Value) bool {
+// sanitizeFieldMin check if field value is bellow minimum. If true, true is returned
+func sanitizeFieldMin(field reflect.StructField, value reflect.Value) bool {
 	s_min := field.Tag.Get("min")
 
 	if len(s_min) == 0 {
@@ -71,13 +71,13 @@ func SanitizeFieldMin(field reflect.StructField, value reflect.Value) bool {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		min, _ := strconv.ParseInt(s_min, 10, 64)
 		if value.Int() < min {
-			SetFieldToDefault(field, value)
+			setFieldToDefault(field, value)
 			return true
 		}
 	case reflect.Float32, reflect.Float64:
 		min, _ := strconv.ParseFloat(s_min, 64)
 		if value.Float() < min {
-			SetFieldToDefault(field, value)
+			setFieldToDefault(field, value)
 			return true
 		}
 	default:
@@ -87,8 +87,8 @@ func SanitizeFieldMin(field reflect.StructField, value reflect.Value) bool {
 	return false
 }
 
-// SanitizeFieldMax check if field value is above maxium. If true, true is returned
-func SanitizeFieldMax(field reflect.StructField, value reflect.Value) bool {
+// sanitizeFieldMax check if field value is above maxium. If true, true is returned
+func sanitizeFieldMax(field reflect.StructField, value reflect.Value) bool {
 	s_max := field.Tag.Get("max")
 
 	if len(s_max) == 0 {
@@ -99,13 +99,13 @@ func SanitizeFieldMax(field reflect.StructField, value reflect.Value) bool {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		max, _ := strconv.ParseInt(s_max, 10, 64)
 		if value.Int() > max {
-			SetFieldToDefault(field, value)
+			setFieldToDefault(field, value)
 			return true
 		}
 	case reflect.Float32, reflect.Float64:
 		max, _ := strconv.ParseFloat(s_max, 64)
 		if value.Float() > max {
-			SetFieldToDefault(field, value)
+			setFieldToDefault(field, value)
 			return true
 		}
 	default:
