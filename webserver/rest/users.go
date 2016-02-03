@@ -27,7 +27,6 @@ import (
 	"log"
 	"net/http"
 	"reflect"
-	"strconv"
 	"strings"
 	"time"
 
@@ -51,6 +50,14 @@ type Company struct {
 	City       Valuedisplay `json:"city"`
 }
 
+// UserListParams is params struct for UserList query
+type UserListParams struct {
+	Limit  int    `default:"10" min:"1" max:"100" error:"limit over boundaries"`
+	Page   int    `default:"1" min:"1" error:"page over boundaries"`
+	Order  string `default:"created_at" enum:"created_at,updated_at,username,firstname,lastname,email" error:"bad order"`
+	Filter string `default:""`
+}
+
 type Usercreate struct {
 	model.User
 	City     Valuedisplay `city`
@@ -59,13 +66,6 @@ type Usercreate struct {
 }
 
 func init() {
-
-	type UserListParams struct {
-		Limit  int    `default:"10" min:"1" max:"100" error:"limit over boundaries"`
-		Page   int    `default:"1" min:"1" error:"page over boundaries"`
-		Order  string `default:"created_at" enum:"created_at,updated_at,username,firstname,lastname,email" error:"bad order"`
-		Filter string `default:""`
-	}
 
 	Routes := []*routes.Route{
 		&routes.Route{
@@ -129,14 +129,10 @@ func UserList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	answer := Answer{}
 
-	err := r.ParseForm()
-	if err != nil {
-		fmt.Println("ParseForm err: ", err)
-		return
-	}
+	params := proute.Params.(*UserListParams)
 
 	// decode order...
-	order := r.FormValue("order")
+	order := params.Order
 	orderdir := "ASC"
 	if strings.HasPrefix(order, "-") {
 		order = order[1:]
@@ -160,29 +156,9 @@ func UserList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	}
 	/////
 
-	// decode limit / page
-	limit, err := strconv.Atoi(r.FormValue("limit"))
-	if err != nil {
-		limit = 10
-	}
-	switch {
-	case limit == 5,
-		limit == 10,
-		limit == 15:
-		// accepted
-	default:
-		limit = 10
-	}
+	offset := (params.Page - 1) * params.Limit
 
-	page, err := strconv.Atoi(r.FormValue("page"))
-	if err != nil || page < 1 {
-		page = 1
-	}
-
-	offset := (page - 1) * limit
-	/////
-
-	err = db.DB.Select(&answer.Data, "SELECT * FROM \"user\" u WHERE (u.username ILIKE $1 OR u.firstname ILIKE $1 OR u.lastname ILIKE $1 OR u.email ILIKE $1) ORDER BY "+order+" "+orderdir+" OFFSET $2 LIMIT $3", "%"+r.FormValue("filter")+"%", offset, limit)
+	err := db.DB.Select(&answer.Data, "SELECT * FROM \"user\" u WHERE (u.username ILIKE $1 OR u.firstname ILIKE $1 OR u.lastname ILIKE $1 OR u.email ILIKE $1) ORDER BY "+order+" "+orderdir+" OFFSET $2 LIMIT $3", "%"+params.Filter+"%", offset, params.Limit)
 	if err != nil {
 		log.Println("err: ", err)
 		return
