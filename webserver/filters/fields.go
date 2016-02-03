@@ -9,13 +9,25 @@ import (
 
 // SanitizeStruct will sanitize all fields of a struct (o must be a pointer to this struct)
 func SanitizeStruct(o interface{}) {
-	st := reflect.TypeOf(o).Elem()
-	vt := reflect.ValueOf(o).Elem()
+	fmt.Println("sanitisz : ", o)
+	st := reflect.TypeOf(o)
+	vt := reflect.ValueOf(o)
+
+	if st.Kind() == reflect.Ptr {
+		st = st.Elem()
+		vt = vt.Elem()
+	}
+
 	for i := 0; i < st.NumField(); i++ {
 		field := st.Field(i)
 		value := vt.Field(i)
 		fmt.Println("field", i, ":", field.Name)
-		sanitizeField(field, value)
+		if field.Type.Kind() == reflect.Struct {
+			fmt.Println("sub sanitize : ", field.Name)
+			SanitizeStruct(value.Interface())
+		} else {
+			sanitizeField(field, value)
+		}
 	}
 }
 
