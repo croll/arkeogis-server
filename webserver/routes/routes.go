@@ -29,6 +29,7 @@ import (
 	"log"
 	"net/http"
 	"reflect"
+	"strconv"
 	//"strconv"
 	"strings"
 
@@ -138,11 +139,48 @@ func decodeContent(myroute *Route, rw http.ResponseWriter, r *http.Request, s *s
 		if err != nil {
 			log.Panicln("decode failed", err)
 		}
-		if o != nil {
-			filters.SanitizeStruct(o)
-		}
 		return o
 	}
+}
+
+func decodeParams(myroute *Route, rw http.ResponseWriter, r *http.Request) {
+	if myroute.Params == nil {
+		return
+	}
+
+	err := r.ParseForm()
+	if err != nil {
+		fmt.Println("ParseForm err: ", err)
+		return
+	}
+
+	v := reflect.New(myroute.Params)
+	params := v.Interface()
+
+	st := reflect.TypeOf(params).Elem()
+	vt := reflect.ValueOf(params).Elem()
+
+	for i := 0; i < st.NumField(); i++ {
+		field := st.Field(i)
+		value := vt.Field(i)
+		log.Println("i: ", i, field.Name)
+		paramval := r.FormValue(strings.ToLower(field.Name))
+
+		switch field.Type.Kind() {
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+			def, _ := strconv.ParseInt(paramval, 10, 64)
+			value.SetInt(def)
+		case reflect.Float32, reflect.Float64:
+			def, _ := strconv.ParseFloat(paramval, 64)
+			value.SetFloat(def)
+		case reflect.String:
+			value.SetString(paramval)
+		default:
+			log.Println("decodeParams on type", field.Type.Name(), "not implemented")
+		}
+	}
+
+	log.Println("result : ", v)
 }
 
 func handledRoute(myroute *Route, rw http.ResponseWriter, r *http.Request) {
@@ -209,6 +247,13 @@ func handledRoute(myroute *Route, rw http.ResponseWriter, r *http.Request) {
 	}
 
 	o := decodeContent(myroute, rw, r, s)
+
+	if o != nil {
+		filters.SanitizeStruct(o)
+	}
+
+	decodeParams(myroute, rw, r)
+
 	proute := Proute{
 		Json:    o,
 		Session: s,
