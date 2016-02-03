@@ -47,6 +47,7 @@ type Row struct {
 	Autoincrement int        `xml:"autoincrement,attr"`
 	Datatype      string     `xml:"datatype"`
 	Default       string     `xml:"default"`
+	Comment       string     `xml:"comment"`
 	Relations     []Relation `xml:"relation"`
 }
 
@@ -136,7 +137,13 @@ func printPsql(sql Sql) {
 		for _, row := range table.Rows {
 			typestr := mysqlToPsqlType(row)
 
-			tablestr += fmt.Sprintf("\t%s\t%s\t`db:\"%s\" json:\"%s\"`", sqlToGoName(row.Name), typestr, row.Name, row.Name)
+			// add custom tags that are in comments
+			comment := ""
+			if len(row.Comment) > 0 {
+				comment = " " + row.Comment
+			}
+
+			tablestr += fmt.Sprintf("\t%s\t%s\t`db:\"%s\" json:\"%s\"%s`", sqlToGoName(row.Name), typestr, row.Name, row.Name, comment)
 			insertrows = append(insertrows, row.Name)
 
 			for _, relation := range row.Relations {
