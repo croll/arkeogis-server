@@ -25,16 +25,22 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"reflect"
 
 	db "github.com/croll/arkeogis-server/db"
 	routes "github.com/croll/arkeogis-server/webserver/routes"
 )
+
+type ContinentsListParams struct {
+	Lang string `default:"en" min:"2" max:"2"`
+}
 
 func init() {
 	Routes := []*routes.Route{
 		&routes.Route{
 			Path:   "/api/continents",
 			Func:   ContinentsList,
+			Params: reflect.TypeOf(ContinentsListParams{}),
 			Method: "GET",
 		},
 	}
@@ -43,18 +49,14 @@ func init() {
 
 func ContinentsList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
-	err := r.ParseForm()
-	if err != nil {
-		fmt.Println("ParseForm err: ", err)
-		return
-	}
+	params := proute.Params.(*ContinentsListParams)
 
 	continents := []struct {
 		Geonameid uint32 `json:"geonameid"`
 		Name      string `json:"name"`
 	}{}
 
-	err = db.DB.Select(&continents, "SELECT geonameid, name FROM continent LEFT JOIN continent_translation ON continent.geonameid = continent_translation.continent_geonameid LEFT JOIN lang ON continent_translation.lang_id = lang.id WHERE active = true AND continent.iso_code != 'U' AND (lang.iso_code = $1 OR lang.iso_code = 'D')", r.FormValue("lang"))
+	err := db.DB.Select(&continents, "SELECT geonameid, name FROM continent LEFT JOIN continent_translation ON continent.geonameid = continent_translation.continent_geonameid LEFT JOIN lang ON continent_translation.lang_id = lang.id WHERE active = true AND continent.iso_code != 'U' AND (lang.iso_code = $1 OR lang.iso_code = 'D')", params.Lang)
 	if err != nil {
 		fmt.Println("err: ", err)
 		return

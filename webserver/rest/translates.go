@@ -32,12 +32,25 @@ import (
 	routes "github.com/croll/arkeogis-server/webserver/routes"
 )
 
+type TranslateListParams struct {
+	Lang   string `default:"en" min:"2" max:"2"` // todo: sanitize using regular expression
+	Side   string `default:"web" enum:"server,web,*"`
+	Domain string
+}
+
+type TranslateSaveParams struct {
+	Lang   string `default:"en" min:"2" max:"2"` // todo: sanitize using regular expression
+	Side   string `default:"web" enum:"server,web,*"`
+	Domain string
+}
+
 func init() {
 	Routes := []*routes.Route{
 		&routes.Route{
 			Path:   "/api/translates",
 			Func:   TranslatesSave,
 			Method: "PUT",
+			Params: reflect.TypeOf(TranslateSaveParams{}),
 			Json:   reflect.TypeOf(make(map[string]interface{}, 0)),
 			/*
 				Permissions: []string{
@@ -49,6 +62,7 @@ func init() {
 			Path:   "/api/translates",
 			Func:   TranslatesList,
 			Method: "GET",
+			Params: reflect.TypeOf(TranslateListParams{}),
 		},
 	}
 	routes.RegisterMultiple(Routes)
@@ -57,15 +71,9 @@ func init() {
 // TranslatesList List root translations...
 func TranslatesList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
-	err := r.ParseForm()
-	if err != nil {
-		fmt.Println("ParseForm err: ", err)
-		return
-	}
+	params := proute.Params.(*TranslateListParams)
 
-	//log.Println("########################################  domain : ", r.FormValue("domain"), ", side: ", r.FormValue("side"))
-
-	trans, err := translate.ReadTranslation(r.FormValue("lang"), r.FormValue("side")) // todo: sanitize FormValue lang and side
+	trans, err := translate.ReadTranslation(params.Lang, params.Side)
 	if err != nil {
 		ArkeoError(w, "404", err.Error())
 		return
@@ -73,9 +81,7 @@ func TranslatesList(w http.ResponseWriter, r *http.Request, proute routes.Proute
 
 	tree := translate.PlateToTree(trans)
 
-	domain := r.FormValue("domain")
-
-	if domain == "" {
+	if params.Domain == "" {
 		res := make([]string, len(tree))
 		i := 0
 		for k, _ := range tree {
@@ -90,7 +96,7 @@ func TranslatesList(w http.ResponseWriter, r *http.Request, proute routes.Proute
 		w.Write(j)
 		return
 	} else {
-		subtree := tree[domain]
+		subtree := tree[params.Domain]
 		j, err := json.Marshal(subtree)
 		if err != nil {
 			log.Fatal("Marshal of lang failed", err)
@@ -109,15 +115,10 @@ func TranslatesList(w http.ResponseWriter, r *http.Request, proute routes.Proute
 // UserCreate Create a user, see usercreate struct inside this function for json content
 func TranslatesSave(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
+	params := proute.Params.(*TranslateSaveParams)
 	newtrans := proute.Json.(*map[string]interface{})
 
-	err := r.ParseForm()
-	if err != nil {
-		fmt.Println("ParseForm err: ", err)
-		return
-	}
-
-	trans, err := translate.ReadTranslation(r.FormValue("lang"), r.FormValue("side")) // todo: sanitize FormValue lang and side
+	trans, err := translate.ReadTranslation(params.Lang, params.Side)
 	if err != nil {
 		ArkeoError(w, "404", err.Error())
 		return
@@ -128,7 +129,7 @@ func TranslatesSave(w http.ResponseWriter, r *http.Request, proute routes.Proute
 
 	tree[domain] = *newtrans
 
-	err = translate.WriteJSON(tree, r.FormValue("lang"), r.FormValue("side"))
+	err = translate.WriteJSON(tree, params.Lang, params.Side)
 	if err != nil {
 		fmt.Println("WriteJSON failed: ", err)
 		return

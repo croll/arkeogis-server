@@ -24,6 +24,7 @@ package rest
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 
 	db "github.com/croll/arkeogis-server/db"
 	"github.com/croll/arkeogis-server/model"
@@ -32,6 +33,11 @@ import (
 	//"github.com/gorilla/mux"
 	"net/http"
 )
+
+type CountryListParams struct {
+	Lang   string `default:"en" min:"2" max:"2"`
+	Search string
+}
 
 func init() {
 	Routes := []*routes.Route{
@@ -43,6 +49,7 @@ func init() {
 		&routes.Route{
 			Path:   "/api/countries",
 			Func:   CountryList,
+			Params: reflect.TypeOf(CountryListParams{}),
 			Method: "GET",
 		},
 		&routes.Route{
@@ -61,11 +68,7 @@ func init() {
 
 func CountryList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
-	err := r.ParseForm()
-	if err != nil {
-		fmt.Println("ParseForm err: ", err)
-		return
-	}
+	params := proute.Params.(*CountryListParams)
 
 	type row struct {
 		model.Country
@@ -74,7 +77,7 @@ func CountryList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	countries := []row{}
 
-	err = db.DB.Select(&countries, "SELECT country.*, country_translation.* FROM \"country\" JOIN country_translation ON country_translation.country_geonameid = country.geonameid LEFT JOIN lang ON country_translation.lang_id = lang.id WHERE (lang.iso_code = $1 OR lang.iso_code = 'D') AND (name_ascii ILIKE $2 OR name ILIKE $2)", r.FormValue("lang"), r.FormValue("search")+"%")
+	err := db.DB.Select(&countries, "SELECT country.*, country_translation.* FROM \"country\" JOIN country_translation ON country_translation.country_geonameid = country.geonameid LEFT JOIN lang ON country_translation.lang_id = lang.id WHERE (lang.iso_code = $1 OR lang.iso_code = 'D') AND (name_ascii ILIKE $2 OR name ILIKE $2)", params.Lang, params.Search+"%")
 	if err != nil {
 		fmt.Println("err: ", err)
 		return

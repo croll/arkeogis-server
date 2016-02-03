@@ -24,6 +24,7 @@ package rest
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 
 	"net/http"
 
@@ -32,6 +33,12 @@ import (
 
 	routes "github.com/croll/arkeogis-server/webserver/routes"
 )
+
+type CityListParams struct {
+	Id_country int
+	Lang       string `default:"en" min:"2" max:"2"`
+	Search     string
+}
 
 func init() {
 	Routes := []*routes.Route{
@@ -43,6 +50,7 @@ func init() {
 		&routes.Route{
 			Path:   "/api/cities",
 			Func:   CityList,
+			Params: reflect.TypeOf(CityListParams{}),
 			Method: "GET",
 		},
 		&routes.Route{
@@ -61,11 +69,7 @@ func init() {
 
 func CityList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
-	err := r.ParseForm()
-	if err != nil {
-		fmt.Println("ParseForm err: ", err)
-		return
-	}
+	params := proute.Params.(*CityListParams)
 
 	type row struct {
 		model.City
@@ -74,7 +78,7 @@ func CityList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	cities := []row{}
 
-	err = db.DB.Select(&cities, "SELECT city.*,city_translation.* FROM city JOIN city_translation ON city_translation.city_geonameid = city.geonameid LEFT JOIN lang ON city_translation.lang_id = lang.id WHERE (name_ascii LIKE lower(f_unaccent($1)) OR lower(f_unaccent(name)) LIKE lower(f_unaccent($1))) AND country_geonameid = $2 AND (lang.iso_code = $3 OR lang.iso_code = 'D')", r.FormValue("search")+"%", r.FormValue("id_country"), r.FormValue("lang"))
+	err := db.DB.Select(&cities, "SELECT city.*,city_translation.* FROM city JOIN city_translation ON city_translation.city_geonameid = city.geonameid LEFT JOIN lang ON city_translation.lang_id = lang.id WHERE (name_ascii LIKE lower(f_unaccent($1)) OR lower(f_unaccent(name)) LIKE lower(f_unaccent($1))) AND country_geonameid = $2 AND (lang.iso_code = $3 OR lang.iso_code = 'D')", params.Search+"%", params.Id_country, params.Lang)
 	if err != nil {
 		fmt.Println("err: ", err)
 		return

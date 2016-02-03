@@ -24,6 +24,7 @@ package rest
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 
 	db "github.com/croll/arkeogis-server/db"
 	//model "github.com/croll/arkeogis-server/model"
@@ -31,6 +32,10 @@ import (
 
 	routes "github.com/croll/arkeogis-server/webserver/routes"
 )
+
+type CompanyListParams struct {
+	Search string
+}
 
 func init() {
 	Routes := []*routes.Route{
@@ -42,6 +47,7 @@ func init() {
 		&routes.Route{
 			Path:   "/api/companies",
 			Func:   CompanyList,
+			Params: reflect.TypeOf(CompanyListParams{}),
 			Method: "GET",
 		},
 		&routes.Route{
@@ -60,15 +66,11 @@ func init() {
 
 func CompanyList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
-	err := r.ParseForm()
-	if err != nil {
-		fmt.Println("ParseForm err: ", err)
-		return
-	}
-
 	companies := []Company{}
 
-	err = db.DB.Select(&companies, "SELECT * FROM company WHERE name ILIKE $1", r.FormValue("search")+"%")
+	params := proute.Params.(*CompanyListParams)
+
+	err := db.DB.Select(&companies, "SELECT * FROM company WHERE name ILIKE $1", params.Search+"%")
 	if err != nil {
 		fmt.Println("err: ", err)
 		return
