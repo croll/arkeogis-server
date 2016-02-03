@@ -22,7 +22,6 @@ func SanitizeStruct(o interface{}) []FieldError {
 }
 
 func sanitizeStruct(o interface{}, path string, errors *[]FieldError) {
-	fmt.Println("sanitisz : ", o)
 	st := reflect.TypeOf(o)
 	vt := reflect.ValueOf(o)
 
@@ -55,13 +54,23 @@ func sanitizeStruct(o interface{}, path string, errors *[]FieldError) {
 // DefaultStruct will set all defaults value to fields that have a default set
 // this function is to call before filling the struct with form values
 func DefaultStruct(o interface{}) {
-	st := reflect.TypeOf(o).Elem()
-	vt := reflect.ValueOf(o).Elem()
+	st := reflect.TypeOf(o)
+	vt := reflect.ValueOf(o)
+
+	if st.Kind() == reflect.Ptr {
+		st = st.Elem()
+		vt = vt.Elem()
+	}
+
 	for i := 0; i < st.NumField(); i++ {
 		field := st.Field(i)
 		value := vt.Field(i)
-		fmt.Println("field", i, ":", field.Name)
-		setFieldToDefault(field, value)
+		fmt.Println("defaulting field", i, ":", field.Name)
+		if field.Type.Kind() == reflect.Struct {
+			DefaultStruct(value.Interface())
+		} else {
+			setFieldToDefault(field, value)
+		}
 	}
 }
 
