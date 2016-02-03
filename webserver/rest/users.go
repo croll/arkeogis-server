@@ -32,7 +32,6 @@ import (
 
 	db "github.com/croll/arkeogis-server/db"
 	model "github.com/croll/arkeogis-server/model"
-	"github.com/croll/arkeogis-server/webserver/filters"
 	routes "github.com/croll/arkeogis-server/webserver/routes"
 	"github.com/croll/arkeogis-server/webserver/session"
 	"github.com/lib/pq"
@@ -85,18 +84,6 @@ func init() {
 				"AdminUsers",
 			},
 			Params: reflect.TypeOf(UserListParams{}),
-			ParamFilters: []filters.Filter{
-				filters.ParamFilterIntBoundary{
-					ParamFilter: filters.ParamFilter{
-						ParamType:   filters.ParamTypeForm,
-						ParamName:   "limit",
-						ErrorString: "limit over boundaries",
-						Permissions: []string{"AdminUsers"},
-					},
-					Lower: 0,
-					Upper: 100,
-				},
-			},
 		},
 		&routes.Route{
 			Path:   "/api/users",
