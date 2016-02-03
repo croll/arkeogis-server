@@ -87,6 +87,10 @@ func decodeContent(myroute *Route, rw http.ResponseWriter, r *http.Request, s *s
 	fmt.Println("Json : ", myroute.Json)
 	v := reflect.New(myroute.Json)
 	o := v.Interface()
+
+	// set to default the new structure
+	filters.DefaultStruct(o)
+
 	// Check if multipart
 	mt, params, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
 	if err != nil {
@@ -253,14 +257,22 @@ func handledRoute(myroute *Route, rw http.ResponseWriter, r *http.Request) {
 
 	o := decodeContent(myroute, rw, r, s)
 	if o != nil {
-		filters.SanitizeStruct(o)
+		errors := filters.SanitizeStruct(o)
+		if len(errors) > 0 {
+			Error(rw, errors)
+			return
+		}
 	}
 
 	params := decodeParams(myroute, rw, r)
 	if params != nil {
 		log.Println("params    : ", params)
-		filters.SanitizeStruct(params)
+		errors := filters.SanitizeStruct(params)
 		log.Println("Sanitized : ", params)
+		if len(errors) > 0 {
+			Error(rw, errors)
+			return
+		}
 	}
 
 	proute := Proute{
@@ -270,6 +282,20 @@ func handledRoute(myroute *Route, rw http.ResponseWriter, r *http.Request) {
 	}
 	myroute.Func(rw, r, proute)
 
+}
+
+func Error(w http.ResponseWriter, errors []filters.FieldError) {
+	type Errors struct {
+		Errors []filters.FieldError `json:"errors"`
+	}
+	aerr := Errors{
+		Errors: errors,
+	}
+	j, err := json.Marshal(aerr)
+	if err != nil {
+		log.Panicln("err in error, marshaling failed: ", err)
+	}
+	http.Error(w, (string)(j), 409)
 }
 
 // Register a new Arkeogis route
