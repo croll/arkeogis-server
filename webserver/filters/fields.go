@@ -8,7 +8,13 @@ import (
 )
 
 // SanitizeStruct will sanitize all fields of a struct (o must be a pointer to this struct)
-func SanitizeStruct(o interface{}) {
+func SanitizeStruct(o interface{}) []string {
+	errors := []string{}
+	sanitizeStruct(o, &errors)
+	return errors
+}
+
+func sanitizeStruct(o interface{}, errors *[]string) {
 	fmt.Println("sanitisz : ", o)
 	st := reflect.TypeOf(o)
 	vt := reflect.ValueOf(o)
@@ -24,9 +30,9 @@ func SanitizeStruct(o interface{}) {
 		fmt.Println("field", i, ":", field.Name)
 		if field.Type.Kind() == reflect.Struct {
 			fmt.Println("sub sanitize : ", field.Name)
-			SanitizeStruct(value.Interface())
+			sanitizeStruct(value.Interface(), errors)
 		} else {
-			sanitizeField(field, value)
+			sanitizeField(field, value, errors)
 		}
 	}
 }
@@ -44,16 +50,14 @@ func DefaultStruct(o interface{}) {
 	}
 }
 
-func sanitizeField(field reflect.StructField, value reflect.Value) {
-	sanitizeFieldMin(field, value)
-	sanitizeFieldMax(field, value)
+func sanitizeField(field reflect.StructField, value reflect.Value, errors *[]string) {
+	sanitizeFieldMin(field, value, errors)
+	sanitizeFieldMax(field, value, errors)
 }
 
 // setFieldToDefault if there is a default value
 func setFieldToDefault(field reflect.StructField, value reflect.Value) {
 	s_default := field.Tag.Get("default")
-
-	log.Println("setting", field.Name, "to default", s_default)
 
 	if len(s_default) == 0 {
 		return
@@ -66,13 +70,24 @@ func setFieldToDefault(field reflect.StructField, value reflect.Value) {
 	case reflect.Float32, reflect.Float64:
 		def, _ := strconv.ParseFloat(s_default, 64)
 		value.SetFloat(def)
+	case reflect.String:
+		value.SetString(s_default)
 	default:
 		log.Println("SetFieldDefault on type", field.Type.Name(), "not implemented")
 	}
 }
 
+func setFieldError(field reflect.StructField, value reflect.Value, errors *[]string) {
+	log.Println("setting", field.Name, "to default", field.Tag.Get("default"))
+	setFieldToDefault(field, value)
+	s_error := field.Tag.Get("error")
+	if len(s_error) > 0 {
+		*errors = append(*errors, s_error)
+	}
+}
+
 // sanitizeFieldMin check if field value is bellow minimum. If true, true is returned
-func sanitizeFieldMin(field reflect.StructField, value reflect.Value) bool {
+func sanitizeFieldMin(field reflect.StructField, value reflect.Value, errors *[]string) bool {
 	s_min := field.Tag.Get("min")
 
 	if len(s_min) == 0 {
@@ -83,13 +98,19 @@ func sanitizeFieldMin(field reflect.StructField, value reflect.Value) bool {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		min, _ := strconv.ParseInt(s_min, 10, 64)
 		if value.Int() < min {
-			setFieldToDefault(field, value)
+			setFieldError(field, value, errors)
 			return true
 		}
 	case reflect.Float32, reflect.Float64:
 		min, _ := strconv.ParseFloat(s_min, 64)
 		if value.Float() < min {
-			setFieldToDefault(field, value)
+			setFieldError(field, value, errors)
+			return true
+		}
+	case reflect.String:
+		min, _ := strconv.Atoi(s_min)
+		if len(value.String()) < min {
+			setFieldError(field, value, errors)
 			return true
 		}
 	default:
@@ -100,7 +121,7 @@ func sanitizeFieldMin(field reflect.StructField, value reflect.Value) bool {
 }
 
 // sanitizeFieldMax check if field value is above maxium. If true, true is returned
-func sanitizeFieldMax(field reflect.StructField, value reflect.Value) bool {
+func sanitizeFieldMax(field reflect.StructField, value reflect.Value, errors *[]string) bool {
 	s_max := field.Tag.Get("max")
 
 	if len(s_max) == 0 {
@@ -111,13 +132,19 @@ func sanitizeFieldMax(field reflect.StructField, value reflect.Value) bool {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		max, _ := strconv.ParseInt(s_max, 10, 64)
 		if value.Int() > max {
-			setFieldToDefault(field, value)
+			setFieldError(field, value, errors)
 			return true
 		}
 	case reflect.Float32, reflect.Float64:
 		max, _ := strconv.ParseFloat(s_max, 64)
 		if value.Float() > max {
-			setFieldToDefault(field, value)
+			setFieldError(field, value, errors)
+			return true
+		}
+	case reflect.String:
+		max, _ := strconv.Atoi(s_max)
+		if len(value.String()) > max {
+			setFieldError(field, value, errors)
 			return true
 		}
 	default:
