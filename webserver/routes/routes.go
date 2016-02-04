@@ -208,7 +208,8 @@ func handledRoute(myroute *Route, rw http.ResponseWriter, r *http.Request) {
 	// Open a transaction to load the user from db
 	tx, err := db.DB.Beginx()
 	if err != nil {
-		log.Panicln("Can't start transaction for creating a new user")
+		log.Panicln("Can't start transaction for loading user")
+		ServerError(rw, 500, "Can't start transaction for loading user")
 		return
 	}
 
@@ -246,12 +247,14 @@ func handledRoute(myroute *Route, rw http.ResponseWriter, r *http.Request) {
 		} else {
 			log.Println("commit while getting session user failed !", err)
 		}
+		ServerError(rw, 500, "Can't commit transaction")
 		return
 	}
 
 	// Print a log
 	log.Printf("[%s] %s %s ; authorized: %t\n", user.Username, myroute.Method, myroute.Path, permok)
 	if !permok {
+		ServerError(rw, 403, "Can't commit transaction")
 		return
 	}
 
@@ -259,7 +262,7 @@ func handledRoute(myroute *Route, rw http.ResponseWriter, r *http.Request) {
 	if o != nil {
 		errors := filters.SanitizeStruct(o)
 		if len(errors) > 0 {
-			Error(rw, errors)
+			Errors(rw, errors)
 			return
 		}
 	}
@@ -270,7 +273,7 @@ func handledRoute(myroute *Route, rw http.ResponseWriter, r *http.Request) {
 		errors := filters.SanitizeStruct(params)
 		log.Println("Sanitized : ", params)
 		if len(errors) > 0 {
-			Error(rw, errors)
+			Errors(rw, errors)
 			return
 		}
 	}
@@ -284,7 +287,34 @@ func handledRoute(myroute *Route, rw http.ResponseWriter, r *http.Request) {
 
 }
 
-func Error(w http.ResponseWriter, errors []filters.FieldError) {
+func ServerError(w http.ResponseWriter, code int, message string) {
+	type ServerError struct {
+		Message string `json:"message"`
+	}
+
+	aerr := ServerError{
+		Message: message,
+	}
+
+	j, err := json.Marshal(aerr)
+	if err != nil {
+		log.Panicln("err in error, marshaling failed: ", err)
+	}
+	http.Error(w, (string)(j), code)
+}
+
+func FieldError(w http.ResponseWriter, fieldpath string, fieldname string, errorstring string) {
+	aerr := []filters.FieldError{
+		filters.FieldError{
+			FieldPath:   fieldpath,
+			FieldName:   fieldname,
+			ErrorString: errorstring,
+		},
+	}
+	Errors(w, aerr)
+}
+
+func Errors(w http.ResponseWriter, errors []filters.FieldError) {
 	type Errors struct {
 		Errors []filters.FieldError `json:"errors"`
 	}
@@ -295,7 +325,7 @@ func Error(w http.ResponseWriter, errors []filters.FieldError) {
 	if err != nil {
 		log.Panicln("err in error, marshaling failed: ", err)
 	}
-	http.Error(w, (string)(j), 409)
+	http.Error(w, (string)(j), 400)
 }
 
 // Register a new Arkeogis route
