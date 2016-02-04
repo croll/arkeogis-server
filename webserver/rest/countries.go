@@ -72,12 +72,12 @@ func CountryList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	type row struct {
 		model.Country
-		model.Country_translation
+		model.Country_tr
 	}
 
 	countries := []row{}
 
-	err := db.DB.Select(&countries, "SELECT country.*, country_translation.* FROM \"country\" JOIN country_translation ON country_translation.country_geonameid = country.geonameid LEFT JOIN lang ON country_translation.lang_id = lang.id WHERE (lang.iso_code = $1 OR lang.iso_code = 'D') AND (name_ascii ILIKE $2 OR name ILIKE $2)", params.Lang, params.Search+"%")
+	err := db.DB.Select(&countries, "SELECT country.*, country_tr.* FROM \"country\" JOIN country_tr ON country_tr.country_geonameid = country.geonameid LEFT JOIN lang ON country_tr.lang_id = lang.id WHERE (lang.iso_code = $1 OR lang.iso_code = 'D') AND (name_ascii ILIKE $2 OR name ILIKE $2)", params.Lang, params.Search+"%")
 	if err != nil {
 		fmt.Println("err: ", err)
 		return

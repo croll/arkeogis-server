@@ -24,11 +24,12 @@ package main
 import (
 	"encoding/csv"
 	"errors"
-	db "github.com/croll/arkeogis-server/db"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
+
+	db "github.com/croll/arkeogis-server/db"
 )
 
 var caracsRootByLang map[string]map[string]string = map[string]map[string]string{
@@ -158,7 +159,7 @@ func processFile(filename string, langs map[int]int, langsByIso map[string]int) 
 	var langIsoCode string
 	var langID int
 	for langIsoCode, langID = range langsByIso {
-		_, err = tx.Exec("INSERT INTO caracterisation_translation (lang_id, caracterisation_id, name, description) VALUES ($1, $2, $3, '')", langID, rootID, caracsRootByLang[rootName][langIsoCode])
+		_, err = tx.Exec("INSERT INTO caracterisation_tr (lang_id, caracterisation_id, name, description) VALUES ($1, $2, $3, '')", langID, rootID, caracsRootByLang[rootName][langIsoCode])
 		if err != nil {
 			return err
 		}
@@ -195,7 +196,7 @@ func processFile(filename string, langs map[int]int, langsByIso map[string]int) 
 						return err
 					}
 				}
-				_, err = tx.Exec("INSERT INTO caracterisation_translation (lang_id, caracterisation_id, name, description) VALUES ($1, $2, $3, '')", langs[i], lastInsertId, l)
+				_, err = tx.Exec("INSERT INTO caracterisation_tr (lang_id, caracterisation_id, name, description) VALUES ($1, $2, $3, '')", langs[i], lastInsertId, l)
 				if err != nil {
 					return err
 				}

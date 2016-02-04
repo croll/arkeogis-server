@@ -27,7 +27,7 @@ import (
 
 func GetCaracterisationPathsFromLang(name string, lang string) (caracs map[string]int, err error) {
 	caracs = map[string]int{}
-	rows, err := db.DB.Query("WITH RECURSIVE nodes_cte(id, path) AS (SELECT ca.id, cat.name::TEXT AS path FROM caracterisation AS ca LEFT JOIN caracterisation_translation cat ON ca.id = cat.caracterisation_id LEFT JOIN lang ON cat.lang_id = lang.id WHERE lang.iso_code = $2 AND ca.id = (SELECT ca.id FROM caracterisation ca LEFT JOIN caracterisation_translation cat ON ca.id = cat.caracterisation_id LEFT JOIN lang ON lang.id = cat.lang_id WHERE lang.iso_code = $2 AND cat.name = $1) UNION ALL SELECT ca.id, (p.path || '->' || cat.name) FROM nodes_cte AS p, caracterisation AS ca LEFT JOIN caracterisation_translation cat ON ca.id = cat.caracterisation_id LEFT JOIN lang ON cat.lang_id = lang.id WHERE lang.iso_code = $2 AND ca.parent_id = p.id) SELECT * FROM nodes_cte AS n ORDER BY n.id ASC;", name, lang)
+	rows, err := db.DB.Query("WITH RECURSIVE nodes_cte(id, path) AS (SELECT ca.id, cat.name::TEXT AS path FROM caracterisation AS ca LEFT JOIN caracterisation_tr cat ON ca.id = cat.caracterisation_id LEFT JOIN lang ON cat.lang_id = lang.id WHERE lang.iso_code = $2 AND ca.id = (SELECT ca.id FROM caracterisation ca LEFT JOIN caracterisation_tr cat ON ca.id = cat.caracterisation_id LEFT JOIN lang ON lang.id = cat.lang_id WHERE lang.iso_code = $2 AND cat.name = $1) UNION ALL SELECT ca.id, (p.path || '->' || cat.name) FROM nodes_cte AS p, caracterisation AS ca LEFT JOIN caracterisation_tr cat ON ca.id = cat.caracterisation_id LEFT JOIN lang ON cat.lang_id = lang.id WHERE lang.iso_code = $2 AND ca.parent_id = p.id) SELECT * FROM nodes_cte AS n ORDER BY n.id ASC;", name, lang)
 	if err != nil {
 		return
 	}
@@ -50,7 +50,7 @@ func GetCaracterisationPathsFromLang(name string, lang string) (caracs map[strin
 
 func GetCaracterisationPathsFromLangID(name string, langID int) (caracs map[string]int, err error) {
 	caracs = map[string]int{}
-	rows, err := db.DB.Query("WITH RECURSIVE nodes_cte(id, path) AS (SELECT ca.id, cat.name::TEXT AS path FROM caracterisation AS ca LEFT JOIN caracterisation_translation cat ON ca.id = cat.caracterisation_id LEFT JOIN lang ON cat.lang_id = lang.id WHERE lang.id= $2 AND ca.id = (SELECT ca.id FROM caracterisation ca LEFT JOIN caracterisation_translation cat ON ca.id = cat.caracterisation_id LEFT JOIN lang ON lang.id = cat.lang_id WHERE lang.id = $2 AND cat.name = $1) UNION ALL SELECT ca.id, (p.path || '->' || cat.name) FROM nodes_cte AS p, caracterisation AS ca LEFT JOIN caracterisation_translation cat ON ca.id = cat.caracterisation_id LEFT JOIN lang ON cat.lang_id = lang.id WHERE lang.id= $2 AND ca.parent_id = p.id) SELECT * FROM nodes_cte AS n ORDER BY n.id ASC;", name, langID)
+	rows, err := db.DB.Query("WITH RECURSIVE nodes_cte(id, path) AS (SELECT ca.id, cat.name::TEXT AS path FROM caracterisation AS ca LEFT JOIN caracterisation_tr cat ON ca.id = cat.caracterisation_id LEFT JOIN lang ON cat.lang_id = lang.id WHERE lang.id= $2 AND ca.id = (SELECT ca.id FROM caracterisation ca LEFT JOIN caracterisation_tr cat ON ca.id = cat.caracterisation_id LEFT JOIN lang ON lang.id = cat.lang_id WHERE lang.id = $2 AND cat.name = $1) UNION ALL SELECT ca.id, (p.path || '->' || cat.name) FROM nodes_cte AS p, caracterisation AS ca LEFT JOIN caracterisation_tr cat ON ca.id = cat.caracterisation_id LEFT JOIN lang ON cat.lang_id = lang.id WHERE lang.id= $2 AND ca.parent_id = p.id) SELECT * FROM nodes_cte AS n ORDER BY n.id ASC;", name, langID)
 	if err != nil {
 		return
 	}
@@ -73,7 +73,7 @@ func GetCaracterisationPathsFromLangID(name string, langID int) (caracs map[stri
 
 func GetAllCaracterisationsRootFromLangId(langId int) (caracsRoot map[string]int, err error) {
 	caracsRoot = map[string]int{}
-	rows, err := db.DB.Query("SELECT id, name FROM caracterisation ca LEFT JOIN caracterisation_translation cat ON ca.id = cat.caracterisation_id WHERE ca.parent_id = 0 AND cat.lang_id = $1", langId)
+	rows, err := db.DB.Query("SELECT id, name FROM caracterisation ca LEFT JOIN caracterisation_tr cat ON ca.id = cat.caracterisation_id WHERE ca.parent_id = 0 AND cat.lang_id = $1", langId)
 	if err != nil {
 		return
 	}
@@ -94,4 +94,4 @@ func GetAllCaracterisationsRootFromLangId(langId int) (caracsRoot map[string]int
 	return
 }
 
-//WITH RECURSIVE nodes_cte(id, path) AS (SELECT ca.id, cat.name::TEXT AS path FROM caracterisation AS ca LEFT JOIN caracterisation_translation cat ON ca.id = cat.caracterisation_id LEFT JOIN lang ON cat.lang_id = lang.id WHERE lang.id = 48 AND ca.parent_id = 0 UNION ALL SELECT ca.id, (p.path || '->' || cat.name) FROM nodes_cte AS p, caracterisation AS ca LEFT JOIN caracterisation_translation cat ON ca.id = cat.caracterisation_id LEFT JOIN lang ON cat.lang_id = lang.id WHERE lang.id = 48 AND ca.parent_id = p.id) SELECT * FROM nodes_cte AS n ORDER BY n.id ASC
+//WITH RECURSIVE nodes_cte(id, path) AS (SELECT ca.id, cat.name::TEXT AS path FROM caracterisation AS ca LEFT JOIN caracterisation_tr cat ON ca.id = cat.caracterisation_id LEFT JOIN lang ON cat.lang_id = lang.id WHERE lang.id = 48 AND ca.parent_id = 0 UNION ALL SELECT ca.id, (p.path || '->' || cat.name) FROM nodes_cte AS p, caracterisation AS ca LEFT JOIN caracterisation_tr cat ON ca.id = cat.caracterisation_id LEFT JOIN lang ON cat.lang_id = lang.id WHERE lang.id = 48 AND ca.parent_id = p.id) SELECT * FROM nodes_cte AS n ORDER BY n.id ASC

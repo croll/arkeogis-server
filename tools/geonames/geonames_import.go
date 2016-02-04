@@ -27,7 +27,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	db "github.com/croll/arkeogis-server/db"
 	"io"
 	"log"
 	"net/http"
@@ -37,6 +36,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	db "github.com/croll/arkeogis-server/db"
 )
 
 var (
@@ -257,11 +258,11 @@ func importCountries(rc io.Reader) error {
 	if len(CachedCountries) > 1 {
 		fmt.Println("- Updating existing countries")
 		stmtUpdate1, errStmt1 = tx.Prepare("UPDATE country SET iso_code = $2 WHERE geonameid = $1")
-		stmtUpdate2, errStmt2 = tx.Prepare("UPDATE country_translation SET lang_id = $2, name = $3, name_ascii = $4 WHERE country_geonameid = $1")
+		stmtUpdate2, errStmt2 = tx.Prepare("UPDATE country_tr SET lang_id = $2, name = $3, name_ascii = $4 WHERE country_geonameid = $1")
 	} else {
 		fmt.Println("- Inserting countries")
 		stmtInsert1, errStmt1 = tx.Prepare("INSERT INTO country (geonameid, iso_code, created_at, updated_at) VALUES ($1, $2, $3, $4)")
-		stmtInsert2, errStmt2 = tx.Prepare("INSERT INTO country_translation (country_geonameid, lang_id, name, name_ascii) VALUES ($1, $2, $3, $4)")
+		stmtInsert2, errStmt2 = tx.Prepare("INSERT INTO country_tr (country_geonameid, lang_id, name, name_ascii) VALUES ($1, $2, $3, $4)")
 	}
 	if errStmt1 != nil {
 		return errStmt1
@@ -356,11 +357,11 @@ func importCities(rc io.Reader) error {
 	if len(CachedCitiesById) > 1 {
 		fmt.Println("- Updating existing cities")
 		stmtUpdate1, errStmt1 = tx.Prepare("UPDATE city SET country_geonameid = $2, geom_centroid = ST_GeomFromText($3, 4326) WHERE geonameid = $1")
-		stmtUpdate2, errStmt2 = tx.Prepare("UPDATE city_translation SET lang_id = $2, name = $3, name_ascii = $4 WHERE city_geonameid = $1")
+		stmtUpdate2, errStmt2 = tx.Prepare("UPDATE city_tr SET lang_id = $2, name = $3, name_ascii = $4 WHERE city_geonameid = $1")
 	} else {
 		fmt.Println("- Inserting cities")
 		stmtInsert1, errStmt1 = tx.Prepare("INSERT INTO city (geonameid, country_geonameid, geom_centroid) VALUES ($1, $2, ST_GeomFromText($3, 4326))")
-		stmtInsert2, errStmt2 = tx.Prepare("INSERT INTO city_translation (city_geonameid, lang_id, name, name_ascii) VALUES ($1, $2, $3, $4)")
+		stmtInsert2, errStmt2 = tx.Prepare("INSERT INTO city_tr (city_geonameid, lang_id, name, name_ascii) VALUES ($1, $2, $3, $4)")
 	}
 	if errStmt1 != nil {
 		return errStmt1
@@ -503,11 +504,11 @@ func importContinents() error {
 	if len(CachedContinentsById) > 1 {
 		fmt.Println("- Updating existing continents")
 		stmtUpdate1, errStmt1 = tx.Prepare("UPDATE continent SET iso_code = $2, updated_at = $3 WHERE geonameid = $1")
-		stmtUpdate2, errStmt2 = tx.Prepare("UPDATE continent_translation SET lang_id = $2, name = $3, name_ascii = $4 WHERE continent_geonameid = $1")
+		stmtUpdate2, errStmt2 = tx.Prepare("UPDATE continent_tr SET lang_id = $2, name = $3, name_ascii = $4 WHERE continent_geonameid = $1")
 	} else {
 		fmt.Println("- Inserting continents")
 		stmtInsert1, errStmt1 = tx.Prepare("INSERT INTO continent (geonameid, iso_code, created_at, updated_at) VALUES ($1, $2, $3, $4)")
-		stmtInsert2, errStmt2 = tx.Prepare("INSERT INTO continent_translation (continent_geonameid, lang_id, name, name_ascii) VALUES ($1, $2, $3, $4)")
+		stmtInsert2, errStmt2 = tx.Prepare("INSERT INTO continent_tr (continent_geonameid, lang_id, name, name_ascii) VALUES ($1, $2, $3, $4)")
 	}
 	if errStmt1 != nil {
 		return errStmt1
@@ -599,21 +600,21 @@ func importAlternateNames(rc io.Reader) error {
 	scan := bufio.NewScanner(rc)
 	alreadyProcessed := map[string]bool{}
 	// Delete old entries wich are not tagged with "Undefined lang"
-	for _, tablename := range []string{"continent_translation", "country_translation", "city_translation"} {
+	for _, tablename := range []string{"continent_tr", "country_tr", "city_tr"} {
 		if _, err := db.DB.Exec("DELETE FROM "+tablename+" WHERE lang_id != (SELECT id FROM lang WHERE iso_code = $1)", "D"); err != nil {
 			return err
 		}
 	}
 	tx := db.DB.MustBegin()
-	stmtContinent, err := tx.Prepare("INSERT INTO continent_translation (continent_geonameid, lang_id, name, name_ascii) VALUES ($1, $2, $3, $4)")
+	stmtContinent, err := tx.Prepare("INSERT INTO continent_tr (continent_geonameid, lang_id, name, name_ascii) VALUES ($1, $2, $3, $4)")
 	if err != nil {
 		return err
 	}
-	stmtCountry, err := tx.Prepare("INSERT INTO country_translation (country_geonameid, lang_id, name, name_ascii) VALUES ($1, $2, $3, $4)")
+	stmtCountry, err := tx.Prepare("INSERT INTO country_tr (country_geonameid, lang_id, name, name_ascii) VALUES ($1, $2, $3, $4)")
 	if err != nil {
 		return err
 	}
-	stmtCity, err := tx.Prepare("INSERT INTO city_translation (city_geonameid, lang_id, name, name_ascii) VALUES ($1, $2, $3, $4)")
+	stmtCity, err := tx.Prepare("INSERT INTO city_tr (city_geonameid, lang_id, name, name_ascii) VALUES ($1, $2, $3, $4)")
 	if err != nil {
 		return err
 	}
@@ -643,7 +644,7 @@ func importAlternateNames(rc io.Reader) error {
 			if _, ok := CitiesById[GeonameID]; ok {
 				if _, ok := alreadyProcessed[uniqCode]; ok {
 					if preferred == 1 {
-						_, err = tx.Exec("DELETE FROM city_translation WHERE city_geonameid = $1 AND lang_id = $2", GeonameID, Langs[iso_code])
+						_, err = tx.Exec("DELETE FROM city_tr WHERE city_geonameid = $1 AND lang_id = $2", GeonameID, Langs[iso_code])
 						if err != nil {
 							return err
 						}
@@ -658,7 +659,7 @@ func importAlternateNames(rc io.Reader) error {
 			} else if _, ok := CountriesById[GeonameID]; ok {
 				if _, ok := alreadyProcessed[uniqCode]; ok {
 					if preferred == 1 {
-						_, err = tx.Exec("DELETE FROM country_translation WHERE country_geonameid = $1 AND lang_id = $2", GeonameID, Langs[iso_code])
+						_, err = tx.Exec("DELETE FROM country_tr WHERE country_geonameid = $1 AND lang_id = $2", GeonameID, Langs[iso_code])
 						if err != nil {
 							return err
 						}
@@ -673,7 +674,7 @@ func importAlternateNames(rc io.Reader) error {
 			} else if _, ok := ContinentsById[GeonameID]; ok {
 				if _, ok := alreadyProcessed[uniqCode]; ok {
 					if preferred == 1 {
-						_, err = tx.Exec("DELETE FROM continent_translation WHERE continent_geonameid = $1 AND lang_id = $2", GeonameID, Langs[iso_code])
+						_, err = tx.Exec("DELETE FROM continent_tr WHERE continent_geonameid = $1 AND lang_id = $2", GeonameID, Langs[iso_code])
 						if err != nil {
 							return err
 						}
