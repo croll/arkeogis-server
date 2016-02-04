@@ -47,7 +47,7 @@ type Row struct {
 	Datatype      string     `xml:"datatype"`
 	Default       string     `xml:"default"`
 	Relations     []Relation `xml:"relation"`
-    PsqlType      string
+	PsqlType      string
 }
 
 type Key struct {
@@ -86,19 +86,19 @@ func mysqlToPsqlType(row Row) string {
 	if row.Datatype == "bit" {
 		return "boolean"
 	}
-    
-    if row.Datatype == "VARCHAR(POINT)" {
-        return "geography(POINT,4326)"
-    }
-    
-    if row.Datatype == "VARCHAR(POLYGON)" {
-        return "geography(POLYGON,4326)"
-    }
-    
-    if row.Datatype == "VARCHAR(MULTIPOLYGON)" {
-        return "geography(MULTIPOLYGON,4326)"
-    }
-    
+
+	if row.Datatype == "VARCHAR(POINT)" {
+		return "geography(POINT,4326)"
+	}
+
+	if row.Datatype == "VARCHAR(POLYGON)" {
+		return "geography(POLYGON,4326)"
+	}
+
+	if row.Datatype == "VARCHAR(MULTIPOLYGON)" {
+		return "geography(MULTIPOLYGON,4326)"
+	}
+
 	return row.Datatype
 }
 
@@ -106,74 +106,71 @@ func mysqlToPsqlType(row Row) string {
 func printPsql(sql Sql) {
 	types := ""
 	creates := ""
-    geoms := ""
+	geoms := ""
 	constraints := ""
-    indexes := ""
-    
-    for i1 := range sql.Tables {
-        table := &sql.Tables[i1]
+	indexes := ""
+
+	for i1 := range sql.Tables {
+		table := &sql.Tables[i1]
 		creates += fmt.Sprintf("CREATE TABLE \"%s\" (\n", table.Name)
-		idx := 1
-        for i2 := range table.Rows {
-            row := &table.Rows[i2]
+		for i2 := range table.Rows {
+			row := &table.Rows[i2]
 			nullstr := ""
 			if row.Null == 0 {
 				nullstr = " NOT NULL"
 			}
 			row.PsqlType = mysqlToPsqlType(*row)
 
-            // special case for enums in postgres, we have to create a type
+			// special case for enums in postgres, we have to create a type
 			if strings.Index(row.Datatype, "ENUM(") == 0 {
 				types += fmt.Sprintf("CREATE TYPE %s_%s AS %s;\n", table.Name, row.Name, row.Datatype)
 				row.PsqlType = fmt.Sprintf("%s_%s", table.Name, row.Name)
 			}
 
-            creates += fmt.Sprintf("  \"%s\" %s%s,\n", row.Name, row.PsqlType, nullstr)
-            
-            // create all foreign keys
+			creates += fmt.Sprintf("  \"%s\" %s%s,\n", row.Name, row.PsqlType, nullstr)
+
+			// create all foreign keys
 			for _, relation := range row.Relations {
-				constraints += fmt.Sprintf("ALTER TABLE \"%s\" ADD CONSTRAINT \"%s_ibfk_%d\" FOREIGN KEY (\"%s\") REFERENCES \"%s\" (\"%s\") DEFERRABLE INITIALLY DEFERRED;\n", table.Name, table.Name, idx, row.Name, relation.Table, relation.Row)
-                
-                // also create an index for the foreign key.
-				indexes += fmt.Sprintf("CREATE INDEX ON \"%s\" (\"%s\");\n", table.Name, row.Name)
-				idx++
+				constraints += fmt.Sprintf("ALTER TABLE \"%s\" ADD CONSTRAINT \"c_%s.%s\" FOREIGN KEY (\"%s\") REFERENCES \"%s\" (\"%s\") DEFERRABLE INITIALLY DEFERRED;\n", table.Name, table.Name, row.Name, row.Name, relation.Table, relation.Row)
+
+				// also create an index for the foreign key.
+				indexes += fmt.Sprintf("CREATE INDEX \"i_%s.%s\" ON \"%s\" (\"%s\");\n",
+					table.Name, row.Name, table.Name, row.Name)
 			}
 		}
 
-        // search all indexs for this table
-        for _, key := range table.Keys {
+		// search all indexs for this table
+		for _, key := range table.Keys {
 			if key.Type == "PRIMARY" {
 				creates += fmt.Sprintf("  PRIMARY KEY (\"%s\")\n", strings.Join(key.Parts, "\", \""))
 			}
 
-            if key.Type == "INDEX" {
-                
-                // search if the index concern a geographic column, so we use the correct index type to it
-                isgeo := false
-                for _, keyname := range key.Parts {
-                    for _, row := range table.Rows {
-                        if row.Name == keyname {
-                            if strings.Index(row.PsqlType, "geography(") == 0 {
-                                isgeo = true
-                            }
-                        }
-                    }
-                }
+			if key.Type == "INDEX" {
 
-                if isgeo {
-                    indexes += fmt.Sprintf("CREATE INDEX %s_idx_%d ON \"%s\" USING GIST ( %s );\n",
-                                           table.Name, idx, table.Name, strings.Join(key.Parts, "\", \""))
-                    idx++
-                } else {
-                    indexes += fmt.Sprintf("CREATE INDEX %s_idx_%d ON \"%s\" ( \"%s\" );\n",
-                                           table.Name, idx, table.Name, strings.Join(key.Parts, "\", \""))
-                    idx++
-                }
+				// search if the index concern a geographic column, so we use the correct index type to it
+				isgeo := false
+				for _, keyname := range key.Parts {
+					for _, row := range table.Rows {
+						if row.Name == keyname {
+							if strings.Index(row.PsqlType, "geography(") == 0 {
+								isgeo = true
+							}
+						}
+					}
+				}
 
-            } else if key.Type == "UNIQUE" {
-                indexes += fmt.Sprintf("CREATE UNIQUE INDEX %s_idx_%d ON \"%s\" ( \"%s\" );\n",
-                                           table.Name, idx, table.Name, strings.Join(key.Parts, "\", \""))
-            }
+				if isgeo {
+					indexes += fmt.Sprintf("CREATE INDEX \"i_%s.%s\" ON \"%s\" USING GIST ( %s );\n",
+						table.Name, strings.Join(key.Parts, ","), table.Name, strings.Join(key.Parts, "\", \""))
+				} else {
+					indexes += fmt.Sprintf("CREATE INDEX \"i_%s.%s\" ON \"%s\" ( \"%s\" );\n",
+						table.Name, strings.Join(key.Parts, ","), table.Name, strings.Join(key.Parts, "\", \""))
+				}
+
+			} else if key.Type == "UNIQUE" {
+				indexes += fmt.Sprintf("CREATE UNIQUE INDEX \"i_%s.%s\" ON \"%s\" ( \"%s\" );\n",
+					table.Name, strings.Join(key.Parts, ","), table.Name, strings.Join(key.Parts, "\", \""))
+			}
 		}
 		creates += fmt.Sprintf(");\n\n")
 	}
