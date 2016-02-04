@@ -24,14 +24,15 @@ package databaseimport
 import (
 	"errors"
 	"fmt"
+	"strconv"
+	"strings"
+	"time"
+
 	db "github.com/croll/arkeogis-server/db"
 	"github.com/croll/arkeogis-server/geo"
 	"github.com/croll/arkeogis-server/model"
 	"github.com/croll/arkeogis-server/translate"
 	"github.com/jmoiron/sqlx"
-	"strconv"
-	"strings"
-	"time"
 )
 
 // UserChoices stores user preferences for the parsing process
@@ -43,7 +44,7 @@ type UserChoices struct {
 // a database
 type DatabaseFullInfos struct {
 	model.Database
-	model.Database_translation
+	model.Database_tr
 	Authors    []int
 	Continents []int
 	Countries  []int
@@ -55,10 +56,10 @@ type DatabaseFullInfos struct {
 // about a site range
 type SiteRangeFullInfos struct {
 	model.Site_range
-	model.Site_range_translation
-	Caracterisations []int
-	NoStartDate      bool
-	NoEndDate        bool
+	model.Site_range_tr
+	Characs     []int
+	NoStartDate bool
+	NoEndDate   bool
 }
 
 // SiteFullInfos is a meta struct which stores all the informations about a site
@@ -66,7 +67,7 @@ type SiteFullInfos struct {
 	model.Site
 	CurrentSiteRange SiteRangeFullInfos
 	NbSiteRanges     int
-	Caracterisations []int
+	Characs          []int
 	HasError         bool
 	Point            *geo.Point
 	Latitude         string
@@ -109,17 +110,17 @@ func (di *DatabaseImport) AddError(value string, errMsg string, columns ...strin
 
 // DatabaseImport is a meta struct which stores all the informations about a site
 type DatabaseImport struct {
-	SitesProcessed         map[string]int
-	Database               *DatabaseFullInfos
-	CurrentSite            *SiteFullInfos
-	CurrentCaracterisation string
-	Simulate               bool
-	Tx                     *sqlx.Tx
-	Parser                 *Parser
-	ArkeoCaracs            map[string]map[string]int
-	NumberOfSites          int
-	SitesWithError         map[string]bool
-	Errors                 []*ImportError
+	SitesProcessed map[string]int
+	Database       *DatabaseFullInfos
+	CurrentSite    *SiteFullInfos
+	CurrentCharac  string
+	Simulate       bool
+	Tx             *sqlx.Tx
+	Parser         *Parser
+	ArkeoCaracs    map[string]map[string]int
+	NumberOfSites  int
+	SitesWithError map[string]bool
+	Errors         []*ImportError
 }
 
 // New creates a new import process
@@ -143,10 +144,10 @@ func (di *DatabaseImport) New(parser *Parser, uid int, databaseName string, lang
 		return errors.New("Can't start transaction for database import")
 	}
 
-	// Cache caracterisations defined in Arkeogis
+	// Cache characs defined in Arkeogis
 	// TODO: Get only needed caracs filtering by user id and project
 	di.ArkeoCaracs = map[string]map[string]int{}
-	di.ArkeoCaracs, err = di.cacheCaracterisations()
+	di.ArkeoCaracs, err = di.cacheCharacs()
 	if err != nil {
 		fmt.Println(err)
 		return err
@@ -386,8 +387,8 @@ func (di *DatabaseImport) getOccupation(occupation string) (val string, err erro
 func (di *DatabaseImport) processSiteRangeInfos(f *Fields) {
 
 	// CARACTERISATIONS
-	caracs, err := di.processCaracterisations(f)
-	di.CurrentSite.CurrentSiteRange.Caracterisations = caracs
+	caracs, err := di.processCharacs(f)
+	di.CurrentSite.CurrentSiteRange.Characs = caracs
 	if err != nil {
 	}
 
@@ -581,9 +582,9 @@ func (di *DatabaseImport) processGeonames(f *Fields) (*geo.Point, error) {
 	return point, nil
 }
 
-// processCaracterisations analyses the fields of each caracterisation for each level
-// It verify if caracterisation of any level exists and if true, assign it to the site range
-func (di *DatabaseImport) processCaracterisations(f *Fields) ([]int, error) {
+// processCharacs analyses the fields of each charac for each level
+// It verify if charac of any level exists and if true, assign it to the site range
+func (di *DatabaseImport) processCharacs(f *Fields) ([]int, error) {
 	var caracs []int
 	path := ""
 	lvl := 1
@@ -591,7 +592,7 @@ func (di *DatabaseImport) processCaracterisations(f *Fields) ([]int, error) {
 		di.AddError(f.CARAC_NAME, "IMPORT.CSVFIELD_CARAC_NAME.T_CHECK_EMPTY", "CARAC_NAME")
 		return caracs, errors.New("invalid carac name")
 	} else {
-		di.CurrentCaracterisation = f.CARAC_NAME
+		di.CurrentCharac = f.CARAC_NAME
 	}
 	if f.CARAC_LVL1 != "" {
 		path += "->" + f.CARAC_LVL1
@@ -612,25 +613,25 @@ func (di *DatabaseImport) processCaracterisations(f *Fields) ([]int, error) {
 		lvl++
 	}
 	//path = strings.TrimSuffix(path, "->")
-	// Check if caracterisation exists and retrieve id
+	// Check if charac exists and retrieve id
 	caracID := di.ArkeoCaracs[f.CARAC_NAME][f.CARAC_NAME+path]
 	if caracID == 0 {
 		di.AddError(f.CARAC_NAME+path, "IMPORT.CSVFIELD_CARACTERISATION.T_CHECK_INVALID", "CARAC_LVL"+strconv.Itoa(lvl))
-		return caracs, errors.New("invalid caracterisation")
+		return caracs, errors.New("invalid charac")
 	}
 	caracs = append(caracs, caracID)
 	return caracs, nil
 }
 
-// cacheCaracterisations get all Caracterisations from database and cache them
-func (di *DatabaseImport) cacheCaracterisations() (map[string]map[string]int, error) {
+// cacheCharacs get all Characs from database and cache them
+func (di *DatabaseImport) cacheCharacs() (map[string]map[string]int, error) {
 	caracs := map[string]map[string]int{}
-	caracsRoot, err := model.GetAllCaracterisationsRootFromLangId(di.Database.Default_language)
+	caracsRoot, err := model.GetAllCharacsRootFromLangId(di.Database.Default_language)
 	if err != nil {
 		return caracs, err
 	}
 	for name, _ := range caracsRoot {
-		caracs[name], err = model.GetCaracterisationPathsFromLangID(name, di.Database.Default_language)
+		caracs[name], err = model.GetCharacPathsFromLangID(name, di.Database.Default_language)
 		if err != nil {
 			return caracs, err
 		}

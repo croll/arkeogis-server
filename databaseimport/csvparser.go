@@ -25,11 +25,12 @@ import (
 	"encoding/csv"
 	"errors"
 	"fmt"
-	db "github.com/croll/arkeogis-server/db"
-	"github.com/croll/arkeogis-server/translate"
 	"io"
 	"os"
 	"reflect"
+
+	db "github.com/croll/arkeogis-server/db"
+	"github.com/croll/arkeogis-server/translate"
 	//"strconv"
 	"strings"
 	"unicode/utf8"
@@ -146,7 +147,7 @@ func (p *Parser) Parse(fn func(r *Fields)) error {
 // If not, trigger and error and exit
 func (p *Parser) checkHeader(record []string) error {
 	f := Fields{}
-	// Store if we found header file witch defines lvl1 for a caracterisation like furniture, realestate, etc
+	// Store if we found header file witch defines lvl1 for a charac like furniture, realestate, etc
 	p.HeaderFields = make(map[int]string)
 	r := reflect.Indirect(reflect.ValueOf(&f))
 	for k, v := range record {

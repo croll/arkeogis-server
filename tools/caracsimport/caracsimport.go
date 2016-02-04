@@ -59,7 +59,7 @@ func main() {
 
 	// TODO
 	// Delete all caracs entries without desroying everything
-	if _, err := db.DB.Exec("TRUNCATE TABLE caracterisation CASCADE"); err != nil {
+	if _, err := db.DB.Exec("TRUNCATE TABLE charac CASCADE"); err != nil {
 		log.Fatalln(err)
 	}
 
@@ -144,22 +144,22 @@ func processFile(filename string, langs map[int]int, langsByIso map[string]int) 
 	rootName := rootNames[0]
 
 	if _, ok := caracsRootByLang[rootName]; !ok {
-		log.Println("Unable to define caracterisation root name analyzing file name")
+		log.Println("Unable to define charac root name analyzing file name")
 		log.Fatalln("Please, give to your csv file a name like Furniture_en_fr.csv")
 	}
 
 	// Init db transaction
 	tx := db.DB.MustBegin()
 
-	// Insert root of caracterisation with name derived from file name like Furniture_fr_de_en.csv
-	err = tx.QueryRow("INSERT INTO caracterisation (parent_id, \"order\", author_user_id, created_at, updated_at) VALUES ($1, $2, $3, now(), now()) RETURNING id", 0, 0, 1).Scan(&rootID)
+	// Insert root of charac with name derived from file name like Furniture_fr_de_en.csv
+	err = tx.QueryRow("INSERT INTO charac (parent_id, \"order\", author_user_id, created_at, updated_at) VALUES ($1, $2, $3, now(), now()) RETURNING id", 0, 0, 1).Scan(&rootID)
 	if err != nil {
 		return err
 	}
 	var langIsoCode string
 	var langID int
 	for langIsoCode, langID = range langsByIso {
-		_, err = tx.Exec("INSERT INTO caracterisation_tr (lang_id, caracterisation_id, name, description) VALUES ($1, $2, $3, '')", langID, rootID, caracsRootByLang[rootName][langIsoCode])
+		_, err = tx.Exec("INSERT INTO charac_tr (lang_id, charac_id, name, description) VALUES ($1, $2, $3, '')", langID, rootID, caracsRootByLang[rootName][langIsoCode])
 		if err != nil {
 			return err
 		}
@@ -189,14 +189,14 @@ func processFile(filename string, langs map[int]int, langsByIso map[string]int) 
 			// Split each record to get label for each lang
 			for i, label := range strings.Split(record, "#") {
 				l := strings.TrimSpace(label)
-				// Insert caracterisation once
+				// Insert charac once
 				if i == 0 {
-					err := tx.QueryRow("INSERT INTO caracterisation (parent_id, \"order\", author_user_id, created_at, updated_at) VALUES ($1, $2, $3, now(), now()) RETURNING id", parentId, 0, 1).Scan(&lastInsertId)
+					err := tx.QueryRow("INSERT INTO charac (parent_id, \"order\", author_user_id, created_at, updated_at) VALUES ($1, $2, $3, now(), now()) RETURNING id", parentId, 0, 1).Scan(&lastInsertId)
 					if err != nil {
 						return err
 					}
 				}
-				_, err = tx.Exec("INSERT INTO caracterisation_tr (lang_id, caracterisation_id, name, description) VALUES ($1, $2, $3, '')", langs[i], lastInsertId, l)
+				_, err = tx.Exec("INSERT INTO charac_tr (lang_id, charac_id, name, description) VALUES ($1, $2, $3, '')", langs[i], lastInsertId, l)
 				if err != nil {
 					return err
 				}
