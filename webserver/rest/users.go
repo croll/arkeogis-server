@@ -162,40 +162,60 @@ func UserList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	w.Write(j)
 }
 
+func userSqlError(w http.ResponseWriter, err error) {
+	if pgerr, ok := err.(*pq.Error); ok {
+		log.Printf("pgerr: %#v\n", pgerr)
+		switch pgerr.Code.Name() {
+		case "foreign_key_violation":
+			switch pgerr.Constraint {
+			case "user_ibfk_1":
+				routes.FieldError(w, "user.first_lang_id", "user.first_lang_id", "USERS.FIELD_LANG.S_ERROR_BADLANG")
+			case "user_ibfk_2":
+				routes.FieldError(w, "user.second_lang_id", "user.second_lang_id", "USERS.FIELD_LANG.S_ERROR_BADLANG")
+			}
+		case "unique_violation":
+			switch pgerr.Constraint {
+			case "user_idx_4":
+				routes.FieldError(w, "user.username", "username", "USERS.FIELD_USERNAME.S_ERROR_ALREADYEXISTS")
+			}
+		default:
+			log.Printf("unhandled postgresql error ! : %#v\n", pgerr)
+			routes.ServerError(w, 500, "INTERNAL ERROR")
+		}
+	} else {
+		log.Println("not a postgresql error !", err)
+		routes.ServerError(w, 500, "INTERNAL ERROR")
+	}
+}
+
 // UserCreate Create a user, see usercreate struct inside this function for json content
 func UserCreate(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	u := proute.Json.(*Usercreate)
+
 	// hack
 	u.City_geonameid = u.City.Value
 
 	tx, err := db.DB.Beginx()
 	if err != nil {
-		log.Panicln("Can't start transaction for creating a new user")
+		userSqlError(w, err)
 		return
 	}
 
 	err = u.Create(tx)
-
 	if err != nil {
-		if pgerr, ok := err.(*pq.Error); ok {
-			log.Println("create user failed, pq error:", pgerr.Code.Name())
-			ArkeoError(w, pgerr.Code.Name(), "Mince mince minnnnnce !")
-		} else {
-			log.Println("create user failed !", err)
-		}
+		userSqlError(w, err)
 		return
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		if err, ok := err.(*pq.Error); ok {
-			log.Println("commit user failed, pq error:", err.Code.Name())
-		} else {
-			log.Println("commit user failed !", err)
-		}
+		userSqlError(w, err)
 		return
 	}
+
+	j, err := json.Marshal("ok")
+	w.Write(j)
 }
 
 // UserUpdate update an user.
