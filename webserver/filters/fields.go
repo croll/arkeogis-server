@@ -35,11 +35,16 @@ func sanitizeStruct(o interface{}, path string, errors *[]FieldError) {
 		field := st.Field(i)
 		value := vt.Field(i)
 
+		name := field.Tag.Get("json")
+		if len(name) == 0 {
+			name = field.Name
+		}
+
 		n_path := ""
 		if path != "" {
-			n_path = path + "." + field.Name
+			n_path = path + "." + name
 		} else {
-			n_path = field.Name
+			n_path = name
 		}
 
 		fmt.Println("path", n_path)
