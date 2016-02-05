@@ -5,6 +5,7 @@ import (
 	"log"
 	"reflect"
 	"strconv"
+	"strings"
 )
 
 type FieldError struct {
@@ -177,6 +178,53 @@ func sanitizeFieldMax(field reflect.StructField, value reflect.Value, path strin
 		}
 	default:
 		log.Println("SanitizeFieldMax on type", field.Type.Name(), "not implemented")
+		return true
+	}
+	return false
+}
+
+// sanitizeFieldEnum check if field value is above maxium. If true, true is returned
+func sanitizeFieldEnum(field reflect.StructField, value reflect.Value, path string, errors *[]FieldError) bool {
+	s_enum := field.Tag.Get("enum")
+
+	if len(s_enum) == 0 {
+		return false
+	}
+
+	s_enums := strings.Split(s_enum, ",")
+
+	switch field.Type.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		val := value.Int()
+		for _, s_enum := range s_enums {
+			v, _ := strconv.ParseInt(s_enum, 10, 64)
+			if val == v {
+				return false
+			}
+		}
+		setFieldError(field, value, path, errors)
+		return true
+	case reflect.Float32, reflect.Float64:
+		val := value.Float()
+		for _, s_enum := range s_enums {
+			v, _ := strconv.ParseFloat(s_enum, 64)
+			if val == v {
+				return false
+			}
+		}
+		setFieldError(field, value, path, errors)
+		return true
+	case reflect.String:
+		val := value.String()
+		for _, s_enum := range s_enums {
+			if val == s_enum {
+				return false
+			}
+		}
+		setFieldError(field, value, path, errors)
+		return true
+	default:
+		log.Println("SanitizeFieldEnum on type", field.Type.Name(), "not implemented")
 		return true
 	}
 	return false
