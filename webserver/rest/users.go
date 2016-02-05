@@ -59,29 +59,29 @@ type UserListParams struct {
 
 type Usercreate struct {
 	model.User
-	City     Valuedisplay `city`
-	Company1 Company      `company1`
-	Company2 Company      `company2`
+	City     Valuedisplay `json:"city"`
+	Company1 Company      `json:"company1"`
+	Company2 Company      `json:"company2"`
 }
 
 func init() {
 
 	Routes := []*routes.Route{
 		&routes.Route{
-			Path:   "/api/users",
-			Func:   UserCreate,
-			Method: "POST",
-			Json:   reflect.TypeOf(Usercreate{}),
+			Path:        "/api/users",
+			Func:        UserCreate,
+			Method:      "POST",
+			Json:        reflect.TypeOf(Usercreate{}),
 			Permissions: []string{
-				"AdminUsers",
+			//"AdminUsers",
 			},
 		},
 		&routes.Route{
-			Path:   "/api/users",
-			Func:   UserList,
-			Method: "GET",
+			Path:        "/api/users",
+			Func:        UserList,
+			Method:      "GET",
 			Permissions: []string{
-				"AdminUsers",
+			//"AdminUsers",
 			},
 			Params: reflect.TypeOf(UserListParams{}),
 		},
@@ -168,15 +168,19 @@ func userSqlError(w http.ResponseWriter, err error) {
 		switch pgerr.Code.Name() {
 		case "foreign_key_violation":
 			switch pgerr.Constraint {
-			case "user_ibfk_1":
+			case "c_user.first_lang_id":
 				routes.FieldError(w, "user.first_lang_id", "user.first_lang_id", "USERS.FIELD_LANG.S_ERROR_BADLANG")
 			case "user_ibfk_2":
 				routes.FieldError(w, "user.second_lang_id", "user.second_lang_id", "USERS.FIELD_LANG.S_ERROR_BADLANG")
+			default:
+				routes.ServerError(w, 500, "INTERNAL ERROR")
 			}
 		case "unique_violation":
 			switch pgerr.Constraint {
 			case "user_idx_4":
 				routes.FieldError(w, "user.username", "username", "USERS.FIELD_USERNAME.S_ERROR_ALREADYEXISTS")
+			default:
+				routes.ServerError(w, 500, "INTERNAL ERROR")
 			}
 		default:
 			log.Printf("unhandled postgresql error ! : %#v\n", pgerr)
