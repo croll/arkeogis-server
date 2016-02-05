@@ -52,7 +52,7 @@ func sanitizeStruct(o interface{}, path string, errors *[]FieldError) {
 		if field.Type.Kind() == reflect.Struct {
 			sanitizeStruct(value.Interface(), n_path, errors)
 		} else {
-			sanitizeField(field, value, n_path, errors)
+			sanitizeField(field, value, n_path, name, errors)
 		}
 	}
 }
@@ -80,9 +80,9 @@ func DefaultStruct(o interface{}) {
 	}
 }
 
-func sanitizeField(field reflect.StructField, value reflect.Value, path string, errors *[]FieldError) {
-	sanitizeFieldMin(field, value, path, errors)
-	sanitizeFieldMax(field, value, path, errors)
+func sanitizeField(field reflect.StructField, value reflect.Value, path string, fieldname string, errors *[]FieldError) {
+	sanitizeFieldMin(field, value, path, fieldname, errors)
+	sanitizeFieldMax(field, value, path, fieldname, errors)
 }
 
 // setFieldToDefault if there is a default value
@@ -107,21 +107,21 @@ func setFieldToDefault(field reflect.StructField, value reflect.Value) {
 	}
 }
 
-func setFieldError(field reflect.StructField, value reflect.Value, path string, errors *[]FieldError) {
+func setFieldError(field reflect.StructField, value reflect.Value, path string, fieldname string, errors *[]FieldError) {
 	log.Println("setting", field.Name, "to default", field.Tag.Get("default"))
 	setFieldToDefault(field, value)
 	s_error := field.Tag.Get("error")
 	if len(s_error) > 0 {
 		*errors = append(*errors, FieldError{
 			FieldPath:   path,
-			FieldName:   field.Name,
+			FieldName:   fieldname,
 			ErrorString: s_error,
 		})
 	}
 }
 
 // sanitizeFieldMin check if field value is bellow minimum. If true, true is returned
-func sanitizeFieldMin(field reflect.StructField, value reflect.Value, path string, errors *[]FieldError) bool {
+func sanitizeFieldMin(field reflect.StructField, value reflect.Value, path string, fieldname string, errors *[]FieldError) bool {
 	s_min := field.Tag.Get("min")
 
 	if len(s_min) == 0 {
@@ -132,19 +132,19 @@ func sanitizeFieldMin(field reflect.StructField, value reflect.Value, path strin
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		min, _ := strconv.ParseInt(s_min, 10, 64)
 		if value.Int() < min {
-			setFieldError(field, value, path, errors)
+			setFieldError(field, value, path, fieldname, errors)
 			return true
 		}
 	case reflect.Float32, reflect.Float64:
 		min, _ := strconv.ParseFloat(s_min, 64)
 		if value.Float() < min {
-			setFieldError(field, value, path, errors)
+			setFieldError(field, value, path, fieldname, errors)
 			return true
 		}
 	case reflect.String:
 		min, _ := strconv.Atoi(s_min)
 		if len(value.String()) < min {
-			setFieldError(field, value, path, errors)
+			setFieldError(field, value, path, fieldname, errors)
 			return true
 		}
 	default:
@@ -155,7 +155,7 @@ func sanitizeFieldMin(field reflect.StructField, value reflect.Value, path strin
 }
 
 // sanitizeFieldMax check if field value is above maxium. If true, true is returned
-func sanitizeFieldMax(field reflect.StructField, value reflect.Value, path string, errors *[]FieldError) bool {
+func sanitizeFieldMax(field reflect.StructField, value reflect.Value, path string, fieldname string, errors *[]FieldError) bool {
 	s_max := field.Tag.Get("max")
 
 	if len(s_max) == 0 {
@@ -166,19 +166,19 @@ func sanitizeFieldMax(field reflect.StructField, value reflect.Value, path strin
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		max, _ := strconv.ParseInt(s_max, 10, 64)
 		if value.Int() > max {
-			setFieldError(field, value, path, errors)
+			setFieldError(field, value, path, fieldname, errors)
 			return true
 		}
 	case reflect.Float32, reflect.Float64:
 		max, _ := strconv.ParseFloat(s_max, 64)
 		if value.Float() > max {
-			setFieldError(field, value, path, errors)
+			setFieldError(field, value, path, fieldname, errors)
 			return true
 		}
 	case reflect.String:
 		max, _ := strconv.Atoi(s_max)
 		if len(value.String()) > max {
-			setFieldError(field, value, path, errors)
+			setFieldError(field, value, path, fieldname, errors)
 			return true
 		}
 	default:
@@ -189,7 +189,7 @@ func sanitizeFieldMax(field reflect.StructField, value reflect.Value, path strin
 }
 
 // sanitizeFieldEnum check if field value is above maxium. If true, true is returned
-func sanitizeFieldEnum(field reflect.StructField, value reflect.Value, path string, errors *[]FieldError) bool {
+func sanitizeFieldEnum(field reflect.StructField, value reflect.Value, path string, fieldname string, errors *[]FieldError) bool {
 	s_enum := field.Tag.Get("enum")
 
 	if len(s_enum) == 0 {
@@ -207,7 +207,7 @@ func sanitizeFieldEnum(field reflect.StructField, value reflect.Value, path stri
 				return false
 			}
 		}
-		setFieldError(field, value, path, errors)
+		setFieldError(field, value, path, fieldname, errors)
 		return true
 	case reflect.Float32, reflect.Float64:
 		val := value.Float()
@@ -217,7 +217,7 @@ func sanitizeFieldEnum(field reflect.StructField, value reflect.Value, path stri
 				return false
 			}
 		}
-		setFieldError(field, value, path, errors)
+		setFieldError(field, value, path, fieldname, errors)
 		return true
 	case reflect.String:
 		val := value.String()
@@ -226,7 +226,7 @@ func sanitizeFieldEnum(field reflect.StructField, value reflect.Value, path stri
 				return false
 			}
 		}
-		setFieldError(field, value, path, errors)
+		setFieldError(field, value, path, fieldname, errors)
 		return true
 	default:
 		log.Println("SanitizeFieldEnum on type", field.Type.Name(), "not implemented")
