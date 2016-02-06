@@ -53,7 +53,7 @@ type Company struct {
 type UserListParams struct {
 	Limit  int    `default:"10" min:"1" max:"100" error:"limit over boundaries"`
 	Page   int    `default:"1" min:"1" error:"page over boundaries"`
-	Order  string `default:"created_at" enum:"created_at,updated_at,username,firstname,lastname,email" error:"bad order"`
+	Order  string `default:"u.created_at" enum:"u.created_at,-u.created_at,u.updated_at,-u.updated_at,u.username,-u.username,u.firstname,-u.firstname,u.lastname,-u.lastname,u.email,-u.email" error:"bad order"`
 	Filter string `default:""`
 }
 
@@ -125,21 +125,8 @@ func UserList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		order = order[1:]
 		orderdir = "DESC"
 	}
-
-	switch {
-	case order == "u.username",
-		order == "u.id",
-		order == "u.created_at",
-		order == "u.updated_at",
-		order == "u.email",
-		order == "u.active":
-		// accepted
-	case order == "u.lastname, u.firstname":
+	if order == "u.lastname" {
 		order = "u.lastname " + orderdir + ", u.firstname"
-	default:
-		log.Println("rest(users.UsersList): order denied : ", order)
-		order = "u.id"
-		orderdir = "ASC"
 	}
 	/////
 
