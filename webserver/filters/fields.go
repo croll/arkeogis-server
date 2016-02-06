@@ -166,6 +166,8 @@ func sanitizeField(field reflect.StructField, value reflect.Value, path string, 
 			sanitizeFieldMax(field, tag, value, path, fieldname, errors)
 		case "enum":
 			sanitizeFieldEnum(field, tag, value, path, fieldname, errors)
+		case "set":
+			sanitizeFieldSet(field, tag, value, path, fieldname, errors)
 		}
 	}
 }
@@ -309,6 +311,38 @@ func sanitizeFieldEnum(field reflect.StructField, tag Tag, value reflect.Value, 
 		return true
 	default:
 		log.Println("SanitizeFieldEnum on type", field.Type.Name(), "not implemented")
+		return true
+	}
+	return false
+}
+
+// sanitizeFieldSet check if field value is above maxium. If true, true is returned
+func sanitizeFieldSet(field reflect.StructField, tag Tag, value reflect.Value, path string, fieldname string, errors *[]FieldError) bool {
+	if len(tag.Value) == 0 {
+		return false
+	}
+
+	s_sets := strings.Split(tag.Value, ",")
+
+	switch field.Type.Kind() {
+	case reflect.String:
+		vals := strings.Split(value.String(), ",")
+		for _, val := range vals {
+			found := false
+			for _, s_set := range s_sets {
+				if val == s_set {
+					found = true
+					break
+				}
+			}
+			if !found {
+				return false
+			}
+		}
+		setFieldError(field, tag, value, path, fieldname, errors)
+		return true
+	default:
+		log.Println("SanitizeFieldSet on type", field.Type.Name(), "not implemented")
 		return true
 	}
 	return false
