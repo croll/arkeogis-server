@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -168,6 +169,8 @@ func sanitizeField(field reflect.StructField, value reflect.Value, path string, 
 			sanitizeFieldEnum(field, tag, value, path, fieldname, errors)
 		case "set":
 			sanitizeFieldSet(field, tag, value, path, fieldname, errors)
+		case "regexp":
+			sanitizeFieldRegexp(field, tag, value, path, fieldname, errors)
 		}
 	}
 }
@@ -271,7 +274,7 @@ func sanitizeFieldMax(field reflect.StructField, tag Tag, value reflect.Value, p
 	return false
 }
 
-// sanitizeFieldEnum check if field value is above maxium. If true, true is returned
+// sanitizeFieldEnum check if field value is in an enum of values (separated by a comma)
 func sanitizeFieldEnum(field reflect.StructField, tag Tag, value reflect.Value, path string, fieldname string, errors *[]FieldError) bool {
 	if len(tag.Value) == 0 {
 		return false
@@ -316,7 +319,7 @@ func sanitizeFieldEnum(field reflect.StructField, tag Tag, value reflect.Value, 
 	return false
 }
 
-// sanitizeFieldSet check if field value is above maxium. If true, true is returned
+// sanitizeFieldSet check that multiple values separated by a comma are in a set of values that are also separated by a comma
 func sanitizeFieldSet(field reflect.StructField, tag Tag, value reflect.Value, path string, fieldname string, errors *[]FieldError) bool {
 	if len(tag.Value) == 0 {
 		return false
@@ -336,11 +339,34 @@ func sanitizeFieldSet(field reflect.StructField, tag Tag, value reflect.Value, p
 				}
 			}
 			if !found {
-				return false
+				setFieldError(field, tag, value, path, fieldname, errors)
+				return true
 			}
 		}
-		setFieldError(field, tag, value, path, fieldname, errors)
+	default:
+		log.Println("SanitizeFieldSet on type", field.Type.Name(), "not implemented")
 		return true
+	}
+	return false
+}
+
+// sanitizeFieldRegexp a value using regular expression
+func sanitizeFieldRegexp(field reflect.StructField, tag Tag, value reflect.Value, path string, fieldname string, errors *[]FieldError) bool {
+	if len(tag.Value) == 0 {
+		return false
+	}
+
+	switch field.Type.Kind() {
+	case reflect.String:
+		matched, err := regexp.MatchString(tag.Value, value.String())
+		if err != nil {
+			matched = false
+			log.Println("error in regular expression of field "+field.Name+" : ", err)
+		}
+		if !matched {
+			setFieldError(field, tag, value, path, fieldname, errors)
+			return true
+		}
 	default:
 		log.Println("SanitizeFieldSet on type", field.Type.Name(), "not implemented")
 		return true
