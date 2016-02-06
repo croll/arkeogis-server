@@ -80,9 +80,94 @@ func DefaultStruct(o interface{}) {
 	}
 }
 
+type Tag struct {
+	Name     string
+	Value    string
+	TagError *Tag
+}
+
+func decodeTags(field reflect.StructField) (tags []Tag) {
+	// Inspired from go /src/reflect/type.go
+	tag := field.Tag
+
+	tags = []Tag{}
+
+	for tag != "" {
+		// Skip leading space.
+		i := 0
+		for i < len(tag) && tag[i] == ' ' {
+			i++
+		}
+		tag = tag[i:]
+		if tag == "" {
+			break
+		}
+
+		// Scan to colon. A space, a quote or a control character is a syntax error.
+		// Strictly speaking, control chars include the range [0x7f, 0x9f], not just
+		// [0x00, 0x1f], but in practice, we ignore the multi-byte control characters
+		// as it is simpler to inspect the tag's bytes than the tag's runes.
+		i = 0
+		for i < len(tag) && tag[i] > ' ' && tag[i] != ':' && tag[i] != '"' && tag[i] != 0x7f {
+			i++
+		}
+		if i == 0 || i+1 >= len(tag) || tag[i] != ':' || tag[i+1] != '"' {
+			break
+		}
+		name := string(tag[:i])
+		tag = tag[i+1:]
+
+		// Scan quoted string to find value.
+		i = 1
+		for i < len(tag) && tag[i] != '"' {
+			if tag[i] == '\\' {
+				i++
+			}
+			i++
+		}
+		if i >= len(tag) {
+			break
+		}
+		qvalue := string(tag[:i+1])
+		tag = tag[i+1:]
+
+		value, err := strconv.Unquote(qvalue)
+		if err != nil {
+			break
+		}
+
+		if name == "error" {
+			errtag := Tag{
+				Name:  name,
+				Value: value,
+			}
+			for _, t := range tags {
+				if t.TagError == nil {
+					t.TagError = &errtag
+				}
+			}
+		} else {
+			tags = append(tags, Tag{
+				Name:  name,
+				Value: value,
+			})
+		}
+	}
+	return tags
+}
+
 func sanitizeField(field reflect.StructField, value reflect.Value, path string, fieldname string, errors *[]FieldError) {
-	sanitizeFieldMin(field, value, path, fieldname, errors)
-	sanitizeFieldMax(field, value, path, fieldname, errors)
+	tags := decodeTags(field)
+	for _, tag := range tags {
+		switch tag.Name {
+		case "min":
+			sanitizeFieldMin(field, tag, value, path, fieldname, errors)
+		case "max":
+			sanitizeFieldMax(field, tag, value, path, fieldname, errors)
+		case "enum":
+			sanitizeFieldEnum(field, tag, value, path, fieldname, errors)
+		}
+	}
 }
 
 // setFieldToDefault if there is a default value
@@ -107,44 +192,42 @@ func setFieldToDefault(field reflect.StructField, value reflect.Value) {
 	}
 }
 
-func setFieldError(field reflect.StructField, value reflect.Value, path string, fieldname string, errors *[]FieldError) {
+func setFieldError(field reflect.StructField, tag Tag, value reflect.Value, path string, fieldname string, errors *[]FieldError) {
 	log.Println("setting", field.Name, "to default", field.Tag.Get("default"))
 	setFieldToDefault(field, value)
-	s_error := field.Tag.Get("error")
-	if len(s_error) > 0 {
+
+	if tag.TagError != nil && len(tag.TagError.Value) > 0 {
 		*errors = append(*errors, FieldError{
 			FieldPath:   path,
 			FieldName:   fieldname,
-			ErrorString: s_error,
+			ErrorString: tag.TagError.Value,
 		})
 	}
 }
 
 // sanitizeFieldMin check if field value is bellow minimum. If true, true is returned
-func sanitizeFieldMin(field reflect.StructField, value reflect.Value, path string, fieldname string, errors *[]FieldError) bool {
-	s_min := field.Tag.Get("min")
-
-	if len(s_min) == 0 {
+func sanitizeFieldMin(field reflect.StructField, tag Tag, value reflect.Value, path string, fieldname string, errors *[]FieldError) bool {
+	if len(tag.Value) == 0 {
 		return false
 	}
 
 	switch field.Type.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		min, _ := strconv.ParseInt(s_min, 10, 64)
+		min, _ := strconv.ParseInt(tag.Value, 10, 64)
 		if value.Int() < min {
-			setFieldError(field, value, path, fieldname, errors)
+			setFieldError(field, tag, value, path, fieldname, errors)
 			return true
 		}
 	case reflect.Float32, reflect.Float64:
-		min, _ := strconv.ParseFloat(s_min, 64)
+		min, _ := strconv.ParseFloat(tag.Value, 64)
 		if value.Float() < min {
-			setFieldError(field, value, path, fieldname, errors)
+			setFieldError(field, tag, value, path, fieldname, errors)
 			return true
 		}
 	case reflect.String:
-		min, _ := strconv.Atoi(s_min)
+		min, _ := strconv.Atoi(tag.Value)
 		if len(value.String()) < min {
-			setFieldError(field, value, path, fieldname, errors)
+			setFieldError(field, tag, value, path, fieldname, errors)
 			return true
 		}
 	default:
@@ -155,30 +238,28 @@ func sanitizeFieldMin(field reflect.StructField, value reflect.Value, path strin
 }
 
 // sanitizeFieldMax check if field value is above maxium. If true, true is returned
-func sanitizeFieldMax(field reflect.StructField, value reflect.Value, path string, fieldname string, errors *[]FieldError) bool {
-	s_max := field.Tag.Get("max")
-
-	if len(s_max) == 0 {
+func sanitizeFieldMax(field reflect.StructField, tag Tag, value reflect.Value, path string, fieldname string, errors *[]FieldError) bool {
+	if len(tag.Value) == 0 {
 		return false
 	}
 
 	switch field.Type.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		max, _ := strconv.ParseInt(s_max, 10, 64)
+		max, _ := strconv.ParseInt(tag.Value, 10, 64)
 		if value.Int() > max {
-			setFieldError(field, value, path, fieldname, errors)
+			setFieldError(field, tag, value, path, fieldname, errors)
 			return true
 		}
 	case reflect.Float32, reflect.Float64:
-		max, _ := strconv.ParseFloat(s_max, 64)
+		max, _ := strconv.ParseFloat(tag.Value, 64)
 		if value.Float() > max {
-			setFieldError(field, value, path, fieldname, errors)
+			setFieldError(field, tag, value, path, fieldname, errors)
 			return true
 		}
 	case reflect.String:
-		max, _ := strconv.Atoi(s_max)
+		max, _ := strconv.Atoi(tag.Value)
 		if len(value.String()) > max {
-			setFieldError(field, value, path, fieldname, errors)
+			setFieldError(field, tag, value, path, fieldname, errors)
 			return true
 		}
 	default:
@@ -189,14 +270,12 @@ func sanitizeFieldMax(field reflect.StructField, value reflect.Value, path strin
 }
 
 // sanitizeFieldEnum check if field value is above maxium. If true, true is returned
-func sanitizeFieldEnum(field reflect.StructField, value reflect.Value, path string, fieldname string, errors *[]FieldError) bool {
-	s_enum := field.Tag.Get("enum")
-
-	if len(s_enum) == 0 {
+func sanitizeFieldEnum(field reflect.StructField, tag Tag, value reflect.Value, path string, fieldname string, errors *[]FieldError) bool {
+	if len(tag.Value) == 0 {
 		return false
 	}
 
-	s_enums := strings.Split(s_enum, ",")
+	s_enums := strings.Split(tag.Value, ",")
 
 	switch field.Type.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
@@ -207,7 +286,7 @@ func sanitizeFieldEnum(field reflect.StructField, value reflect.Value, path stri
 				return false
 			}
 		}
-		setFieldError(field, value, path, fieldname, errors)
+		setFieldError(field, tag, value, path, fieldname, errors)
 		return true
 	case reflect.Float32, reflect.Float64:
 		val := value.Float()
@@ -217,7 +296,7 @@ func sanitizeFieldEnum(field reflect.StructField, value reflect.Value, path stri
 				return false
 			}
 		}
-		setFieldError(field, value, path, fieldname, errors)
+		setFieldError(field, tag, value, path, fieldname, errors)
 		return true
 	case reflect.String:
 		val := value.String()
@@ -226,7 +305,7 @@ func sanitizeFieldEnum(field reflect.StructField, value reflect.Value, path stri
 				return false
 			}
 		}
-		setFieldError(field, value, path, fieldname, errors)
+		setFieldError(field, tag, value, path, fieldname, errors)
 		return true
 	default:
 		log.Println("SanitizeFieldEnum on type", field.Type.Name(), "not implemented")
