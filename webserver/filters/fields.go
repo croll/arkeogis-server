@@ -141,9 +141,9 @@ func decodeTags(field reflect.StructField) (tags []Tag) {
 				Name:  name,
 				Value: value,
 			}
-			for _, t := range tags {
-				if t.TagError == nil {
-					t.TagError = &errtag
+			for i, _ := range tags {
+				if tags[i].TagError == nil {
+					tags[i].TagError = &errtag
 				}
 			}
 		} else {
