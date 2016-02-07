@@ -38,7 +38,7 @@ import (
 
 	db "github.com/croll/arkeogis-server/db"
 	"github.com/croll/arkeogis-server/model"
-	"github.com/croll/arkeogis-server/webserver/filters"
+	"github.com/croll/arkeogis-server/webserver/sanitizer"
 	session "github.com/croll/arkeogis-server/webserver/session"
 	"github.com/gorilla/mux"
 	"github.com/lib/pq"
@@ -89,7 +89,7 @@ func decodeContent(myroute *Route, rw http.ResponseWriter, r *http.Request, s *s
 	o := v.Interface()
 
 	// set to default the new structure
-	filters.DefaultStruct(o)
+	sanitizer.DefaultStruct(o)
 
 	// Check if multipart
 	mt, params, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
@@ -165,7 +165,7 @@ func decodeParams(myroute *Route, rw http.ResponseWriter, r *http.Request) inter
 	params := v.Interface()
 
 	// set all defaults
-	filters.DefaultStruct(params)
+	sanitizer.DefaultStruct(params)
 
 	st := reflect.TypeOf(params).Elem()
 	vt := reflect.ValueOf(params).Elem()
@@ -250,7 +250,7 @@ func handledRoute(myroute *Route, rw http.ResponseWriter, r *http.Request) {
 
 	o := decodeContent(myroute, rw, r, s)
 	if o != nil {
-		errors := filters.SanitizeStruct(o)
+		errors := sanitizer.SanitizeStruct(o)
 		if len(errors) > 0 {
 			Errors(rw, errors)
 			return
@@ -260,7 +260,7 @@ func handledRoute(myroute *Route, rw http.ResponseWriter, r *http.Request) {
 	params := decodeParams(myroute, rw, r)
 	if params != nil {
 		log.Println("params    : ", params)
-		errors := filters.SanitizeStruct(params)
+		errors := sanitizer.SanitizeStruct(params)
 		log.Println("Sanitized : ", params)
 		if len(errors) > 0 {
 			Errors(rw, errors)
@@ -294,8 +294,8 @@ func ServerError(w http.ResponseWriter, code int, message string) {
 }
 
 func FieldError(w http.ResponseWriter, fieldpath string, fieldname string, errorstring string) {
-	aerr := []filters.FieldError{
-		filters.FieldError{
+	aerr := []sanitizer.FieldError{
+		sanitizer.FieldError{
 			FieldPath:   fieldpath,
 			FieldName:   fieldname,
 			ErrorString: errorstring,
@@ -304,9 +304,9 @@ func FieldError(w http.ResponseWriter, fieldpath string, fieldname string, error
 	Errors(w, aerr)
 }
 
-func Errors(w http.ResponseWriter, errors []filters.FieldError) {
+func Errors(w http.ResponseWriter, errors []sanitizer.FieldError) {
 	type Errors struct {
-		Errors []filters.FieldError `json:"errors"`
+		Errors []sanitizer.FieldError `json:"errors"`
 	}
 	aerr := Errors{
 		Errors: errors,
