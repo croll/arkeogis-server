@@ -179,6 +179,8 @@ func sanitizeField(field reflect.StructField, value reflect.Value, path string, 
 			sanitizeFieldSet(field, tag, value, path, fieldname, errors)
 		case "regexp":
 			sanitizeFieldRegexp(field, tag, value, path, fieldname, errors)
+		case "email":
+			sanitizeFieldEmail(field, tag, value, path, fieldname, errors)
 		}
 	}
 }
@@ -374,6 +376,26 @@ func sanitizeFieldRegexp(field reflect.StructField, tag Tag, value reflect.Value
 		}
 	default:
 		log.Println("SanitizeFieldRegexp on type", field.Type.Name(), "not implemented")
+		return true
+	}
+	return false
+}
+
+// sanitizeFieldEmail a string
+func sanitizeFieldEmail(field reflect.StructField, tag Tag, value reflect.Value, path string, fieldname string, errors *[]FieldError) bool {
+	switch field.Type.Kind() {
+	case reflect.String:
+		matched, err := regexp.MatchString(`^[a-zA-Z0-9.!#$%&'*+/=?^_`+"`"+`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$`, value.String())
+		if err != nil {
+			matched = false
+			log.Println("error in regular expression of field "+field.Name+" : ", err)
+		}
+		if !matched {
+			setFieldError(field, tag, value, path, fieldname, errors)
+			return true
+		}
+	default:
+		log.Println("SanitizeFieldEmail on type", field.Type.Name(), "not implemented")
 		return true
 	}
 	return false
