@@ -47,11 +47,12 @@ type TranslateSaveParams struct {
 func init() {
 	Routes := []*routes.Route{
 		&routes.Route{
-			Path:   "/api/translates",
-			Func:   TranslatesSave,
-			Method: "PUT",
-			Params: reflect.TypeOf(TranslateSaveParams{}),
-			Json:   reflect.TypeOf(make(map[string]interface{}, 0)),
+			Path:        "/api/translates",
+			Description: "Save translations (langeditor)",
+			Func:        TranslatesSave,
+			Method:      "PUT",
+			Params:      reflect.TypeOf(TranslateSaveParams{}),
+			Json:        reflect.TypeOf(make(map[string]interface{}, 0)),
 			/*
 				Permissions: []string{
 					"PermTranslatesAdmin",
@@ -59,10 +60,11 @@ func init() {
 			*/
 		},
 		&routes.Route{
-			Path:   "/api/translates",
-			Func:   TranslatesList,
-			Method: "GET",
-			Params: reflect.TypeOf(TranslateListParams{}),
+			Path:        "/api/translates",
+			Description: "Get Translations (langeditor)",
+			Func:        TranslatesList,
+			Method:      "GET",
+			Params:      reflect.TypeOf(TranslateListParams{}),
 		},
 	}
 	routes.RegisterMultiple(Routes)

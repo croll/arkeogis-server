@@ -47,6 +47,7 @@ import (
 // Route structure that is used for registering a new Arkeogis Route
 type Route struct {
 	Path         string
+	Description  string // for rest doc generator
 	Func         func(rw http.ResponseWriter, r *http.Request, proute Proute)
 	Method       string
 	Queries      []string

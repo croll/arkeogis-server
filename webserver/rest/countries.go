@@ -47,10 +47,11 @@ func init() {
 			Method: "POST",
 		},
 		&routes.Route{
-			Path:   "/api/countries",
-			Func:   CountryList,
-			Params: reflect.TypeOf(CountryListParams{}),
-			Method: "GET",
+			Path:        "/api/countries",
+			Description: "Search for countries available on our world, using a search string",
+			Func:        CountryList,
+			Params:      reflect.TypeOf(CountryListParams{}),
+			Method:      "GET",
 		},
 		&routes.Route{
 			Path:   "/api/countries",

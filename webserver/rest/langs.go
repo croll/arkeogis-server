@@ -33,9 +33,10 @@ import (
 func init() {
 	Routes := []*routes.Route{
 		&routes.Route{
-			Path:   "/api/langs",
-			Func:   LangList,
-			Method: "GET",
+			Path:        "/api/langs",
+			Description: "Get languages list that are available",
+			Func:        LangList,
+			Method:      "GET",
 		},
 	}
 	routes.RegisterMultiple(Routes)

@@ -38,10 +38,11 @@ type ContinentsListParams struct {
 func init() {
 	Routes := []*routes.Route{
 		&routes.Route{
-			Path:   "/api/continents",
-			Func:   ContinentsList,
-			Params: reflect.TypeOf(ContinentsListParams{}),
-			Method: "GET",
+			Path:        "/api/continents",
+			Description: "Search for continents available on our world, using a search string",
+			Func:        ContinentsList,
+			Params:      reflect.TypeOf(ContinentsListParams{}),
+			Method:      "GET",
 		},
 	}
 	routes.RegisterMultiple(Routes)

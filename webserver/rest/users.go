@@ -69,6 +69,7 @@ func init() {
 	Routes := []*routes.Route{
 		&routes.Route{
 			Path:        "/api/users",
+			Description: "Create a new arkeogis user",
 			Func:        UserCreate,
 			Method:      "POST",
 			Json:        reflect.TypeOf(Usercreate{}),
@@ -78,6 +79,7 @@ func init() {
 		},
 		&routes.Route{
 			Path:        "/api/users",
+			Description: "List arkeogis users",
 			Func:        UserList,
 			Method:      "GET",
 			Permissions: []string{
@@ -86,20 +88,23 @@ func init() {
 			Params: reflect.TypeOf(UserListParams{}),
 		},
 		&routes.Route{
-			Path:   "/api/users",
-			Func:   UserUpdate,
-			Method: "PUT",
+			Path:        "/api/users",
+			Description: "Update an arkeogis user",
+			Func:        UserUpdate,
+			Method:      "PUT",
 		},
 		&routes.Route{
-			Path:   "/api/users",
-			Func:   UserDelete,
-			Method: "DELETE",
+			Path:        "/api/users",
+			Description: "Delete an arkeogis user",
+			Func:        UserDelete,
+			Method:      "DELETE",
 		},
 		&routes.Route{
-			Path:   "/api/login",
-			Func:   UserLogin,
-			Method: "POST",
-			Json:   reflect.TypeOf(Userlogin{}),
+			Path:        "/api/login",
+			Description: "Login to an arkeogis session",
+			Func:        UserLogin,
+			Method:      "POST",
+			Json:        reflect.TypeOf(Userlogin{}),
 		},
 	}
 	fmt.Println("routes : ", Routes[4])

@@ -35,9 +35,9 @@ import (
 )
 
 type CityListParams struct {
-	Id_country int
+	Id_country int    `default:"0" min:"0"`
 	Lang       string `default:"en" min:"2" max:"2"`
-	Search     string
+	Search     string `default:"" regexp:"^[^%]*$"`
 }
 
 func init() {
@@ -48,10 +48,11 @@ func init() {
 			Method: "POST",
 		},
 		&routes.Route{
-			Path:   "/api/cities",
-			Func:   CityList,
-			Params: reflect.TypeOf(CityListParams{}),
-			Method: "GET",
+			Path:        "/api/cities",
+			Func:        CityList,
+			Description: "Search for cities available in a country, using a search string",
+			Params:      reflect.TypeOf(CityListParams{}),
+			Method:      "GET",
 		},
 		&routes.Route{
 			Path:   "/api/cities",

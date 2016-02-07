@@ -38,9 +38,10 @@ func init() {
 			Method: "POST",
 		},
 		&routes.Route{
-			Path:   "/api/database",
-			Func:   DatabasesList,
-			Method: "GET",
+			Path:        "/api/database",
+			Description: "Get list of all databases in arkeogis",
+			Func:        DatabasesList,
+			Method:      "GET",
 		},
 		&routes.Route{
 			Path:   "/api/database",

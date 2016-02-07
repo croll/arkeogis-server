@@ -37,10 +37,11 @@ import (
 func init() {
 	Routes := []*routes.Route{
 		&routes.Route{
-			Path:   "/api/import/step1",
-			Func:   ImportStep1,
-			Method: "POST",
-			Json:   reflect.TypeOf(ImportStep1T{}),
+			Path:        "/api/import/step1",
+			Description: "Fist step of CSV importation of sites in arkeogis",
+			Func:        ImportStep1,
+			Method:      "POST",
+			Json:        reflect.TypeOf(ImportStep1T{}),
 		},
 	}
 	routes.RegisterMultiple(Routes)
