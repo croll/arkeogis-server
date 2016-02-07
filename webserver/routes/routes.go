@@ -46,15 +46,14 @@ import (
 
 // Route structure that is used for registering a new Arkeogis Route
 type Route struct {
-	Path         string
-	Description  string // for rest doc generator
-	Func         func(rw http.ResponseWriter, r *http.Request, proute Proute)
-	Method       string
-	Queries      []string
-	Json         reflect.Type
-	Params       reflect.Type
-	Permissions  []string
-	ParamFilters []filters.Filter
+	Path        string
+	Description string // for rest doc generator
+	Func        func(rw http.ResponseWriter, r *http.Request, proute Proute)
+	Method      string
+	Queries     []string
+	Json        reflect.Type
+	Params      reflect.Type
+	Permissions []string
 }
 
 type Proute struct {
@@ -228,16 +227,6 @@ func handledRoute(myroute *Route, rw http.ResponseWriter, r *http.Request) {
 	} else if ok == false {
 		log.Printf("user has no permissions : ", myroute.Permissions)
 		permok = false
-	}
-
-	// Check filters
-	errstr := ""
-	if permok {
-		ok, errstr = filters.CheckAll(tx, myroute.ParamFilters, rw, r, s)
-		if !ok {
-			permok = false
-			log.Printf("filters says no ! ", errstr)
-		}
 	}
 
 	// Close the transaction
