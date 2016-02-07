@@ -179,10 +179,6 @@ func sanitizeField(field reflect.StructField, value reflect.Value, path string, 
 func setFieldToDefault(field reflect.StructField, value reflect.Value) {
 	s_default := field.Tag.Get("default")
 
-	if len(s_default) == 0 {
-		return
-	}
-
 	switch field.Type.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		def, _ := strconv.ParseInt(s_default, 10, 64)
@@ -359,6 +355,7 @@ func sanitizeFieldRegexp(field reflect.StructField, tag Tag, value reflect.Value
 	switch field.Type.Kind() {
 	case reflect.String:
 		matched, err := regexp.MatchString(tag.Value, value.String())
+		log.Println("reg: ", tag.Value, "on :", value.String, "matched:", matched, "err:", err)
 		if err != nil {
 			matched = false
 			log.Println("error in regular expression of field "+field.Name+" : ", err)
@@ -368,7 +365,7 @@ func sanitizeFieldRegexp(field reflect.StructField, tag Tag, value reflect.Value
 			return true
 		}
 	default:
-		log.Println("SanitizeFieldSet on type", field.Type.Name(), "not implemented")
+		log.Println("SanitizeFieldRegexp on type", field.Type.Name(), "not implemented")
 		return true
 	}
 	return false
