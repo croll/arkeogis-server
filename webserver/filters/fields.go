@@ -19,14 +19,13 @@ type FieldError struct {
 // return an array of string, one string per error
 func SanitizeStruct(o interface{}) []FieldError {
 	errors := []FieldError{}
-	sanitizeStruct(o, "", &errors)
+	st := reflect.TypeOf(o)
+	vt := reflect.ValueOf(o)
+	sanitizeStruct(st, vt, "", &errors)
 	return errors
 }
 
-func sanitizeStruct(o interface{}, path string, errors *[]FieldError) {
-	st := reflect.TypeOf(o)
-	vt := reflect.ValueOf(o)
-
+func sanitizeStruct(st reflect.Type, vt reflect.Value, path string, errors *[]FieldError) {
 	if st.Kind() == reflect.Ptr {
 		st = st.Elem()
 		vt = vt.Elem()
@@ -37,21 +36,25 @@ func sanitizeStruct(o interface{}, path string, errors *[]FieldError) {
 		value := vt.Field(i)
 
 		name := field.Tag.Get("json")
-		if len(name) == 0 {
+		if len(name) == 0 && !field.Anonymous {
 			name = field.Name
 		}
 
 		n_path := ""
-		if path != "" {
-			n_path = path + "." + name
+		if field.Anonymous {
+			n_path = path
 		} else {
-			n_path = name
+			if path != "" {
+				n_path = path + "." + name
+			} else {
+				n_path = name
+			}
 		}
 
 		fmt.Println("path", n_path)
 
 		if field.Type.Kind() == reflect.Struct {
-			sanitizeStruct(value.Interface(), n_path, errors)
+			sanitizeStruct(field.Type, value, n_path, errors)
 		} else {
 			sanitizeField(field, value, n_path, name, errors)
 		}
@@ -63,7 +66,10 @@ func sanitizeStruct(o interface{}, path string, errors *[]FieldError) {
 func DefaultStruct(o interface{}) {
 	st := reflect.TypeOf(o)
 	vt := reflect.ValueOf(o)
+	defaultStruct(st, vt)
+}
 
+func defaultStruct(st reflect.Type, vt reflect.Value) {
 	if st.Kind() == reflect.Ptr {
 		st = st.Elem()
 		vt = vt.Elem()
@@ -72,9 +78,11 @@ func DefaultStruct(o interface{}) {
 	for i := 0; i < st.NumField(); i++ {
 		field := st.Field(i)
 		value := vt.Field(i)
-		fmt.Println("defaulting field", i, ":", field.Name)
+		if field.Name[:1] >= "a" && field.Name[:1] <= "z" {
+			continue
+		}
 		if field.Type.Kind() == reflect.Struct {
-			DefaultStruct(value.Interface())
+			defaultStruct(field.Type, value)
 		} else {
 			setFieldToDefault(field, value)
 		}
