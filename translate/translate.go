@@ -238,7 +238,7 @@ func PlateToTree(trans map[string]string) map[string]interface{} {
 func BuildJSON(trans map[string]string) string {
 	tree := PlateToTree(trans)
 
-	res, err := json.Marshal(tree)
+	res, err := json.MarshalIndent(tree, "", "\t")
 	if err != nil {
 		log.Fatal("Marshal of lang failed", err)
 	}
@@ -254,7 +254,7 @@ func WriteJSON(trans map[string]interface{}, lang string, side string) (err erro
 		return
 	}
 
-	j, err := json.Marshal(trans)
+	j, err := json.MarshalIndent(trans, "", "\t")
 	if err != nil {
 		log.Fatal("Marshal of lang failed", err)
 		return err
