@@ -399,13 +399,13 @@ type Site_tr struct {
 
 type User struct {
 	Id	int	`db:"id" json:"id"`
-	Username	string	`db:"username" json:"username" min:"2" max:"32" error:"USERS.FIELD_USERNAME.T_CHECK_INCORRECT"`
-	Firstname	string	`db:"firstname" json:"firstname"`
-	Lastname	string	`db:"lastname" json:"lastname"`
-	Email	string	`db:"email" json:"email" email:"1" error:"USERS.FIELD_EMAIL.T_CHECK_INCORRECT"`
-	Password	string	`db:"password" json:"password" min:"6" max:"32" error:"USERS.FIELD_PASSWORD.T_CHECK_INCORRECT"`
-	Description	string	`db:"description" json:"description"`
-	Active	bool	`db:"active" json:"active"`
+	Username	string	`db:"username" json:"username" min:"2" max:"32" error:"USER.FIELD_USERNAME.T_CHECK_INCORRECT"`
+	Firstname	string	`db:"firstname" json:"firstname" min:"1" max:"32" error:"USER.FIELD_FIRSTNAME.T_CHECK_MANDATORY"`
+	Lastname	string	`db:"lastname" json:"lastname" min:"1" max:"32" error:"USER.FIELD_LASTNAME.T_CHECK_MANDATORY"`
+	Email	string	`db:"email" json:"email" email:"1" error:"USER.FIELD_EMAIL.T_CHECK_INCORRECT"`
+	Password	string	`db:"password" json:"password" min:"6" max:"32" error:"USER.FIELD_PASSWORD.T_CHECK_INCORRECT"`
+	Description	string	`db:"description" json:"description" min:"1" max:"2048" error:"USER.FIELD_DESCRIPTION.T_CHECK_MANDATORY"`
+	Active	bool	`db:"active" json:"active" enum:"0,1" error:"USER.FIELD_ACTIVE.T_CHECK_MANDATORY"`
 	First_lang_id	int	`db:"first_lang_id" json:"first_lang_id"`	// Lang.Id
 	Second_lang_id	int	`db:"second_lang_id" json:"second_lang_id"`	// Lang.Id
 	City_geonameid	int	`db:"city_geonameid" json:"city_geonameid"`	// City.Geonameid
