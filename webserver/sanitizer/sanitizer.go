@@ -21,43 +21,51 @@ func SanitizeStruct(o interface{}) []FieldError {
 	errors := []FieldError{}
 	st := reflect.TypeOf(o)
 	vt := reflect.ValueOf(o)
-	sanitizeStruct(st, vt, "", &errors)
+	sanitizeStruct(st, vt, nil, "", "", &errors)
 	return errors
 }
 
-func sanitizeStruct(st reflect.Type, vt reflect.Value, path string, errors *[]FieldError) {
-	if st.Kind() == reflect.Ptr {
+func sanitizeStruct(st reflect.Type, vt reflect.Value, field *reflect.StructField, path string, name string, errors *[]FieldError) {
+	fmt.Println("path : ", path, "name: ", name)
+	switch st.Kind() {
+	case reflect.Ptr:
 		st = st.Elem()
 		vt = vt.Elem()
-	}
-
-	for i := 0; i < st.NumField(); i++ {
-		field := st.Field(i)
-		value := vt.Field(i)
-
-		name := field.Tag.Get("json")
-		if len(name) == 0 && !field.Anonymous {
-			name = field.Name
-		}
-
-		n_path := ""
-		if field.Anonymous {
-			n_path = path
-		} else {
-			if path != "" {
-				n_path = path + "." + name
-			} else {
-				n_path = name
+		sanitizeStruct(st, vt, nil, path, name, errors)
+	case reflect.Struct:
+		for i := 0; i < st.NumField(); i++ {
+			field := st.Field(i)
+			if field.Name[:1] >= "a" && field.Name[:1] <= "z" {
+				continue
 			}
-		}
+			value := vt.Field(i)
 
-		fmt.Println("path", n_path)
+			name := field.Tag.Get("json")
+			if len(name) == 0 && !field.Anonymous {
+				name = field.Name
+			}
 
-		if field.Type.Kind() == reflect.Struct {
-			sanitizeStruct(field.Type, value, n_path, errors)
-		} else {
-			sanitizeField(field, value, n_path, name, errors)
+			n_path := ""
+			if field.Anonymous {
+				n_path = path
+			} else {
+				if path != "" {
+					n_path = path + "." + name
+				} else {
+					n_path = name
+				}
+			}
+
+			fmt.Println("path", n_path)
+
+			sanitizeStruct(field.Type, value, &field, n_path, name, errors)
 		}
+	case reflect.Array, reflect.Map, reflect.Slice:
+		log.Println("type ", st.Kind, " unsupported, todo !")
+	case reflect.Invalid, reflect.Chan, reflect.Interface, reflect.UnsafePointer:
+		log.Println("type ", st.Kind, " unsupported")
+	default:
+		sanitizeField(*field, vt, path, name, errors)
 	}
 }
 
@@ -66,26 +74,30 @@ func sanitizeStruct(st reflect.Type, vt reflect.Value, path string, errors *[]Fi
 func DefaultStruct(o interface{}) {
 	st := reflect.TypeOf(o)
 	vt := reflect.ValueOf(o)
-	defaultStruct(st, vt)
+	defaultStruct(st, vt, nil)
 }
 
-func defaultStruct(st reflect.Type, vt reflect.Value) {
-	if st.Kind() == reflect.Ptr {
+func defaultStruct(st reflect.Type, vt reflect.Value, field *reflect.StructField) {
+	switch st.Kind() {
+	case reflect.Ptr:
 		st = st.Elem()
 		vt = vt.Elem()
-	}
-
-	for i := 0; i < st.NumField(); i++ {
-		field := st.Field(i)
-		value := vt.Field(i)
-		if field.Name[:1] >= "a" && field.Name[:1] <= "z" {
-			continue
+		defaultStruct(st, vt, nil)
+	case reflect.Struct:
+		for i := 0; i < st.NumField(); i++ {
+			field := st.Field(i)
+			if field.Name[:1] >= "a" && field.Name[:1] <= "z" {
+				continue
+			}
+			value := vt.Field(i)
+			defaultStruct(field.Type, value, &field)
 		}
-		if field.Type.Kind() == reflect.Struct {
-			defaultStruct(field.Type, value)
-		} else {
-			setFieldToDefault(field, value)
-		}
+	case reflect.Array, reflect.Map, reflect.Slice:
+		log.Println("type ", st.Kind, " unsupported, todo !")
+	case reflect.Invalid, reflect.Chan, reflect.Interface, reflect.UnsafePointer:
+		log.Println("type ", st.Kind, " unsupported")
+	default:
+		setFieldToDefault(*field, vt)
 	}
 }
 
