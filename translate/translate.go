@@ -94,7 +94,7 @@ func readLevel(jspath string, dec *json.Decoder, tr map[string]string) {
 }
 
 // return a file path to the json file lang. prodonly force to use dist files even in dev mode
-func makeFilePath(lang string, domain string, prodonly bool) (filename string, err error) {
+func makeFilePath(lang string, side string, prodonly bool) (filename string, err error) {
 	var distpath string
 	var webpath string
 
@@ -106,21 +106,21 @@ func makeFilePath(lang string, domain string, prodonly bool) (filename string, e
 		webpath = config.CurWebPath
 	}
 
-	if domain == "server" {
+	if side == "server" {
 		filename = path.Join(distpath, "languages", lang+".json")
-	} else if domain == "web" {
+	} else if side == "web" {
 		filename = path.Join(webpath, "languages", lang+".json")
 	} else {
-		err = errors.New("Bad domain")
+		err = errors.New("Bad side")
 		return
 	}
 	return
 }
 
 // readTranslation will load a translation file (json format).
-// domain is "server" or "web"
-func readTranslation(lang string, domain string, res map[string]string) error {
-	filename, err := makeFilePath(lang, domain, true)
+// side is "server" or "web"
+func readTranslation(lang string, side string, res map[string]string) error {
+	filename, err := makeFilePath(lang, side, true)
 	if err != nil {
 		return err
 	}
@@ -140,13 +140,13 @@ func readTranslation(lang string, domain string, res map[string]string) error {
 }
 
 // ReadTranslation will load a translation file (json format).
-// domain is "server", "web" or "*" meaning server+web merged
-func ReadTranslation(lang string, domain string) (res map[string]string, err error) {
+// side is "server", "web" or "*" meaning server+web merged
+func ReadTranslation(lang string, side string) (res map[string]string, err error) {
 	res = make(map[string]string)
 
-	switch domain {
+	switch side {
 	case "server", "web":
-		err = readTranslation(lang, domain, res)
+		err = readTranslation(lang, side, res)
 		break
 	case "*":
 		err = readTranslation(lang, "web", res)
@@ -247,9 +247,9 @@ func BuildJSON(trans map[string]string) string {
 }
 
 // Write JSON where it should be, using map of strings
-func WriteJSON(trans map[string]interface{}, lang string, domain string) (err error) {
+func WriteJSON(trans map[string]interface{}, lang string, side string) (err error) {
 	var filename string
-	filename, err = makeFilePath(lang, domain, false)
+	filename, err = makeFilePath(lang, side, false)
 	if err != nil {
 		return
 	}
