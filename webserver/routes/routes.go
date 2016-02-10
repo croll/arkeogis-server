@@ -250,7 +250,7 @@ func handledRoute(myroute *Route, rw http.ResponseWriter, r *http.Request) {
 
 	o := decodeContent(myroute, rw, r, s)
 	if o != nil {
-		errors := sanitizer.SanitizeStruct(o)
+		errors := sanitizer.SanitizeStruct(o, "json")
 		if len(errors) > 0 {
 			Errors(rw, errors)
 			return
@@ -260,7 +260,7 @@ func handledRoute(myroute *Route, rw http.ResponseWriter, r *http.Request) {
 	params := decodeParams(myroute, rw, r)
 	if params != nil {
 		log.Println("params    : ", params)
-		errors := sanitizer.SanitizeStruct(params)
+		errors := sanitizer.SanitizeStruct(params, "params")
 		log.Println("Sanitized : ", params)
 		if len(errors) > 0 {
 			Errors(rw, errors)

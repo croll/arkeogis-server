@@ -17,11 +17,11 @@ type FieldError struct {
 
 // SanitizeStruct will sanitize all fields of a struct (o must be a pointer to this struct)
 // return an array of string, one string per error
-func SanitizeStruct(o interface{}) []FieldError {
+func SanitizeStruct(o interface{}, path_prefix string) []FieldError {
 	errors := []FieldError{}
 	st := reflect.TypeOf(o)
 	vt := reflect.ValueOf(o)
-	sanitizeStruct(st, vt, nil, "", "", &errors)
+	sanitizeStruct(st, vt, nil, path_prefix, "", &errors)
 	return errors
 }
 
