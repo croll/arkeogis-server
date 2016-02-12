@@ -155,11 +155,15 @@ func decodeParams(myroute *Route, rw http.ResponseWriter, r *http.Request) inter
 		return nil
 	}
 
+	// get form parameters
 	err := r.ParseForm()
 	if err != nil {
 		fmt.Println("ParseForm err: ", err)
 		return nil
 	}
+
+	// get mux parameters
+	muxvars := mux.Vars(r)
 
 	v := reflect.New(myroute.Params)
 	params := v.Interface()
@@ -173,7 +177,13 @@ func decodeParams(myroute *Route, rw http.ResponseWriter, r *http.Request) inter
 	for i := 0; i < st.NumField(); i++ {
 		field := st.Field(i)
 		value := vt.Field(i)
-		paramval := r.FormValue(strings.ToLower(field.Name))
+
+		paramval := ""
+		if val, ok := muxvars[strings.ToLower(field.Name)]; ok {
+			paramval = val
+		} else {
+			paramval = r.FormValue(strings.ToLower(field.Name))
+		}
 
 		switch field.Type.Kind() {
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
