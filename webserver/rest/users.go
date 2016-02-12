@@ -100,7 +100,7 @@ func init() {
 		},
 		&routes.Route{
 			Path:        "/api/users/{id:[0-9]+}",
-			Description: "List arkeogis users",
+			Description: "Get an arkeogis user",
 			Func:        UserInfos,
 			Method:      "GET",
 			Permissions: []string{
@@ -109,16 +109,23 @@ func init() {
 			Params: reflect.TypeOf(UserGetParams{}),
 		},
 		&routes.Route{
-			Path:        "/api/users",
+			Path:        "/api/users/{id:[0-9]+}",
 			Description: "Update an arkeogis user",
 			Func:        UserUpdate,
-			Method:      "PUT",
+			Method:      "POST",
+			Json:        reflect.TypeOf(Usercreate{}),
+			Permissions: []string{
+			//"AdminUsers",
+			},
 		},
 		&routes.Route{
 			Path:        "/api/users",
 			Description: "Delete an arkeogis user",
 			Func:        UserDelete,
 			Method:      "DELETE",
+			Permissions: []string{
+			//"AdminUsers",
+			},
 		},
 		&routes.Route{
 			Path:        "/api/login",
@@ -126,6 +133,9 @@ func init() {
 			Func:        UserLogin,
 			Method:      "POST",
 			Json:        reflect.TypeOf(Userlogin{}),
+			Permissions: []string{
+			//"AdminUsers",
+			},
 		},
 	}
 	fmt.Println("routes : ", Routes[4])
@@ -237,9 +247,32 @@ func UserCreate(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 // UserUpdate update an user.
 func UserUpdate(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
-	//params := mux.Vars(r)
-	//uid := params["id"]
-	//email := r.FormValue("email")
+
+	u := proute.Json.(*Usercreate)
+
+	// hack
+	u.City_geonameid = u.City.Value
+
+	tx, err := db.DB.Beginx()
+	if err != nil {
+		userSqlError(w, err)
+		return
+	}
+
+	err = u.Update(tx)
+	if err != nil {
+		userSqlError(w, err)
+		return
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		userSqlError(w, err)
+		return
+	}
+
+	j, err := json.Marshal("ok")
+	w.Write(j)
 }
 
 // UserDelete delete an user.

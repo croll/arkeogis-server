@@ -65,6 +65,7 @@ func (u *User) Create(tx *sqlx.Tx) error {
 // Update the user in the database
 func (u *User) Update(tx *sqlx.Tx) error {
 	//_, err := tx.NamedExec("UPDATE \"user\" SET username=:username, firstname=:firstname, lastname=:lastname, email=:email, password=:password, description=:description, active=:active, city_geonameid=:city_geonameid, first_lang_id=:first_lang_idfirst_lang_id, second_lang_id=:second_lang_id, updated_at=now()", u)
+	log.Println("update : ", "UPDATE \"user\" SET "+User_UpdateStr+" WHERE id=:id")
 	_, err := tx.NamedExec("UPDATE \"user\" SET "+User_UpdateStr+" WHERE id=:id", u)
 	return err
 }
