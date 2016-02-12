@@ -1,7 +1,6 @@
 package sanitizer
 
 import (
-	"fmt"
 	"log"
 	"reflect"
 	"regexp"
@@ -26,7 +25,7 @@ func SanitizeStruct(o interface{}, path_prefix string) []FieldError {
 }
 
 func sanitizeStruct(st reflect.Type, vt reflect.Value, field *reflect.StructField, path string, name string, errors *[]FieldError) {
-	fmt.Println("path : ", path, "name: ", name)
+	//fmt.Println("path : ", path, "name: ", name)
 	switch st.Kind() {
 	case reflect.Ptr:
 		st = st.Elem()
@@ -56,7 +55,7 @@ func sanitizeStruct(st reflect.Type, vt reflect.Value, field *reflect.StructFiel
 				}
 			}
 
-			fmt.Println("path", n_path)
+			//fmt.Println("path", n_path)
 
 			sanitizeStruct(field.Type, value, &field, n_path, name, errors)
 		}
