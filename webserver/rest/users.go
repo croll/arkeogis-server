@@ -57,11 +57,22 @@ type UserListParams struct {
 	Filter string `default:""`
 }
 
+// UserCreate structure (json)
 type Usercreate struct {
 	model.User
 	City     Valuedisplay `json:"city"`
 	Company1 Company      `json:"company1"`
 	Company2 Company      `json:"company2"`
+}
+
+// Userlogin structure (json)
+type Userlogin struct {
+	Username string
+	Password string
+}
+
+type UserGetParams struct {
+	Id int `min:"0" error:"User Id is mandatory"`
 }
 
 func init() {
@@ -86,6 +97,16 @@ func init() {
 			//"AdminUsers",
 			},
 			Params: reflect.TypeOf(UserListParams{}),
+		},
+		&routes.Route{
+			Path:        "/api/users/{id:[0-9]+}",
+			Description: "List arkeogis users",
+			Func:        UserInfos,
+			Method:      "GET",
+			Permissions: []string{
+			//"AdminUsers",
+			},
+			Params: reflect.TypeOf(UserGetParams{}),
 		},
 		&routes.Route{
 			Path:        "/api/users",
@@ -228,13 +249,32 @@ func UserDelete(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 // UserInfos return detailed infos on an user
 func UserInfos(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
-	w.Header().Set("Allow", "DELETE,GET,HEAD,OPTIONS,POST,PUT")
-}
+	params := proute.Params.(*UserGetParams)
+	tx, err := db.DB.Beginx()
+	if err != nil {
+		log.Println("can't start transaction")
+		userSqlError(w, err)
+		return
+	}
+	u := model.User{
+		Id: params.Id,
+	}
+	err = u.Get(tx)
+	if err != nil {
+		log.Println("can't get user")
+		userSqlError(w, err)
+		return
+	}
 
-// Userlogin structure (json)
-type Userlogin struct {
-	Username string
-	Password string
+	log.Println("user id : ", params.Id, "user : ", u)
+	err = tx.Commit()
+	if err != nil {
+		log.Println("can't commit")
+		userSqlError(w, err)
+		return
+	}
+	j, err := json.Marshal(u)
+	w.Write(j)
 }
 
 // UserLogin Check Login
