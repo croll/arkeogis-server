@@ -176,6 +176,50 @@ func (u *User) SetGroups(tx *sqlx.Tx, groups []Group) error {
 	return nil
 }
 
+// GetCompanies return an array of companies of the User
+func (u *User) GetCompanies(tx *sqlx.Tx) (companies []Company, err error) {
+	stmt, err := tx.PrepareNamed("SELECT g.* FROM \"company\" g, \"user__company\" ug WHERE ug.user_id = :id AND ug.company_id = g.id")
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+	err = stmt.Select(&companies, u)
+	return companies, err
+}
+
+// SetCompanies set user companies
+func (u *User) SetCompanies(tx *sqlx.Tx, companies []Company) error {
+	ids := make([]string, len(companies)+1)
+	for i, company := range companies {
+		ids[i] = fmt.Sprintf("%d", company.Id)
+	}
+	ids[len(companies)] = "-1" // empty list is a problem
+
+	_, err := tx.NamedExec("DELETE FROM \"user__company\" WHERE user_id=:id AND company_id NOT IN ("+strings.Join(ids, ",")+")", u)
+	if err != nil {
+		return err
+	}
+
+	rows, err := tx.Queryx("SELECT company_id FROM user__company WHERE user_id = $1 AND company_id IN ("+strings.Join(ids, ",")+")", u.Id)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id string
+		rows.Scan(&id)
+		ids = removeString(ids, id)
+	}
+
+	for _, company := range companies {
+		_, err := tx.Exec("INSERT INTO user__company (user_id, company_id) VALUES ($1, $2)", u.Id, company.Id)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // GetUsers return an array of groups of the User
 func (g *Group) GetUsers(tx *sqlx.Tx) (users []User, err error) {
 	log.Println("TODO: Group.GetUsers() => This function was not tested. If it work fine, please, remove this log comment!")

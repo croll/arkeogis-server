@@ -184,6 +184,7 @@ func UserList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 }
 
 func userSqlError(w http.ResponseWriter, err error) {
+	log.Printf("paf: %#v\n", err)
 	if pgerr, ok := err.(*pq.Error); ok {
 		log.Printf("pgerr: %#v\n", pgerr)
 		switch pgerr.Code.Name() {
@@ -213,6 +214,16 @@ func userSqlError(w http.ResponseWriter, err error) {
 	}
 }
 
+// serach a company in an array of companies, using the Id for key search
+func companyIndex(id int, slice []model.Company) int {
+	for i, v := range slice {
+		if v.Id == id {
+			return i
+		}
+	}
+	return -1
+}
+
 // userSet is for UserCreate or UserUpdate
 func userSet(w http.ResponseWriter, r *http.Request, proute routes.Proute, create bool) {
 
@@ -223,23 +234,90 @@ func userSet(w http.ResponseWriter, r *http.Request, proute routes.Proute, creat
 
 	tx, err := db.DB.Beginx()
 	if err != nil {
+		log.Println("1")
 		userSqlError(w, err)
 		return
 	}
 
+	// save the user
 	if create {
 		err = u.Create(tx)
 	} else {
 		err = u.Update(tx)
 	}
-
 	if err != nil {
+		log.Println("2")
+		userSqlError(w, err)
+		tx.Rollback()
+		return
+	}
+
+	// Companies
+	var companies []model.Company
+	if !create {
+		companies, err = u.GetCompanies(tx)
+		if err != nil {
+			log.Println("3")
+			userSqlError(w, err)
+			tx.Rollback()
+			return
+		}
+	}
+
+	log.Printf("company : %#v\n", u.Company1)
+
+	if u.Company1.Name.Value > 0 { // companie wanted already exists
+		if companyIndex(u.Company1.Name.Value, companies) == -1 {
+			company := model.Company{
+				Id: u.Company1.Name.Value,
+			}
+			err = company.Get(tx)
+			if err != nil {
+				log.Println("4")
+				userSqlError(w, err)
+				tx.Rollback()
+				return
+			}
+
+			// update the company City
+			company.City_geonameid = u.Company1.City.Value
+			err = company.Update(tx)
+			if err != nil {
+				log.Println("5")
+				userSqlError(w, err)
+				tx.Rollback()
+				return
+			}
+
+			companies = append(companies, company)
+		}
+	} else if len(u.Company1.SearchName) > 0 { // create a new company
+		log.Println("creating a new company : ", u.Company1.SearchName)
+		company := model.Company{
+			Name:           u.Company1.SearchName,
+			City_geonameid: u.Company1.City.Value,
+		}
+		err = company.Create(tx)
+		if err != nil {
+			log.Println("6")
+			tx.Rollback()
+			userSqlError(w, err)
+			return
+		}
+		companies = append(companies, company)
+	}
+
+	err = u.SetCompanies(tx, companies)
+	if err != nil {
+		log.Println("7")
+		tx.Rollback()
 		userSqlError(w, err)
 		return
 	}
 
 	err = tx.Commit()
 	if err != nil {
+		log.Println("8")
 		userSqlError(w, err)
 		return
 	}
