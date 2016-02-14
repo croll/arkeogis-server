@@ -24,9 +24,11 @@ package rest
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"reflect"
 
 	db "github.com/croll/arkeogis-server/db"
+	"github.com/croll/arkeogis-server/model"
 	//model "github.com/croll/arkeogis-server/model"
 	"net/http"
 
@@ -66,13 +68,14 @@ func init() {
 
 func CompanyList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
-	companies := []Company{}
+	companies := []model.Company{}
 
 	params := proute.Params.(*CompanyListParams)
 
+	log.Println("search : ", params.Search)
 	err := db.DB.Select(&companies, "SELECT * FROM company WHERE name ILIKE $1", params.Search+"%")
 	if err != nil {
-		fmt.Println("err: ", err)
+		fmt.Printf("err: %#v\n", err)
 		return
 	}
 
