@@ -138,8 +138,6 @@ func init() {
 			},
 		},
 	}
-	fmt.Println("routes : ", Routes[4])
-	fmt.Println("routes : ", Routes[2])
 	routes.RegisterMultiple(Routes)
 }
 
@@ -215,8 +213,8 @@ func userSqlError(w http.ResponseWriter, err error) {
 	}
 }
 
-// UserCreate Create a user, see usercreate struct inside this function for json content
-func UserCreate(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+// userSet is for UserCreate or UserUpdate
+func userSet(w http.ResponseWriter, r *http.Request, proute routes.Proute, create bool) {
 
 	u := proute.Json.(*Usercreate)
 
@@ -229,7 +227,12 @@ func UserCreate(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		return
 	}
 
-	err = u.Create(tx)
+	if create {
+		err = u.Create(tx)
+	} else {
+		err = u.Update(tx)
+	}
+
 	if err != nil {
 		userSqlError(w, err)
 		return
@@ -245,34 +248,14 @@ func UserCreate(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	w.Write(j)
 }
 
+// UserCreate Create a user, see usercreate struct inside this function for json content
+func UserCreate(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+	userSet(w, r, proute, true)
+}
+
 // UserUpdate update an user.
 func UserUpdate(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
-
-	u := proute.Json.(*Usercreate)
-
-	// hack
-	u.City_geonameid = u.City.Value
-
-	tx, err := db.DB.Beginx()
-	if err != nil {
-		userSqlError(w, err)
-		return
-	}
-
-	err = u.Update(tx)
-	if err != nil {
-		userSqlError(w, err)
-		return
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		userSqlError(w, err)
-		return
-	}
-
-	j, err := json.Marshal("ok")
-	w.Write(j)
+	userSet(w, r, proute, false)
 }
 
 // UserDelete delete an user.
