@@ -210,9 +210,10 @@ func (u *User) SetCompanies(tx *sqlx.Tx, companies []Company) error {
 		rows.Scan(&id)
 		ids = removeString(ids, id)
 	}
+	ids = removeString(ids, "-1")
 
-	for _, company := range companies {
-		_, err := tx.Exec("INSERT INTO user__company (user_id, company_id) VALUES ($1, $2)", u.Id, company.Id)
+	for _, companyid := range ids {
+		_, err := tx.Exec("INSERT INTO user__company (user_id, company_id) VALUES ($1, $2)", u.Id, companyid)
 		if err != nil {
 			return err
 		}
