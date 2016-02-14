@@ -60,9 +60,8 @@ type UserListParams struct {
 // UserCreate structure (json)
 type Usercreate struct {
 	model.User
-	City     Valuedisplay `json:"city"`
-	Company1 Company      `json:"company1"`
-	Company2 Company      `json:"company2"`
+	City      Valuedisplay `json:"city"`
+	Companies []Company    `json:"companies"`
 }
 
 // Userlogin structure (json)
@@ -264,47 +263,47 @@ func userSet(w http.ResponseWriter, r *http.Request, proute routes.Proute, creat
 		}
 	}
 
-	log.Printf("company : %#v\n", u.Company1)
+	for _, form_company := range u.Companies {
+		if form_company.Name.Value > 0 { // companie wanted already exists
+			if companyIndex(form_company.Name.Value, companies) == -1 {
+				company := model.Company{
+					Id: form_company.Name.Value,
+				}
+				err = company.Get(tx)
+				if err != nil {
+					log.Println("4")
+					userSqlError(w, err)
+					tx.Rollback()
+					return
+				}
 
-	if u.Company1.Name.Value > 0 { // companie wanted already exists
-		if companyIndex(u.Company1.Name.Value, companies) == -1 {
+				// update the company City
+				company.City_geonameid = form_company.City.Value
+				err = company.Update(tx)
+				if err != nil {
+					log.Println("5")
+					userSqlError(w, err)
+					tx.Rollback()
+					return
+				}
+
+				companies = append(companies, company)
+			}
+		} else if len(form_company.SearchName) > 0 { // create a new company
+			log.Println("creating a new company : ", form_company.SearchName)
 			company := model.Company{
-				Id: u.Company1.Name.Value,
+				Name:           form_company.SearchName,
+				City_geonameid: form_company.City.Value,
 			}
-			err = company.Get(tx)
+			err = company.Create(tx)
 			if err != nil {
-				log.Println("4")
-				userSqlError(w, err)
+				log.Println("6")
 				tx.Rollback()
+				userSqlError(w, err)
 				return
 			}
-
-			// update the company City
-			company.City_geonameid = u.Company1.City.Value
-			err = company.Update(tx)
-			if err != nil {
-				log.Println("5")
-				userSqlError(w, err)
-				tx.Rollback()
-				return
-			}
-
 			companies = append(companies, company)
 		}
-	} else if len(u.Company1.SearchName) > 0 { // create a new company
-		log.Println("creating a new company : ", u.Company1.SearchName)
-		company := model.Company{
-			Name:           u.Company1.SearchName,
-			City_geonameid: u.Company1.City.Value,
-		}
-		err = company.Create(tx)
-		if err != nil {
-			log.Println("6")
-			tx.Rollback()
-			userSqlError(w, err)
-			return
-		}
-		companies = append(companies, company)
 	}
 
 	err = u.SetCompanies(tx, companies)
@@ -350,14 +349,24 @@ func UserInfos(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		userSqlError(w, err)
 		return
 	}
-	u := model.User{
-		Id: params.Id,
-	}
+	u := Usercreate{}
+	u.Id = params.Id
+
 	err = u.Get(tx)
 	if err != nil {
 		log.Println("can't get user")
 		userSqlError(w, err)
 		return
+	}
+
+	companies, err := u.GetCompanies(tx)
+	for _, company := range companies {
+		u.Companies = append(u.Companies, Company{
+			Name: Valuedisplay{
+				Value:   company.Id,
+				Display: company.Name,
+			},
+		})
 	}
 
 	log.Println("user id : ", params.Id, "user : ", u)
