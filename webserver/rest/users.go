@@ -44,9 +44,9 @@ type Valuedisplay struct {
 }
 
 type Company struct {
-	Name       Valuedisplay `json:"data"`
-	SearchName string       `json:"searchname"`
-	City       Valuedisplay `json:"city"`
+	model.Company
+	CityAndCountry model.CityAndCountry_wtr `json:"city_and_country"`
+	SearchName     string                   `json:"searchname"`
 }
 
 // UserListParams is params struct for UserList query
@@ -60,8 +60,8 @@ type UserListParams struct {
 // UserCreate structure (json)
 type Usercreate struct {
 	model.User
-	City      Valuedisplay `json:"city"`
-	Companies []Company    `json:"companies"`
+	CityAndCountry model.CityAndCountry_wtr `json:"city_and_country"`
+	Companies      []Company                `json:"companies"`
 }
 
 // Userlogin structure (json)
@@ -229,7 +229,8 @@ func userSet(w http.ResponseWriter, r *http.Request, proute routes.Proute, creat
 	u := proute.Json.(*Usercreate)
 
 	// hack
-	u.City_geonameid = u.City.Value
+	u.City_geonameid = u.CityAndCountry.City.Geonameid
+	log.Println("city : ", u.City_geonameid)
 
 	tx, err := db.DB.Beginx()
 	if err != nil {
@@ -264,10 +265,10 @@ func userSet(w http.ResponseWriter, r *http.Request, proute routes.Proute, creat
 	}
 
 	for _, form_company := range u.Companies {
-		if form_company.Name.Value > 0 { // companie wanted already exists
-			if companyIndex(form_company.Name.Value, companies) == -1 {
+		if form_company.Id > 0 { // companie wanted already exists
+			if companyIndex(form_company.Id, companies) == -1 {
 				company := model.Company{
-					Id: form_company.Name.Value,
+					Id: form_company.Id,
 				}
 				err = company.Get(tx)
 				if err != nil {
@@ -278,7 +279,7 @@ func userSet(w http.ResponseWriter, r *http.Request, proute routes.Proute, creat
 				}
 
 				// update the company City
-				company.City_geonameid = form_company.City.Value
+				company.City_geonameid = form_company.CityAndCountry.City.Geonameid
 				err = company.Update(tx)
 				if err != nil {
 					log.Println("5")
@@ -293,7 +294,7 @@ func userSet(w http.ResponseWriter, r *http.Request, proute routes.Proute, creat
 			log.Println("creating a new company : ", form_company.SearchName)
 			company := model.Company{
 				Name:           form_company.SearchName,
-				City_geonameid: form_company.City.Value,
+				City_geonameid: form_company.CityAndCountry.City.Geonameid,
 			}
 			err = company.Create(tx)
 			if err != nil {
@@ -359,14 +360,33 @@ func UserInfos(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		return
 	}
 
+	log.Println("getting city : ", u.User.City_geonameid)
+	err = u.CityAndCountry.Get(tx, u.User.City_geonameid, 48) // todo: take good lang
+	if err != nil {
+		log.Println("can't get user city and country", err)
+		//userSqlError(w, err)
+		//return
+	}
+	log.Println("city and country : ", u.CityAndCountry)
+
 	companies, err := u.GetCompanies(tx)
+	if err != nil {
+		log.Println("can't get user companies")
+		userSqlError(w, err)
+		return
+	}
 	for _, company := range companies {
-		u.Companies = append(u.Companies, Company{
-			Name: Valuedisplay{
-				Value:   company.Id,
-				Display: company.Name,
-			},
-		})
+		mcomp := Company{}
+		mcomp.Id = company.Id
+		mcomp.Name = company.Name
+
+		err = mcomp.CityAndCountry.Get(tx, company.City_geonameid, 48) // todo: take good lang
+		if err != nil {
+			log.Println("can't get company city and country", err)
+			//userSqlError(w, err)
+			//return
+		}
+		u.Companies = append(u.Companies, mcomp)
 	}
 
 	log.Println("user id : ", params.Id, "user : ", u)
