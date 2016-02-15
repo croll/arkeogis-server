@@ -71,7 +71,7 @@ type City_wtr struct {
 
 // Get the city from the database
 func (u *City_wtr) Get(tx *sqlx.Tx) error {
-	var q = "SELECT city.*, city_tr.* FROM \"city\" LEFT JOIN \"city_tr\" ON city_geonameid = geonameid WHERE geonameid=:geonameid AND (lang_id=:lang_id OR lang_id=1) GROUP BY city.geonameid, city_tr.city_geonameid, city_tr.lang_id ORDER BY city_tr.lang_id DESC"
+	var q = "SELECT city.*, city_tr.* FROM \"city\" LEFT JOIN \"city_tr\" ON city_geonameid = geonameid WHERE geonameid=:geonameid AND (lang_id=:lang_id OR lang_id=1) GROUP BY city.geonameid, city_tr.city_geonameid, city_tr.lang_id ORDER BY city_tr.lang_id DESC LIMIT 1"
 	stmt, err := tx.PrepareNamed(q)
 	if err != nil {
 		return err
@@ -128,7 +128,7 @@ type Country_wtr struct {
 
 // Get the country from the database
 func (u *Country_wtr) Get(tx *sqlx.Tx) error {
-	var q = "SELECT country.*, country_tr.* FROM \"country\" LEFT JOIN \"country_tr\" ON country_geonameid = geonameid WHERE geonameid=:geonameid AND (lang_id=:lang_id OR lang_id=1) GROUP BY country.geonameid, country_tr.country_geonameid, country_tr.lang_id ORDER BY country_tr.lang_id DESC"
+	var q = "SELECT country.*, country_tr.* FROM \"country\" LEFT JOIN \"country_tr\" ON country_geonameid = geonameid WHERE geonameid=:geonameid AND (lang_id=:lang_id OR lang_id=1) GROUP BY country.geonameid, country_tr.country_geonameid, country_tr.lang_id ORDER BY country_tr.lang_id DESC LIMIT 1"
 	stmt, err := tx.PrepareNamed(q)
 	if err != nil {
 		return err
