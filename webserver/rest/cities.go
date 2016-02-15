@@ -24,6 +24,7 @@ package rest
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"reflect"
 
 	"net/http"
@@ -40,6 +41,11 @@ type CityListParams struct {
 	Search     string `default:"" regexp:"^[^%]*$"`
 }
 
+type CityGetParams struct {
+	Id_city int    `default:"0" min:"0"`
+	Lang    string `default:"en" min:"2" max:"2"`
+}
+
 func init() {
 	Routes := []*routes.Route{
 		&routes.Route{
@@ -52,6 +58,13 @@ func init() {
 			Func:        CityList,
 			Description: "Search for cities available in a country, using a search string",
 			Params:      reflect.TypeOf(CityListParams{}),
+			Method:      "GET",
+		},
+		&routes.Route{
+			Path:        "/api/cities/{id_city:[0-9]+}",
+			Func:        CityGet,
+			Description: "Get a city, using a city id",
+			Params:      reflect.TypeOf(CityGetParams{}),
 			Method:      "GET",
 		},
 		&routes.Route{
@@ -86,6 +99,37 @@ func CityList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	}
 
 	j, err := json.Marshal(cities)
+	w.Write(j)
+}
+
+func CityGet(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+
+	params := proute.Params.(*CityGetParams)
+
+	res := model.CityAndCountry_wtr{}
+
+	tx, err := db.DB.Beginx()
+	if err != nil {
+		log.Println("err on begin", err)
+		routes.ServerError(w, 500, "INTERNAL ERROR")
+		return
+	}
+
+	err = res.Get(tx, params.Id_city, 48) // todo: lang ...
+	if err != nil {
+		log.Println("err while getting city and country: ", err)
+		routes.ServerError(w, 500, "INTERNAL ERROR")
+		return
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		log.Println("err on commit", err)
+		routes.ServerError(w, 500, "INTERNAL ERROR")
+		return
+	}
+
+	j, err := json.Marshal(res)
 	w.Write(j)
 }
 
