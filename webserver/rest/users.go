@@ -252,58 +252,89 @@ func userSet(w http.ResponseWriter, r *http.Request, proute routes.Proute, creat
 		return
 	}
 
-	// Companies
-	var companies []model.Company
-	if !create {
-		companies, err = u.GetCompanies(tx)
-		if err != nil {
-			log.Println("3")
-			userSqlError(w, err)
-			tx.Rollback()
-			return
+	/*
+		// Companies
+		var companies []model.Company
+		if !create {
+			companies, err = u.GetCompanies(tx)
+			if err != nil {
+				log.Println("3")
+				userSqlError(w, err)
+				tx.Rollback()
+				return
+			}
 		}
-	}
 
-	for _, form_company := range u.Companies {
-		if form_company.Id > 0 { // companie wanted already exists
-			if companyIndex(form_company.Id, companies) == -1 {
+		for _, form_company := range u.Companies {
+			log.Println("companie to update : ", form_company)
+			if form_company.Id > 0 { // companie wanted already exists
+				if companyIndex(form_company.Id, companies) == -1 {
+					company := model.Company{
+						Id: form_company.Id,
+					}
+					err = company.Get(tx)
+					if err != nil {
+						log.Println("4")
+						userSqlError(w, err)
+						tx.Rollback()
+						return
+					}
+
+					// update the company City
+					log.Println("updating company...", company)
+					company.City_geonameid = form_company.CityAndCountry.City.Geonameid
+					err = company.Update(tx)
+					if err != nil {
+						log.Println("5")
+						userSqlError(w, err)
+						tx.Rollback()
+						return
+					}
+
+					companies = append(companies, company)
+				}
+			} else if len(form_company.SearchName) > 0 { // create a new company
+				log.Println("creating a new company : ", form_company.SearchName)
 				company := model.Company{
-					Id: form_company.Id,
+					Name:           form_company.SearchName,
+					City_geonameid: form_company.CityAndCountry.City.Geonameid,
 				}
-				err = company.Get(tx)
+				err = company.Create(tx)
 				if err != nil {
-					log.Println("4")
-					userSqlError(w, err)
+					log.Println("6")
 					tx.Rollback()
+					userSqlError(w, err)
 					return
 				}
-
-				// update the company City
-				company.City_geonameid = form_company.CityAndCountry.City.Geonameid
-				err = company.Update(tx)
-				if err != nil {
-					log.Println("5")
-					userSqlError(w, err)
-					tx.Rollback()
-					return
-				}
-
 				companies = append(companies, company)
 			}
-		} else if len(form_company.SearchName) > 0 { // create a new company
-			log.Println("creating a new company : ", form_company.SearchName)
-			company := model.Company{
-				Name:           form_company.SearchName,
-				City_geonameid: form_company.CityAndCountry.City.Geonameid,
-			}
-			err = company.Create(tx)
+		}
+	*/
+
+	var companies []model.Company
+	for _, form_company := range u.Companies {
+		if form_company.Id > 0 {
+			form_company.City_geonameid = form_company.CityAndCountry.City.City_geonameid
+			log.Println("updating company : ", form_company.Company)
+			err = form_company.Update(tx)
 			if err != nil {
-				log.Println("6")
+				log.Println("error while updating a company", err)
 				tx.Rollback()
 				userSqlError(w, err)
 				return
 			}
-			companies = append(companies, company)
+			companies = append(companies, form_company.Company)
+		} else if len(form_company.Name) > 0 {
+			form_company.City_geonameid = form_company.CityAndCountry.City.City_geonameid
+			log.Println("creating company : ", form_company.Company)
+			err = form_company.Create(tx)
+			if err != nil {
+				log.Println("error while adding a company", err)
+				tx.Rollback()
+				userSqlError(w, err)
+				return
+			}
+			companies = append(companies, form_company.Company)
 		}
 	}
 
@@ -360,7 +391,6 @@ func UserInfos(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		return
 	}
 
-	log.Println("getting city : ", u.User.City_geonameid)
 	err = u.CityAndCountry.Get(tx, u.User.City_geonameid, 48) // todo: take good lang
 	if err != nil {
 		log.Println("can't get user city and country", err)
