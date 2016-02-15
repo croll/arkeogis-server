@@ -163,22 +163,23 @@ func printPsql(sql Sql) {
 		tablestr += fmt.Sprintf("}")
 		tables = append(tables, tablestr)
 
-		insertrowsquoted := make([]string, len(insertrows))
-		insertrowsvalues := make([]string, len(insertrows))
-		updaterowsquoted := make([]string, len(insertrows))
-		for i, rowname := range insertrows {
-			insertrowsquoted[i] = fmt.Sprintf("\\\"%s\\\"", rowname)
+		insertrowsquoted := []string{}
+		insertrowsvalues := []string{}
+		updaterowsquoted := []string{}
+
+		for _, rowname := range insertrows {
+			insertrowsquoted = append(insertrowsquoted, fmt.Sprintf("\\\"%s\\\"", rowname))
 			if rowname == "created_at" || rowname == "updated_at" {
-				insertrowsvalues[i] = fmt.Sprintf("now()")
+				insertrowsvalues = append(insertrowsvalues, fmt.Sprintf("now()"))
 			} else {
-				insertrowsvalues[i] = fmt.Sprintf(":%s", rowname)
+				insertrowsvalues = append(insertrowsvalues, fmt.Sprintf(":%s", rowname))
 			}
 
 			if rowname == "updated_at" {
-				updaterowsquoted[i] = fmt.Sprintf("\\\"%s\\\" = now()", rowname)
+				updaterowsquoted = append(updaterowsquoted, fmt.Sprintf("\\\"%s\\\" = now()", rowname))
 			} else {
 				if rowname != "created_at" {
-					updaterowsquoted[i] = fmt.Sprintf("\\\"%s\\\" = :%s", rowname, rowname)
+					updaterowsquoted = append(updaterowsquoted, fmt.Sprintf("\\\"%s\\\" = :%s", rowname, rowname))
 				}
 			}
 		}
