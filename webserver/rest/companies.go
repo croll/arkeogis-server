@@ -39,6 +39,15 @@ type CompanyListParams struct {
 	Search string
 }
 
+type CompanyGetParams struct {
+	Id int `json:"id"`
+}
+
+type CompanyGetResult struct {
+	model.Company
+	CityAndCountry model.CityAndCountry_wtr `json:"city_and_country"`
+}
+
 func init() {
 	Routes := []*routes.Route{
 		&routes.Route{
@@ -50,6 +59,12 @@ func init() {
 			Path:   "/api/companies",
 			Func:   CompanyList,
 			Params: reflect.TypeOf(CompanyListParams{}),
+			Method: "GET",
+		},
+		&routes.Route{
+			Path:   "/api/companies/{id}",
+			Func:   CompanyGet,
+			Params: reflect.TypeOf(CompanyGetParams{}),
 			Method: "GET",
 		},
 		&routes.Route{
@@ -80,6 +95,44 @@ func CompanyList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	}
 
 	j, err := json.Marshal(companies)
+	w.Write(j)
+}
+
+func CompanyGet(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+	params := proute.Params.(*CompanyGetParams)
+
+	res := CompanyGetResult{}
+	res.Id = params.Id
+
+	tx, err := db.DB.Beginx()
+	if err != nil {
+		log.Println("err on begin", err)
+		routes.ServerError(w, 500, "INTERNAL ERROR")
+		return
+	}
+
+	err = res.Company.Get(tx)
+	if err != nil {
+		log.Println("err on get", err)
+		routes.ServerError(w, 500, "INTERNAL ERROR")
+		return
+	}
+
+	err = res.CityAndCountry.Get(tx, res.Company.City_geonameid, 48) // todo: lang !
+	if err != nil {
+		log.Println("err on get", err)
+		//routes.ServerError(w, 500, "INTERNAL ERROR")
+		//return
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		log.Println("err on commit", err)
+		routes.ServerError(w, 500, "INTERNAL ERROR")
+		return
+	}
+
+	j, err := json.Marshal(res)
 	w.Write(j)
 }
 
