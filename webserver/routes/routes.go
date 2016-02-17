@@ -226,7 +226,7 @@ func handledRoute(myroute *Route, rw http.ResponseWriter, r *http.Request) {
 	// Retrieve the user from db
 	user.Get(tx)
 	log.Println("user is : ", user)
-	s.Values["user"] = user
+	s.Set("user", user)
 
 	// Check global permsissions
 	permok := true

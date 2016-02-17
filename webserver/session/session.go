@@ -97,6 +97,11 @@ func (session *Session) GetIntDef(key string, def int) int {
 	return def
 }
 
+// Set any value to a key string.
+func (session *Session) Set(key string, value interface{}) {
+	session.Values[key] = value
+}
+
 var sessions map[string]*Session
 
 func init() {
