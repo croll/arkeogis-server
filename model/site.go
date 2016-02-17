@@ -47,3 +47,9 @@ func (s *Site) Update(tx *sqlx.Tx) error {
 func (s *Site) AddSiteRange(tx *sqlx.Tx) error {
 	return nil
 }
+
+//// @beve: hack added so compilation work...
+type Site_range_tr struct {
+	Bibliography string
+	Comment      string
+}
