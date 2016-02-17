@@ -280,6 +280,11 @@ type Project__wms_map struct {
 	Wms_map_id int `db:"wms_map_id" json:"wms_map_id"` // Wms_map.Id
 }
 
+type Session struct {
+	Token string `db:"token" json:"token"`
+	Value string `db:"value" json:"value"`
+}
+
 type Shapefile struct {
 	Id                   int            `db:"id" json:"id"`
 	Creator_user_id      int            `db:"creator_user_id" json:"creator_user_id"` // User.Id
@@ -581,3 +586,6 @@ const Database__continent_UpdateStr = ""
 const Lang_tr_InsertStr = "\"name\""
 const Lang_tr_InsertValuesStr = ":name"
 const Lang_tr_UpdateStr = "\"name\" = :name"
+const Session_InsertStr = "\"value\""
+const Session_InsertValuesStr = ":value"
+const Session_UpdateStr = "\"value\" = :value"
