@@ -105,7 +105,7 @@ func (session *Session) Set(key string, value interface{}) {
 var sessions map[string]*Session
 
 func init() {
-	sessionDuration = 20 * time.Minute
+	sessionDuration = 7 * 24 * time.Hour // 7 days
 	sessions = make(map[string]*Session, 0)
 	rand.Seed(time.Now().UnixNano())
 }
