@@ -77,11 +77,14 @@ func DefaultStruct(o interface{}) {
 }
 
 func defaultStruct(st reflect.Type, vt reflect.Value, field *reflect.StructField) {
+	log.Println("field: ", field)
+	if vt.IsNil() {
+		return
+	}
 	switch st.Kind() {
 	case reflect.Ptr:
 		st = st.Elem()
 		vt = vt.Elem()
-		defaultStruct(st, vt, nil)
 	case reflect.Struct:
 		for i := 0; i < st.NumField(); i++ {
 			field := st.Field(i)
