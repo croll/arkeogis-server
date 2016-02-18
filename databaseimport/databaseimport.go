@@ -496,6 +496,7 @@ func (di *DatabaseImport) processGeoDatas(f *Fields) (*geo.Point, error) {
 	var point *geo.Point
 	var epsg int
 	var err error
+	var pointToBeReturned *geo.Point
 	hasError := false
 	// If projection system is not set, we assume it's 4326 (WGS84)
 	if f.PROJECTION_SYSTEM == "" {
@@ -531,31 +532,32 @@ func (di *DatabaseImport) processGeoDatas(f *Fields) (*geo.Point, error) {
 	} else {
 		point, err = geo.NewPoint(epsg, lon, lat)
 	}
+	if err != nil {
+		di.AddError(f.PROJECTION_SYSTEM, "IMPORT.CSVFIELD_GEO.T_ERROR_UNABLE_TO_GET_WKT", "EPSG", "LATITUDE", "LONGITUDE")
+	}
 	// Datas are already in WGS84, leave it untouched
 	if epsg == 4326 {
-		if err != nil {
-			di.AddError(f.PROJECTION_SYSTEM, "IMPORT.CSVFIELD_GEO.T_ERROR_UNABLE_TO_GET_WKT", "EPSG", "LATITUDE", "LONGITUDE")
-			return nil, err
-		}
-		return point, nil
+		pointToBeReturned = point
 	} else {
-		// Couvert datas to WGS84
+		// Convert datas to WGS84
 		point2, err := point.ToWGS84()
 		if err != nil {
 			di.AddError(f.PROJECTION_SYSTEM+" "+f.LONGITUDE+" "+f.LATITUDE, "IMPORT.CSVFIELD_GEO.T_ERROR_UNABLE_TO_CONVERT_TO_WGS84", "EPSG", "LATITUDE", "LONGITUDE")
-			return nil, err
+			pointToBeReturned = nil
 		}
-		if err != nil {
-			di.AddError(f.PROJECTION_SYSTEM+" "+f.LONGITUDE+" "+f.LATITUDE, "IMPORT.CSVFIELD_GEO.T_ERROR_UNABLE_TO_GET_WKT", "EPSG", "LATITUDE", "LONGITUDE")
-			return nil, err
-		}
-		return point2, nil
+		/*
+			if err != nil {
+				di.AddError(f.PROJECTION_SYSTEM+" "+f.LONGITUDE+" "+f.LATITUDE, "IMPORT.CSVFIELD_GEO.T_ERROR_UNABLE_TO_GET_WKT", "EPSG", "LATITUDE", "LONGITUDE")
+				pointToBeReturned = nil
+			}
+		*/
+		pointToBeReturned = point2
 	}
 	if hasError {
 		di.AddError(f.PROJECTION_SYSTEM+" "+f.LONGITUDE+" "+f.LATITUDE, "IMPORT.CSVFIELD_GEO.T_ERROR_UNABLE_TO_CREATE_GEOMETRY", "EPSG", "LATITUDE", "LONGITUDE")
 		return nil, err
 	}
-	return nil, nil
+	return pointToBeReturned, nil
 }
 
 // processGeonames get the city name/lat/lon from the database and assign it TODO
@@ -590,9 +592,8 @@ func (di *DatabaseImport) processCharacs(f *Fields) ([]int, error) {
 	if f.CARAC_NAME == "" {
 		di.AddError(f.CARAC_NAME, "IMPORT.CSVFIELD_CARAC_NAME.T_CHECK_EMPTY", "CARAC_NAME")
 		return caracs, errors.New("invalid carac name")
-	} else {
-		di.CurrentCharac = f.CARAC_NAME
 	}
+	di.CurrentCharac = f.CARAC_NAME
 	if f.CARAC_LVL1 != "" {
 		path += "->" + f.CARAC_LVL1
 	} else {
@@ -629,7 +630,7 @@ func (di *DatabaseImport) cacheCharacs() (map[string]map[string]int, error) {
 	if err != nil {
 		return caracs, err
 	}
-	for name, _ := range caracsRoot {
+	for name := range caracsRoot {
 		caracs[name], err = model.GetCharacPathsFromLangID(name, di.Database.Default_language)
 		if err != nil {
 			return caracs, err
