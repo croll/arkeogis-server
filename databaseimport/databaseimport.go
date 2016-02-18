@@ -88,6 +88,7 @@ func (e *ImportError) Error() string {
 	return fmt.Sprintf("line %d, column %s: %s", e.Line, strings.Join(e.Columns, ","), e.ErrMsg)
 }
 
+// AddError structures errors to be logged or returned to client
 func (di *DatabaseImport) AddError(value string, errMsg string, columns ...string) {
 
 	di.Errors = append(di.Errors, &ImportError{
@@ -234,7 +235,7 @@ func (di *DatabaseImport) processDatabaseName(name string) error {
 
 	// Check database name length
 	if len(name) > 50 {
-		di.AddError("", "IMPORT.FORM_DATABASE_NAME.T_CHECK_TOO_LONG", "MAIN_CITY_NAME")
+		di.AddError("", "IMPORT.FORM_DATABASE_NAME.T_CHECK_TOO_LONG", "DATABASE_NAME")
 		return errors.New("Database name too long")
 
 	}
@@ -275,8 +276,6 @@ func (di *DatabaseImport) processSiteInfos(f *Fields) {
 	// MAIN_CITY_NAME
 	if f.MAIN_CITY_NAME != "" {
 		di.CurrentSite.City_name = f.MAIN_CITY_NAME
-	} else {
-		di.AddError("", "IMPORT.CSVFIELD_MAIN_CITY_NAME.T_CHECK_EMPTY", "MAIN_CITY_NAME")
 	}
 
 	// CITY_CENTROID
