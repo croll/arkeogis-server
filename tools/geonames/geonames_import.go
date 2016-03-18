@@ -185,6 +185,7 @@ func importLanguageCodes(rc io.Reader) error {
 	}
 	// Langs map stores the langs and associates them to their id for further use.
 	tx := db.DB.MustBegin()
+	tx.MustExec("SET CONSTRAINTS ALL DEFERRED")
 	// Store langs in database
 	stmt, err := tx.Prepare("INSERT INTO lang (iso_code, active) VALUES ($1, false) RETURNING id")
 	lineNum := 0
@@ -253,6 +254,7 @@ func importCountries(rc io.Reader) error {
 	// Make an index from existing countries in database
 	cacheExistingCountries()
 	tx := db.DB.MustBegin()
+	tx.MustExec("SET CONSTRAINTS ALL DEFERRED")
 	var stmtInsert1, stmtInsert2, stmtUpdate1, stmtUpdate2 *sql.Stmt
 	var errStmt1, errStmt2 error
 	if len(CachedCountries) > 1 {
@@ -270,6 +272,9 @@ func importCountries(rc io.Reader) error {
 	if errStmt2 != nil {
 		return errStmt2
 	}
+
+	rgxp_onlycities, _ := regexp.Compile("^PCLI")
+
 	for scan.Scan() {
 		line := scan.Text()
 		s := strings.Split(line, "\t")
@@ -278,8 +283,7 @@ func importCountries(rc io.Reader) error {
 			continue
 		}
 		// get only cities
-		rgxp, _ := regexp.Compile("^PCLI")
-		if !rgxp.MatchString(strings.TrimSpace(s[7])) {
+		if !rgxp_onlycities.MatchString(strings.TrimSpace(s[7])) {
 			continue
 		}
 		if strings.TrimSpace(s[0]) == "" {
@@ -350,6 +354,7 @@ func importCities(rc io.Reader) error {
 	scan := bufio.NewScanner(rc)
 	cacheExistingCities()
 	tx := db.DB.MustBegin()
+	tx.MustExec("SET CONSTRAINTS ALL DEFERRED")
 	var stmtInsert1, stmtInsert2, stmtUpdate1, stmtUpdate2 *sql.Stmt
 	var errStmt1, errStmt2 error
 	// var lon, lat float64
@@ -369,6 +374,9 @@ func importCities(rc io.Reader) error {
 	if errStmt2 != nil {
 		return errStmt2
 	}
+
+	rgxp_onlycities, _ := regexp.Compile("^PPL.*")
+
 	for scan.Scan() {
 		line := scan.Text()
 		s := strings.Split(line, "\t")
@@ -377,8 +385,7 @@ func importCities(rc io.Reader) error {
 			continue
 		}
 		// get only cities
-		rgxp, _ := regexp.Compile("^PPL.*")
-		if !rgxp.MatchString(strings.TrimSpace(s[7])) {
+		if !rgxp_onlycities.MatchString(strings.TrimSpace(s[7])) {
 			continue
 		}
 		if strings.TrimSpace(s[0]) == "" {
@@ -499,6 +506,7 @@ func importContinents() error {
 		},
 	}
 	tx := db.DB.MustBegin()
+	tx.MustExec("SET CONSTRAINTS ALL DEFERRED")
 	var stmtInsert1, stmtInsert2, stmtUpdate1, stmtUpdate2 *sql.Stmt
 	var errStmt1, errStmt2 error
 	if len(CachedContinentsById) > 1 {
@@ -606,6 +614,7 @@ func importAlternateNames(rc io.Reader) error {
 		}
 	}
 	tx := db.DB.MustBegin()
+	tx.MustExec("SET CONSTRAINTS ALL DEFERRED")
 	stmtContinent, err := tx.Prepare("INSERT INTO continent_tr (continent_geonameid, lang_id, name, name_ascii) VALUES ($1, $2, $3, $4)")
 	if err != nil {
 		return err
