@@ -305,6 +305,7 @@ func importCountries(rc io.Reader) error {
 				return err
 			}
 		} else {
+			fmt.Println("S8", s[8])
 			if _, err := stmtInsert1.Exec(GeonameID, s[8], time.Now(), time.Now()); err != nil {
 				tx.Rollback()
 				return err
