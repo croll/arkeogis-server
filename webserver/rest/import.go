@@ -24,7 +24,6 @@ package rest
 import (
 	//	"github.com/croll/arkeogis-server/csvimport"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -32,6 +31,7 @@ import (
 	//	"strings"
 
 	"github.com/croll/arkeogis-server/databaseimport"
+	"github.com/croll/arkeogis-server/model"
 	routes "github.com/croll/arkeogis-server/webserver/routes"
 )
 
@@ -43,6 +43,7 @@ func init() {
 			Func:        ImportStep1,
 			Method:      "POST",
 			Json:        reflect.TypeOf(ImportStep1T{}),
+			Permissions: []string{},
 		},
 	}
 	routes.RegisterMultiple(Routes)
@@ -50,23 +51,28 @@ func init() {
 
 // ImportStep1T struct holds information provided by user
 type ImportStep1T struct {
-	DatabaseLang       int
-	DatabaseName       string
-	SelectedContinent  int
-	SelectedCountries  []int
-	UseGeonames        bool
-	GeographicalExtent string
-	Separator          string
-	EchapCharacter     string
-	File               *routes.File
+	model.Database
+	DatabaseLang      int
+	SelectedContinent int
+	SelectedCountries []int
+	UseGeonames       bool
+	Separator         string
+	EchapCharacter    string
+	File              *routes.File
 }
 
 // ImportStep1 is called by rest
 func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
+	// fmt.Println("- - -------------- LALALALA")
 	params := proute.Json.(*ImportStep1T)
 
-	fmt.Println(params)
+	/*
+		fmt.Println("_______________________")
+		fmt.Println(params)
+		fmt.Println("_______________________")
+		fmt.Println(filepath)
+	*/
 	filepath := "./uploaded/" + params.File.Name
 	outfile, err := os.Create(filepath)
 	if err != nil {
@@ -91,7 +97,7 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	// Init import
 	dbImport := new(databaseimport.DatabaseImport)
-	dbImport.New(parser, 1, params.DatabaseName, params.DatabaseLang, true)
+	dbImport.New(parser, 1, params.Name, params.DatabaseLang, true)
 
 	// Analyze csv headers
 	if err := parser.CheckHeader(); err != nil {

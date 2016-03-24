@@ -170,7 +170,7 @@ func (di *DatabaseImport) New(parser *Parser, uid int, databaseName string, lang
 }
 
 // periodRegexp is used to match if starting and ending periods are valid
-var periodRegexp = regexp.MustCompile(`(\d{0,}):?(\d{0,})`)
+var periodRegexp = regexp.MustCompile(`(\d{0,}):(\d{0,})`)
 
 // setDefaultValues init the di.Database object with default values
 func (di *DatabaseImport) setDefaultValues() {
