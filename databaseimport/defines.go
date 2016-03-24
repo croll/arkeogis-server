@@ -36,10 +36,8 @@ type Fields struct {
 	STATE_OF_KNOWLEDGE   string
 	CITY_CENTROID        string
 	OCCUPATION           string
-	START_DATE_QUALIFIER string
-	START_DATE           string
-	END_DATE_QUALIFIER   string
-	END_DATE             string
+	STARTING_PERIOD      string
+	ENDING_PERIOD        string
 	CARAC_NAME           string
 	CARAC_LVL1           string
 	CARAC_LVL2           string
@@ -51,7 +49,7 @@ type Fields struct {
 }
 
 var (
-	mandatoryCsvColumns = map[string]bool{"SITE_SOURCE_ID": false, "CARAC_NAME": false, "CARAC_LVL1": false, "CARAC_LVL2": false, "CARAC_LVL3": false, "CARAC_LVL4": false, "CARAC_EXP": false, "MAIN_CITY_NAME": false, "CITY_CENTROID": false, "STATE_OF_KNOWLEDGE": false, "OCCUPATION": false, "SITE_NAME": false, "START_DATE_QUALIFIER": false, "START_DATE": false, "END_DATE_QUALIFIER": false, "END_DATE": false, "BIBLIOGRAPHY": false, "COMMENTS": false, "GEONAME_ID": false}
+	mandatoryCsvColumns = map[string]bool{"SITE_SOURCE_ID": false, "CARAC_NAME": false, "CARAC_LVL1": false, "CARAC_LVL2": false, "CARAC_LVL3": false, "CARAC_LVL4": false, "CARAC_EXP": false, "MAIN_CITY_NAME": false, "CITY_CENTROID": false, "STATE_OF_KNOWLEDGE": false, "OCCUPATION": false, "SITE_NAME": false, "STARTING_PERIOD": false, "ENDING_PERIOD": false, "BIBLIOGRAPHY": false, "COMMENTS": false, "GEONAME_ID": false}
 	//mandatoryFields       = [11]string{"SITE_SOURCE_ID", "DATABASE_SOURCE_NAME", "MAIN_CITY_NAME", "CITY_CENTROID", "STATE_OF_KNOWLEDGE", "OCCUPATION"}
 	//	mandatoryFields = map[string]bool{"SITE_SOURCE_ID": false, "DATABASE_SOURCE_NAME": false, "MAIN_CITY_NAME": false, "CITY_CENTROID": false, "STATE_OF_KNOWLEDGE": false, "OCCUPATION": false}
 	//mandatoryHeaderFields = [2]string{"SITE_NAME", "BIBLIOGRAPHY", "COMMENTS"}

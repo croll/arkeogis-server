@@ -24,6 +24,8 @@ package databaseimport
 import (
 	"errors"
 	"fmt"
+	"math"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -57,9 +59,7 @@ type DatabaseFullInfos struct {
 type SiteRangeFullInfos struct {
 	model.Site_range
 	model.Site_range_tr
-	Characs     []int
-	NoStartDate bool
-	NoEndDate   bool
+	Characs []int
 }
 
 // SiteFullInfos is a meta struct which stores all the informations about a site
@@ -88,6 +88,7 @@ func (e *ImportError) Error() string {
 	return fmt.Sprintf("line %d, column %s: %s", e.Line, strings.Join(e.Columns, ","), e.ErrMsg)
 }
 
+// AddError structures errors to be logged or returned to client
 func (di *DatabaseImport) AddError(value string, errMsg string, columns ...string) {
 
 	di.Errors = append(di.Errors, &ImportError{
@@ -145,7 +146,7 @@ func (di *DatabaseImport) New(parser *Parser, uid int, databaseName string, lang
 	}
 
 	// Cache characs defined in Arkeogis
-	// TODO: Get only needed caracs filtering by user id and project
+	// TODO: Get only needed characs filtering by user id and project
 	di.ArkeoCaracs = map[string]map[string]int{}
 	di.ArkeoCaracs, err = di.cacheCharacs()
 	if err != nil {
@@ -167,6 +168,9 @@ func (di *DatabaseImport) New(parser *Parser, uid int, databaseName string, lang
 
 	return nil
 }
+
+// periodRegexp is used to match if starting and ending periods are valid
+var periodRegexp = regexp.MustCompile(`(\d{0,}):?(\d{0,})`)
 
 // setDefaultValues init the di.Database object with default values
 func (di *DatabaseImport) setDefaultValues() {
@@ -216,8 +220,6 @@ func (di *DatabaseImport) ProcessRecord(f *Fields) {
 	// Init the site range if necessary
 	if di.CurrentSite.NbSiteRanges == 0 {
 		di.CurrentSite.CurrentSiteRange = SiteRangeFullInfos{}
-		di.CurrentSite.CurrentSiteRange.NoStartDate = true
-		di.CurrentSite.CurrentSiteRange.NoEndDate = true
 	}
 
 	// Process site range infos
@@ -234,7 +236,7 @@ func (di *DatabaseImport) processDatabaseName(name string) error {
 
 	// Check database name length
 	if len(name) > 50 {
-		di.AddError("", "IMPORT.FORM_DATABASE_NAME.T_CHECK_TOO_LONG", "MAIN_CITY_NAME")
+		di.AddError("", "IMPORT.FORM_DATABASE_NAME.T_CHECK_TOO_LONG", "DATABASE_NAME")
 		return errors.New("Database name too long")
 
 	}
@@ -275,8 +277,6 @@ func (di *DatabaseImport) processSiteInfos(f *Fields) {
 	// MAIN_CITY_NAME
 	if f.MAIN_CITY_NAME != "" {
 		di.CurrentSite.City_name = f.MAIN_CITY_NAME
-	} else {
-		di.AddError("", "IMPORT.CSVFIELD_MAIN_CITY_NAME.T_CHECK_EMPTY", "MAIN_CITY_NAME")
 	}
 
 	// CITY_CENTROID
@@ -387,82 +387,28 @@ func (di *DatabaseImport) getOccupation(occupation string) (val string, err erro
 func (di *DatabaseImport) processSiteRangeInfos(f *Fields) {
 
 	// CARACTERISATIONS
-	caracs, err := di.processCharacs(f)
-	di.CurrentSite.CurrentSiteRange.Characs = caracs
+	characs, err := di.processCharacs(f)
+	di.CurrentSite.CurrentSiteRange.Characs = characs
 	if err != nil {
 	}
 
-	// START_DATE_QUALIFIER
-	switch strings.ToLower(f.START_DATE_QUALIFIER) {
-	case di.lowerTranslation("IMPORT.CSVFIELD_ALL.T_LABEL_EARLIER"):
-		di.CurrentSite.CurrentSiteRange.Start_date_qualifier = "earlier"
-	case di.lowerTranslation("IMPORT.CSVFIELD_ALL.T_LABEL_LATER"):
-		di.CurrentSite.CurrentSiteRange.Start_date_qualifier = "later"
-	case di.lowerTranslation("IMPORT.CSVFIELD_ALL.T_LABEL_ABSOLUTE"):
-		di.CurrentSite.CurrentSiteRange.Start_date_qualifier = "absolute"
-	case "":
-		if di.CurrentSite.CurrentSiteRange.Start_date_qualifier == "" {
-			di.AddError(f.START_DATE_QUALIFIER, "IMPORT.CSVFIELD_START_DATE_QUALIFIER.T_CHECK_EMPTY", "START_DATE_QUALIFIER")
-		}
-	default:
-		di.AddError(f.START_DATE_QUALIFIER, "IMPORT.CSVFIELD_START_DATE_QUALIFIER.T_CHECK_INVALID", "START_DATE_QUALIFIER")
-	}
-
-	// START_DATE
-	if f.START_DATE != "" {
-		if (strings.ToLower(f.START_DATE) == di.lowerTranslation("IMPORT.CSVFIELD_ALL.T_CHECK_UNDEFINED")) || strings.ToLower(f.START_DATE) == "null" {
-			// Set an crazy date to store "undefined" value
-			di.CurrentSite.CurrentSiteRange.Start_date = 999999
-			di.CurrentSite.CurrentSiteRange.NoStartDate = false
-		} else {
-			f.START_DATE = strings.Replace(f.START_DATE, "+", "", 1)
-			if di.CurrentSite.CurrentSiteRange.End_date, err = strconv.Atoi(f.START_DATE); err != nil {
-				di.AddError(f.START_DATE, "IMPORT.CSVFIELD_START_DATE.T_CHECK_INVALID", "START_DATE")
-			} else {
-				di.CurrentSite.CurrentSiteRange.NoStartDate = false
-			}
-		}
+	// STARTING_PERIOD
+	if (f.STARTING_PERIOD != "" || strings.ToLower(f.STARTING_PERIOD) == di.lowerTranslation("IMPORT.CSVFIELD_ALL.T_CHECK_UNDETERMINED")) || strings.ToLower(f.STARTING_PERIOD) == "null" {
+		di.CurrentSite.CurrentSiteRange.Start_date1 = math.MinInt32
+		di.CurrentSite.CurrentSiteRange.Start_date2 = math.MinInt32
 	} else {
-		if di.CurrentSite.CurrentSiteRange.NoStartDate {
-			di.AddError("", "IMPORT.CSVFIELD_START_DATE.T_CHECK_EMPTY", "START_DATE")
-		}
-	}
-
-	// END_DATE_QUALIFIER
-	switch strings.ToLower(f.END_DATE_QUALIFIER) {
-	case di.lowerTranslation("IMPORT.CSVFIELD_ALL.T_LABEL_EARLIER"):
-		di.CurrentSite.CurrentSiteRange.End_date_qualifier = "earlier"
-	case di.lowerTranslation("IMPORT.CSVFIELD_ALL.T_LABEL_LATER"):
-		di.CurrentSite.CurrentSiteRange.End_date_qualifier = "later"
-	case di.lowerTranslation("IMPORT.CSVFIELD_ALL.T_LABEL_ABSOLUTE"):
-		di.CurrentSite.CurrentSiteRange.End_date_qualifier = "absolute"
-	case "":
-		if di.CurrentSite.CurrentSiteRange.End_date_qualifier == "" {
-			di.AddError(f.END_DATE_QUALIFIER, "IMPORT.CSVFIELD_END_DATE_QUALIFIER.T_CHECK_EMPTY", "END_DATE_QUALIFIER")
-		}
-	default:
-		di.AddError(f.END_DATE_QUALIFIER, "IMPORT.CSVFIELD_END_DATE_QUALIFIER.T_CHECK_INVALID", "END_DATE_QUALIFIER")
-	}
-
-	// END_DATE
-	if f.END_DATE != "" {
-		if (strings.ToLower(f.END_DATE) == di.lowerTranslation("IMPORT.CSVFIELD_ALL.T_CHECK_UNDEFINED")) || strings.ToLower(f.END_DATE) == "null" {
-			// Set an crazy date to store "undefined" value
-			di.CurrentSite.CurrentSiteRange.End_date = 999999
-			di.CurrentSite.CurrentSiteRange.NoEndDate = false
-		} else {
-			f.END_DATE = strings.Replace(f.END_DATE, "+", "", 1)
-			if di.CurrentSite.CurrentSiteRange.End_date, err = strconv.Atoi(f.END_DATE); err != nil {
-				di.AddError(f.END_DATE, "IMPORT.CSVFIELD_END_DATE.T_CHECK_INVALID", "END_DATE")
+		f.STARTING_PERIOD = strings.Replace(f.STARTING_PERIOD, "+", "", 1)
+		dates := periodRegexp.FindAllString(f.STARTING_PERIOD, -1)
+		fmt.Println("dates", dates)
+		/*
+			if di.CurrentSite.CurrentSiteRange.STARTING_PERIOD, err = strconv.Atoi(f.STARTING_PERIOD); err != nil {
+				di.AddError(f.STARTING_PERIOD, "IMPORT.CSVFIELD_STARTING_PERIOD.T_CHECK_INVALID", "STARTING_PERIOD")
 			} else {
-				di.CurrentSite.CurrentSiteRange.NoEndDate = false
 			}
-		}
-	} else {
-		if di.CurrentSite.CurrentSiteRange.NoEndDate {
-			di.AddError("", "IMPORT.CSVFIELD_END_DATE.T_CHECK_EMPTY", "END_DATE")
-		}
+		*/
 	}
+
+	// ENDING_PERIOD
 
 	// STATE_OF_KNOWLEDGE
 	switch strings.ToLower(f.STATE_OF_KNOWLEDGE) {
@@ -470,8 +416,10 @@ func (di *DatabaseImport) processSiteRangeInfos(f *Fields) {
 		di.CurrentSite.CurrentSiteRange.Knowledge_type = "not_documented"
 	case di.lowerTranslation("IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_LITERATURE"):
 		di.CurrentSite.CurrentSiteRange.Knowledge_type = "literature"
-	case di.lowerTranslation("IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_PROSPECTED"):
-		di.CurrentSite.CurrentSiteRange.Knowledge_type = "prospected"
+	case di.lowerTranslation("IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_PROSPECTED_AERIAL"):
+		di.CurrentSite.CurrentSiteRange.Knowledge_type = "prospected_aerial"
+	case di.lowerTranslation("IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_PROSPECTED_PEDESTRIAN"):
+		di.CurrentSite.CurrentSiteRange.Knowledge_type = "prospected_pedestrian"
 	case di.lowerTranslation("IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_SURVEYED"):
 		di.CurrentSite.CurrentSiteRange.Knowledge_type = "surveyed"
 	case di.lowerTranslation("IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_DIG"):
@@ -497,6 +445,7 @@ func (di *DatabaseImport) processGeoDatas(f *Fields) (*geo.Point, error) {
 	var point *geo.Point
 	var epsg int
 	var err error
+	var pointToBeReturned *geo.Point
 	hasError := false
 	// If projection system is not set, we assume it's 4326 (WGS84)
 	if f.PROJECTION_SYSTEM == "" {
@@ -532,31 +481,32 @@ func (di *DatabaseImport) processGeoDatas(f *Fields) (*geo.Point, error) {
 	} else {
 		point, err = geo.NewPoint(epsg, lon, lat)
 	}
+	if err != nil {
+		di.AddError(f.PROJECTION_SYSTEM, "IMPORT.CSVFIELD_GEO.T_ERROR_UNABLE_TO_GET_WKT", "EPSG", "LATITUDE", "LONGITUDE")
+	}
 	// Datas are already in WGS84, leave it untouched
 	if epsg == 4326 {
-		if err != nil {
-			di.AddError(f.PROJECTION_SYSTEM, "IMPORT.CSVFIELD_GEO.T_ERROR_UNABLE_TO_GET_WKT", "EPSG", "LATITUDE", "LONGITUDE")
-			return nil, err
-		}
-		return point, nil
+		pointToBeReturned = point
 	} else {
-		// Couvert datas to WGS84
+		// Convert datas to WGS84
 		point2, err := point.ToWGS84()
 		if err != nil {
 			di.AddError(f.PROJECTION_SYSTEM+" "+f.LONGITUDE+" "+f.LATITUDE, "IMPORT.CSVFIELD_GEO.T_ERROR_UNABLE_TO_CONVERT_TO_WGS84", "EPSG", "LATITUDE", "LONGITUDE")
-			return nil, err
+			pointToBeReturned = nil
 		}
-		if err != nil {
-			di.AddError(f.PROJECTION_SYSTEM+" "+f.LONGITUDE+" "+f.LATITUDE, "IMPORT.CSVFIELD_GEO.T_ERROR_UNABLE_TO_GET_WKT", "EPSG", "LATITUDE", "LONGITUDE")
-			return nil, err
-		}
-		return point2, nil
+		/*
+			if err != nil {
+				di.AddError(f.PROJECTION_SYSTEM+" "+f.LONGITUDE+" "+f.LATITUDE, "IMPORT.CSVFIELD_GEO.T_ERROR_UNABLE_TO_GET_WKT", "EPSG", "LATITUDE", "LONGITUDE")
+				pointToBeReturned = nil
+			}
+		*/
+		pointToBeReturned = point2
 	}
 	if hasError {
 		di.AddError(f.PROJECTION_SYSTEM+" "+f.LONGITUDE+" "+f.LATITUDE, "IMPORT.CSVFIELD_GEO.T_ERROR_UNABLE_TO_CREATE_GEOMETRY", "EPSG", "LATITUDE", "LONGITUDE")
 		return nil, err
 	}
-	return nil, nil
+	return pointToBeReturned, nil
 }
 
 // processGeonames get the city name/lat/lon from the database and assign it TODO
@@ -585,20 +535,19 @@ func (di *DatabaseImport) processGeonames(f *Fields) (*geo.Point, error) {
 // processCharacs analyses the fields of each charac for each level
 // It verify if charac of any level exists and if true, assign it to the site range
 func (di *DatabaseImport) processCharacs(f *Fields) ([]int, error) {
-	var caracs []int
+	var characs []int
 	path := ""
 	lvl := 1
 	if f.CARAC_NAME == "" {
 		di.AddError(f.CARAC_NAME, "IMPORT.CSVFIELD_CARAC_NAME.T_CHECK_EMPTY", "CARAC_NAME")
-		return caracs, errors.New("invalid carac name")
-	} else {
-		di.CurrentCharac = f.CARAC_NAME
+		return characs, errors.New("invalid carac name")
 	}
+	di.CurrentCharac = f.CARAC_NAME
 	if f.CARAC_LVL1 != "" {
 		path += "->" + f.CARAC_LVL1
 	} else {
 		di.AddError(f.CARAC_NAME, "IMPORT.CSVFIELD_CARAC_LVL1.T_CHECK_EMPTY")
-		return caracs, errors.New("no lvl1 carac")
+		return characs, errors.New("no lvl1 carac")
 	}
 	if f.CARAC_LVL2 != "" {
 		path += "->" + f.CARAC_LVL2
@@ -617,26 +566,26 @@ func (di *DatabaseImport) processCharacs(f *Fields) ([]int, error) {
 	caracID := di.ArkeoCaracs[f.CARAC_NAME][f.CARAC_NAME+path]
 	if caracID == 0 {
 		di.AddError(f.CARAC_NAME+path, "IMPORT.CSVFIELD_CARACTERISATION.T_CHECK_INVALID", "CARAC_LVL"+strconv.Itoa(lvl))
-		return caracs, errors.New("invalid charac")
+		return characs, errors.New("invalid charac")
 	}
-	caracs = append(caracs, caracID)
-	return caracs, nil
+	characs = append(characs, caracID)
+	return characs, nil
 }
 
 // cacheCharacs get all Characs from database and cache them
 func (di *DatabaseImport) cacheCharacs() (map[string]map[string]int, error) {
-	caracs := map[string]map[string]int{}
-	caracsRoot, err := model.GetAllCharacsRootFromLangId(di.Database.Default_language)
+	characs := map[string]map[string]int{}
+	characsRoot, err := model.GetAllCharacsRootFromLangId(di.Database.Default_language)
 	if err != nil {
-		return caracs, err
+		return characs, err
 	}
-	for name, _ := range caracsRoot {
-		caracs[name], err = model.GetCharacPathsFromLangID(name, di.Database.Default_language)
+	for name := range characsRoot {
+		characs[name], err = model.GetCharacPathsFromLangID(name, di.Database.Default_language)
 		if err != nil {
-			return caracs, err
+			return characs, err
 		}
 	}
-	return caracs, nil
+	return characs, nil
 }
 
 // valueAsBool analyses YES/NO translatable values to bool

@@ -24,6 +24,7 @@ package rest
 import (
 	//	"github.com/croll/arkeogis-server/csvimport"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -47,6 +48,7 @@ func init() {
 	routes.RegisterMultiple(Routes)
 }
 
+// ImportStep1T struct holds information provided by user
 type ImportStep1T struct {
 	DatabaseLang       int
 	DatabaseName       string
@@ -55,39 +57,41 @@ type ImportStep1T struct {
 	UseGeonames        bool
 	GeographicalExtent string
 	Separator          string
-	Echap_character    string
+	EchapCharacter     string
 	File               *routes.File
 }
 
+// ImportStep1 is called by rest
 func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
-	l := proute.Json.(*ImportStep1T)
+	params := proute.Json.(*ImportStep1T)
 
-	filepath := "./uploaded/" + l.File.Name
+	fmt.Println(params)
+	filepath := "./uploaded/" + params.File.Name
 	outfile, err := os.Create(filepath)
 	if err != nil {
 		http.Error(w, "Error saving file: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	_, err = io.WriteString(outfile, l.File.Content)
+	_, err = io.WriteString(outfile, params.File.Content)
 	if err != nil {
 		http.Error(w, "Error saving file: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	parser, err := databaseimport.NewParser(filepath, l.DatabaseLang)
+	parser, err := databaseimport.NewParser(filepath, params.DatabaseLang)
 	if err != nil {
 		http.Error(w, "Error parsing file: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	// Set parser preferences
-	parser.SetUserChoices("UseGeonames", l.UseGeonames)
+	parser.SetUserChoices("UseGeonames", params.UseGeonames)
 
 	// Init import
 	dbImport := new(databaseimport.DatabaseImport)
-	dbImport.New(parser, 1, l.DatabaseName, l.DatabaseLang, true)
+	dbImport.New(parser, 1, params.DatabaseName, params.DatabaseLang, true)
 
 	// Analyze csv headers
 	if err := parser.CheckHeader(); err != nil {
@@ -132,7 +136,7 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	var sitesWithError []string
 
-	for id, _ := range dbImport.SitesWithError {
+	for id := range dbImport.SitesWithError {
 		sitesWithError = append(sitesWithError, id)
 	}
 
