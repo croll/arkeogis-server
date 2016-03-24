@@ -31,7 +31,6 @@ import (
 	//	"strings"
 
 	"github.com/croll/arkeogis-server/databaseimport"
-	"github.com/croll/arkeogis-server/model"
 	routes "github.com/croll/arkeogis-server/webserver/routes"
 )
 
@@ -51,7 +50,7 @@ func init() {
 
 // ImportStep1T struct holds information provided by user
 type ImportStep1T struct {
-	model.Database
+	Name              string
 	DatabaseLang      int
 	SelectedContinent int
 	SelectedCountries []int

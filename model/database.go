@@ -23,12 +23,25 @@ package model
 
 import (
 	"database/sql"
+
 	"github.com/jmoiron/sqlx"
 )
 
 func (d *Database) DoesExist(tx *sqlx.Tx) (exists bool, err error) {
 	exists = false
 	err = tx.QueryRowx("SELECT id FROM \"database\" WHERE name = $1 AND owner = $2", d.Name, d.Owner).Scan(&d.Id)
+	switch {
+	case err == sql.ErrNoRows:
+		return exists, nil
+	case err != nil:
+		return
+	}
+	return true, nil
+}
+
+func (d *Database) AnotherExistsWithSameName(tx *sqlx.Tx) (exists bool, err error) {
+	exists = false
+	err = tx.QueryRowx("SELECT id FROM \"database\" WHERE name = $1 AND owner != $2", d.Name, d.Owner).Scan(&d.Id)
 	switch {
 	case err == sql.ErrNoRows:
 		return exists, nil

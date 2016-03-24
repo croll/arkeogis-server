@@ -155,14 +155,17 @@ func (di *DatabaseImport) New(parser *Parser, uid int, databaseName string, lang
 	}
 
 	// Field DATABASE_SOURCE_NAME
+	fmt.Println("---- > ", databaseName)
+	fmt.Println("---- > ", di.Database.Name)
 	if di.Database.Name == "" {
 		if databaseName != "" {
 			if di.Database.Init == false {
 				if err = di.processDatabaseName(databaseName); err != nil {
-					fmt.Println(err)
-					di.AddError(databaseName, "IMPORT.CSVFIELD_DATABASE_SOURCE_NAME.T_CHECK_EMPTY", "DATABASE_SOURCE_NAME")
+					di.AddError(databaseName, "IMPORT.CSVFIELD_DATABASE_SOURCE_NAME.T_CHECK_INVALID", "DATABASE_SOURCE_NAME")
 				}
 			}
+		} else {
+			di.AddError(databaseName, "IMPORT.CSVFIELD_DATABASE_SOURCE_NAME.T_CHECK_EMPTY", "DATABASE_SOURCE_NAME")
 		}
 	}
 
@@ -186,6 +189,7 @@ func (di *DatabaseImport) setDefaultValues() {
 	di.Database.Relation = ""
 	di.Database.Coverage = ""
 	di.Database.Copyright = ""
+	di.Database.Context = "todo"
 	di.Database.State = "in-progress"
 	di.Database.Published = false
 	di.Database.License_id = 1
@@ -238,13 +242,21 @@ func (di *DatabaseImport) processDatabaseName(name string) error {
 	if len(name) > 50 {
 		di.AddError("", "IMPORT.FORM_DATABASE_NAME.T_CHECK_TOO_LONG", "DATABASE_NAME")
 		return errors.New("Database name too long")
-
 	}
 
-	// Check if database already exists
+	// Check if another user as a database with same name
+	alreadyExists, err := di.Database.AnotherExistsWithSameName(di.Tx)
+	if err != nil {
+		return err
+	}
+
+	if alreadyExists {
+		di.AddError("", "IMPORT.FORM_DATABASE_NAME.T_CHECK_OTHER_USER_HAS_DB_WITH_SAME_NAME", "DATABASE_NAME")
+		return err
+	}
+
 	di.Database.Exists, err = di.Database.DoesExist(di.Tx)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 
@@ -425,10 +437,10 @@ func (di *DatabaseImport) processSiteRangeInfos(f *Fields) {
 	case di.lowerTranslation("IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_DIG"):
 		di.CurrentSite.CurrentSiteRange.Knowledge_type = "dig"
 	default:
-		if f.STATE_OF_KNOWLEDGE != "" {
+		if f.STATE_OF_KNOWLEDGE == "" {
 			di.AddError(f.STATE_OF_KNOWLEDGE, "IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_CHECK_EMPTY", "STATE_OF_KNOWLEDGE")
 		} else {
-			di.CurrentSite.CurrentSiteRange.Knowledge_type = "unknown"
+			di.AddError(f.STATE_OF_KNOWLEDGE, "IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_CHECK_INVALID", "STATE_OF_KNOWLEDGE")
 		}
 	}
 
