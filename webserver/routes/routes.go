@@ -84,7 +84,7 @@ func decodeContent(myroute *Route, rw http.ResponseWriter, r *http.Request, s *s
 	}
 
 	// decode json from request
-	fmt.Println("Json : ", myroute.Json)
+	//fmt.Println("Json : ", myroute.Json)
 	v := reflect.New(myroute.Json)
 	o := v.Interface()
 
@@ -283,8 +283,8 @@ func handledRoute(myroute *Route, rw http.ResponseWriter, r *http.Request) {
 		Params:  params,
 		Session: s,
 	}
-	myroute.Func(rw, r, proute)
 
+	myroute.Func(rw, r, proute)
 }
 
 func ServerError(w http.ResponseWriter, code int, message string) {

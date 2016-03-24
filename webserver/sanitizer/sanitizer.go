@@ -26,6 +26,9 @@ func SanitizeStruct(o interface{}, path_prefix string) []FieldError {
 
 func sanitizeStruct(st reflect.Type, vt reflect.Value, field *reflect.StructField, path string, name string, errors *[]FieldError) {
 	//fmt.Println("path : ", path, "name: ", name)
+	if field != nil && field.Tag.Get("ignore") == "true" {
+		return
+	}
 	switch st.Kind() {
 	case reflect.Ptr:
 		st = st.Elem()
@@ -59,8 +62,13 @@ func sanitizeStruct(st reflect.Type, vt reflect.Value, field *reflect.StructFiel
 
 			sanitizeStruct(field.Type, value, &field, n_path, name, errors)
 		}
-	case reflect.Array, reflect.Map, reflect.Slice:
-		log.Println("type ", st.Kind, " unsupported, todo !")
+	case reflect.Array, reflect.Slice:
+		for i := 0; i < vt.Len(); i++ {
+			value := vt.Index(i)
+			sanitizeStruct(value.Type(), value, nil, path+"[]", name, errors)
+		}
+	case reflect.Map:
+		log.Println("type map ", st.Kind, " unsupported, todo !")
 	case reflect.Invalid, reflect.Chan, reflect.Interface, reflect.UnsafePointer:
 		log.Println("type ", st.Kind, " unsupported")
 	default:

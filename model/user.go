@@ -223,14 +223,50 @@ func (u *User) SetCompanies(tx *sqlx.Tx, companies []Company) error {
 
 // GetUsers return an array of groups of the User
 func (g *Group) GetUsers(tx *sqlx.Tx) (users []User, err error) {
-	log.Println("TODO: Group.GetUsers() => This function was not tested. If it work fine, please, remove this log comment!")
 	stmt, err := tx.PrepareNamed("SELECT u.* FROM \"user\" u, \"user__group\" ug WHERE ug.group_id = :id AND ug.user_id = u.id")
 	if err != nil {
 		return nil, err
 	}
 	defer stmt.Close()
 	err = stmt.Select(&users, g)
+	for _, user := range users {
+		user.Password = ""
+	}
 	return users, err
+}
+
+// SetUsers of the group
+func (g *Group) SetUsers(tx *sqlx.Tx, users []User) error {
+	ids := make([]string, len(users)+1)
+	for i, user := range users {
+		ids[i] = fmt.Sprintf("%d", user.Id)
+	}
+	ids[len(users)] = "-1" // empty list is a problem
+
+	_, err := tx.NamedExec("DELETE FROM \"user__group\" WHERE group_id=:id AND user_id NOT IN ("+strings.Join(ids, ",")+")", g)
+	if err != nil {
+		return err
+	}
+
+	rows, err := tx.Queryx("SELECT user_id FROM user__group WHERE group_id = $1 AND user_id IN ("+strings.Join(ids, ",")+")", g.Id)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id string
+		rows.Scan(&id)
+		ids = removeString(ids, id)
+	}
+	ids = removeString(ids, "-1")
+
+	for _, userid := range ids {
+		_, err := tx.Exec("INSERT INTO user__group (group_id, user_id) VALUES ($1, $2)", g.Id, userid)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Login test the username/password couple, and return true if it is ok, false if not
