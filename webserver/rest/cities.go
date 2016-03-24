@@ -92,7 +92,7 @@ func CityList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	cities := []row{}
 
-	err := db.DB.Select(&cities, "SELECT city.*,city_tr.* FROM city JOIN city_tr ON city_tr.city_geonameid = city.geonameid LEFT JOIN lang ON city_tr.lang_id = lang.id WHERE (name_ascii LIKE lower(f_unaccent($1)) OR lower(f_unaccent(name)) LIKE lower(f_unaccent($1))) AND country_geonameid = $2 AND (lang.iso_code = $3 OR lang.iso_code = 'D')", params.Search+"%", params.Id_country, params.Lang)
+	err := db.DB.Select(&cities, "SELECT geonameid, country_geonameid, geom, geom_centroid, lang_id, name, name_ascii FROM city JOIN city_tr ON city_tr.city_geonameid = city.geonameid LEFT JOIN lang ON city_tr.lang_id = lang.id WHERE (name_ascii LIKE lower(f_unaccent($1)) OR lower(f_unaccent(name)) LIKE lower(f_unaccent($1))) AND country_geonameid = $2 AND (lang.iso_code = $3 OR lang.iso_code = 'D')", params.Search+"%", params.Id_country, params.Lang)
 	if err != nil {
 		fmt.Println("err: ", err)
 		return
