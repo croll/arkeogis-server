@@ -200,7 +200,7 @@ func userSqlError(w http.ResponseWriter, err error) {
 			}
 		case "unique_violation":
 			switch pgerr.Constraint {
-			case "user_idx_4":
+			case "i_user.username":
 				routes.FieldError(w, "json.username", "username", "USER.FIELD_USERNAME.T_CHECK_ALREADYEXISTS")
 			default:
 				routes.ServerError(w, 500, "INTERNAL ERROR")
