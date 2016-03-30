@@ -85,7 +85,7 @@ func mysqlToPsqlType(row Row) string {
 		return "time.Time"
 	}
 
-	if row.Datatype == "MEDIUMTEXT" || strings.Index(row.Datatype, "VARCHAR") == 0 || strings.Index(row.Datatype, "CHAR") == 0 || strings.Index(row.Datatype, "ENUM") == 0 {
+	if row.Datatype == "TEXT" || row.Datatype == "MEDIUMTEXT" || strings.Index(row.Datatype, "VARCHAR") == 0 || strings.Index(row.Datatype, "CHAR") == 0 || strings.Index(row.Datatype, "ENUM") == 0 || strings.Index(row.Datatype, "BIT") == 0 {
 		if row.Null == 0 {
 			return "string"
 		} else {
@@ -93,12 +93,16 @@ func mysqlToPsqlType(row Row) string {
 		}
 	}
 
-	if row.Datatype == "bit" {
+	if row.Datatype == "INTEGER" {
+		return "int"
+	}
+
+	if row.Datatype == "BOOLEAN" {
 		return "bool"
 	}
 
-	if row.Datatype == "INTEGER" {
-		return "int"
+	if row.Datatype == "BYTEA" {
+		return "sql.RawBytes"
 	}
 
 	return row.Datatype
