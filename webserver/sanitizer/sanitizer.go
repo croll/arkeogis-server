@@ -76,7 +76,6 @@ func sanitizeStruct(st reflect.Type, vt reflect.Value, field *reflect.StructFiel
 	case reflect.Invalid, reflect.Chan, reflect.Interface, reflect.UnsafePointer:
 		log.Println("type ", st.Kind, " unsupported")
 	default:
-		log.Println("ca va peter ! ", path)
 		sanitizeField(*field, vt, path, name, errors)
 	}
 }
