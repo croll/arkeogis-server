@@ -27,6 +27,7 @@ import (
 	"log"
 	"net/http"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 
@@ -62,6 +63,7 @@ type Usercreate struct {
 	model.User
 	CityAndCountry model.CityAndCountry_wtr `json:"city_and_country"`
 	Companies      []Company                `json:"companies"`
+	File           *routes.File
 }
 
 // Userlogin structure (json)
@@ -135,6 +137,16 @@ func init() {
 			Permissions: []string{
 			//"AdminUsers",
 			},
+		},
+		&routes.Route{
+			Path:        "/api/users/{id:[0-9]+}/photo",
+			Description: "get user photo (jpg)",
+			Func:        UserPhoto,
+			Method:      "GET",
+			Permissions: []string{
+			//"AdminUsers",
+			},
+			Params: reflect.TypeOf(UserGetParams{}),
 		},
 	}
 	routes.RegisterMultiple(Routes)
@@ -239,6 +251,11 @@ func userSet(w http.ResponseWriter, r *http.Request, proute routes.Proute, creat
 		log.Println("1")
 		userSqlError(w, err)
 		return
+	}
+
+	// photo...
+	if u.File != nil {
+		u.Photo = string(u.File.Content)
 	}
 
 	// save the user
@@ -438,4 +455,21 @@ func UserLogin(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	j, err := json.Marshal(a)
 	w.Write(j)
+}
+
+func UserPhoto(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+	params := proute.Params.(*UserGetParams)
+
+	var photo []byte
+
+	err := db.DB.Get(&photo, "SELECT photo FROM \"user\" u WHERE id=$1", params.Id)
+
+	if err != nil {
+		log.Println("user photo get failed")
+		return
+	}
+
+	w.Header().Set("Content-Type", "image/jpeg")
+	w.Header().Set("Content-Length", strconv.Itoa(len(photo)))
+	w.Write(photo)
 }
