@@ -97,6 +97,7 @@ func decodeContent(myroute *Route, rw http.ResponseWriter, r *http.Request, s *s
 		log.Println("error parsing header:", err)
 	}
 	if strings.HasPrefix(mt, "multipart/") {
+		log.Println(" = MULTIPART POST = ")
 		mr := multipart.NewReader(r.Body, params["boundary"])
 		// For each part
 		for {
@@ -113,6 +114,7 @@ func decodeContent(myroute *Route, rw http.ResponseWriter, r *http.Request, s *s
 			if err != nil {
 				log.Println("error: unable to get content of the file")
 			}
+			//log.Println(" => part ... ", string(j))
 			// Is it a file ?
 			if p.FileName() != "" {
 				// Check if target interface has a FileName field
@@ -140,6 +142,7 @@ func decodeContent(myroute *Route, rw http.ResponseWriter, r *http.Request, s *s
 			}
 		}
 	} else {
+		//log.Println(" = normal POST = ")
 		decoder := json.NewDecoder(r.Body)
 		//fmt.Printf("t : %t\n", o)
 		//fmt.Println("o : ", o)
@@ -226,7 +229,7 @@ func handledRoute(myroute *Route, rw http.ResponseWriter, r *http.Request) {
 
 	// Retrieve the user from db
 	user.Get(tx)
-	log.Println("user is : ", user)
+	log.Println("user is : ", user.Username)
 	s.Set("user", user)
 
 	// Check global permsissions
