@@ -63,9 +63,13 @@ func sanitizeStruct(st reflect.Type, vt reflect.Value, field *reflect.StructFiel
 			sanitizeStruct(field.Type, value, &field, n_path, name, errors)
 		}
 	case reflect.Array, reflect.Slice:
-		for i := 0; i < vt.Len(); i++ {
-			value := vt.Index(i)
-			sanitizeStruct(value.Type(), value, nil, path+"[]", name, errors)
+		subtype := st.Elem()
+		subkind := subtype.Kind()
+		if subkind == reflect.Struct {
+			for i := 0; i < vt.Len(); i++ {
+				value := vt.Index(i)
+				sanitizeStruct(value.Type(), value, nil, path+"[]", name, errors)
+			}
 		}
 	case reflect.Map:
 		log.Println("type map ", st.Kind, " unsupported, todo !")

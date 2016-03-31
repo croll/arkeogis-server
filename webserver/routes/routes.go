@@ -64,7 +64,7 @@ type Proute struct {
 
 type File struct {
 	Name    string
-	Content string
+	Content []byte
 }
 
 // All routes added here are stored there. This is usefull for building REST doc
@@ -131,7 +131,8 @@ func decodeContent(myroute *Route, rw http.ResponseWriter, r *http.Request, s *s
 				fsi := fs.Interface()
 				ee := reflect.Indirect(reflect.ValueOf(fsi))
 				ee.FieldByName("Name").SetString(p.FileName())
-				ee.FieldByName("Content").SetString(string(j[:]))
+				//ee.FieldByName("Content").SetString(string(j[:]))
+				ee.FieldByName("Content").SetBytes(j)
 				ta.Set(fs)
 			} else {
 				// Unmarshall datas into structure

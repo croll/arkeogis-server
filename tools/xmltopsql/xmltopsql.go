@@ -126,6 +126,10 @@ func printPsql(sql Sql) {
 				types += fmt.Sprintf("CREATE TYPE %s_%s AS %s;\n", table.Name, row.Name, row.Datatype)
 				row.PsqlType = fmt.Sprintf("%s_%s", table.Name, row.Name)
 			}
+			if strings.Index(row.Datatype, "BIT(") == 0 {
+				types += fmt.Sprintf("CREATE TYPE %s_%s AS %s;\n", table.Name, row.Name, strings.Replace(row.Datatype, "BIT", "ENUM", -1))
+				row.PsqlType = fmt.Sprintf("%s_%s", table.Name, row.Name)
+			}
 
 			creates += fmt.Sprintf("  \"%s\" %s%s,\n", row.Name, row.PsqlType, nullstr)
 

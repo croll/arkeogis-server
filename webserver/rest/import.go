@@ -79,7 +79,7 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		return
 	}
 
-	_, err = io.WriteString(outfile, params.File.Content)
+	_, err = io.WriteString(outfile, string(params.File.Content))
 	if err != nil {
 		http.Error(w, "Error saving file: "+err.Error(), http.StatusBadRequest)
 		return

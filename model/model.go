@@ -160,7 +160,7 @@ type Database__handle struct {
 type Database_tr struct {
 	Database_id	int	`db:"database_id" json:"database_id"`	// Database.Id
 	Lang_id	int	`db:"lang_id" json:"lang_id"`	// Lang.Id
-	Description	sql.NullString	`db:"description" json:"description"`
+	Description	string	`db:"description" json:"description"`
 	Geographical_limit	sql.NullString	`db:"geographical_limit" json:"geographical_limit"`
 	Bibliography	string	`db:"bibliography" json:"bibliography"`
 }
@@ -321,7 +321,7 @@ type Project__wms_map struct {
 
 type Session struct {
 	Token	string	`db:"token" json:"token"`
-	Value	string	`db:"value" json:"value"`
+	Value	sql.RawBytes	`db:"value" json:"value"`
 }
 
 
@@ -425,6 +425,7 @@ type User struct {
 	First_lang_id	int	`db:"first_lang_id" json:"first_lang_id"`	// Lang.Id
 	Second_lang_id	int	`db:"second_lang_id" json:"second_lang_id"`	// Lang.Id
 	City_geonameid	int	`db:"city_geonameid" json:"city_geonameid"`	// City.Geonameid
+	Photo	sql.RawBytes	`db:"photo" json:"photo"`
 	Created_at	time.Time	`db:"created_at" json:"created_at"`
 	Updated_at	time.Time	`db:"updated_at" json:"updated_at"`
 }
@@ -445,7 +446,7 @@ type User__group struct {
 type User_preferences struct {
 	User_id	int	`db:"user_id" json:"user_id"`	// User.Id
 	Key	string	`db:"key" json:"key"`
-	Value	string	`db:"value" json:"value"`
+	Value	sql.RawBytes	`db:"value" json:"value"`
 }
 
 
@@ -482,9 +483,9 @@ type Wms_map_tr struct {
 }
 
 
-const User_InsertStr = "\"username\", \"firstname\", \"lastname\", \"email\", \"password\", \"description\", \"active\", \"first_lang_id\", \"second_lang_id\", \"city_geonameid\", \"created_at\", \"updated_at\""
-const User_InsertValuesStr = ":username, :firstname, :lastname, :email, :password, :description, :active, :first_lang_id, :second_lang_id, :city_geonameid, now(), now()"
-const User_UpdateStr = "\"username\" = :username, \"firstname\" = :firstname, \"lastname\" = :lastname, \"email\" = :email, \"password\" = :password, \"description\" = :description, \"active\" = :active, \"first_lang_id\" = :first_lang_id, \"second_lang_id\" = :second_lang_id, \"city_geonameid\" = :city_geonameid, \"updated_at\" = now()"
+const User_InsertStr = "\"username\", \"firstname\", \"lastname\", \"email\", \"password\", \"description\", \"active\", \"first_lang_id\", \"second_lang_id\", \"city_geonameid\", \"photo\", \"created_at\", \"updated_at\""
+const User_InsertValuesStr = ":username, :firstname, :lastname, :email, :password, :description, :active, :first_lang_id, :second_lang_id, :city_geonameid, :photo, now(), now()"
+const User_UpdateStr = "\"username\" = :username, \"firstname\" = :firstname, \"lastname\" = :lastname, \"email\" = :email, \"password\" = :password, \"description\" = :description, \"active\" = :active, \"first_lang_id\" = :first_lang_id, \"second_lang_id\" = :second_lang_id, \"city_geonameid\" = :city_geonameid, \"photo\" = :photo, \"updated_at\" = now()"
 const Lang_InsertStr = "\"iso_code\", \"active\""
 const Lang_InsertValuesStr = ":iso_code, :active"
 const Lang_UpdateStr = "\"iso_code\" = :iso_code, \"active\" = :active"

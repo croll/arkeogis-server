@@ -190,16 +190,18 @@ func userSqlError(w http.ResponseWriter, err error) {
 		case "foreign_key_violation":
 			switch pgerr.Constraint {
 			case "c_user.first_lang_id":
-				routes.FieldError(w, "first_lang_id", "first_lang_id", "USERS.FIELD_LANG.S_ERROR_BADLANG")
-			case "user_ibfk_2":
-				routes.FieldError(w, "second_lang_id", "second_lang_id", "USERS.FIELD_LANG.S_ERROR_BADLANG")
+				routes.FieldError(w, "json.first_lang_id", "first_lang_id", "USER.FIELD_LANG.T_CHECK_BADLANG")
+			case "c_user.second_lang_id":
+				routes.FieldError(w, "json.second_lang_id", "second_lang_id", "USER.FIELD_LANG.T_CHECK_BADLANG")
+			case "c_user.city_geonameid":
+				routes.FieldError(w, "json.searchTextCity", "searchTextCity", "USER.FIELD_CITY.T_CHECK_MANDATORY")
 			default:
 				routes.ServerError(w, 500, "INTERNAL ERROR")
 			}
 		case "unique_violation":
 			switch pgerr.Constraint {
-			case "user_idx_4":
-				routes.FieldError(w, "username", "username", "USERS.FIELD_USERNAME.S_ERROR_ALREADYEXISTS")
+			case "i_user.username":
+				routes.FieldError(w, "json.username", "username", "USER.FIELD_USERNAME.T_CHECK_ALREADYEXISTS")
 			default:
 				routes.ServerError(w, 500, "INTERNAL ERROR")
 			}
