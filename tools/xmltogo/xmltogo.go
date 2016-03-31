@@ -102,7 +102,8 @@ func mysqlToPsqlType(row Row) string {
 	}
 
 	if row.Datatype == "BYTEA" {
-		return "sql.RawBytes"
+		//return "sql.RawBytes"
+		return "string"
 	}
 
 	return row.Datatype
