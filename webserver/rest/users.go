@@ -24,6 +24,7 @@ package rest
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"reflect"
@@ -31,6 +32,7 @@ import (
 	"strings"
 	"time"
 
+	config "github.com/croll/arkeogis-server/config"
 	db "github.com/croll/arkeogis-server/db"
 	model "github.com/croll/arkeogis-server/model"
 	routes "github.com/croll/arkeogis-server/webserver/routes"
@@ -467,6 +469,14 @@ func UserPhoto(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	if err != nil {
 		log.Println("user photo get failed")
 		return
+	}
+
+	if len(photo) == 0 {
+		photo, err = ioutil.ReadFile(config.WebPath + "/img/default-user-photo.jpg")
+		if err != nil {
+			log.Println("user default photo load failed")
+			return
+		}
 	}
 
 	w.Header().Set("Content-Type", "image/jpeg")
