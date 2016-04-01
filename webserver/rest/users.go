@@ -156,9 +156,15 @@ func init() {
 
 // UserList List of users. no filets, no args actually...
 func UserList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+	type User struct {
+		model.User
+		Groups_user       string `json:"groups_user"`
+		Groups_chronology string `json:"groups_chronology"`
+		Groups_charac     string `json:"groups_charac"`
+	}
 	type Answer struct {
-		Data  []model.User `json:"data"`
-		Count int          `json:"count"`
+		Data  []User `json:"data"`
+		Count int    `json:"count"`
 	}
 
 	answer := Answer{}
@@ -179,7 +185,14 @@ func UserList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	offset := (params.Page - 1) * params.Limit
 
-	err := db.DB.Select(&answer.Data, "SELECT * FROM \"user\" u WHERE (u.username ILIKE $1 OR u.firstname ILIKE $1 OR u.lastname ILIKE $1 OR u.email ILIKE $1) ORDER BY "+order+" "+orderdir+" OFFSET $2 LIMIT $3", "%"+params.Filter+"%", offset, params.Limit)
+	err := db.DB.Select(&answer.Data,
+		"SELECT "+
+			" *, "+
+			" COALESCE((SELECT array_to_json(array_agg(group_tr.*)) FROM user__group u_g LEFT JOIN \"group\" g ON u_g.group_id = g.id LEFT JOIN group_tr ON g.id = group_tr.group_id WHERE g.type='user' AND u_g.user_id = u.id), '[]') as groups_user,"+
+			" COALESCE((SELECT array_to_json(array_agg(group_tr.*)) FROM user__group u_g LEFT JOIN \"group\" g ON u_g.group_id = g.id LEFT JOIN group_tr ON g.id = group_tr.group_id WHERE g.type='chronology' AND u_g.user_id = u.id), '[]') as groups_chronology,"+
+			" COALESCE((SELECT array_to_json(array_agg(group_tr.*)) FROM user__group u_g LEFT JOIN \"group\" g ON u_g.group_id = g.id LEFT JOIN group_tr ON g.id = group_tr.group_id WHERE g.type='charac' AND u_g.user_id = u.id), '[]') as groups_charac"+
+			" FROM \"user\" u WHERE (u.username ILIKE $1 OR u.firstname ILIKE $1 OR u.lastname ILIKE $1 OR u.email ILIKE $1) GROUP BY u.id ORDER BY "+order+" "+orderdir+" OFFSET $2 LIMIT $3",
+		"%"+params.Filter+"%", offset, params.Limit)
 	if err != nil {
 		log.Println("err: ", err)
 		return
@@ -359,7 +372,7 @@ func UserInfos(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		//userSqlError(w, err)
 		//return
 	}
-	log.Println("city and country : ", u.CityAndCountry)
+	//log.Println("city and country : ", u.CityAndCountry)
 
 	companies, err := u.GetCompanies(tx)
 	if err != nil {
@@ -381,7 +394,7 @@ func UserInfos(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		u.Companies = append(u.Companies, mcomp)
 	}
 
-	log.Println("user id : ", params.Id, "user : ", u)
+	//log.Println("user id : ", params.Id, "user : ", u)
 	err = tx.Commit()
 	if err != nil {
 		log.Println("can't commit")
