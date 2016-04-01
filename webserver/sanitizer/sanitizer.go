@@ -1,6 +1,7 @@
 package sanitizer
 
 import (
+	"fmt"
 	"log"
 	"reflect"
 	"regexp"
@@ -25,7 +26,7 @@ func SanitizeStruct(o interface{}, path_prefix string) []FieldError {
 }
 
 func sanitizeStruct(st reflect.Type, vt reflect.Value, field *reflect.StructField, path string, name string, errors *[]FieldError) {
-	//fmt.Println("path : ", path, "name: ", name)
+	fmt.Println("path : ", path, "name: ", name)
 	if field != nil && field.Tag.Get("ignore") == "true" {
 		return
 	}
@@ -40,8 +41,13 @@ func sanitizeStruct(st reflect.Type, vt reflect.Value, field *reflect.StructFiel
 			if field.Name[:1] >= "a" && field.Name[:1] <= "z" {
 				continue
 			}
-			value := vt.Field(i)
 
+			var value reflect.Value
+			if vt.IsValid() { // @TODO: should I warn/error when a struct isn't valid ?
+				value = vt.Field(i)
+			} else {
+				log.Println("Warning : ", path, " is ZERO")
+			}
 			name := field.Tag.Get("json")
 			if len(name) == 0 && !field.Anonymous {
 				name = field.Name

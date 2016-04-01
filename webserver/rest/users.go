@@ -24,12 +24,15 @@ package rest
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 
+	config "github.com/croll/arkeogis-server/config"
 	db "github.com/croll/arkeogis-server/db"
 	model "github.com/croll/arkeogis-server/model"
 	routes "github.com/croll/arkeogis-server/webserver/routes"
@@ -62,6 +65,7 @@ type Usercreate struct {
 	model.User
 	CityAndCountry model.CityAndCountry_wtr `json:"city_and_country"`
 	Companies      []Company                `json:"companies"`
+	File           *routes.File
 }
 
 // Userlogin structure (json)
@@ -136,15 +140,31 @@ func init() {
 			//"AdminUsers",
 			},
 		},
+		&routes.Route{
+			Path:        "/api/users/{id:[0-9]+}/photo",
+			Description: "get user photo (jpg)",
+			Func:        UserPhoto,
+			Method:      "GET",
+			Permissions: []string{
+			//"AdminUsers",
+			},
+			Params: reflect.TypeOf(UserGetParams{}),
+		},
 	}
 	routes.RegisterMultiple(Routes)
 }
 
 // UserList List of users. no filets, no args actually...
 func UserList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+	type User struct {
+		model.User
+		Groups_user       string `json:"groups_user"`
+		Groups_chronology string `json:"groups_chronology"`
+		Groups_charac     string `json:"groups_charac"`
+	}
 	type Answer struct {
-		Data  []model.User `json:"data"`
-		Count int          `json:"count"`
+		Data  []User `json:"data"`
+		Count int    `json:"count"`
 	}
 
 	answer := Answer{}
@@ -165,7 +185,14 @@ func UserList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	offset := (params.Page - 1) * params.Limit
 
-	err := db.DB.Select(&answer.Data, "SELECT * FROM \"user\" u WHERE (u.username ILIKE $1 OR u.firstname ILIKE $1 OR u.lastname ILIKE $1 OR u.email ILIKE $1) ORDER BY "+order+" "+orderdir+" OFFSET $2 LIMIT $3", "%"+params.Filter+"%", offset, params.Limit)
+	err := db.DB.Select(&answer.Data,
+		"SELECT "+
+			" *, "+
+			" COALESCE((SELECT array_to_json(array_agg(group_tr.*)) FROM user__group u_g LEFT JOIN \"group\" g ON u_g.group_id = g.id LEFT JOIN group_tr ON g.id = group_tr.group_id WHERE g.type='user' AND u_g.user_id = u.id), '[]') as groups_user,"+
+			" COALESCE((SELECT array_to_json(array_agg(group_tr.*)) FROM user__group u_g LEFT JOIN \"group\" g ON u_g.group_id = g.id LEFT JOIN group_tr ON g.id = group_tr.group_id WHERE g.type='chronology' AND u_g.user_id = u.id), '[]') as groups_chronology,"+
+			" COALESCE((SELECT array_to_json(array_agg(group_tr.*)) FROM user__group u_g LEFT JOIN \"group\" g ON u_g.group_id = g.id LEFT JOIN group_tr ON g.id = group_tr.group_id WHERE g.type='charac' AND u_g.user_id = u.id), '[]') as groups_charac"+
+			" FROM \"user\" u WHERE (u.username ILIKE $1 OR u.firstname ILIKE $1 OR u.lastname ILIKE $1 OR u.email ILIKE $1) GROUP BY u.id ORDER BY "+order+" "+orderdir+" OFFSET $2 LIMIT $3",
+		"%"+params.Filter+"%", offset, params.Limit)
 	if err != nil {
 		log.Println("err: ", err)
 		return
@@ -239,6 +266,11 @@ func userSet(w http.ResponseWriter, r *http.Request, proute routes.Proute, creat
 		log.Println("1")
 		userSqlError(w, err)
 		return
+	}
+
+	// photo...
+	if u.File != nil {
+		u.Photo = string(u.File.Content)
 	}
 
 	// save the user
@@ -340,7 +372,7 @@ func UserInfos(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		//userSqlError(w, err)
 		//return
 	}
-	log.Println("city and country : ", u.CityAndCountry)
+	//log.Println("city and country : ", u.CityAndCountry)
 
 	companies, err := u.GetCompanies(tx)
 	if err != nil {
@@ -362,7 +394,7 @@ func UserInfos(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		u.Companies = append(u.Companies, mcomp)
 	}
 
-	log.Println("user id : ", params.Id, "user : ", u)
+	//log.Println("user id : ", params.Id, "user : ", u)
 	err = tx.Commit()
 	if err != nil {
 		log.Println("can't commit")
@@ -438,4 +470,29 @@ func UserLogin(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	j, err := json.Marshal(a)
 	w.Write(j)
+}
+
+func UserPhoto(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+	params := proute.Params.(*UserGetParams)
+
+	var photo []byte
+
+	err := db.DB.Get(&photo, "SELECT photo FROM \"user\" u WHERE id=$1", params.Id)
+
+	if err != nil {
+		log.Println("user photo get failed")
+		return
+	}
+
+	if len(photo) == 0 {
+		photo, err = ioutil.ReadFile(config.WebPath + "/img/default-user-photo.jpg")
+		if err != nil {
+			log.Println("user default photo load failed")
+			return
+		}
+	}
+
+	w.Header().Set("Content-Type", "image/jpeg")
+	w.Header().Set("Content-Length", strconv.Itoa(len(photo)))
+	w.Write(photo)
 }
