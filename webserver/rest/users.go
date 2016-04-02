@@ -54,10 +54,11 @@ type Company struct {
 
 // UserListParams is params struct for UserList query
 type UserListParams struct {
-	Limit  int    `default:"10" min:"1" max:"100" error:"limit over boundaries"`
-	Page   int    `default:"1" min:"1" error:"page over boundaries"`
-	Order  string `default:"u.created_at" enum:"u.created_at,-u.created_at,u.updated_at,-u.updated_at,u.username,-u.username,u.firstname,-u.firstname,u.lastname,-u.lastname,u.email,-u.email" error:"bad order"`
-	Filter string `default:""`
+	Limit   int    `default:"10" min:"1" max:"100" error:"limit over boundaries"`
+	Page    int    `default:"1" min:"1" error:"page over boundaries"`
+	Order   string `default:"u.created_at" enum:"u.created_at,-u.created_at,u.updated_at,-u.updated_at,u.username,-u.username,u.firstname,-u.firstname,u.lastname,-u.lastname,u.email,-u.email" error:"bad order"`
+	Filter  string `default:""`
+	Lang_id int    `default:"1"`
 }
 
 // UserCreate structure (json)
@@ -154,6 +155,22 @@ func init() {
 	routes.RegisterMultiple(Routes)
 }
 
+func selectCityAndCountry(city_geonameid string, langid int) string {
+	return "" +
+		"SELECT " +
+		" city.geonameid as city_geonameid, city_tr.lang_id as city_lang_id, city_tr.name as city_name, " +
+		" country.geonameid as country_geonameid, country.iso_code as country_iso_code, country_tr.lang_id as country_lang_id, country_tr.name as country_name " +
+		"from city " +
+		"LEFT JOIN city_tr ON city_tr.city_geonameid=city.geonameid " +
+		"LEFT JOIN country ON country.geonameid=city.country_geonameid " +
+		"LEFT JOIN country_tr ON country_tr.country_geonameid = country.geonameid " +
+		"WHERE city.geonameid=" + city_geonameid +
+		" AND (city_tr.lang_id = " + strconv.Itoa(langid) + " or city_tr.lang_id=1) " +
+		" AND (country_tr.lang_id = " + strconv.Itoa(langid) + " or country_tr.lang_id=1) " +
+		"ORDER by city_tr.lang_id desc, country_tr.lang_id desc " +
+		"LIMIT 1"
+}
+
 // UserList List of users. no filets, no args actually...
 func UserList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	type User struct {
@@ -161,6 +178,7 @@ func UserList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		Groups_user       string `json:"groups_user"`
 		Groups_chronology string `json:"groups_chronology"`
 		Groups_charac     string `json:"groups_charac"`
+		CountryAndCity    string `json:"country_and_city"`
 	}
 	type Answer struct {
 		Data  []User `json:"data"`
@@ -190,11 +208,12 @@ func UserList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 			" *, "+
 			" COALESCE((SELECT array_to_json(array_agg(group_tr.*)) FROM user__group u_g LEFT JOIN \"group\" g ON u_g.group_id = g.id LEFT JOIN group_tr ON g.id = group_tr.group_id WHERE g.type='user' AND u_g.user_id = u.id), '[]') as groups_user,"+
 			" COALESCE((SELECT array_to_json(array_agg(group_tr.*)) FROM user__group u_g LEFT JOIN \"group\" g ON u_g.group_id = g.id LEFT JOIN group_tr ON g.id = group_tr.group_id WHERE g.type='chronology' AND u_g.user_id = u.id), '[]') as groups_chronology,"+
-			" COALESCE((SELECT array_to_json(array_agg(group_tr.*)) FROM user__group u_g LEFT JOIN \"group\" g ON u_g.group_id = g.id LEFT JOIN group_tr ON g.id = group_tr.group_id WHERE g.type='charac' AND u_g.user_id = u.id), '[]') as groups_charac"+
+			" COALESCE((SELECT array_to_json(array_agg(group_tr.*)) FROM user__group u_g LEFT JOIN \"group\" g ON u_g.group_id = g.id LEFT JOIN group_tr ON g.id = group_tr.group_id WHERE g.type='charac' AND u_g.user_id = u.id), '[]') as groups_charac, "+
+			" COALESCE((select row_to_json(t) from("+selectCityAndCountry("u.city_geonameid", params.Lang_id)+") t), '{}') as countryandcity"+
 			" FROM \"user\" u WHERE (u.username ILIKE $1 OR u.firstname ILIKE $1 OR u.lastname ILIKE $1 OR u.email ILIKE $1) GROUP BY u.id ORDER BY "+order+" "+orderdir+" OFFSET $2 LIMIT $3",
 		"%"+params.Filter+"%", offset, params.Limit)
 	if err != nil {
-		log.Println("err: ", err)
+		userSqlError(w, err)
 		return
 	}
 
