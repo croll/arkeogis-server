@@ -155,8 +155,6 @@ func (di *DatabaseImport) New(parser *Parser, uid int, databaseName string, lang
 	}
 
 	// Field DATABASE_SOURCE_NAME
-	fmt.Println("---- > ", databaseName)
-	fmt.Println("---- > ", di.Database.Name)
 	if di.Database.Name == "" {
 		if databaseName != "" {
 			if di.Database.Init == false {

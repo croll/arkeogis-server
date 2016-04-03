@@ -64,6 +64,13 @@ func (p *Parser) AddError(errMsg string, columns ...string) {
 	})
 }
 
+func (p *Parser) HasError() bool {
+	if len(p.Errors) > 0 {
+		return true
+	}
+	return false
+}
+
 // NewParser open csv file and return a  *Parser
 func NewParser(filename string, lang int) (*Parser, error) {
 	f, err := os.Open(filename)
@@ -112,6 +119,8 @@ func (p *Parser) CheckHeader() error {
 
 // Parse is the entry point of the parsing process
 func (p *Parser) Parse(fn func(r *Fields)) error {
+	// Check encoding
+
 	// Variable to store database status
 	f := Fields{}
 	r := reflect.ValueOf(&f)

@@ -24,11 +24,14 @@ package rest
 import (
 	//	"github.com/croll/arkeogis-server/csvimport"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"reflect"
 	//	"strings"
+
+	"unicode/utf8"
 
 	"github.com/croll/arkeogis-server/databaseimport"
 	routes "github.com/croll/arkeogis-server/webserver/routes"
@@ -63,31 +66,41 @@ type ImportStep1T struct {
 // ImportStep1 is called by rest
 func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
-	// fmt.Println("- - -------------- LALALALA")
 	params := proute.Json.(*ImportStep1T)
 
-	/*
-		fmt.Println("_______________________")
-		fmt.Println(params)
-		fmt.Println("_______________________")
-		fmt.Println(filepath)
-	*/
+	var dbImport *databaseimport.DatabaseImport
+
+	fmt.Println("_______________________")
+	fmt.Println(params)
+	fmt.Println("_______________________")
 	filepath := "./uploaded/" + params.File.Name
+
 	outfile, err := os.Create(filepath)
 	if err != nil {
 		http.Error(w, "Error saving file: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
+	// Save the file on filesystem
 	_, err = io.WriteString(outfile, string(params.File.Content))
 	if err != nil {
 		http.Error(w, "Error saving file: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
+	// Parse the file
 	parser, err := databaseimport.NewParser(filepath, params.DatabaseLang)
 	if err != nil {
-		http.Error(w, "Error parsing file: "+err.Error(), http.StatusBadRequest)
+		parser.AddError("IMPORT.CSV_FILE.T_ERROR_PARSING_FAILED")
+	}
+
+	// utf8 validation
+	if !utf8.ValidString(string(params.File.Content)) {
+		parser.AddError("IMPORT.CSV_FILE.T_ERROR_NOT_UTF8_ENCODING")
+	}
+
+	if parser.HasError() {
+		sendError(w, parser.Errors)
 		return
 	}
 
@@ -95,27 +108,18 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	parser.SetUserChoices("UseGeonames", params.UseGeonames)
 
 	// Init import
-	dbImport := new(databaseimport.DatabaseImport)
+	dbImport = new(databaseimport.DatabaseImport)
 	dbImport.New(parser, 1, params.Name, params.DatabaseLang, true)
 
 	// Analyze csv headers
 	if err := parser.CheckHeader(); err != nil {
 		if err != nil {
-
-			// Prepare response
-			response := struct {
-				Errors []*databaseimport.ParserError `json:"errors"`
-			}{
-				parser.Errors,
-			}
-			l, _ := json.Marshal(response)
-			w.Header().Set("Content-Type", "application/json")
-			w.Write(l)
+			sendError(w, parser.Errors)
 			return
 		}
 	}
 
-	err = parser.Parse(dbImport.ProcessRecord)
+	dbImportErr := parser.Parse(dbImport.ProcessRecord)
 	/*
 		if err != nil {
 			for siteCode, e := range dbImport.Errors {
@@ -125,7 +129,7 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	*/
 
 	// If error ...
-	if err != nil {
+	if dbImportErr != nil {
 		dbImport.Tx.Rollback()
 	} else {
 		// Commit or Rollback if we are in simulation mode
@@ -162,3 +166,37 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(lok)
 }
+
+func sendError(w http.ResponseWriter, errors []*databaseimport.ParserError) {
+	// Prepare response
+	response := struct {
+		Errors []*databaseimport.ParserError `json:"errors"`
+	}{
+		errors,
+	}
+	l, _ := json.Marshal(response)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(l)
+	return
+}
+
+/*
+func writeResponse(w http.ResponseWriter, numberOfSites int, sitesWithError []string, errors []*databaseimport.ParserError, lines int) {
+	response := struct {
+		NumberOfSites  int                           `json:"nbSites"`
+		SitesWithError []string                      `json:"sitesWithError"`
+		Errors         []*databaseimport.ImportError `json:"errors"`
+		Lines          int                           `json:"nbLines"`
+	}{
+		NumberOfSites:  numberOfSites,
+		SitesWithError: sitesWithError,
+		Errors:         errors,
+		Lines:          lines, // Remove first line
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	lok, _ := json.Marshal(response)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(lok)
+}
+*/
