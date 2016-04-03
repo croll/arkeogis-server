@@ -33,7 +33,6 @@ import (
 	"github.com/croll/arkeogis-server/translate"
 	//"strconv"
 	"strings"
-	"unicode/utf8"
 )
 
 // Handle errors
@@ -136,10 +135,6 @@ func (p *Parser) Parse(fn func(r *Fields)) error {
 		// Parse lines after first line
 		// Ok we assign fields vlues to struct Fields
 		for k, v := range record {
-			// utf8 validation
-			if !utf8.ValidString(record[0]) {
-				p.AddError("IMPORT.CSV_FILE.T_CHECK_NOT_UTF8_ENCODING", record[0])
-			}
 			r.Elem().FieldByName(p.HeaderFields[k]).SetString(v)
 		}
 		// Process line

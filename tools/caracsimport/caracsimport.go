@@ -37,21 +37,25 @@ var caracsRootByLang map[string]map[string]string = map[string]map[string]string
 		"en": "Furniture",
 		"fr": "Mobilier",
 		"de": "Funde auswählen",
+		"es": "Mobiliario",
 	},
 	"Landscape": map[string]string{
 		"en": "Landscape",
 		"fr": "Paysage",
 		"de": "Umwelt auswählen",
+		"es": "Paisaje",
 	},
 	"Production": map[string]string{
 		"en": "Production",
 		"fr": "Production",
 		"de": "Production auswählen",
+		"es": "Producción",
 	},
 	"Realestate": map[string]string{
 		"en": "Realestate",
 		"fr": "Immobilier",
 		"de": "Befunde auswählen",
+		"es": "Inmobiliario",
 	},
 }
 
@@ -70,7 +74,7 @@ func main() {
 
 	var err error
 
-	rows, err := db.DB.Query("SELECT id, iso_code FROM lang WHERE iso_code IN ('fr', 'de', 'en')")
+	rows, err := db.DB.Query("SELECT id, iso_code FROM lang WHERE iso_code IN ('fr', 'de', 'en', 'es')")
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -98,6 +102,10 @@ func main() {
 			langFound = true
 			num = 2
 			langsByIso["en"] = id
+		case "es":
+			langFound = true
+			num = 3
+			langsByIso["es"] = id
 		}
 		langs[num] = id
 	}
@@ -110,7 +118,7 @@ func main() {
 		log.Fatalln("No lang found in your database. Please run dist/tools/geoname_import")
 	}
 
-	for _, f := range []string{"../datas/csv/Furniture_fr-de-en.csv", "../datas/csv/Landscape_fr-de-en.csv", "../datas/csv/Production_fr-de-en.csv", "../datas/csv/Realestate_fr-de-en.csv"} {
+	for _, f := range []string{"../datas/csv/Furniture_fr-de-en-es.csv", "../datas/csv/Landscape_fr-de-en-es.csv", "../datas/csv/Production_fr-de-en-es.csv", "../datas/csv/Realestate_fr-de-en-es.csv"} {
 		err = processFile(f, langs, langsByIso)
 		if err != nil {
 			log.Println(err)
@@ -145,7 +153,7 @@ func processFile(filename string, langs map[int]int, langsByIso map[string]int) 
 
 	if _, ok := caracsRootByLang[rootName]; !ok {
 		log.Println("Unable to define charac root name analyzing file name")
-		log.Fatalln("Please, give to your csv file a name like Furniture_en_fr.csv")
+		log.Fatalln("Please, give to your csv file a name like Furniture_fr-de-en-es.csv")
 	}
 
 	// Init db transaction

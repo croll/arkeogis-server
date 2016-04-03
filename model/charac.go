@@ -22,6 +22,8 @@
 package model
 
 import (
+	"fmt"
+
 	db "github.com/croll/arkeogis-server/db"
 )
 
@@ -45,6 +47,7 @@ func GetCharacPathsFromLang(name string, lang string) (caracs map[string]int, er
 	if err = rows.Err(); err != nil {
 		return
 	}
+	fmt.Println(caracs)
 	return
 }
 

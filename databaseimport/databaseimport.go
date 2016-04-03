@@ -118,7 +118,7 @@ type DatabaseImport struct {
 	Simulate       bool
 	Tx             *sqlx.Tx
 	Parser         *Parser
-	ArkeoCaracs    map[string]map[string]int
+	ArkeoCharacs   map[string]map[string]int
 	NumberOfSites  int
 	SitesWithError map[string]bool
 	Errors         []*ImportError
@@ -147,8 +147,8 @@ func (di *DatabaseImport) New(parser *Parser, uid int, databaseName string, lang
 
 	// Cache characs defined in Arkeogis
 	// TODO: Get only needed characs filtering by user id and project
-	di.ArkeoCaracs = map[string]map[string]int{}
-	di.ArkeoCaracs, err = di.cacheCharacs()
+	di.ArkeoCharacs = map[string]map[string]int{}
+	di.ArkeoCharacs, err = di.cacheCharacs()
 	if err != nil {
 		fmt.Println(err)
 		return err
@@ -171,7 +171,10 @@ func (di *DatabaseImport) New(parser *Parser, uid int, databaseName string, lang
 }
 
 // periodRegexp is used to match if starting and ending periods are valid
-var periodRegexp = regexp.MustCompile(`(\d{0,}):(\d{0,})`)
+//var periodRegexp = regexp.MustCompile(`(-?\d{0,}):(-?\d{0,})`)
+var uniqDateRexep = regexp.MustCompile(`^(-?\d+)$`)
+var periodRegexpDate1 = regexp.MustCompile(`^(-?\d{0,}):?-?\d{0,}$`)
+var periodRegexpDate2 = regexp.MustCompile(`^-?\d{0,}:?(-?\d{0,})$`)
 
 // setDefaultValues init the di.Database object with default values
 func (di *DatabaseImport) setDefaultValues() {
@@ -397,26 +400,17 @@ func (di *DatabaseImport) getOccupation(occupation string) (val string, err erro
 func (di *DatabaseImport) processSiteRangeInfos(f *Fields) {
 
 	// CARACTERISATIONS
-	characs, err := di.processCharacs(f)
+	characs, _ := di.processCharacs(f)
 	di.CurrentSite.CurrentSiteRange.Characs = characs
-	if err != nil {
-	}
 
 	// STARTING_PERIOD
-	if (f.STARTING_PERIOD != "" || strings.ToLower(f.STARTING_PERIOD) == di.lowerTranslation("IMPORT.CSVFIELD_ALL.T_CHECK_UNDETERMINED")) || strings.ToLower(f.STARTING_PERIOD) == "null" {
-		di.CurrentSite.CurrentSiteRange.Start_date1 = math.MinInt32
-		di.CurrentSite.CurrentSiteRange.Start_date2 = math.MinInt32
-	} else {
-		f.STARTING_PERIOD = strings.Replace(f.STARTING_PERIOD, "+", "", 1)
-		dates := periodRegexp.FindAllString(f.STARTING_PERIOD, -1)
-		fmt.Println("dates", dates)
-		/*
-			if di.CurrentSite.CurrentSiteRange.STARTING_PERIOD, err = strconv.Atoi(f.STARTING_PERIOD); err != nil {
-				di.AddError(f.STARTING_PERIOD, "IMPORT.CSVFIELD_STARTING_PERIOD.T_CHECK_INVALID", "STARTING_PERIOD")
-			} else {
-			}
-		*/
-	}
+	fmt.Println("Starting period", f.STARTING_PERIOD)
+	dates := di.parseDates(f.STARTING_PERIOD)
+	fmt.Println("Parsed dates", dates)
+	di.CurrentSite.CurrentSiteRange.Start_date1 = dates[0]
+	di.CurrentSite.CurrentSiteRange.Start_date2 = dates[1]
+	fmt.Println("Start_date1", di.CurrentSite.CurrentSiteRange.Start_date1)
+	fmt.Println("Start_date2", di.CurrentSite.CurrentSiteRange.Start_date2)
 
 	// ENDING_PERIOD
 
@@ -573,7 +567,7 @@ func (di *DatabaseImport) processCharacs(f *Fields) ([]int, error) {
 	}
 	//path = strings.TrimSuffix(path, "->")
 	// Check if charac exists and retrieve id
-	caracID := di.ArkeoCaracs[f.CARAC_NAME][f.CARAC_NAME+path]
+	caracID := di.ArkeoCharacs[f.CARAC_NAME][f.CARAC_NAME+path]
 	if caracID == 0 {
 		di.AddError(f.CARAC_NAME+path, "IMPORT.CSVFIELD_CARACTERISATION.T_CHECK_INVALID", "CARAC_LVL"+strconv.Itoa(lvl))
 		return characs, errors.New("invalid charac")
@@ -614,4 +608,55 @@ func (di *DatabaseImport) valueAsBool(fieldName, val string) (choosenValue bool,
 // lowerTranslation return translation in lower case
 func (di *DatabaseImport) lowerTranslation(s string) string {
 	return strings.ToLower(translate.T(di.Parser.Lang, s))
+}
+
+// parseDates analyzes declared period and returns starting and ending dates
+func (di *DatabaseImport) parseDates(period string) [2]int {
+	// If empty period, set "min and max" dates
+	if (period == "" || strings.ToLower(period) == di.lowerTranslation("IMPORT.CSVFIELD_ALL.T_CHECK_UNDETERMINED")) || strings.ToLower(period) == "null" {
+		return [2]int{math.MinInt32, math.MaxInt32}
+	}
+
+	period = strings.Replace(period, "+", "", -1)
+	var dates [2]int
+	var date1 string
+	var date2 string
+
+	// If we have only a date, start date and end date are the same
+	uniqDate := uniqDateRexep.FindString(period)
+	if uniqDate != "" {
+		fmt.Println("UNIQ DATE")
+		date1 = uniqDate
+		date2 = uniqDate
+	} else {
+		date1 = periodRegexpDate1.FindString(period)
+		date2 = periodRegexpDate2.FindString(period)
+	}
+
+	fmt.Println("Date1 and Date2", date1, date2)
+
+	// First date
+	if date1 != "" {
+		sd, err := strconv.Atoi(date1)
+		if err != nil {
+			di.AddError("IMPORT.CSVFIELD_STARTING_PERIOD_DATE1.T_CHECK_WRONG_VALUE", "STARTING_PERIOD")
+		} else {
+			dates[0] = sd
+		}
+	} else {
+		dates[0] = math.MinInt32
+	}
+
+	// Second date
+	if date2 != "" {
+		ed, err := strconv.Atoi(date2)
+		if err != nil {
+			di.AddError("IMPORT.CSVFIELD_STARTING_PERIOD_DATE1.T_CHECK_WRONG_VALUE", "STARTING_PERIOD")
+		} else {
+			dates[1] = ed
+		}
+	} else {
+		dates[1] = math.MaxInt32
+	}
+	return dates
 }
