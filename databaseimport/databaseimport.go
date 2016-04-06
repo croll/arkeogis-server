@@ -629,6 +629,7 @@ func (di *DatabaseImport) parseDates(period string) ([2]int, error) {
 	// If empty period, set "min and max" dates
 	period = strings.Replace(period, "+", "", -1)
 	period = strings.Replace(period, " ", "", -1)
+	period = strings.Replace(period, " ", "", -1) // non breaking space
 	if (period == "" || strings.ToLower(period) == di.lowerTranslation("IMPORT.CSVFIELD_ALL.T_CHECK_UNDETERMINED")) || strings.ToLower(period) == "null" {
 		return [2]int{math.MinInt32, math.MaxInt32}, nil
 	}
