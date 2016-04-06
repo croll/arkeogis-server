@@ -24,12 +24,14 @@ package model
 import (
 	"fmt"
 
+	"strings"
+
 	db "github.com/croll/arkeogis-server/db"
 )
 
 func GetCharacPathsFromLang(name string, lang string) (caracs map[string]int, err error) {
 	caracs = map[string]int{}
-	rows, err := db.DB.Query("WITH RECURSIVE nodes_cte(id, path) AS (SELECT ca.id, cat.name::TEXT AS path FROM charac AS ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON cat.lang_id = lang.id WHERE lang.iso_code = $2 AND ca.id = (SELECT ca.id FROM charac ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON lang.id = cat.lang_id WHERE lang.iso_code = $2 AND cat.name = $1) UNION ALL SELECT ca.id, (p.path || '->' || cat.name) FROM nodes_cte AS p, charac AS ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON cat.lang_id = lang.id WHERE lang.iso_code = $2 AND ca.parent_id = p.id) SELECT * FROM nodes_cte AS n ORDER BY n.id ASC;", name, lang)
+	rows, err := db.DB.Query("WITH RECURSIVE nodes_cte(id, path) AS (SELECT ca.id, cat.name::TEXT AS path FROM charac AS ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON cat.lang_id = lang.id WHERE lang.iso_code = $2 AND ca.id = (SELECT ca.id FROM charac ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON lang.id = cat.lang_id WHERE lang.iso_code = $2 AND lower(cat.name) = lower($1)) UNION ALL SELECT ca.id, (p.path || '->' || cat.name) FROM nodes_cte AS p, charac AS ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON cat.lang_id = lang.id WHERE lang.iso_code = $2 AND ca.parent_id = p.id) SELECT * FROM nodes_cte AS n ORDER BY n.id ASC;", name, lang)
 	if err != nil {
 		return
 	}
@@ -53,7 +55,7 @@ func GetCharacPathsFromLang(name string, lang string) (caracs map[string]int, er
 
 func GetCharacPathsFromLangID(name string, langID int) (caracs map[string]int, err error) {
 	caracs = map[string]int{}
-	rows, err := db.DB.Query("WITH RECURSIVE nodes_cte(id, path) AS (SELECT ca.id, cat.name::TEXT AS path FROM charac AS ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON cat.lang_id = lang.id WHERE lang.id= $2 AND ca.id = (SELECT ca.id FROM charac ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON lang.id = cat.lang_id WHERE lang.id = $2 AND cat.name = $1) UNION ALL SELECT ca.id, (p.path || '->' || cat.name) FROM nodes_cte AS p, charac AS ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON cat.lang_id = lang.id WHERE lang.id= $2 AND ca.parent_id = p.id) SELECT * FROM nodes_cte AS n ORDER BY n.id ASC;", name, langID)
+	rows, err := db.DB.Query("WITH RECURSIVE nodes_cte(id, path) AS (SELECT ca.id, cat.name::TEXT AS path FROM charac AS ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON cat.lang_id = lang.id WHERE lang.id= $2 AND ca.id = (SELECT ca.id FROM charac ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON lang.id = cat.lang_id WHERE lang.id = $2 AND lower(cat.name) = lower($1)) UNION ALL SELECT ca.id, (p.path || '->' || cat.name) FROM nodes_cte AS p, charac AS ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON cat.lang_id = lang.id WHERE lang.id= $2 AND ca.parent_id = p.id) SELECT * FROM nodes_cte AS n ORDER BY n.id ASC;", name, langID)
 	if err != nil {
 		return
 	}
@@ -66,6 +68,7 @@ func GetCharacPathsFromLangID(name string, langID int) (caracs map[string]int, e
 		if err = rows.Scan(&id, &path); err != nil {
 			return
 		}
+		path = strings.ToLower(path)
 		caracs[path] = id
 	}
 	if err = rows.Err(); err != nil {

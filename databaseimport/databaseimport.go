@@ -114,7 +114,6 @@ type DatabaseImport struct {
 	SitesProcessed map[string]int
 	Database       *DatabaseFullInfos
 	CurrentSite    *SiteFullInfos
-	CurrentCharac  string
 	Simulate       bool
 	Tx             *sqlx.Tx
 	Parser         *Parser
@@ -559,30 +558,31 @@ func (di *DatabaseImport) processCharacs(f *Fields) ([]int, error) {
 		di.AddError(f.CARAC_NAME, "IMPORT.CSVFIELD_CARAC_NAME.T_CHECK_EMPTY", "CARAC_NAME")
 		return characs, errors.New("invalid carac name")
 	}
-	di.CurrentCharac = f.CARAC_NAME
 	if f.CARAC_LVL1 != "" {
-		path += "->" + f.CARAC_LVL1
+		path += "->" + strings.ToLower(f.CARAC_LVL1)
 	} else {
 		di.AddError(f.CARAC_NAME, "IMPORT.CSVFIELD_CARAC_LVL1.T_CHECK_EMPTY")
 		return characs, errors.New("no lvl1 carac")
 	}
 	if f.CARAC_LVL2 != "" {
-		path += "->" + f.CARAC_LVL2
+		path += "->" + strings.ToLower(f.CARAC_LVL2)
 		lvl++
 	}
 	if f.CARAC_LVL3 != "" {
-		path += "->" + f.CARAC_LVL3
+		path += "->" + strings.ToLower(f.CARAC_LVL3)
 		lvl++
 	}
 	if f.CARAC_LVL4 != "" {
-		path += "->" + f.CARAC_LVL4
+		path += "->" + strings.ToLower(f.CARAC_LVL4)
 		lvl++
 	}
 	//path = strings.TrimSuffix(path, "->")
 	// Check if charac exists and retrieve id
-	caracID := di.ArkeoCharacs[f.CARAC_NAME][f.CARAC_NAME+path]
+	caracNameToLowerCase := strings.ToLower(f.CARAC_NAME)
+	caracID := di.ArkeoCharacs[caracNameToLowerCase][caracNameToLowerCase+path]
 	if caracID == 0 {
-		di.AddError(f.CARAC_NAME+path, "IMPORT.CSVFIELD_CARACTERISATION.T_CHECK_INVALID", "CARAC_LVL"+strconv.Itoa(lvl))
+		fmt.Println("NOT FOUND: ", caracNameToLowerCase+path)
+		di.AddError(caracNameToLowerCase+path, "IMPORT.CSVFIELD_CARACTERISATION.T_CHECK_INVALID", "CARAC_LVL"+strconv.Itoa(lvl))
 		return characs, errors.New("invalid charac")
 	}
 	characs = append(characs, caracID)
@@ -597,7 +597,8 @@ func (di *DatabaseImport) cacheCharacs() (map[string]map[string]int, error) {
 		return characs, err
 	}
 	for name := range characsRoot {
-		characs[name], err = model.GetCharacPathsFromLangID(name, di.Database.Default_language)
+		loweredName := strings.ToLower(name)
+		characs[loweredName], err = model.GetCharacPathsFromLangID(name, di.Database.Default_language)
 		if err != nil {
 			return characs, err
 		}
