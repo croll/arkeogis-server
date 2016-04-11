@@ -187,7 +187,7 @@ func importLanguageCodes(rc io.Reader) error {
 	tx := db.DB.MustBegin()
 	tx.MustExec("SET CONSTRAINTS ALL DEFERRED")
 	// Store langs in database
-	stmt, err := tx.Prepare("INSERT INTO lang (iso_code, active) VALUES ($1, false) RETURNING id")
+	stmt, err := tx.Prepare("INSERT INTO lang (id, iso_code, active) VALUES (0, $1, false) RETURNING id")
 	lineNum := 0
 	if err != nil {
 		return err
