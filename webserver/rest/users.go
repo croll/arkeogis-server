@@ -348,7 +348,7 @@ func userSet(w http.ResponseWriter, r *http.Request, proute routes.Proute, creat
 	var companies []model.Company
 	for _, form_company := range u.Companies {
 		if form_company.Id > 0 {
-			form_company.City_geonameid = form_company.CityAndCountry.City.City_geonameid
+			form_company.City_geonameid = form_company.CityAndCountry.City.Geonameid
 			log.Println("updating company : ", form_company.Company)
 			err = form_company.Update(tx)
 			if err != nil {
@@ -359,7 +359,7 @@ func userSet(w http.ResponseWriter, r *http.Request, proute routes.Proute, creat
 			}
 			companies = append(companies, form_company.Company)
 		} else if len(form_company.Name) > 0 {
-			form_company.City_geonameid = form_company.CityAndCountry.City.City_geonameid
+			form_company.City_geonameid = form_company.CityAndCountry.City.Geonameid
 			log.Println("creating company : ", form_company.Company)
 			err = form_company.Create(tx)
 			if err != nil {
