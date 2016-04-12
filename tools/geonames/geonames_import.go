@@ -362,11 +362,11 @@ func importCities(rc io.Reader) error {
 	//var err error
 	if len(CachedCitiesById) > 1 {
 		fmt.Println("- Updating existing cities")
-		stmtUpdate1, errStmt1 = tx.Prepare("UPDATE city SET country_geonameid = $2, geom_centroid = ST_GeomFromText($3, 4326) WHERE geonameid = $1")
+		stmtUpdate1, errStmt1 = tx.Prepare("UPDATE city SET country_geonameid = $2, geom_centroid = ST_GeomFromText($3, 4326), updated_at=now() WHERE geonameid = $1")
 		stmtUpdate2, errStmt2 = tx.Prepare("UPDATE city_tr SET lang_id = $2, name = $3, name_ascii = $4 WHERE city_geonameid = $1")
 	} else {
 		fmt.Println("- Inserting cities")
-		stmtInsert1, errStmt1 = tx.Prepare("INSERT INTO city (geonameid, country_geonameid, geom_centroid) VALUES ($1, $2, ST_GeomFromText($3, 4326))")
+		stmtInsert1, errStmt1 = tx.Prepare("INSERT INTO city (geonameid, country_geonameid, geom_centroid, created_at, updated_at) VALUES ($1, $2, ST_GeomFromText($3, 4326), now(), now())")
 		stmtInsert2, errStmt2 = tx.Prepare("INSERT INTO city_tr (city_geonameid, lang_id, name, name_ascii) VALUES ($1, $2, $3, $4)")
 	}
 	if errStmt1 != nil {
