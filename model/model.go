@@ -282,8 +282,8 @@ type Project__wms_map struct {
 }
 
 type Session struct {
-	Token string       `db:"token" json:"token"`
-	Value sql.RawBytes `db:"value" json:"value"`
+	Token string `db:"token" json:"token"`
+	Value string `db:"value" json:"value"`
 }
 
 type Shapefile struct {
@@ -394,9 +394,9 @@ type User__group struct {
 }
 
 type User_preferences struct {
-	User_id int          `db:"user_id" json:"user_id"` // User.Id
-	Key     string       `db:"key" json:"key"`
-	Value   sql.RawBytes `db:"value" json:"value"`
+	User_id int    `db:"user_id" json:"user_id"` // User.Id
+	Key     string `db:"key" json:"key"`
+	Value   string `db:"value" json:"value"`
 }
 
 type User_project struct {
