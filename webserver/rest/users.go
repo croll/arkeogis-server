@@ -193,14 +193,15 @@ func selectGroupAsJsonNotNull(group_type string) string {
 func selectCompany(user_id string) string {
 	return "" +
 		"SELECT " +
-		" c.id, c.name, c.city_geonameid " +
+		" array_agg(c.*) " +
 		" FROM user__company u_c " +
 		" LEFT JOIN company c ON u_c.company_id = c.id " +
 		" WHERE u_c.user_id = " + user_id
 }
 
 func selectCompanyAsJson(user_id string) string {
-	return "COALESCE((select row_to_json(t) from(" + selectCompany(user_id) + ") t), '[]'::json)"
+	//return "COALESCE((select row_to_json(t) from(" + selectCompany(user_id) + ") t), '[]'::json)"
+	return "COALESCE(array_to_json((" + selectCompany(user_id) + ")), '[]'::json)"
 }
 
 // UserList List of users. no filets, no args actually...
