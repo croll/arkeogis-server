@@ -37,6 +37,7 @@ import (
 	model "github.com/croll/arkeogis-server/model"
 	routes "github.com/croll/arkeogis-server/webserver/routes"
 	"github.com/croll/arkeogis-server/webserver/session"
+	sqlx_types "github.com/jmoiron/sqlx/types"
 	"github.com/lib/pq"
 )
 
@@ -175,10 +176,10 @@ func selectCityAndCountry(city_geonameid string, langid int) string {
 func UserList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	type User struct {
 		model.User
-		Groups_user       string `json:"groups_user"`
-		Groups_chronology string `json:"groups_chronology"`
-		Groups_charac     string `json:"groups_charac"`
-		CountryAndCity    string `json:"country_and_city"`
+		Groups_user       sqlx_types.JsonText `json:"groups_user"`
+		Groups_chronology sqlx_types.JsonText `json:"groups_chronology"`
+		Groups_charac     sqlx_types.JsonText `json:"groups_charac"`
+		CountryAndCity    sqlx_types.JsonText `json:"country_and_city"`
 	}
 	type Answer struct {
 		Data  []User `json:"data"`
@@ -217,6 +218,8 @@ func UserList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		return
 	}
 
+	//log.Println("result: ", answer.Data)
+
 	err = db.DB.Get(&answer.Count, "SELECT count(*) FROM \"user\"")
 	if err != nil {
 		log.Println("err: ", err)
@@ -225,6 +228,10 @@ func UserList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	//fmt.Println("users: ", users)
 	j, err := json.Marshal(answer)
+	if err != nil {
+		log.Println("marshal failed: ", err)
+	}
+	log.Println("result: ", string(j))
 	w.Write(j)
 }
 
