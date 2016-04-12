@@ -190,6 +190,19 @@ func selectGroupAsJsonNotNull(group_type string) string {
 	return "COALESCE((" + selectGroupAsJson(group_type) + "), '[]'::json)"
 }
 
+func selectCompany(user_id string) string {
+	return "" +
+		"SELECT " +
+		" c.id, c.name, c.city_geonameid " +
+		" FROM user__company u_c " +
+		" LEFT JOIN company c ON u_c.company_id = c.id " +
+		" WHERE u_c.user_id = " + user_id
+}
+
+func selectCompanyAsJson(user_id string) string {
+	return "COALESCE((select row_to_json(t) from(" + selectCompany(user_id) + ") t), '[]'::json)"
+}
+
 // UserList List of users. no filets, no args actually...
 func UserList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	type User struct {
@@ -198,6 +211,7 @@ func UserList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		Groups_chronology sqlx_types.JsonText `json:"groups_chronology"`
 		Groups_charac     sqlx_types.JsonText `json:"groups_charac"`
 		CountryAndCity    sqlx_types.JsonText `json:"country_and_city"`
+		Companies         sqlx_types.JsonText `json:"companies"`
 	}
 	type Answer struct {
 		Data  []User `json:"data"`
@@ -228,7 +242,8 @@ func UserList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 			" "+selectGroupAsJsonNotNull("user")+" as groups_user, "+
 			" "+selectGroupAsJsonNotNull("chronology")+" as groups_chronology, "+
 			" "+selectGroupAsJsonNotNull("charac")+" as groups_charac, "+
-			" "+selectCityAndCountryAsJson("u.city_geonameid", params.Lang_id)+" as countryandcity "+
+			" "+selectCityAndCountryAsJson("u.city_geonameid", params.Lang_id)+" as countryandcity, "+
+			" "+selectCompanyAsJson("u.id")+" as companies "+
 			" FROM \"user\" u WHERE (u.username ILIKE $1 OR u.firstname ILIKE $1 OR u.lastname ILIKE $1 OR u.email ILIKE $1) GROUP BY u.id ORDER BY "+order+" "+orderdir+" OFFSET $2 LIMIT $3",
 		"%"+params.Filter+"%", offset, params.Limit)
 	if err != nil {
@@ -431,7 +446,7 @@ func UserInfos(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 		err = mcomp.CityAndCountry.Get(tx, company.City_geonameid, 48) // todo: take good lang
 		if err != nil {
-			log.Println("can't get company city and country", err)
+			log.Println("can't get company city and country err:", err)
 			//userSqlError(w, err)
 			//return
 		}
