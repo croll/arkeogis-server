@@ -172,6 +172,10 @@ func selectCityAndCountry(city_geonameid string, langid int) string {
 		"LIMIT 1"
 }
 
+func selectCityAndCountryAsJson(city_geonameid string, langid int) string {
+	return "COALESCE((select row_to_json(t) from(" + selectCityAndCountry(city_geonameid, langid) + ") t), '[]'::json)"
+}
+
 // UserList List of users. no filets, no args actually...
 func UserList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	type User struct {
@@ -206,11 +210,11 @@ func UserList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	err := db.DB.Select(&answer.Data,
 		"SELECT "+
-			" *, "+
-			" COALESCE((SELECT array_to_json(array_agg(group_tr.*)) FROM user__group u_g LEFT JOIN \"group\" g ON u_g.group_id = g.id LEFT JOIN group_tr ON g.id = group_tr.group_id WHERE g.type='user' AND u_g.user_id = u.id), '[]') as groups_user,"+
-			" COALESCE((SELECT array_to_json(array_agg(group_tr.*)) FROM user__group u_g LEFT JOIN \"group\" g ON u_g.group_id = g.id LEFT JOIN group_tr ON g.id = group_tr.group_id WHERE g.type='chronology' AND u_g.user_id = u.id), '[]') as groups_chronology,"+
-			" COALESCE((SELECT array_to_json(array_agg(group_tr.*)) FROM user__group u_g LEFT JOIN \"group\" g ON u_g.group_id = g.id LEFT JOIN group_tr ON g.id = group_tr.group_id WHERE g.type='charac' AND u_g.user_id = u.id), '[]') as groups_charac, "+
-			" COALESCE((select row_to_json(t) from("+selectCityAndCountry("u.city_geonameid", params.Lang_id)+") t), '{}') as countryandcity"+
+			" u.id, u.username, u.created_at, u.updated_at, u.firstname, u.lastname, u.active, u.email, "+
+			" COALESCE((SELECT array_to_json(array_agg(group_tr.*)) FROM user__group u_g LEFT JOIN \"group\" g ON u_g.group_id = g.id LEFT JOIN group_tr ON g.id = group_tr.group_id WHERE g.type='user' AND u_g.user_id = u.id), '[]'::json) as groups_user,"+
+			" COALESCE((SELECT array_to_json(array_agg(group_tr.*)) FROM user__group u_g LEFT JOIN \"group\" g ON u_g.group_id = g.id LEFT JOIN group_tr ON g.id = group_tr.group_id WHERE g.type='chronology' AND u_g.user_id = u.id), '[]'::json) as groups_chronology,"+
+			" COALESCE((SELECT array_to_json(array_agg(group_tr.*)) FROM user__group u_g LEFT JOIN \"group\" g ON u_g.group_id = g.id LEFT JOIN group_tr ON g.id = group_tr.group_id WHERE g.type='charac' AND u_g.user_id = u.id), '[]'::json) as groups_charac, "+
+			" "+selectCityAndCountryAsJson("u.city_geonameid", params.Lang_id)+" as countryandcity "+
 			" FROM \"user\" u WHERE (u.username ILIKE $1 OR u.firstname ILIKE $1 OR u.lastname ILIKE $1 OR u.email ILIKE $1) GROUP BY u.id ORDER BY "+order+" "+orderdir+" OFFSET $2 LIMIT $3",
 		"%"+params.Filter+"%", offset, params.Limit)
 	if err != nil {
