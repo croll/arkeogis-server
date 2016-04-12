@@ -52,6 +52,8 @@ var (
 	acNum                int
 )
 
+const geom_nowhere = "ST_GeometryFromText('POINT(2.5559 49.0083)', 4326)" // Paris (CDG)
+
 func downloadFromUrl(url string) error {
 	tokens := strings.Split(url, "/")
 	fileName := tokens[len(tokens)-1]
@@ -187,7 +189,7 @@ func importLanguageCodes(rc io.Reader) error {
 	tx := db.DB.MustBegin()
 	tx.MustExec("SET CONSTRAINTS ALL DEFERRED")
 	// Store langs in database
-	stmt, err := tx.Prepare("INSERT INTO lang (id, iso_code, active) VALUES (0, $1, false) RETURNING id")
+	stmt, err := tx.Prepare("INSERT INTO lang (iso_code, active) VALUES ($1, false) RETURNING id")
 	lineNum := 0
 	if err != nil {
 		return err
@@ -711,8 +713,9 @@ func importAlternateNames(rc io.Reader) error {
 func insertDefaultValues() error {
 	// Insert "undefined" lang and populate cache index
 	var undefinedLangId int
-	err := db.DB.QueryRow("INSERT INTO lang (iso_code, active) VALUES ('D', true) RETURNING id").Scan(&undefinedLangId)
+	err := db.DB.QueryRow("INSERT INTO lang (id, iso_code, active) VALUES (0, 'D', true) RETURNING id").Scan(&undefinedLangId)
 	if err != nil {
+		fmt.Println("can't insert default lang D : ", err)
 		return err
 	}
 	Langs["D"] = undefinedLangId
@@ -720,18 +723,24 @@ func insertDefaultValues() error {
 	var undefinedContinentId int
 	err = db.DB.QueryRow("INSERT INTO continent (geonameid, iso_code, created_at, updated_at) VALUES (0, 'U', $1, $2) RETURNING geonameid", time.Now(), time.Now()).Scan(&undefinedContinentId)
 	if err != nil {
+		fmt.Println("can't insert default continent D : ", err)
 		return err
 	}
 	// Insert "undefined" country and populate cache index
 	var undefinedCountryId int
 	err = db.DB.QueryRow("INSERT INTO country (geonameid, iso_code, created_at, updated_at) VALUES (0, 'U', $1, $2) RETURNING geonameid", time.Now(), time.Now()).Scan(&undefinedCountryId)
 	if err != nil {
+		fmt.Println("can't insert default country D : ", err)
 		return err
 	}
 	Countries["U"] = undefinedCountryId
 	// Insert "undefined" city
 	var undefinedCityId int
-	err = db.DB.QueryRow("INSERT INTO city (geonameid, country_geonameid) VALUES (0, 0) RETURNING geonameid").Scan(&undefinedCityId)
+	err = db.DB.QueryRow("INSERT INTO city (geonameid, country_geonameid, geom_centroid, created_at, updated_at) VALUES (0, 0, " + geom_nowhere + ", now(), now()) RETURNING geonameid").Scan(&undefinedCityId)
+	if err != nil {
+		fmt.Println("can't insert city : ", err)
+		return err
+	}
 	CitiesById[undefinedCityId] = true
 	return nil
 }
