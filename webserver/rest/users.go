@@ -208,11 +208,11 @@ func selectCompanyAsJson(user_id string) string {
 func UserList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	type User struct {
 		model.User
-		Groups_user       sqlx_types.JsonText `json:"groups_user"`
-		Groups_chronology sqlx_types.JsonText `json:"groups_chronology"`
-		Groups_charac     sqlx_types.JsonText `json:"groups_charac"`
-		CountryAndCity    sqlx_types.JsonText `json:"country_and_city"`
-		Companies         sqlx_types.JsonText `json:"companies"`
+		Groups_user       sqlx_types.JSONText `json:"groups_user"`
+		Groups_chronology sqlx_types.JSONText `json:"groups_chronology"`
+		Groups_charac     sqlx_types.JSONText `json:"groups_charac"`
+		CountryAndCity    sqlx_types.JSONText `json:"country_and_city"`
+		Companies         sqlx_types.JSONText `json:"companies"`
 	}
 	type Answer struct {
 		Data  []User `json:"data"`
