@@ -118,7 +118,7 @@ func CompanyGet(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		return
 	}
 
-	err = res.CityAndCountry.Get(tx, res.Company.City_geonameid, 48) // todo: lang !
+	err = res.CityAndCountry.Get(tx, res.Company.City_geonameid, proute.Lang.Id) // todo: lang !
 	if err != nil {
 		log.Println("err on get", err)
 		//routes.ServerError(w, 500, "INTERNAL ERROR")
