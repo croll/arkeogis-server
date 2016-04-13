@@ -35,7 +35,6 @@ import (
 )
 
 type CountryListParams struct {
-	Lang   string `default:"en" min:"2" max:"2"`
 	Search string
 }
 
@@ -78,7 +77,7 @@ func CountryList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	countries := []row{}
 
-	err := db.DB.Select(&countries, "SELECT country.*, country_tr.* FROM \"country\" JOIN country_tr ON country_tr.country_geonameid = country.geonameid LEFT JOIN lang ON country_tr.lang_id = lang.id WHERE (lang.iso_code = $1 OR lang.iso_code = 'D') AND (name_ascii ILIKE $2 OR name ILIKE $2)", params.Lang, params.Search+"%")
+	err := db.DB.Select(&countries, "SELECT country.*, country_tr.* FROM \"country\" JOIN country_tr ON country_tr.country_geonameid = country.geonameid LEFT JOIN lang ON country_tr.lang_id = lang.id WHERE (lang.iso_code = $1 OR lang.iso_code = 'D') AND (name_ascii ILIKE $2 OR name ILIKE $2)", proute.Lang1.Id, params.Search+"%")
 	if err != nil {
 		fmt.Println("err: ", err)
 		return
