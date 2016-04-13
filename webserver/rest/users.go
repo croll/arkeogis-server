@@ -525,6 +525,34 @@ func UserLogin(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	s.Values["user_id"] = user.Id
 	s.Values["user"] = user
 
+	// get langs
+	lang1 := model.Lang{
+		Id: user.First_lang_id,
+	}
+	lang2 := model.Lang{
+		Id: user.Second_lang_id,
+	}
+
+	err = lang1.Get(tx)
+	if err != nil {
+		lang1.Iso_code = "en"
+		err = lang1.Get(tx)
+		if err != nil {
+			log.Fatal("can't load lang1 !")
+		}
+	}
+
+	err = lang2.Get(tx)
+	if err != nil {
+		lang2.Iso_code = "fr"
+		err = lang2.Get(tx)
+		if err != nil {
+			log.Fatal("can't load lang2 !")
+		}
+	}
+
+	log.Println("langs: ", lang1, lang2)
+
 	err = tx.Commit()
 	if err != nil {
 		if err, ok := err.(*pq.Error); ok {
@@ -538,11 +566,15 @@ func UserLogin(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	type answer struct {
 		User  model.User
 		Token string
+		Lang1 model.Lang `json:"lang1"`
+		Lang2 model.Lang `json:"lang2"`
 	}
 
 	a := answer{
 		User:  user,
 		Token: token,
+		Lang1: lang1,
+		Lang2: lang2,
 	}
 
 	j, err := json.Marshal(a)
