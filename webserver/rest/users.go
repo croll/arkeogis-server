@@ -59,7 +59,7 @@ type UserListParams struct {
 	Page    int    `default:"1" min:"1" error:"page over boundaries"`
 	Order   string `default:"u.created_at" enum:"u.created_at,-u.created_at,u.updated_at,-u.updated_at,u.username,-u.username,u.firstname,-u.firstname,u.lastname,-u.lastname,u.email,-u.email" error:"bad order"`
 	Filter  string `default:""`
-	Lang_id int    `default:"1"`
+	Lang_id int    `default:"0"`
 }
 
 // UserCreate structure (json)
@@ -167,8 +167,8 @@ func selectCityAndCountry(city_geonameid string, langid int) string {
 		"LEFT JOIN country ON country.geonameid=city.country_geonameid " +
 		"LEFT JOIN country_tr ON country_tr.country_geonameid = country.geonameid " +
 		"WHERE city.geonameid=" + city_geonameid +
-		" AND (city_tr.lang_id = " + strconv.Itoa(langid) + " or city_tr.lang_id=1) " +
-		" AND (country_tr.lang_id = " + strconv.Itoa(langid) + " or country_tr.lang_id=1) " +
+		" AND (city_tr.lang_id = " + strconv.Itoa(langid) + " or city_tr.lang_id=0) " +
+		" AND (country_tr.lang_id = " + strconv.Itoa(langid) + " or country_tr.lang_id=0) " +
 		"ORDER by city_tr.lang_id desc, country_tr.lang_id desc " +
 		"LIMIT 1"
 }
