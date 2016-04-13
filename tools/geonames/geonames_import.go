@@ -717,7 +717,7 @@ func importAlternateNames(rc io.Reader) error {
 func insertDefaultValues() error {
 	// Insert "undefined" lang and populate cache index
 	var undefinedLangId int
-	err := db.DB.QueryRow("INSERT INTO lang (id, iso_code, active) VALUES (0, 'D', true) RETURNING id").Scan(&undefinedLangId)
+	err := db.DB.QueryRow("INSERT INTO lang (id, iso_code, active) VALUES (0, 'D', false) RETURNING id").Scan(&undefinedLangId)
 	if err != nil {
 		fmt.Println("can't insert default lang D : ", err)
 		return err
