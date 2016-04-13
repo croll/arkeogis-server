@@ -60,6 +60,8 @@ type Proute struct {
 	Json    interface{}
 	Params  interface{}
 	Session *session.Session
+	Lang1   model.Lang
+	Lang2   model.Lang
 }
 
 type File struct {
@@ -227,6 +229,41 @@ func handledRoute(myroute *Route, rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// get langs
+	lang1 := model.Lang{
+		Iso_code: "en",
+	}
+	lang2 := model.Lang{
+		Iso_code: "fr",
+	}
+
+	if _lang1, err := r.Cookie("arkeogis_lang_1"); err == nil {
+		lang1.Iso_code = _lang1.Value
+	}
+	if _lang2, err := r.Cookie("arkeogis_lang_2"); err == nil {
+		lang2.Iso_code = _lang2.Value
+	}
+
+	err = lang1.Get(tx)
+	if err != nil {
+		lang1.Iso_code = "en"
+		err = lang1.Get(tx)
+		if err != nil {
+			log.Fatal("can't load lang1 !")
+		}
+	}
+
+	err = lang2.Get(tx)
+	if err != nil {
+		lang2.Iso_code = "fr"
+		err = lang2.Get(tx)
+		if err != nil {
+			log.Fatal("can't load lang2 !")
+		}
+	}
+
+	log.Println("langs: ", lang1, lang2)
+
 	// Retrieve the user from db
 	user.Get(tx)
 	log.Println("user is : ", user.Username)
@@ -286,6 +323,8 @@ func handledRoute(myroute *Route, rw http.ResponseWriter, r *http.Request) {
 		Json:    o,
 		Params:  params,
 		Session: s,
+		Lang1:   lang1,
+		Lang2:   lang2,
 	}
 
 	myroute.Func(rw, r, proute)

@@ -23,7 +23,24 @@ package model
 
 import (
 	db "github.com/croll/arkeogis-server/db"
+	"github.com/jmoiron/sqlx"
 )
+
+// Get the lang from the database
+func (l *Lang) Get(tx *sqlx.Tx) error {
+	var q = "SELECT * FROM \"lang\" WHERE "
+	if len(l.Iso_code) > 0 {
+		q += "iso_code=:iso_code"
+	} else {
+		q += "id=:id"
+	}
+	stmt, err := tx.PrepareNamed(q)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	return stmt.Get(l, l)
+}
 
 // GetActiveLangs return an array of Lang object which are actives only
 func GetActiveLangs() ([]Lang, error) {
