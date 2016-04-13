@@ -215,6 +215,10 @@ func importLanguageCodes(rc io.Reader) error {
 			Langs[s[2]] = id
 		}
 	}
+
+	// activate default langs
+	tx.MustExec("update lang set active='t' where iso_code in ('fr','en','es','de')")
+
 	if err := tx.Commit(); err != nil {
 		return err
 	}
