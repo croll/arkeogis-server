@@ -217,7 +217,34 @@ func importLanguageCodes(rc io.Reader) error {
 	}
 
 	// activate default langs
-	tx.MustExec("update lang set active='t' where iso_code in ('fr','en','es','de')")
+	tx.MustExec("update lang set active='t' where iso_code in ('fr','en','es','de','eu')")
+
+	// set default lang translations for theses langs
+	tx.MustExec("insert into lang_tr (lang_id, lang_id_tr, name) values ((select id from lang where iso_code='fr'), (select id from lang where iso_code='fr'), 'Français')")
+	tx.MustExec("insert into lang_tr (lang_id, lang_id_tr, name) values ((select id from lang where iso_code='fr'), (select id from lang where iso_code='en'), 'French')")
+	tx.MustExec("insert into lang_tr (lang_id, lang_id_tr, name) values ((select id from lang where iso_code='fr'), (select id from lang where iso_code='de'), 'Französisch')")
+	tx.MustExec("insert into lang_tr (lang_id, lang_id_tr, name) values ((select id from lang where iso_code='fr'), (select id from lang where iso_code='es'), 'Francés')")
+	tx.MustExec("insert into lang_tr (lang_id, lang_id_tr, name) values ((select id from lang where iso_code='fr'), (select id from lang where iso_code='eu'), 'Frantsesa')")
+	tx.MustExec("insert into lang_tr (lang_id, lang_id_tr, name) values ((select id from lang where iso_code='en'), (select id from lang where iso_code='fr'), 'Anglais')")
+	tx.MustExec("insert into lang_tr (lang_id, lang_id_tr, name) values ((select id from lang where iso_code='en'), (select id from lang where iso_code='en'), 'English')")
+	tx.MustExec("insert into lang_tr (lang_id, lang_id_tr, name) values ((select id from lang where iso_code='en'), (select id from lang where iso_code='de'), 'Englisch')")
+	tx.MustExec("insert into lang_tr (lang_id, lang_id_tr, name) values ((select id from lang where iso_code='en'), (select id from lang where iso_code='es'), 'Inglés')")
+	tx.MustExec("insert into lang_tr (lang_id, lang_id_tr, name) values ((select id from lang where iso_code='en'), (select id from lang where iso_code='eu'), 'Ingelesa')")
+	tx.MustExec("insert into lang_tr (lang_id, lang_id_tr, name) values ((select id from lang where iso_code='de'), (select id from lang where iso_code='fr'), 'Allemand')")
+	tx.MustExec("insert into lang_tr (lang_id, lang_id_tr, name) values ((select id from lang where iso_code='de'), (select id from lang where iso_code='en'), 'German')")
+	tx.MustExec("insert into lang_tr (lang_id, lang_id_tr, name) values ((select id from lang where iso_code='de'), (select id from lang where iso_code='de'), 'Deutsch')")
+	tx.MustExec("insert into lang_tr (lang_id, lang_id_tr, name) values ((select id from lang where iso_code='de'), (select id from lang where iso_code='es'), 'Alemán')")
+	tx.MustExec("insert into lang_tr (lang_id, lang_id_tr, name) values ((select id from lang where iso_code='de'), (select id from lang where iso_code='eu'), 'Alemana')")
+	tx.MustExec("insert into lang_tr (lang_id, lang_id_tr, name) values ((select id from lang where iso_code='es'), (select id from lang where iso_code='fr'), 'Espagnol')")
+	tx.MustExec("insert into lang_tr (lang_id, lang_id_tr, name) values ((select id from lang where iso_code='es'), (select id from lang where iso_code='en'), 'Spanish')")
+	tx.MustExec("insert into lang_tr (lang_id, lang_id_tr, name) values ((select id from lang where iso_code='es'), (select id from lang where iso_code='de'), 'Spanisch')")
+	tx.MustExec("insert into lang_tr (lang_id, lang_id_tr, name) values ((select id from lang where iso_code='es'), (select id from lang where iso_code='es'), 'Español')")
+	tx.MustExec("insert into lang_tr (lang_id, lang_id_tr, name) values ((select id from lang where iso_code='es'), (select id from lang where iso_code='eu'), 'Española')")
+	tx.MustExec("insert into lang_tr (lang_id, lang_id_tr, name) values ((select id from lang where iso_code='eu'), (select id from lang where iso_code='fr'), 'Basque')")
+	tx.MustExec("insert into lang_tr (lang_id, lang_id_tr, name) values ((select id from lang where iso_code='eu'), (select id from lang where iso_code='en'), 'Basque')")
+	tx.MustExec("insert into lang_tr (lang_id, lang_id_tr, name) values ((select id from lang where iso_code='eu'), (select id from lang where iso_code='de'), 'Baskisch')")
+	tx.MustExec("insert into lang_tr (lang_id, lang_id_tr, name) values ((select id from lang where iso_code='eu'), (select id from lang where iso_code='es'), 'Vasco')")
+	tx.MustExec("insert into lang_tr (lang_id, lang_id_tr, name) values ((select id from lang where iso_code='eu'), (select id from lang where iso_code='eu'), 'Euskera')")
 
 	if err := tx.Commit(); err != nil {
 		return err
