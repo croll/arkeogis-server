@@ -146,7 +146,11 @@ func main() {
 	rebuildLang("fr", "web")
 	rebuildLang("en", "web")
 	rebuildLang("de", "web")
+	rebuildLang("es", "web")
+	rebuildLang("eu", "web")
 	rebuildLang("fr", "server")
 	rebuildLang("en", "server")
 	rebuildLang("de", "server")
+	rebuildLang("es", "server")
+	rebuildLang("eu", "server")
 }
