@@ -68,6 +68,7 @@ type Usercreate struct {
 	CityAndCountry model.CityAndCountry_wtr `json:"city_and_country"`
 	Companies      []Company                `json:"companies"`
 	File           *routes.File
+	Groups         []model.Group `json:"groups"`
 }
 
 // Userlogin structure (json)
@@ -346,6 +347,7 @@ func userSet(w http.ResponseWriter, r *http.Request, proute routes.Proute, creat
 		return
 	}
 
+	// save the companies
 	var companies []model.Company
 	for _, form_company := range u.Companies {
 		if form_company.Id > 0 {
@@ -376,6 +378,15 @@ func userSet(w http.ResponseWriter, r *http.Request, proute routes.Proute, creat
 	err = u.SetCompanies(tx, companies)
 	if err != nil {
 		log.Println("7")
+		tx.Rollback()
+		userSqlError(w, err)
+		return
+	}
+
+	// save the groups
+	err = u.SetGroups(tx, u.Groups)
+	if err != nil {
+		log.Println("set groups")
 		tx.Rollback()
 		userSqlError(w, err)
 		return
@@ -452,6 +463,13 @@ func UserInfos(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 			//return
 		}
 		u.Companies = append(u.Companies, mcomp)
+	}
+
+	u.Groups, err = u.GetGroups(tx)
+	if err != nil {
+		log.Println("can't get user groups")
+		userSqlError(w, err)
+		return
 	}
 
 	//log.Println("user id : ", params.Id, "user : ", u)
