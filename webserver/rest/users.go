@@ -55,11 +55,10 @@ type Company struct {
 
 // UserListParams is params struct for UserList query
 type UserListParams struct {
-	Limit   int    `default:"10" min:"1" max:"100" error:"limit over boundaries"`
-	Page    int    `default:"1" min:"1" error:"page over boundaries"`
-	Order   string `default:"u.created_at" enum:"u.created_at,-u.created_at,u.updated_at,-u.updated_at,u.username,-u.username,u.firstname,-u.firstname,u.lastname,-u.lastname,u.email,-u.email" error:"bad order"`
-	Filter  string `default:""`
-	Lang_id int    `default:"0"`
+	Limit  int    `default:"10" min:"1" max:"100" error:"limit over boundaries"`
+	Page   int    `default:"1" min:"1" error:"page over boundaries"`
+	Order  string `default:"u.created_at" enum:"u.created_at,-u.created_at,u.updated_at,-u.updated_at,u.username,-u.username,u.firstname,-u.firstname,u.lastname,-u.lastname,u.email,-u.email" error:"bad order"`
+	Filter string `default:""`
 }
 
 // UserCreate structure (json)
@@ -244,7 +243,7 @@ func UserList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 			" "+selectGroupAsJsonNotNull("user")+" as groups_user, "+
 			" "+selectGroupAsJsonNotNull("chronology")+" as groups_chronology, "+
 			" "+selectGroupAsJsonNotNull("charac")+" as groups_charac, "+
-			" "+selectCityAndCountryAsJson("u.city_geonameid", params.Lang_id)+" as countryandcity, "+
+			" "+selectCityAndCountryAsJson("u.city_geonameid", proute.Lang1.Id)+" as countryandcity, "+
 			" "+selectCompanyAsJson("u.id")+" as companies "+
 			" FROM \"user\" u WHERE (u.username ILIKE $1 OR u.firstname ILIKE $1 OR u.lastname ILIKE $1 OR u.email ILIKE $1) GROUP BY u.id ORDER BY "+order+" "+orderdir+" OFFSET $2 LIMIT $3",
 		"%"+params.Filter+"%", offset, params.Limit)
@@ -437,7 +436,7 @@ func UserInfos(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		return
 	}
 
-	err = u.CityAndCountry.Get(tx, u.User.City_geonameid, 48) // todo: take good lang
+	err = u.CityAndCountry.Get(tx, u.User.City_geonameid, proute.Lang1.Id)
 	if err != nil {
 		log.Println("can't get user city and country", err)
 		//userSqlError(w, err)
@@ -456,7 +455,7 @@ func UserInfos(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		mcomp.Id = company.Id
 		mcomp.Name = company.Name
 
-		err = mcomp.CityAndCountry.Get(tx, company.City_geonameid, 48) // todo: take good lang
+		err = mcomp.CityAndCountry.Get(tx, company.City_geonameid, proute.Lang1.Id)
 		if err != nil {
 			log.Println("can't get company city and country err:", err)
 			//userSqlError(w, err)
