@@ -72,6 +72,7 @@ type SiteFullInfos struct {
 	Point            *geo.Point
 	Latitude         string
 	Longitude        string
+	Altitude         string
 }
 
 // ImportError is the struct used to return errors, it enhances the errors struct to return more informations like line and field
@@ -171,10 +172,10 @@ func (di *DatabaseImport) New(parser *Parser, uid int, databaseName string, lang
 
 // periodRegexp is used to match if starting and ending periods are valid
 //var periodRegexp = regexp.MustCompile(`(-?\d{0,}):(-?\d{0,})`)
-var validDateRexep = regexp.MustCompile(`^-?\d{0,}:?-?\d{0,}$`)
-var uniqDateRegexp = regexp.MustCompile(`^(-?\d+)$`)
-var periodRegexpDate1 = regexp.MustCompile(`^(-?\d{0,}):-?\d{0,}$`)
-var periodRegexpDate2 = regexp.MustCompile(`^-?\d{0,}:(-?\d{0,})$`)
+var validDateRexep = regexp.MustCompile(`^-?\d{0,}\p{L}{0,}:?-?\d{0,}\p{L}{0,}$`)
+var uniqDateRegexp = regexp.MustCompile(`^(-?\d+\p{L}{0,})$`)
+var periodRegexpDate1 = regexp.MustCompile(`^(-?\d{0,}\p{L}{0,}):-?\d{0,}\p{L}{0,}$`)
+var periodRegexpDate2 = regexp.MustCompile(`^-?\d{0,}\p{L}{0,}:(-?\d{0,}\p{L}{0,})$`)
 
 // setDefaultValues init the di.Database object with default values
 func (di *DatabaseImport) setDefaultValues() {
@@ -191,6 +192,8 @@ func (di *DatabaseImport) setDefaultValues() {
 	di.Database.Coverage = ""
 	di.Database.Copyright = ""
 	di.Database.Context = "todo"
+	di.Database.Context_description = ""
+	di.Database.Subject = ""
 	di.Database.State = "in-progress"
 	di.Database.Published = false
 	di.Database.License_id = 1
@@ -313,6 +316,7 @@ func (di *DatabaseImport) processSiteInfos(f *Fields) {
 				// Store lat and lon to check differences if site has multiple site ranges
 				di.CurrentSite.Latitude = f.LATITUDE
 				di.CurrentSite.Longitude = f.LONGITUDE
+				di.CurrentSite.Altitude = f.ALTITUDE
 			}
 		} else {
 			// User don't want to use Geonames, we are stuck
@@ -363,7 +367,11 @@ func (di *DatabaseImport) checkDifferences(f *Fields) {
 	// LATITUDE
 	if f.LATITUDE != "" && f.LATITUDE != di.CurrentSite.Latitude {
 		di.AddError(f.LATITUDE, "IMPORT.CSVFIELD_ALL.T_CHECK_ALREADY_DEFINED_VALUE_DIFFERS", "LATITUDE")
+	}
 
+	// ALTITUDE
+	if f.ALTITUDE != "" && f.ALTITUDE != di.CurrentSite.Altitude {
+		di.AddError(f.LATITUDE, "IMPORT.CSVFIELD_ALL.T_CHECK_ALREADY_DEFINED_VALUE_DIFFERS", "ALTITUDE")
 	}
 
 	// OCCUPATION
@@ -628,9 +636,13 @@ func (di *DatabaseImport) lowerTranslation(s string) string {
 func (di *DatabaseImport) parseDates(period string) ([2]int, error) {
 	// If empty period, set "min and max" dates
 	period = strings.Replace(period, "+", "", -1)
-	period = strings.Replace(period, " ", "", -1)
 	period = strings.Replace(period, " ", "", -1) // non breaking space
+	period = strings.Replace(period, " ", "", -1)
+
+	// fmt.Println("PERIOD", period)
+
 	if (period == "" || strings.ToLower(period) == di.lowerTranslation("IMPORT.CSVFIELD_ALL.T_CHECK_UNDETERMINED")) || strings.ToLower(period) == "null" {
+		fmt.Println("MIN MAX OK")
 		return [2]int{math.MinInt32, math.MaxInt32}, nil
 	}
 
@@ -645,42 +657,74 @@ func (di *DatabaseImport) parseDates(period string) ([2]int, error) {
 	// If we have only a date, start date and end date are the same
 	uniqDate := uniqDateRegexp.FindString(period)
 	if uniqDate != "" {
-		// fmt.Println("UNIQ DATE")
-		date1 = uniqDate
-		date2 = uniqDate
+		fmt.Println("UNIQ DATE")
+		ud, err := strconv.ParseInt(uniqDate, 10, 64)
+		if err != nil {
+			di.AddError(period, "IMPORT.CSVFIELD_PERIOD.T_CHECK_WRONG_VALUE", "PERIOD")
+		} else {
+			dates[0] = int(ud)
+			dates[1] = int(ud)
+		}
 	} else {
 		// fmt.Println("MATCH ?")
 		mdate1 := periodRegexpDate1.FindStringSubmatch(period)
 		mdate2 := periodRegexpDate2.FindStringSubmatch(period)
-		date1 = mdate1[1]
-		date2 = mdate2[1]
-		// fmt.Println("Sate1 and Sate2", sdate1[1], sdate2[1])
-	}
+		tmpDate1 := mdate1[1]
+		tmpDate2 := mdate2[1]
 
-	// fmt.Println("Date1 and Date2", date1, date2)
-
-	// First date
-	if date1 != "" {
-		sd, err := strconv.ParseInt(date1, 10, 64)
-		if err != nil {
-			di.AddError("IMPORT.CSVFIELD_PERIOD_DATE1.T_CHECK_WRONG_VALUE", "STARTING_PERIOD")
+		// If tmpDate1 is empty, set min date
+		if tmpDate1 == "" {
+			dates[0] = math.MinInt32
 		} else {
-			dates[0] = int(sd)
+			// Check if it is numeric
+			date1 = uniqDateRegexp.FindString(tmpDate1)
+			if date1 != "" {
+				// If not a date check if it is undefined
+				sd, err := strconv.ParseInt(tmpDate1, 10, 64)
+				if err != nil {
+					di.AddError(period, "IMPORT.CSVFIELD_PERIOD_DATE1.T_CHECK_WRONG_VALUE", "STARTING_PERIOD")
+				} else {
+					dates[0] = int(sd)
+				}
+			} else {
+				// Check if it is set explicitly as undefined
+				if tmpDate1 == di.lowerTranslation("IMPORT.CSVFIELD_ALL.T_CHECK_UNDETERMINED") {
+					dates[0] = math.MinInt32
+				} else {
+					di.AddError(period, "IMPORT.CSVFIELD_PERIOD_DATE2.T_CHECK_WRONG_VALUE", "STARTING_PERIOD")
+				}
+			}
 		}
-	} else {
-		dates[0] = math.MinInt32
+
+		// If tmpDate2 is empty, set max date
+		if tmpDate2 == "" {
+			// dbg
+			dates[1] = math.MaxInt32
+		} else {
+			// Check if it is numeric
+			date2 = uniqDateRegexp.FindString(tmpDate2)
+			if date2 != "" {
+				// If not a date check if it is undefined
+				ed, err := strconv.ParseInt(tmpDate2, 10, 64)
+				if err != nil {
+					di.AddError(period, "IMPORT.CSVFIELD_PERIOD_DATE2.T_CHECK_WRONG_VALUE", "ENDING_PERIOD")
+				} else {
+					dates[1] = int(ed)
+				}
+			} else {
+				// Check if it is set explicitly as undefined
+				if tmpDate2 == di.lowerTranslation("IMPORT.CSVFIELD_ALL.T_CHECK_UNDETERMINED") {
+					dates[1] = math.MaxInt32
+				} else {
+					di.AddError(period, "IMPORT.CSVFIELD_PERIOD_DATE2.T_CHECK_WRONG_VALUE", "ENDING_PERIOD")
+				}
+			}
+		}
+
 	}
 
-	// Second date
-	if date2 != "" {
-		ed, err := strconv.ParseInt(date2, 10, 64)
-		if err != nil {
-			di.AddError("IMPORT.CSVFIELDPERIOD_DATE2.T_CHECK_WRONG_VALUE", "STARTING_PERIOD")
-		} else {
-			dates[1] = int(ed)
-		}
-	} else {
-		dates[1] = math.MaxInt32
-	}
+	// fmt.Println("Date1 and Date2", dates, "---")
+	// fmt.Println("----")
+
 	return dates, nil
 }

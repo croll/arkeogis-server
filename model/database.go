@@ -70,7 +70,7 @@ func (d *Database) Create(tx *sqlx.Tx) error {
 }
 
 func (d *Database) Update(tx *sqlx.Tx) error {
-	_, err := tx.NamedExec("UPDATE \"group\" SET "+Database_UpdateStr+" WHERE id=:id", d)
+	_, err := tx.NamedExec("UPDATE \"database\" SET "+Database_UpdateStr+" WHERE id=:id", d)
 	if err != nil {
 		return err
 	}
