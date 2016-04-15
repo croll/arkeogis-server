@@ -160,8 +160,6 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		Errors:         dbImport.Errors,
 		Lines:          dbImport.Parser.Line - 1, // Remove first line
 	}
-
-	w.Header().Set("Content-Type", "application/json")
 	lok, _ := json.Marshal(response)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(lok)

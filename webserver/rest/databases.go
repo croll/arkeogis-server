@@ -23,6 +23,7 @@ package rest
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	db "github.com/croll/arkeogis-server/db"
@@ -33,35 +34,25 @@ import (
 func init() {
 	Routes := []*routes.Route{
 		&routes.Route{
-			Path:   "/api/database",
-			Func:   DatabaseCreate,
-			Method: "POST",
-		},
-		&routes.Route{
 			Path:        "/api/database",
 			Description: "Get list of all databases in arkeogis",
 			Func:        DatabasesList,
 			Method:      "GET",
 		},
 		&routes.Route{
-			Path:   "/api/database",
-			Func:   DatabaseUpdate,
-			Method: "PUT",
-		},
-		&routes.Route{
-			Path:   "/api/database",
-			Func:   DatabaseDelete,
-			Method: "DELETE",
-		},
-		&routes.Route{
-			Path:   "/api/database/geographical_extent",
-			Func:   DatabaseDelete,
-			Method: "DELETE",
+			Path:        "/api/licences",
+			Description: "Get list of licenses",
+			Func:        LicenseList,
+			Method:      "GET",
+			Permissions: []string{
+			//"AdminUsers",
+			},
 		},
 	}
 	routes.RegisterMultiple(Routes)
 }
 
+// DatabaseList returns the list of databases
 func DatabasesList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	databases := []model.Database{}
 	err := db.DB.Select(&databases, "SELECT * FROM \"database\"")
@@ -74,11 +65,26 @@ func DatabasesList(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 	w.Write(l)
 }
 
-func DatabaseCreate(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+// DatabaseList returns the list of licenses which can be assigned to databases
+func LicenseList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+	databases := []model.License{}
+	err := db.DB.Select(&databases, "SELECT * FROM \"license\"")
+	if err != nil {
+		routes.ServerError(w, 500, "INTERNAL ERROR")
+		return
+	}
+	l, _ := json.Marshal(databases)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(l)
 }
 
-func DatabaseUpdate(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
-}
-
-func DatabaseDelete(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+// DatabaseEnumList returns the list of enums fields
+func DatabaseEnumList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+	enums := struct {
+		ScaleResolution    []string
+		GeographicalExtent []string
+		Type               []string
+	}{}
+	db.DB.Select(&enums.ScaleResolution, "SELECT unnest(enum_range(NULL::database_scale_resolution))")
+	fmt.Println(enums)
 }
