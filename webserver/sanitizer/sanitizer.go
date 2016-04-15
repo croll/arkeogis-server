@@ -22,11 +22,37 @@ func SanitizeStruct(o interface{}, path_prefix string) []FieldError {
 	st := reflect.TypeOf(o)
 	vt := reflect.ValueOf(o)
 	sanitizeStruct(st, vt, nil, path_prefix, "", &errors)
+	if len(errors) > 0 {
+		log.Println("sanitizer found some errors :", errors)
+	}
 	return errors
 }
 
+func removeErrorWithPath(errors *[]FieldError, path string) {
+	b := (*errors)[:0]
+	for _, error := range *errors {
+		if error.FieldPath != path {
+			b = append(b, error)
+		} else {
+			fmt.Println("removed path : ", path)
+		}
+	}
+	*errors = b
+}
+
 func sanitizeStruct(st reflect.Type, vt reflect.Value, field *reflect.StructField, path string, name string, errors *[]FieldError) {
-	fmt.Println("path : ", path, "name: ", name)
+	/*
+		if field != nil {
+			fmt.Println("path : ", path, "name: ", name, "tag: ", field.Tag)
+			if name == "password" {
+				fmt.Println("VALUE PASS ", vt)
+				fmt.Printf("FIELD PASS : %+v\n", vt)
+			}
+		}
+	*/
+	// for override to work, we remove every errors with same path before processing the next one
+	removeErrorWithPath(errors, path)
+
 	if field != nil && field.Tag.Get("ignore") == "true" {
 		return
 	}
@@ -36,6 +62,7 @@ func sanitizeStruct(st reflect.Type, vt reflect.Value, field *reflect.StructFiel
 		vt = vt.Elem()
 		sanitizeStruct(st, vt, nil, path, name, errors)
 	case reflect.Struct:
+		//fmt.Println("=> ", st)
 		for i := 0; i < st.NumField(); i++ {
 			field := st.Field(i)
 			if field.Name[:1] >= "a" && field.Name[:1] <= "z" {
@@ -68,6 +95,7 @@ func sanitizeStruct(st reflect.Type, vt reflect.Value, field *reflect.StructFiel
 
 			sanitizeStruct(field.Type, value, &field, n_path, name, errors)
 		}
+		//fmt.Println("<= ", st)
 	case reflect.Array, reflect.Slice:
 		subtype := st.Elem()
 		subkind := subtype.Kind()
