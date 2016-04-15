@@ -23,7 +23,6 @@ package arkeogis
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -73,7 +72,7 @@ func init() {
 	DevDistPath = path.Join(DistPath, "../src/server")
 	DevWebPath = path.Join(DistPath, "../src/web")
 
-	fmt.Println("launch args: ", os.Args)
+	//fmt.Println("launch args: ", os.Args)
 
 	if len(os.Args) > 1 && os.Args[1] == "dev" {
 		DevMode = true
@@ -85,14 +84,14 @@ func init() {
 		CurWebPath = WebPath
 	}
 
-	fmt.Println("DistPath : " + DistPath)
-	fmt.Println("Dev Mode : ", DevMode)
+	//fmt.Println("DistPath : " + DistPath)
+	//fmt.Println("Dev Mode : ", DevMode)
 	ReadMain("config.json")
 }
 
 func ReadMain(f string) {
 	filename := path.Join(DistPath, f)
-	fmt.Println("Reading config file " + filename)
+	//fmt.Println("Reading config file " + filename)
 	c, err := ioutil.ReadFile(filename)
 	if err != nil {
 		log.Fatal(err)
