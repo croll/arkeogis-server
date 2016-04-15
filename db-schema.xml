@@ -1,0 +1,1260 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- SQL XML created by WWW SQL Designer, https://github.com/ondras/wwwsqldesigner/ -->
+<!-- Active URL: https://www.croll.fr/sqldesigner/ -->
+<sql>
+<datatypes db="postgresql">
+	<group label="Numeric" color="rgb(238,238,170)">
+		<type label="Integer" length="0" sql="INTEGER" re="INT" quote=""/>
+		<type label="Small Integer" length="0" sql="SMALLINT" quote=""/>
+		<type label="Big Integer" length="0" sql="BIGINT" quote=""/>
+		<type label="Decimal" length="1" sql="DECIMAL" re="numeric" quote=""/>
+		<type label="Serial" length="0" sql="SERIAL" re="SERIAL4" fk="Integer" quote=""/>
+		<type label="Big Serial" length="0" sql="BIGSERIAL" re="SERIAL8" fk="Big Integer" quote=""/>
+		<type label="Real" length="0" sql="BIGINT" quote=""/>
+		<type label="Single precision" length="0" sql="FLOAT" quote=""/>
+		<type label="Double precision" length="0" sql="DOUBLE" re="DOUBLE" quote=""/>
+	</group>
+
+	<group label="Character" color="rgb(255,200,200)">
+		<type label="Char" length="1" sql="CHAR" quote="'"/>
+		<type label="Varchar" length="1" sql="VARCHAR" re="CHARACTER VARYING" quote="'"/>
+		<type label="Text" length="0" sql="TEXT" quote="'"/>
+		<type label="Binary" length="1" sql="BYTEA" quote="'"/>
+		<type label="Boolean" length="0" sql="BOOLEAN" quote="'"/>
+	</group>
+
+	<group label="Date &amp; Time" color="rgb(200,255,200)">
+		<type label="Date" length="0" sql="DATE" quote="'"/>
+		<type label="Time" length="1" sql="TIME" quote="'"/>
+		<type label="Time w/ TZ" length="0" sql="TIME WITH TIME ZONE" quote="'"/>
+		<type label="Interval" length="1" sql="INTERVAL" quote="'"/>
+		<type label="Timestamp" length="1" sql="TIMESTAMP" quote="'"/>
+		<type label="Timestamp w/ TZ" length="0" sql="TIMESTAMP WITH TIME ZONE" quote="'"/>
+		<type label="Timestamp wo/ TZ" length="0" sql="TIMESTAMP WITHOUT TIME ZONE" quote="'"/>
+	</group>
+
+	<group label="Miscellaneous" color="rgb(200,200,255)">
+		<type label="XML" length="1" sql="XML" quote="'"/>
+		<type label="Bit" length="1" sql="BIT" quote="'"/>
+		<type label="Bit Varying" length="1" sql="VARBIT" re="BIT VARYING" quote="'"/>
+		<type label="Inet Host Addr" length="0" sql="INET" quote="'"/>
+		<type label="Inet CIDR Addr" length="0" sql="CIDR" quote="'"/>
+		<type label="Geometry" length="0" sql="GEOMETRY" quote="'"/>
+	</group>
+</datatypes><table x="53" y="118" name="user">
+<row name="id" null="0" autoincrement="1">
+<datatype>INTEGER</datatype>
+</row>
+<row name="username" null="0" autoincrement="0">
+<datatype>VARCHAR(32)</datatype>
+<comment>min:"2" max:"32" error:"USER.FIELD_USERNAME.T_CHECK_INCORRECT"</comment>
+</row>
+<row name="firstname" null="0" autoincrement="0">
+<datatype>VARCHAR(32)</datatype>
+</row>
+<row name="lastname" null="0" autoincrement="0">
+<datatype>VARCHAR(32)</datatype>
+<comment>min:"1" error:"USER.FIELD_LASTNAME.T_CHECK_MANDATORY" max:"32" error:"USER.FIELD_LASTNAME.T_CHECK_INCORRECT"</comment>
+</row>
+<row name="email" null="0" autoincrement="0">
+<datatype>VARCHAR(255)</datatype>
+<comment>email:"1" error:"USER.FIELD_EMAIL.T_CHECK_INCORRECT"</comment>
+</row>
+<row name="password" null="0" autoincrement="0">
+<datatype>VARCHAR(32)</datatype>
+<comment>min:"6" max:"32" error:"USER.FIELD_PASSWORD.T_CHECK_INCORRECT"</comment>
+</row>
+<row name="description" null="0" autoincrement="0">
+<datatype>VARCHAR</datatype>
+<comment>min:"1" max:"2048" error:"USER.FIELD_DESCRIPTION.T_CHECK_MANDATORY"</comment>
+</row>
+<row name="active" null="0" autoincrement="0">
+<datatype>BOOLEAN</datatype>
+<default>'false'</default></row>
+<row name="first_lang_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="lang" row="id" />
+</row>
+<row name="second_lang_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="lang" row="id" />
+</row>
+<row name="city_geonameid" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<default>0</default><relation table="city" row="geonameid" />
+</row>
+<row name="photo" null="0" autoincrement="0">
+<datatype>BYTEA</datatype>
+</row>
+<row name="created_at" null="0" autoincrement="0">
+<datatype>TIMESTAMP</datatype>
+</row>
+<row name="updated_at" null="0" autoincrement="0">
+<datatype>TIMESTAMP</datatype>
+</row>
+<key type="PRIMARY" name="">
+<part>id</part>
+</key>
+<key type="UNIQUE" name="">
+<part>username</part>
+</key>
+</table>
+<table x="727" y="479" name="lang">
+<row name="id" null="0" autoincrement="1">
+<datatype>INTEGER</datatype>
+</row>
+<row name="iso_code" null="0" autoincrement="0">
+<datatype>VARCHAR(2)</datatype>
+</row>
+<row name="active" null="0" autoincrement="0">
+<datatype>BOOLEAN</datatype>
+<default>'false'</default></row>
+<key type="PRIMARY" name="">
+<part>id</part>
+</key>
+</table>
+<table x="53" y="505" name="user__company">
+<row name="user_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="user" row="id" />
+</row>
+<row name="company_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="company" row="id" />
+</row>
+<key type="PRIMARY" name="">
+<part>user_id</part>
+<part>company_id</part>
+</key>
+</table>
+<table x="55" y="628" name="company">
+<row name="id" null="0" autoincrement="1">
+<datatype>INTEGER</datatype>
+</row>
+<row name="name" null="0" autoincrement="0">
+<datatype>VARCHAR(255)</datatype>
+</row>
+<row name="city_geonameid" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<default>0</default><relation table="city" row="geonameid" />
+</row>
+<key type="PRIMARY" name="">
+<part>id</part>
+</key>
+</table>
+<table x="1096" y="17" name="project">
+<row name="id" null="0" autoincrement="1">
+<datatype>INTEGER</datatype>
+</row>
+<row name="name" null="0" autoincrement="0">
+<datatype>VARCHAR(255)</datatype>
+<comment>min:"1" error:"PROJECT.FIELD_NAME.T_CHECK_MANDATORY" max:"255" error:"PROJECT.FIELD_NAME.T_CHECK_INCORRECT"</comment>
+</row>
+<row name="user_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="user" row="id" />
+</row>
+<row name="geographical_zone_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="geographical_zone" row="id" />
+</row>
+<row name="created_at" null="0" autoincrement="0">
+<datatype>TIMESTAMP</datatype>
+</row>
+<row name="updated_at" null="0" autoincrement="0">
+<datatype>TIMESTAMP</datatype>
+</row>
+<key type="PRIMARY" name="">
+<part>id</part>
+</key>
+</table>
+<table x="1067" y="372" name="geographical_zone">
+<row name="id" null="0" autoincrement="1">
+<datatype>INTEGER</datatype>
+</row>
+<row name="name" null="0" autoincrement="0">
+<datatype>VARCHAR(255)</datatype>
+</row>
+<row name="geom" null="0" autoincrement="0">
+<datatype>VARCHAR(POLYGON)</datatype>
+</row>
+<key type="PRIMARY" name="">
+<part>id</part>
+</key>
+</table>
+<table x="1321" y="763" name="chronology">
+<row name="id" null="0" autoincrement="1">
+<datatype>INTEGER</datatype>
+</row>
+<row name="parent_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="chronology" row="id" />
+</row>
+<row name="start_date" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+</row>
+<row name="end_date" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+</row>
+<row name="color" null="0" autoincrement="0">
+<datatype>VARCHAR(6)</datatype>
+</row>
+<row name="created_at" null="0" autoincrement="0">
+<datatype>TIMESTAMP</datatype>
+</row>
+<row name="updated_at" null="0" autoincrement="0">
+<datatype>TIMESTAMP</datatype>
+</row>
+<key type="PRIMARY" name="">
+<part>id</part>
+</key>
+</table>
+<table x="1610" y="750" name="chronology_tr">
+<row name="lang_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="lang" row="id" />
+</row>
+<row name="chronology_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="chronology" row="id" />
+</row>
+<row name="name" null="0" autoincrement="0">
+<datatype>VARCHAR(255)</datatype>
+</row>
+<row name="description" null="0" autoincrement="0">
+<datatype>TEXT</datatype>
+</row>
+<key type="PRIMARY" name="">
+<part>lang_id</part>
+<part>chronology_id</part>
+</key>
+</table>
+<table x="1073" y="771" name="project__chronology">
+<row name="project_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="project" row="id" />
+</row>
+<row name="chronology_root_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="chronology" row="id" />
+</row>
+<row name="id_group" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="group" row="id" />
+</row>
+<key type="PRIMARY" name="">
+<part>project_id</part>
+<part>chronology_root_id</part>
+</key>
+</table>
+<table x="470" y="36" name="database">
+<row name="id" null="0" autoincrement="1">
+<datatype>INTEGER</datatype>
+</row>
+<row name="name" null="0" autoincrement="0">
+<datatype>VARCHAR(255)</datatype>
+<comment>min:"1" max:"255" error:"DATABASE.FIELD_NAME.T_CHECK_MANDATORY"</comment>
+</row>
+<row name="scale_resolution" null="0" autoincrement="0">
+<datatype>BIT('object','site','watershed','micro-region','region','country','europa')</datatype>
+<comment>enum:"object,site,watershed,micro-region,region,country,europa" error:"DATABASE.FIELD_SCALE_RESOLUTION.T_CHECK_INCORRECT"</comment>
+</row>
+<row name="geographical_extent" null="0" autoincrement="0">
+<datatype>BIT('country','continent','world')</datatype>
+<comment>enum:"country,continent,world" error:"DATABASE.FIELD_GEOGRAPHICAL_EXTENT.T_CHECK_INCORRECT"</comment>
+</row>
+<row name="type" null="0" autoincrement="0">
+<datatype>BIT('inventory', 'research', 'literary-work' )</datatype>
+<comment>enum:"inventory, research, literary-work" error:"DATABASE.FIELD_TYPE.T_CHECK_INCORRECT"</comment>
+</row>
+<row name="owner" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="user" row="id" />
+</row>
+<row name="source_creation_date" null="0" autoincrement="0">
+<datatype>TIMESTAMP</datatype>
+</row>
+<row name="data_set" null="0" autoincrement="0">
+<datatype>VARCHAR(255)</datatype>
+</row>
+<row name="identifier" null="0" autoincrement="0">
+<datatype>VARCHAR(255)</datatype>
+</row>
+<row name="source" null="0" autoincrement="0">
+<datatype>VARCHAR(255)</datatype>
+</row>
+<row name="source_url" null="0" autoincrement="0">
+<datatype>VARCHAR(255)</datatype>
+</row>
+<row name="publisher" null="0" autoincrement="0">
+<datatype>VARCHAR(255)</datatype>
+</row>
+<row name="contributor" null="0" autoincrement="0">
+<datatype>VARCHAR</datatype>
+</row>
+<row name="default_language" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="lang" row="id" />
+</row>
+<row name="relation" null="0" autoincrement="0">
+<datatype>VARCHAR(255)</datatype>
+</row>
+<row name="coverage" null="0" autoincrement="0">
+<datatype>VARCHAR(255)</datatype>
+</row>
+<row name="copyright" null="0" autoincrement="0">
+<datatype>VARCHAR(255)</datatype>
+</row>
+<row name="state" null="0" autoincrement="0">
+<datatype>BIT('in-progress', 'finished')</datatype>
+<comment>enum:"in-progress,finished" error:"DATABASE.FIELD_STATE.T_CHECK_INCORRECT"</comment>
+</row>
+<row name="published" null="0" autoincrement="0">
+<datatype>BOOLEAN</datatype>
+<default>'false'</default><comment>enum:"0,1" error:"DATABASE.FIELD_PUBLISHED.T_CHECK_INCORRECT"</comment>
+</row>
+<row name="license_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="license" row="id" />
+</row>
+<row name="context" null="0" autoincrement="0">
+<datatype>BIT('todo')</datatype>
+</row>
+<row name="context_description" null="0" autoincrement="0">
+<datatype>TEXT</datatype>
+</row>
+<row name="subject" null="0" autoincrement="0">
+<datatype>TEXT</datatype>
+<comment>min:"1" error:"DATABASE.FIELD_SUBJECT.T_CHECK_MANDATORY" max:"255" error:"DATABASE.FIELD_SUBJECT.T_CHECK_INCORRECT"</comment>
+</row>
+<row name="created_at" null="0" autoincrement="0">
+<datatype>TIMESTAMP</datatype>
+</row>
+<row name="updated_at" null="0" autoincrement="0">
+<datatype>TIMESTAMP</datatype>
+</row>
+<key type="PRIMARY" name="">
+<part>id</part>
+</key>
+</table>
+<table x="881" y="31" name="site">
+<row name="id" null="0" autoincrement="1">
+<datatype>INTEGER</datatype>
+</row>
+<row name="code" null="0" autoincrement="0">
+<datatype>VARCHAR(255)</datatype>
+<comment>min:"1" error:"SITE.FIELD_CODE.T_CHECK_MANDATORY" max:"255" error:"SITE.FIELD_CODE.T_CHECK_INCORRECT"</comment>
+</row>
+<row name="name" null="0" autoincrement="0">
+<datatype>VARCHAR(255)</datatype>
+<comment>min:"1" error:"SITE.FIELD_NAME.T_CHECK_MANDATORY" max:"255" error:"SITE.FIELD_NAME.T_CHECK_INCORRECT"</comment>
+</row>
+<row name="city_name" null="0" autoincrement="0">
+<datatype>VARCHAR(255)</datatype>
+</row>
+<row name="city_geonameid" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<default>0</default></row>
+<row name="geom" null="0" autoincrement="0">
+<datatype>VARCHAR(POINT)</datatype>
+</row>
+<row name="centroid" null="0" autoincrement="0">
+<datatype>BOOLEAN</datatype>
+<comment>enum:"0,1" error:"SITE.FIELD_CENTROID.T_CHECK_MANDATORY"</comment>
+</row>
+<row name="occupation" null="0" autoincrement="0">
+<datatype>BIT('not_documented', 'single', 'continuous', 'multiple')</datatype>
+<comment>enum:"not_documented,single,continuous,multiple" error:"SITE.FIELD_OCCUPATION.T_CHECK_INCORRECT"</comment>
+</row>
+<row name="database_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="database" row="id" />
+</row>
+<row name="created_at" null="0" autoincrement="0">
+<datatype>TIMESTAMP</datatype>
+</row>
+<row name="updated_at" null="0" autoincrement="0">
+<datatype>TIMESTAMP</datatype>
+</row>
+<key type="PRIMARY" name="">
+<part>id</part>
+</key>
+<key type="INDEX" name="">
+<part>geom</part>
+</key>
+</table>
+<table x="249" y="509" name="database_tr">
+<row name="database_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="database" row="id" />
+</row>
+<row name="lang_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="lang" row="id" />
+</row>
+<row name="description" null="0" autoincrement="0">
+<datatype>TEXT</datatype>
+</row>
+<row name="geographical_limit" null="1" autoincrement="0">
+<datatype>VARCHAR(255)</datatype>
+<default>NULL</default></row>
+<row name="bibliography" null="0" autoincrement="0">
+<datatype>VARCHAR(255)</datatype>
+</row>
+<key type="PRIMARY" name="">
+<part>database_id</part>
+<part>lang_id</part>
+</key>
+</table>
+<table x="472" y="873" name="city">
+<row name="geonameid" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+</row>
+<row name="country_geonameid" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="country" row="geonameid" />
+</row>
+<row name="geom" null="1" autoincrement="0">
+<datatype>VARCHAR(POLYGON)</datatype>
+<default>NULL</default></row>
+<row name="geom_centroid" null="0" autoincrement="0">
+<datatype>VARCHAR(POINT)</datatype>
+</row>
+<row name="created_at" null="0" autoincrement="0">
+<datatype>TIMESTAMP</datatype>
+<default>'NULL'</default></row>
+<row name="updated_at" null="0" autoincrement="0">
+<datatype>TIMESTAMP</datatype>
+<default>'NULL'</default></row>
+<key type="PRIMARY" name="">
+<part>geonameid</part>
+</key>
+</table>
+<table x="496" y="651" name="site_tr">
+<row name="site_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="site" row="id" />
+</row>
+<row name="lang_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="lang" row="id" />
+</row>
+<row name="description" null="0" autoincrement="0">
+<datatype>TEXT</datatype>
+</row>
+<key type="PRIMARY" name="">
+<part>site_id</part>
+<part>lang_id</part>
+</key>
+</table>
+<table x="861" y="324" name="site_range">
+<row name="id" null="0" autoincrement="1">
+<datatype>INTEGER</datatype>
+</row>
+<row name="site_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="site" row="id" />
+</row>
+<row name="start_date1" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+</row>
+<row name="start_date2" null="1" autoincrement="0">
+<datatype>INTEGER</datatype>
+<default>NULL</default></row>
+<row name="end_date1" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+</row>
+<row name="end_date2" null="1" autoincrement="0">
+<datatype>INTEGER</datatype>
+<default>NULL</default></row>
+<row name="knowledge_type" null="0" autoincrement="0">
+<datatype>BIT('not_documented', 'literature', 'prospected_aerial', 'prospected_pedestrian', 'surveyed', 'dig')</datatype>
+<comment>enum:"not_documented,literature,prospected_aerial,prospected_pedestrian,surveyed,dig" error:"DATABASE.FIELD_KNOWLEDGE_TYPE.T_CHECK_INCORRECT"</comment>
+</row>
+<row name="depth" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+</row>
+<row name="created_at" null="0" autoincrement="0">
+<datatype>TIMESTAMP</datatype>
+</row>
+<row name="updated_at" null="0" autoincrement="0">
+<datatype>TIMESTAMP</datatype>
+</row>
+<key type="PRIMARY" name="">
+<part>id</part>
+</key>
+</table>
+<table x="1059" y="636" name="site_range__charac_tr">
+<row name="site_range__charac_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="site_range__charac" row="id" />
+</row>
+<row name="lang_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="lang" row="id" />
+</row>
+<row name="comment" null="0" autoincrement="0">
+<datatype>TEXT</datatype>
+</row>
+<row name="bibliography" null="0" autoincrement="0">
+<datatype>TEXT</datatype>
+</row>
+<key type="PRIMARY" name="">
+<part>site_range__charac_id</part>
+<part>lang_id</part>
+</key>
+</table>
+<table x="447" y="1051" name="city_tr">
+<row name="city_geonameid" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="city" row="geonameid" />
+</row>
+<row name="lang_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="lang" row="id" />
+</row>
+<row name="name" null="0" autoincrement="0">
+<datatype>VARCHAR(255)</datatype>
+</row>
+<row name="name_ascii" null="0" autoincrement="0">
+<datatype>VARCHAR(255)</datatype>
+</row>
+<key type="PRIMARY" name="">
+<part>city_geonameid</part>
+<part>lang_id</part>
+</key>
+<key type="INDEX" name="">
+<part>name_ascii</part>
+</key>
+<key type="INDEX" name="">
+<part>name</part>
+</key>
+</table>
+<table x="1528" y="472" name="charac_tr">
+<row name="lang_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="lang" row="id" />
+</row>
+<row name="charac_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="charac" row="id" />
+</row>
+<row name="name" null="0" autoincrement="0">
+<datatype>VARCHAR(255)</datatype>
+</row>
+<row name="description" null="0" autoincrement="0">
+<datatype>TEXT</datatype>
+</row>
+<key type="PRIMARY" name="">
+<part>lang_id</part>
+<part>charac_id</part>
+</key>
+</table>
+<table x="1344" y="469" name="charac">
+<row name="id" null="0" autoincrement="1">
+<datatype>INTEGER</datatype>
+</row>
+<row name="parent_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+</row>
+<row name="order" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+</row>
+<row name="author_user_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="user" row="id" />
+</row>
+<row name="created_at" null="0" autoincrement="0">
+<datatype>TIMESTAMP</datatype>
+</row>
+<row name="updated_at" null="0" autoincrement="0">
+<datatype>TIMESTAMP</datatype>
+</row>
+<key type="PRIMARY" name="">
+<part>id</part>
+</key>
+</table>
+<table x="35" y="754" name="wms_map">
+<row name="id" null="0" autoincrement="1">
+<datatype>INTEGER</datatype>
+</row>
+<row name="creator_user_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="user" row="id" />
+</row>
+<row name="url" null="1" autoincrement="0">
+<datatype>VARCHAR(255)</datatype>
+<default>NULL</default><comment>min:"1" error:"WMS_MAP.FIELD_URL.T_CHECK_MANDATORY" max:"255" error:"WMS_MAP.FIELD_URL.T_CHECK_INCORRECT"</comment>
+</row>
+<row name="source_creation_date" null="0" autoincrement="0">
+<datatype>TIMESTAMP</datatype>
+</row>
+<row name="min_scale" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+</row>
+<row name="max_scale" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+</row>
+<row name="start_date1" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+</row>
+<row name="start_date2" null="1" autoincrement="0">
+<datatype>INTEGER</datatype>
+<default>NULL</default></row>
+<row name="end_date1" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+</row>
+<row name="end_date2" null="1" autoincrement="0">
+<datatype>INTEGER</datatype>
+<default>NULL</default></row>
+<row name="published" null="0" autoincrement="0">
+<datatype>BOOLEAN</datatype>
+<default>'false'</default></row>
+<row name="created_at" null="0" autoincrement="0">
+<datatype>TIMESTAMP</datatype>
+</row>
+<row name="updated_at" null="0" autoincrement="0">
+<datatype>TIMESTAMP</datatype>
+</row>
+<key type="PRIMARY" name="">
+<part>id</part>
+</key>
+</table>
+<table x="51" y="1209" name="wms_map_tr">
+<row name="wms_map_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="wms_map" row="id" />
+</row>
+<row name="lang_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="lang" row="id" />
+</row>
+<row name="name" null="0" autoincrement="0">
+<datatype>VARCHAR(255)</datatype>
+<comment>min:"1" error:"WMS_MAP.FIELD_NAME.T_CHECK_MANDATORY" max:"255" error:"WMS_MAP_TR.FIELD_NAME.T_CHECK_INCORRECT"</comment>
+</row>
+<row name="attribution" null="0" autoincrement="0">
+<datatype>TEXT</datatype>
+</row>
+<row name="copyright" null="0" autoincrement="0">
+<datatype>VARCHAR(255)</datatype>
+</row>
+<key type="PRIMARY" name="">
+<part>wms_map_id</part>
+<part>lang_id</part>
+</key>
+</table>
+<table x="236" y="798" name="shapefile">
+<row name="id" null="0" autoincrement="1">
+<datatype>INTEGER</datatype>
+</row>
+<row name="creator_user_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="user" row="id" />
+</row>
+<row name="source_creation_date" null="0" autoincrement="0">
+<datatype>TIMESTAMP</datatype>
+</row>
+<row name="filename" null="1" autoincrement="0">
+<datatype>VARCHAR(255)</datatype>
+<default>NULL</default></row>
+<row name="geom" null="1" autoincrement="0">
+<datatype>VARCHAR(MULTIPOLYGON)</datatype>
+<default>NULL</default></row>
+<row name="min_scale" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+</row>
+<row name="max_scale" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+</row>
+<row name="start_date1" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+</row>
+<row name="start_date2" null="1" autoincrement="0">
+<datatype>INTEGER</datatype>
+<default>NULL</default></row>
+<row name="end_date1" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+</row>
+<row name="end_date2" null="1" autoincrement="0">
+<datatype>INTEGER</datatype>
+<default>NULL</default></row>
+<row name="published" null="0" autoincrement="0">
+<datatype>BOOLEAN</datatype>
+<default>'false'</default><comment>enum:"0,1" error:"SHAPEFILE.FIELD_PUBLISHED.T_CHECK_INCORRECT"</comment>
+</row>
+<row name="license_name" null="0" autoincrement="0">
+<datatype>VARCHAR(50)</datatype>
+</row>
+<row name="odbl_license" null="0" autoincrement="0">
+<datatype>BOOLEAN</datatype>
+<default>'false'</default><comment>enum:"0,1" error:"SHAPEFILE.FIELD_ODBL_LICENSE.T_CHECK_INCORRECT"</comment>
+</row>
+<row name="created_at" null="0" autoincrement="0">
+<datatype>TIMESTAMP</datatype>
+</row>
+<row name="updated_at" null="0" autoincrement="0">
+<datatype>TIMESTAMP</datatype>
+</row>
+<key type="PRIMARY" name="">
+<part>id</part>
+</key>
+</table>
+<table x="276" y="1210" name="shapefile_tr">
+<row name="shapefile_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="shapefile" row="id" />
+</row>
+<row name="lang_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="lang" row="id" />
+</row>
+<row name="name" null="0" autoincrement="0">
+<datatype>VARCHAR(255)</datatype>
+<comment>min:"1" error:"SHAPEFILE.FIELD_NAME.T_CHECK_MANDATORY" max:"255" error:"SHAPEFILE_TR.FIELD_NAME.T_CHECK_INCORRECT"</comment>
+</row>
+<row name="description" null="0" autoincrement="0">
+<datatype>TEXT</datatype>
+</row>
+<row name="attribution" null="0" autoincrement="0">
+<datatype>VARCHAR(255)</datatype>
+</row>
+<row name="bibiography" null="0" autoincrement="0">
+<datatype>VARCHAR</datatype>
+</row>
+<key type="PRIMARY" name="">
+<part>shapefile_id</part>
+<part>lang_id</part>
+</key>
+</table>
+<table x="1075" y="905" name="project__databases">
+<row name="project_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="project" row="id" />
+</row>
+<row name="database_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="database" row="id" />
+</row>
+<key type="PRIMARY" name="">
+<part>project_id</part>
+<part>database_id</part>
+</key>
+</table>
+<table x="1076" y="1007" name="project__wms_map">
+<row name="project_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="project" row="id" />
+</row>
+<row name="wms_map_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="wms_map" row="id" />
+</row>
+<key type="PRIMARY" name="">
+<part>project_id</part>
+<part>wms_map_id</part>
+</key>
+</table>
+<table x="1077" y="1098" name="project__shapefile">
+<row name="project_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="project" row="id" />
+</row>
+<row name="shapefile_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="shapefile" row="id" />
+</row>
+<key type="PRIMARY" name="">
+<part>project_id</part>
+<part>shapefile_id</part>
+</key>
+</table>
+<table x="1065" y="507" name="site_range__charac">
+<row name="id" null="1" autoincrement="0">
+<datatype>INTEGER</datatype>
+<default>NULL</default></row>
+<row name="site_range_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="site_range" row="id" />
+</row>
+<row name="charac_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="charac" row="id" />
+</row>
+<row name="exceptional" null="0" autoincrement="0">
+<datatype>BOOLEAN</datatype>
+<default>'false'</default></row>
+<key type="PRIMARY" name="">
+<part>id</part>
+</key>
+</table>
+<table x="1345" y="325" name="project__charac">
+<row name="project__characs_set_id" null="1" autoincrement="0">
+<datatype>INTEGER</datatype>
+<default>NULL</default><relation table="project__characs_set" row="id" />
+</row>
+<row name="charac_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="charac" row="id" />
+</row>
+<key type="PRIMARY" name="">
+<part>project__characs_set_id</part>
+<part>charac_id</part>
+</key>
+</table>
+<table x="1344" y="192" name="project__characs_set">
+<row name="id" null="0" autoincrement="1">
+<datatype>INTEGER</datatype>
+</row>
+<row name="project_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="project" row="id" />
+</row>
+<row name="copied_from_project__charac_set_id" null="1" autoincrement="0">
+<datatype>INTEGER</datatype>
+<default>NULL</default><relation table="project__characs_set" row="id" />
+</row>
+<key type="PRIMARY" name="">
+<part>id</part>
+</key>
+</table>
+<table x="1497" y="36" name="project__characs_set_tr">
+<row name="project__characs_set_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="project__characs_set" row="id" />
+</row>
+<row name="lang_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="lang" row="id" />
+</row>
+<row name="name" null="0" autoincrement="0">
+<datatype>VARCHAR(255)</datatype>
+</row>
+<row name="description" null="0" autoincrement="0">
+<datatype>TEXT</datatype>
+</row>
+<key type="PRIMARY" name="">
+<part>project__characs_set_id</part>
+<part>lang_id</part>
+</key>
+</table>
+<table x="1313" y="19" name="user_project">
+<row name="project_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="project" row="id" />
+</row>
+<row name="start_date" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+</row>
+<row name="end_date" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+</row>
+<key type="PRIMARY" name="">
+<part>project_id</part>
+</key>
+</table>
+<table x="1100" y="229" name="global_project">
+<row name="project_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="project" row="id" />
+</row>
+<key type="PRIMARY" name="">
+<part>project_id</part>
+</key>
+</table>
+<table x="1318" y="1024" name="project__chronology_tr">
+<row name="project__chronology_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+</row>
+<row name="lang_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="lang" row="id" />
+</row>
+<row name="name" null="0" autoincrement="0">
+<datatype>VARCHAR(255)</datatype>
+</row>
+<row name="description" null="0" autoincrement="0">
+<datatype>TEXT</datatype>
+</row>
+<key type="PRIMARY" name="">
+<part>project__chronology_id</part>
+<part>lang_id</part>
+</key>
+</table>
+<table x="208" y="1387" name="group">
+<row name="id" null="0" autoincrement="1">
+<datatype>INTEGER</datatype>
+</row>
+<row name="type" null="0" autoincrement="0">
+<datatype>BIT('user','chronology','charac')</datatype>
+<default>'user'</default></row>
+<row name="created_at" null="0" autoincrement="0">
+<datatype>TIMESTAMP</datatype>
+</row>
+<row name="udpated_at" null="0" autoincrement="0">
+<datatype>TIMESTAMP</datatype>
+</row>
+<key type="PRIMARY" name="">
+<part>id</part>
+</key>
+</table>
+<table x="366" y="1539" name="permission">
+<row name="id" null="0" autoincrement="1">
+<datatype>INTEGER</datatype>
+</row>
+<row name="name" null="0" autoincrement="0">
+<datatype>VARCHAR(255)</datatype>
+</row>
+<row name="created_at" null="0" autoincrement="0">
+<datatype>TIMESTAMP</datatype>
+</row>
+<row name="updated_at" null="0" autoincrement="0">
+<datatype>TIMESTAMP</datatype>
+</row>
+<key type="PRIMARY" name="">
+<part>id</part>
+</key>
+</table>
+<table x="114" y="1544" name="group_tr">
+<row name="group_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="group" row="id" />
+</row>
+<row name="lang_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="lang" row="id" />
+</row>
+<row name="name" null="0" autoincrement="0">
+<datatype>VARCHAR(255)</datatype>
+</row>
+<row name="description" null="0" autoincrement="0">
+<datatype>TEXT</datatype>
+</row>
+<key type="PRIMARY" name="">
+<part>group_id</part>
+<part>lang_id</part>
+</key>
+</table>
+<table x="582" y="1506" name="permission_tr">
+<row name="permission_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="permission" row="id" />
+</row>
+<row name="lang_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="lang" row="id" />
+</row>
+<row name="name" null="0" autoincrement="0">
+<datatype>VARCHAR(255)</datatype>
+</row>
+<row name="description" null="0" autoincrement="0">
+<datatype>TEXT</datatype>
+</row>
+<key type="PRIMARY" name="">
+<part>permission_id</part>
+<part>lang_id</part>
+</key>
+</table>
+<table x="22" y="1392" name="user__group">
+<row name="group_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="group" row="id" />
+</row>
+<row name="user_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="user" row="id" />
+</row>
+<key type="PRIMARY" name="">
+<part>group_id</part>
+<part>user_id</part>
+</key>
+</table>
+<table x="355" y="1391" name="group__permission">
+<row name="group_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="group" row="id" />
+</row>
+<row name="permission_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="permission" row="id" />
+</row>
+<row name="created_at" null="0" autoincrement="0">
+<datatype>TIMESTAMP</datatype>
+</row>
+<row name="updated_at" null="0" autoincrement="0">
+<datatype>TIMESTAMP</datatype>
+</row>
+<key type="PRIMARY" name="">
+<part>group_id</part>
+<part>permission_id</part>
+</key>
+</table>
+<table x="646" y="872" name="country">
+<row name="geonameid" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+</row>
+<row name="iso_code" null="1" autoincrement="0">
+<datatype>VARCHAR(2)</datatype>
+<default>NULL</default></row>
+<row name="geom" null="1" autoincrement="0">
+<datatype>VARCHAR(POLYGON)</datatype>
+<default>NULL</default></row>
+<row name="created_at" null="0" autoincrement="0">
+<datatype>TIMESTAMP</datatype>
+</row>
+<row name="updated_at" null="0" autoincrement="0">
+<datatype>TIMESTAMP</datatype>
+</row>
+<key type="PRIMARY" name="">
+<part>geonameid</part>
+</key>
+<key type="INDEX" name="">
+<part>iso_code</part>
+</key>
+</table>
+<table x="479" y="1209" name="user_preferences">
+<row name="user_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="user" row="id" />
+</row>
+<row name="key" null="0" autoincrement="0">
+<datatype>VARCHAR(32)</datatype>
+</row>
+<row name="value" null="0" autoincrement="0">
+<datatype>BYTEA</datatype>
+</row>
+<key type="PRIMARY" name="">
+<part>user_id</part>
+<part>key</part>
+</key>
+</table>
+<table x="638" y="1051" name="country_tr">
+<row name="country_geonameid" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="country" row="geonameid" />
+</row>
+<row name="lang_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="lang" row="id" />
+</row>
+<row name="name" null="0" autoincrement="0">
+<datatype>VARCHAR(128)</datatype>
+</row>
+<row name="name_ascii" null="0" autoincrement="0">
+<datatype>VARCHAR(255)</datatype>
+</row>
+<key type="PRIMARY" name="">
+<part>lang_id</part>
+<part>country_geonameid</part>
+</key>
+<key type="INDEX" name="">
+<part>name_ascii</part>
+</key>
+<key type="INDEX" name="">
+<part>name</part>
+</key>
+</table>
+<table x="226" y="67" name="database__authors">
+<row name="database_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="database" row="id" />
+</row>
+<row name="user_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="user" row="id" />
+</row>
+<key type="PRIMARY" name="">
+<part>database_id</part>
+<part>user_id</part>
+</key>
+</table>
+<table x="285" y="202" name="import">
+<row name="id" null="0" autoincrement="1">
+<datatype>INTEGER</datatype>
+</row>
+<row name="database_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="database" row="id" />
+</row>
+<row name="user_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="user" row="id" />
+</row>
+<row name="filename" null="0" autoincrement="0">
+<datatype>VARCHAR(255)</datatype>
+</row>
+<row name="created_at" null="0" autoincrement="0">
+<datatype>TIMESTAMP</datatype>
+</row>
+<key type="PRIMARY" name="">
+<part>id</part>
+</key>
+</table>
+<table x="341" y="389" name="license">
+<row name="id" null="0" autoincrement="1">
+<datatype>INTEGER</datatype>
+</row>
+<row name="name" null="0" autoincrement="0">
+<datatype>VARCHAR(255)</datatype>
+</row>
+<row name="url" null="0" autoincrement="0">
+<datatype>VARCHAR</datatype>
+<default>'NULL'</default></row>
+<key type="PRIMARY" name="">
+<part>id</part>
+</key>
+</table>
+<table x="710" y="39" name="handle">
+<row name="id" null="0" autoincrement="1">
+<datatype>INTEGER</datatype>
+</row>
+<row name="name" null="0" autoincrement="0">
+<datatype>VARCHAR(255)</datatype>
+<comment>min:"1" error:"HANDLE.FIELD_NAME.T_CHECK_MANDATORY" max:"255" error:"HANDLE.FIELD_NAME.T_CHECK_INCORRECT"</comment>
+</row>
+<row name="url" null="0" autoincrement="0">
+<datatype>VARCHAR(255)</datatype>
+</row>
+<key type="PRIMARY" name="">
+<part>id</part>
+</key>
+</table>
+<table x="468" y="757" name="database__country">
+<row name="database_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="database" row="id" />
+</row>
+<row name="country_geonameid" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="country" row="geonameid" />
+</row>
+<key type="PRIMARY" name="">
+<part>database_id</part>
+<part>country_geonameid</part>
+</key>
+</table>
+<table x="670" y="167" name="database__handle">
+<row name="id" null="1" autoincrement="1">
+<datatype>INTEGER</datatype>
+<default>NULL</default></row>
+<row name="handle_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="handle" row="id" />
+</row>
+<row name="database_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="database" row="id" />
+</row>
+<row name="value" null="0" autoincrement="0">
+<datatype>VARCHAR(255)</datatype>
+</row>
+<row name="created_at" null="0" autoincrement="0">
+<datatype>TIMESTAMP</datatype>
+</row>
+<key type="PRIMARY" name="">
+<part>id</part>
+</key>
+</table>
+<table x="236" y="705" name="shapefile_authors">
+<row name="shapefile_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="shapefile" row="id" />
+</row>
+<row name="user_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="user" row="id" />
+</row>
+<key type="PRIMARY" name="">
+<part>shapefile_id</part>
+<part>user_id</part>
+</key>
+</table>
+<table x="842" y="1052" name="continent_tr">
+<row name="continent_geonameid" null="1" autoincrement="1">
+<datatype>INTEGER</datatype>
+<default>NULL</default></row>
+<row name="lang_id" null="1" autoincrement="0">
+<datatype>INTEGER</datatype>
+<default>NULL</default><relation table="lang" row="id" />
+</row>
+<row name="name" null="0" autoincrement="0">
+<datatype>VARCHAR(255)</datatype>
+</row>
+<row name="name_ascii" null="0" autoincrement="0">
+<datatype>VARCHAR(255)</datatype>
+</row>
+<key type="PRIMARY" name="">
+<part>continent_geonameid</part>
+<part>lang_id</part>
+</key>
+<key type="INDEX" name="">
+<part>name</part>
+<part>name_ascii</part>
+</key>
+</table>
+<table x="822" y="872" name="continent">
+<row name="geonameid" null="1" autoincrement="1">
+<datatype>INTEGER</datatype>
+<default>NULL</default></row>
+<row name="iso_code" null="0" autoincrement="0">
+<datatype>VARCHAR(2)</datatype>
+</row>
+<row name="geom" null="1" autoincrement="0">
+<datatype>VARCHAR(POLYGON)</datatype>
+<default>NULL</default></row>
+<row name="created_at" null="0" autoincrement="0">
+<datatype>TIMESTAMP</datatype>
+</row>
+<row name="updated_at" null="0" autoincrement="0">
+<datatype>TIMESTAMP</datatype>
+</row>
+<key type="PRIMARY" name="">
+<part>geonameid</part>
+</key>
+<key type="INDEX" name="">
+<part>iso_code</part>
+</key>
+</table>
+<table x="778" y="757" name="database__continent">
+<row name="id_database" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="database" row="id" />
+</row>
+<row name="continent_geonameid" null="1" autoincrement="0">
+<datatype>INTEGER</datatype>
+<default>NULL</default><relation table="continent" row="geonameid" />
+</row>
+<key type="PRIMARY" name="">
+<part>id_database</part>
+<part>continent_geonameid</part>
+</key>
+</table>
+<table x="722" y="604" name="lang_tr">
+<row name="lang_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="lang" row="id" />
+</row>
+<row name="lang_id_tr" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="lang" row="id" />
+</row>
+<row name="name" null="0" autoincrement="0">
+<datatype>VARCHAR(255)</datatype>
+</row>
+<key type="PRIMARY" name="">
+<part>lang_id</part>
+<part>lang_id_tr</part>
+</key>
+</table>
+<table x="609" y="1368" name="session">
+<row name="token" null="0" autoincrement="0">
+<datatype>CHAR(42)</datatype>
+</row>
+<row name="value" null="0" autoincrement="0">
+<datatype>BYTEA</datatype>
+</row>
+<key type="PRIMARY" name="">
+<part>token</part>
+</key>
+</table>
+</sql>
