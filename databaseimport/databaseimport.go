@@ -689,7 +689,7 @@ func (di *DatabaseImport) parseDates(period string) ([2]int, error) {
 				}
 			} else {
 				// Check if it is set explicitly as undefined
-				if tmpDate1 == di.lowerTranslation("IMPORT.CSVFIELD_ALL.T_CHECK_UNDETERMINED") {
+				if strings.ToLower(tmpDate1) == di.lowerTranslation("IMPORT.CSVFIELD_ALL.T_CHECK_UNDETERMINED") {
 					dates[0] = math.MinInt32
 				} else {
 					di.AddError(period, "IMPORT.CSVFIELD_PERIOD_DATE2.T_CHECK_WRONG_VALUE", "STARTING_PERIOD")
@@ -714,7 +714,7 @@ func (di *DatabaseImport) parseDates(period string) ([2]int, error) {
 				}
 			} else {
 				// Check if it is set explicitly as undefined
-				if tmpDate2 == di.lowerTranslation("IMPORT.CSVFIELD_ALL.T_CHECK_UNDETERMINED") {
+				if strings.ToLower(tmpDate2) == di.lowerTranslation("IMPORT.CSVFIELD_ALL.T_CHECK_UNDETERMINED") {
 					dates[1] = math.MaxInt32
 				} else {
 					di.AddError(period, "IMPORT.CSVFIELD_PERIOD_DATE2.T_CHECK_WRONG_VALUE", "ENDING_PERIOD")
