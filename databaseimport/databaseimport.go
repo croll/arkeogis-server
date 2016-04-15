@@ -642,7 +642,6 @@ func (di *DatabaseImport) parseDates(period string) ([2]int, error) {
 	// fmt.Println("PERIOD", period)
 
 	if (period == "" || strings.ToLower(period) == di.lowerTranslation("IMPORT.CSVFIELD_ALL.T_CHECK_UNDETERMINED")) || strings.ToLower(period) == "null" {
-		fmt.Println("MIN MAX OK")
 		return [2]int{math.MinInt32, math.MaxInt32}, nil
 	}
 
@@ -657,18 +656,20 @@ func (di *DatabaseImport) parseDates(period string) ([2]int, error) {
 	// If we have only a date, start date and end date are the same
 	uniqDate := uniqDateRegexp.FindString(period)
 	if uniqDate != "" {
-		fmt.Println("UNIQ DATE")
+		//fmt.Println("UNIQ DATE")
 		ud, err := strconv.ParseInt(uniqDate, 10, 64)
 		if err != nil {
-			di.AddError(period, "IMPORT.CSVFIELD_PERIOD.T_CHECK_WRONG_VALUE", "PERIOD")
-		} else {
-			dates[0] = int(ud)
-			dates[1] = int(ud)
+			return [2]int{0, 0}, errors.New("Invalid period")
 		}
+		dates[0] = int(ud)
+		dates[1] = int(ud)
 	} else {
 		// fmt.Println("MATCH ?")
 		mdate1 := periodRegexpDate1.FindStringSubmatch(period)
 		mdate2 := periodRegexpDate2.FindStringSubmatch(period)
+		if len(mdate1) == 0 || len(mdate2) == 0 {
+			return [2]int{0, 0}, errors.New("Invalid period")
+		}
 		tmpDate1 := mdate1[1]
 		tmpDate2 := mdate2[1]
 
