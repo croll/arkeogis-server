@@ -222,6 +222,7 @@ func (di *DatabaseImport) ProcessRecord(f *Fields) {
 		di.processSiteInfos(f)
 	} else {
 		di.CurrentSite.NbSiteRanges++
+		di.processSiteInfos(f)
 		di.checkDifferences(f)
 	}
 
@@ -310,8 +311,7 @@ func (di *DatabaseImport) processSiteInfos(f *Fields) {
 		// If lat and lon not empty, process geo datas
 		if f.LATITUDE != "" && f.LONGITUDE != "" {
 			point, err := di.processGeoDatas(f)
-			if err != nil {
-			} else {
+			if err == nil {
 				di.CurrentSite.Point = point
 				// Store lat and lon to check differences if site has multiple site ranges
 				di.CurrentSite.Latitude = f.LATITUDE
@@ -325,9 +325,7 @@ func (di *DatabaseImport) processSiteInfos(f *Fields) {
 			} else {
 				// If user chose to use Geonames, and we don't have valid coordinates at this point, use geonames functionality
 				point, err := di.processGeonames(f)
-				if err != nil {
-					di.AddError(f.GEONAME_ID, "IMPORT.CSVFIELD_GEONAME_ID.T_PROCESS_INVALID", "GEONAME_ID")
-				} else {
+				if err == nil {
 					di.CurrentSite.Point = point
 					// Has we used Geonames, site location type is "centroid"
 					di.CurrentSite.Centroid = true
@@ -337,10 +335,15 @@ func (di *DatabaseImport) processSiteInfos(f *Fields) {
 	}
 
 	// OCCUPATION
-	val, err := di.getOccupation(f.OCCUPATION)
-	if err == nil {
-		di.CurrentSite.Occupation = val
+	if f.OCCUPATION == "" {
+		di.AddError("", "IMPORT.CSVFIELD_ALL.T_CHECK_UNDEFINED", "OCCUPATION")
+	} else {
+		val, err := di.getOccupation(f.OCCUPATION)
+		if err == nil {
+			di.CurrentSite.Occupation = val
+		}
 	}
+
 }
 
 // checkDifferences verifies if values entered for the site are identical
@@ -381,6 +384,7 @@ func (di *DatabaseImport) checkDifferences(f *Fields) {
 			di.AddError(val, "IMPORT.CSVFIELD_ALL.T_CHECK_ALREADY_DEFINED_VALUE_DIFFERS", "OCCUPATION")
 		}
 	}
+
 }
 
 // getOccupation get occupation string from field translatable in the csv file
