@@ -258,7 +258,13 @@ func UserList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 			" "+selectGroupAsJsonNotNull("charac")+" as groups_charac, "+
 			" "+selectCityAndCountryAsJson("u.city_geonameid", proute.Lang1.Id)+" as countryandcity, "+
 			" "+selectCompanyAsJson("u.id")+" as companies "+
-			" FROM \"user\" u WHERE (u.username ILIKE $1 OR u.firstname ILIKE $1 OR u.lastname ILIKE $1 OR u.email ILIKE $1) GROUP BY u.id ORDER BY "+order+" "+orderdir+" OFFSET $2 LIMIT $3",
+			" FROM \"user\" u "+
+			" WHERE (u.username ILIKE $1 OR u.firstname ILIKE $1 OR u.lastname ILIKE $1 OR u.email ILIKE $1) "+
+			"  AND u.id > 0"+ // don't list anonymous
+			" GROUP BY u.id "+
+			" ORDER BY "+order+" "+orderdir+
+			" OFFSET $2 "+
+			" LIMIT $3",
 		"%"+params.Filter+"%", offset, params.Limit)
 	if err != nil {
 		userSqlError(w, err)
