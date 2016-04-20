@@ -160,7 +160,7 @@ func processFile(filename string, langs map[int]int, langsByIso map[string]int) 
 	tx := db.DB.MustBegin()
 
 	// Insert root of charac with name derived from file name like Furniture_fr_de_en.csv
-	err = tx.QueryRow("INSERT INTO charac (parent_id, \"order\", author_user_id, created_at, updated_at) VALUES ($1, $2, $3, now(), now()) RETURNING id", 0, 0, 1).Scan(&rootID)
+	err = tx.QueryRow("INSERT INTO charac (parent_id, \"order\", author_user_id, created_at, updated_at) VALUES ($1, $2, $3, now(), now()) RETURNING id", 0, 0, 0).Scan(&rootID)
 	if err != nil {
 		return err
 	}
@@ -199,7 +199,7 @@ func processFile(filename string, langs map[int]int, langsByIso map[string]int) 
 				l := strings.TrimSpace(label)
 				// Insert charac once
 				if i == 0 {
-					err := tx.QueryRow("INSERT INTO charac (parent_id, \"order\", author_user_id, created_at, updated_at) VALUES ($1, $2, $3, now(), now()) RETURNING id", parentId, 0, 1).Scan(&lastInsertId)
+					err := tx.QueryRow("INSERT INTO charac (parent_id, \"order\", author_user_id, created_at, updated_at) VALUES ($1, $2, $3, now(), now()) RETURNING id", parentId, 0, 0).Scan(&lastInsertId)
 					if err != nil {
 						return err
 					}
