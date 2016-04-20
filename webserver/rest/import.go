@@ -109,7 +109,12 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	// Init import
 	dbImport = new(databaseimport.DatabaseImport)
-	dbImport.New(parser, 1, params.Name, params.DatabaseLang, true)
+	err = dbImport.New(parser, 1, params.Name, params.DatabaseLang)
+	if err != nil {
+		parser.AddError(err.Error())
+		sendError(w, parser.Errors)
+		return
+	}
 
 	// Analyze csv headers
 	if err := parser.CheckHeader(); err != nil {
@@ -119,7 +124,7 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		}
 	}
 
-	dbImportErr := parser.Parse(dbImport.ProcessRecord)
+	parser.Parse(dbImport.ProcessRecord)
 	/*
 		if err != nil {
 			for siteCode, e := range dbImport.Errors {
@@ -128,17 +133,12 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		}
 	*/
 
-	// If error ...
-	if dbImportErr != nil {
-		dbImport.Tx.Rollback()
-	} else {
-		// Commit or Rollback if we are in simulation mode
-		switch dbImport.Simulate {
-		case true:
-			err = dbImport.Tx.Rollback()
-		case false:
-			err = dbImport.Tx.Commit()
-		}
+	err = dbImport.Tx.Commit()
+
+	if err != nil {
+		parser.AddError(err.Error())
+		sendError(w, parser.Errors)
+		return
 	}
 
 	// Prepare response

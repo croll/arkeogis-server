@@ -256,16 +256,16 @@
 <comment>min:"1" max:"255" error:"DATABASE.FIELD_NAME.T_CHECK_MANDATORY"</comment>
 </row>
 <row name="scale_resolution" null="0" autoincrement="0">
-<datatype>BIT('object','site','watershed','micro-region','region','country','europa')</datatype>
-<comment>enum:"object,site,watershed,micro-region,region,country,europa" error:"DATABASE.FIELD_SCALE_RESOLUTION.T_CHECK_INCORRECT"</comment>
+<datatype>BIT('undefined','object','site','watershed','micro-region','region','country','europa')</datatype>
+<comment>enum:"undefined,object,site,watershed,micro-region,region,country,europa" error:"DATABASE.FIELD_SCALE_RESOLUTION.T_CHECK_INCORRECT"</comment>
 </row>
 <row name="geographical_extent" null="0" autoincrement="0">
-<datatype>BIT('country','continent','world')</datatype>
-<comment>enum:"country,continent,world" error:"DATABASE.FIELD_GEOGRAPHICAL_EXTENT.T_CHECK_INCORRECT"</comment>
+<datatype>BIT('undefined','country','continent','world')</datatype>
+<comment>enum:"undefined,country,continent,world" error:"DATABASE.FIELD_GEOGRAPHICAL_EXTENT.T_CHECK_INCORRECT"</comment>
 </row>
 <row name="type" null="0" autoincrement="0">
-<datatype>BIT('inventory', 'research', 'literary-work' )</datatype>
-<comment>enum:"inventory, research, literary-work" error:"DATABASE.FIELD_TYPE.T_CHECK_INCORRECT"</comment>
+<datatype>BIT('undefined', 'inventory', 'research', 'literary-work' )</datatype>
+<comment>enum:"undefined,inventory,research,literary-work" error:"DATABASE.FIELD_TYPE.T_CHECK_INCORRECT"</comment>
 </row>
 <row name="owner" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
@@ -306,8 +306,8 @@
 <datatype>VARCHAR(255)</datatype>
 </row>
 <row name="state" null="0" autoincrement="0">
-<datatype>BIT('in-progress', 'finished')</datatype>
-<comment>enum:"in-progress,finished" error:"DATABASE.FIELD_STATE.T_CHECK_INCORRECT"</comment>
+<datatype>BIT('undefined','in-progress', 'finished')</datatype>
+<comment>enum:"undefined,in-progress,finished" error:"DATABASE.FIELD_STATE.T_CHECK_INCORRECT"</comment>
 </row>
 <row name="published" null="0" autoincrement="0">
 <datatype>BOOLEAN</datatype>
@@ -318,7 +318,8 @@
 <relation table="license" row="id" />
 </row>
 <row name="context" null="0" autoincrement="0">
-<datatype>BIT('todo')</datatype>
+<datatype>BIT('undefined','academic-work','contract','research_team','other')</datatype>
+<comment>enum:"undefined,academic-work,contract,research_team,other" error:"DATABASE.FIELD_CONTEXT.T_CHECK_INCORRECT"</comment>
 </row>
 <row name="context_description" null="0" autoincrement="0">
 <datatype>TEXT</datatype>
@@ -1258,3 +1259,4 @@
 </key>
 </table>
 </sql>
+
