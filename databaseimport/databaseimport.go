@@ -115,7 +115,6 @@ type DatabaseImport struct {
 	SitesProcessed map[string]int
 	Database       *DatabaseFullInfos
 	CurrentSite    *SiteFullInfos
-	Simulate       bool
 	Tx             *sqlx.Tx
 	Parser         *Parser
 	ArkeoCharacs   map[string]map[string]int
@@ -125,12 +124,11 @@ type DatabaseImport struct {
 }
 
 // New creates a new import process
-func (di *DatabaseImport) New(parser *Parser, uid int, databaseName string, langID int, simu bool) error {
+func (di *DatabaseImport) New(parser *Parser, uid int, databaseName string, langID int) error {
 	var err error
 	if uid <= 0 {
 		return errors.New("Invalid user id")
 	}
-	di.Simulate = simu
 	di.Database = &DatabaseFullInfos{}
 	di.Database.Owner = uid
 	di.Database.Default_language = langID
@@ -150,7 +148,6 @@ func (di *DatabaseImport) New(parser *Parser, uid int, databaseName string, lang
 	di.ArkeoCharacs = map[string]map[string]int{}
 	di.ArkeoCharacs, err = di.cacheCharacs()
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 
@@ -161,9 +158,11 @@ func (di *DatabaseImport) New(parser *Parser, uid int, databaseName string, lang
 				if err = di.processDatabaseName(databaseName); err != nil {
 					di.AddError(databaseName, "IMPORT.CSVFIELD_DATABASE_SOURCE_NAME.T_CHECK_INVALID", "DATABASE_SOURCE_NAME")
 				}
+				return err
 			}
 		} else {
 			di.AddError(databaseName, "IMPORT.CSVFIELD_DATABASE_SOURCE_NAME.T_CHECK_EMPTY", "DATABASE_SOURCE_NAME")
+			return errors.New("IMPORT.CSVFIELD_DATABASE_SOURCE_NAME.T_CHECK_EMPTY")
 		}
 	}
 
@@ -179,9 +178,9 @@ var periodRegexpDate2 = regexp.MustCompile(`^-?\d{0,}\p{L}{0,}:(-?\d{0,}\p{L}{0,
 
 // setDefaultValues init the di.Database object with default values
 func (di *DatabaseImport) setDefaultValues() {
-	di.Database.Scale_resolution = "site"
-	di.Database.Geographical_extent = "world"
-	di.Database.Type = "inventory"
+	di.Database.Scale_resolution = "undefined"
+	di.Database.Geographical_extent = "undefined"
+	di.Database.Type = "undefined"
 	di.Database.Source_creation_date = time.Now()
 	di.Database.Data_set = ""
 	di.Database.Source = ""
@@ -191,12 +190,12 @@ func (di *DatabaseImport) setDefaultValues() {
 	di.Database.Relation = ""
 	di.Database.Coverage = ""
 	di.Database.Copyright = ""
-	di.Database.Context = "todo"
+	di.Database.Context = "undefined"
 	di.Database.Context_description = ""
 	di.Database.Subject = ""
-	di.Database.State = "in-progress"
+	di.Database.State = "undefined"
 	di.Database.Published = false
-	di.Database.License_id = 1
+	di.Database.License_id = 0
 	di.Database.Created_at = time.Now()
 	di.Database.Updated_at = time.Now()
 }
@@ -271,10 +270,7 @@ func (di *DatabaseImport) processDatabaseName(name string) error {
 		// Update record
 		err = di.Database.Update(di.Tx)
 	} else {
-		if di.Simulate {
-			fmt.Println("Simulation")
-			di.setDefaultValues()
-		}
+		di.setDefaultValues()
 		// Create record in database
 		err = di.Database.Create(di.Tx)
 		// Set again values if set in Simulation mode
