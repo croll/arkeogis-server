@@ -68,6 +68,16 @@ type Usercreate struct {
 	Companies      []Company                `json:"companies"`
 	File           *routes.File
 	Groups         []model.Group `json:"groups"`
+
+	// overrides
+	Password string `json:"password"`
+}
+
+type Userinfos struct {
+	Usercreate
+
+	// overrides
+	Password string `json:"-"`
 }
 
 // Userlogin structure (json)
@@ -213,6 +223,9 @@ func UserList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		Groups_charac     sqlx_types.JSONText `json:"groups_charac"`
 		CountryAndCity    sqlx_types.JSONText `json:"country_and_city"`
 		Companies         sqlx_types.JSONText `json:"companies"`
+
+		// overrides
+		Password string `json:"-"`
 	}
 	type Answer struct {
 		Data  []User `json:"data"`
@@ -337,6 +350,20 @@ func userSet(w http.ResponseWriter, r *http.Request, proute routes.Proute, creat
 	if create {
 		err = u.Create(tx)
 	} else {
+		tmpuser := model.User{
+			Id: u.Id,
+		}
+		err = tmpuser.Get(tx)
+		if err != nil {
+			log.Println("can't get user for update", err)
+			userSqlError(w, err)
+			tx.Rollback()
+			return
+		}
+
+		if len(u.Password) == 0 { // if we don't set a new password, we take it back from the db
+			u.Password = tmpuser.Password
+		}
 		err = u.Update(tx)
 	}
 	if err != nil {
@@ -426,7 +453,7 @@ func UserInfos(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		userSqlError(w, err)
 		return
 	}
-	u := Usercreate{}
+	u := Userinfos{}
 	u.Id = params.Id
 
 	err = u.Get(tx)
