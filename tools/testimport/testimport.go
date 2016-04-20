@@ -23,9 +23,10 @@ package main
 
 import (
 	"fmt"
-	"github.com/croll/arkeogis-server/databaseimport"
 	"log"
 	"strings"
+
+	"github.com/croll/arkeogis-server/databaseimport"
 )
 
 func main() {
@@ -43,7 +44,7 @@ func main() {
 		log.Fatalln(err)
 	}
 	dbImport := new(databaseimport.DatabaseImport)
-	dbImport.New(parser, 1, "My test database", 48, true)
+	dbImport.New(parser, 1, "My test database", 48)
 	parser.SetUserChoices("UseGeonames", true)
 	err = parser.Parse(dbImport.ProcessRecord)
 	if err != nil {
@@ -52,12 +53,7 @@ func main() {
 		}
 	}
 	// Commit or Rollback if we are in simulation mode
-	switch dbImport.Simulate {
-	case true:
-		err = dbImport.Tx.Rollback()
-	case false:
-		err = dbImport.Tx.Commit()
-	}
+	err = dbImport.Tx.Rollback()
 	if err != nil {
 		log.Fatalln(err)
 	}

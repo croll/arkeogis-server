@@ -79,12 +79,23 @@ func LicenseList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 }
 
 // DatabaseEnumList returns the list of enums fields
+// We have to link them with a translation manually clientside
 func DatabaseEnumList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	enums := struct {
 		ScaleResolution    []string
 		GeographicalExtent []string
 		Type               []string
+		State              []string
+		Context            []string
+		Occupation         []string
+		KnowledgeType      []string
 	}{}
 	db.DB.Select(&enums.ScaleResolution, "SELECT unnest(enum_range(NULL::database_scale_resolution))")
+	db.DB.Select(&enums.GeographicalExtent, "SELECT unnest(enum_range(NULL::database_geographical_extent))")
+	db.DB.Select(&enums.Type, "SELECT unnest(enum_range(NULL::database_type))")
+	db.DB.Select(&enums.State, "SELECT unnest(enum_range(NULL::database_state))")
+	db.DB.Select(&enums.Context, "SELECT unnest(enum_range(NULL::database_context))")
+	db.DB.Select(&enums.Context, "SELECT unnest(enum_range(NULL::database_context))")
+	db.DB.Select(&enums.Context, "SELECT unnest(enum_range(NULL::database_context))")
 	fmt.Println(enums)
 }

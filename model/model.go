@@ -93,9 +93,9 @@ type Country_tr struct {
 type Database struct {
 	Id                   int       `db:"id" json:"id"`
 	Name                 string    `db:"name" json:"name" min:"1" max:"255" error:"DATABASE.FIELD_NAME.T_CHECK_MANDATORY"`
-	Scale_resolution     string    `db:"scale_resolution" json:"scale_resolution" enum:"object,site,watershed,micro-region,region,country,europa" error:"DATABASE.FIELD_SCALE_RESOLUTION.T_CHECK_INCORRECT"`
-	Geographical_extent  string    `db:"geographical_extent" json:"geographical_extent" enum:"country,continent,world" error:"DATABASE.FIELD_GEOGRAPHICAL_EXTENT.T_CHECK_INCORRECT"`
-	Type                 string    `db:"type" json:"type" enum:"inventory, research, literary-work" error:"DATABASE.FIELD_TYPE.T_CHECK_INCORRECT"`
+	Scale_resolution     string    `db:"scale_resolution" json:"scale_resolution" enum:"undefined,object,site,watershed,micro-region,region,country,europa" error:"DATABASE.FIELD_SCALE_RESOLUTION.T_CHECK_INCORRECT"`
+	Geographical_extent  string    `db:"geographical_extent" json:"geographical_extent" enum:"undefined,country,continent,world" error:"DATABASE.FIELD_GEOGRAPHICAL_EXTENT.T_CHECK_INCORRECT"`
+	Type                 string    `db:"type" json:"type" enum:"undefined,inventory,research,literary-work" error:"DATABASE.FIELD_TYPE.T_CHECK_INCORRECT"`
 	Owner                int       `db:"owner" json:"owner"` // User.Id
 	Source_creation_date time.Time `db:"source_creation_date" json:"source_creation_date"`
 	Data_set             string    `db:"data_set" json:"data_set"`
@@ -108,10 +108,10 @@ type Database struct {
 	Relation             string    `db:"relation" json:"relation"`
 	Coverage             string    `db:"coverage" json:"coverage"`
 	Copyright            string    `db:"copyright" json:"copyright"`
-	State                string    `db:"state" json:"state" enum:"in-progress,finished" error:"DATABASE.FIELD_STATE.T_CHECK_INCORRECT"`
+	State                string    `db:"state" json:"state" enum:"undefined,in-progress,finished" error:"DATABASE.FIELD_STATE.T_CHECK_INCORRECT"`
 	Published            bool      `db:"published" json:"published" enum:"0,1" error:"DATABASE.FIELD_PUBLISHED.T_CHECK_INCORRECT"`
 	License_id           int       `db:"license_id" json:"license_id"` // License.Id
-	Context              string    `db:"context" json:"context"`
+	Context              string    `db:"context" json:"context" enum:"undefined,academic-work,contract,research_team,other" error:"DATABASE.FIELD_CONTEXT.T_CHECK_INCORRECT"`
 	Context_description  string    `db:"context_description" json:"context_description"`
 	Subject              string    `db:"subject" json:"subject" min:"1" error:"DATABASE.FIELD_SUBJECT.T_CHECK_MANDATORY" max:"255" error:"DATABASE.FIELD_SUBJECT.T_CHECK_INCORRECT"`
 	Created_at           time.Time `db:"created_at" json:"created_at"`

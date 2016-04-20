@@ -23,6 +23,7 @@ package model
 
 import (
 	"database/sql"
+	"fmt"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -75,6 +76,31 @@ func (d *Database) Update(tx *sqlx.Tx) error {
 		return err
 	}
 	return nil
+}
+
+func (d *Database) DeleteSites(tx *sqlx.Tx) error {
+
+	var siteIds = make([]int, 0)
+
+	stmt, err := tx.PrepareNamed("SELECT id FROM \"site\" WHERE database_id = :id")
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	err = stmt.Select(&siteIds, d)
+
+	fmt.Println(siteIds)
+
+	return nil
+
+	_, err = tx.NamedExec("DELETE FROM \"site_range__charac\" WHERE site_id IN (SELECT id FROM \"site\" WHERE database_id = :id)", d)
+	_, err = tx.NamedExec("DELETE FROM \"site_range__charac_tr\" WHERE site_id IN (SELECT id FROM \"site\" WHERE database_id = :id)", d)
+
+	_, err = tx.NamedExec("DELETE FROM \"site_range\" WHERE site_id IN (SELECT id FROM \"site\" WHERE database_id = :id)", d)
+	if err != nil {
+		return err
+	}
+	return err
 }
 
 func (d *Database) GetAuthors(tx *sqlx.Tx) ([]int, error) {
