@@ -126,9 +126,6 @@ type DatabaseImport struct {
 // New creates a new import process
 func (di *DatabaseImport) New(parser *Parser, uid int, databaseName string, langID int) error {
 	var err error
-	if uid <= 0 {
-		return errors.New("Invalid user id")
-	}
 	di.Database = &DatabaseFullInfos{}
 	di.Database.Owner = uid
 	di.Database.Default_language = langID
@@ -264,22 +261,65 @@ func (di *DatabaseImport) processDatabaseName(name string) error {
 		return err
 	}
 
+	return nil
+}
+
+func (di *DatabaseImport) ProcessEssentialInfos(name string, geographicalExtent string, selectedContinents []int, selectedCountries []int) error {
+	var err error
 	if di.Database.Exists {
+		// Cache infos received from web form
 		// Get database infos
-		di.Database.GetInfos(di.Tx)
-		// Update record
-		err = di.Database.Update(di.Tx)
+		err = di.Database.GetInfos(di.Tx)
+		if err != nil {
+			return err
+		}
+		// fmt.Println(di.Database)
+
+		// Delete linked continents
+		err = di.Database.DeleteContinents(di.Tx)
+		if err != nil {
+			return err
+		}
+		err = di.Database.DeleteCountries(di.Tx)
+		if err != nil {
+			return err
+		}
 	} else {
 		di.setDefaultValues()
-		// Create record in database
-		err = di.Database.Create(di.Tx)
-		// Set again values if set in Simulation mode
-		di.Database.Name = name
-		di.Database.Init = true
 	}
 	if err != nil {
 		fmt.Println(err)
 		return err
+	}
+	if di.Database.Exists {
+		// Update record
+		err = di.Database.Update(di.Tx)
+	} else {
+		// Create record
+		err = di.Database.Create(di.Tx)
+	}
+	if err != nil {
+		return err
+	}
+
+	di.Database.Name = name
+	di.Database.Geographical_extent = geographicalExtent
+	di.Database.Init = true
+
+	if len(selectedCountries) > 0 {
+		di.Database.Countries = selectedCountries
+		err = di.Database.AddCountries(di.Tx, selectedCountries)
+		if err != nil {
+			return err
+		}
+	}
+
+	if len(selectedContinents) > 0 {
+		di.Database.Continents = selectedContinents
+		err = di.Database.AddContinents(di.Tx, selectedContinents)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
