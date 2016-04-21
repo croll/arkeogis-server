@@ -56,7 +56,7 @@ func ContinentsList(w http.ResponseWriter, r *http.Request, proute routes.Proute
 		Name      string `json:"name"`
 	}{}
 
-	err := db.DB.Select(&continents, "SELECT geonameid, name FROM continent LEFT JOIN continent_tr ON continent.geonameid = continent_tr.continent_geonameid LEFT JOIN lang ON continent_tr.lang_id = lang.id WHERE active = true AND continent.iso_code != 'U' AND (lang.iso_code = $1 OR lang.iso_code = 'D')", proute.Lang1.Id)
+	err := db.DB.Select(&continents, "SELECT geonameid, name FROM continent LEFT JOIN continent_tr ON continent.geonameid = continent_tr.continent_geonameid LEFT JOIN lang ON continent_tr.lang_id = lang.id WHERE active = true AND continent.iso_code != 'U' AND (lang.Id = $1 OR lang.iso_code = 'D')", proute.Lang1.Id)
 	if err != nil {
 		fmt.Println("err: ", err)
 		return
