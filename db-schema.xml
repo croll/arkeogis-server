@@ -41,7 +41,7 @@
 		<type label="Inet CIDR Addr" length="0" sql="CIDR" quote="'"/>
 		<type label="Geometry" length="0" sql="GEOMETRY" quote="'"/>
 	</group>
-</datatypes><table x="53" y="118" name="user">
+</datatypes><table x="63" y="106" name="user">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
@@ -168,7 +168,7 @@
 <part>id</part>
 </key>
 </table>
-<table x="1067" y="372" name="geographical_zone">
+<table x="1087" y="343" name="geographical_zone">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
@@ -247,7 +247,7 @@
 <part>chronology_root_id</part>
 </key>
 </table>
-<table x="470" y="36" name="database">
+<table x="480" y="28" name="database">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
@@ -256,12 +256,12 @@
 <comment>min:"1" max:"255" error:"DATABASE.FIELD_NAME.T_CHECK_MANDATORY"</comment>
 </row>
 <row name="scale_resolution" null="0" autoincrement="0">
-<datatype>BIT('undefined','object','site','watershed','micro-region','region','country','europa')</datatype>
-<comment>enum:"undefined,object,site,watershed,micro-region,region,country,europa" error:"DATABASE.FIELD_SCALE_RESOLUTION.T_CHECK_INCORRECT"</comment>
+<datatype>BIT('undefined','object','site','watershed','micro-region','region','country','continent','world')</datatype>
+<comment>enum:"undefined,object,site,watershed,micro-region,region,country,continent,world" error:"DATABASE.FIELD_SCALE_RESOLUTION.T_CHECK_INCORRECT"</comment>
 </row>
 <row name="geographical_extent" null="0" autoincrement="0">
 <datatype>BIT('undefined','country','continent','world')</datatype>
-<comment>enum:"undefined,country,continent,world" error:"DATABASE.FIELD_GEOGRAPHICAL_EXTENT.T_CHECK_INCORRECT"</comment>
+<comment>enum:"undefined,country,continent,international_waters,world" error:"DATABASE.FIELD_GEOGRAPHICAL_EXTENT.T_CHECK_INCORRECT"</comment>
 </row>
 <row name="type" null="0" autoincrement="0">
 <datatype>BIT('undefined', 'inventory', 'research', 'literary-work' )</datatype>
@@ -338,7 +338,7 @@
 <part>id</part>
 </key>
 </table>
-<table x="881" y="31" name="site">
+<table x="901" y="47" name="site">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
@@ -431,7 +431,7 @@
 <part>geonameid</part>
 </key>
 </table>
-<table x="496" y="651" name="site_tr">
+<table x="505" y="648" name="site_tr">
 <row name="site_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="site" row="id" />
@@ -448,7 +448,7 @@
 <part>lang_id</part>
 </key>
 </table>
-<table x="861" y="324" name="site_range">
+<table x="888" y="379" name="site_range">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
@@ -485,7 +485,7 @@
 <part>id</part>
 </key>
 </table>
-<table x="1059" y="636" name="site_range__charac_tr">
+<table x="1055" y="637" name="site_range__charac_tr">
 <row name="site_range__charac_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="site_range__charac" row="id" />
@@ -551,7 +551,7 @@
 <part>charac_id</part>
 </key>
 </table>
-<table x="1344" y="469" name="charac">
+<table x="1352" y="470" name="charac">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
@@ -770,7 +770,7 @@
 <part>shapefile_id</part>
 </key>
 </table>
-<table x="1065" y="507" name="site_range__charac">
+<table x="1075" y="481" name="site_range__charac">
 <row name="id" null="1" autoincrement="0">
 <datatype>INTEGER</datatype>
 <default>NULL</default></row>
@@ -892,7 +892,7 @@
 <row name="created_at" null="0" autoincrement="0">
 <datatype>TIMESTAMP</datatype>
 </row>
-<row name="updated_at" null="0" autoincrement="0">
+<row name="udpated_at" null="0" autoincrement="0">
 <datatype>TIMESTAMP</datatype>
 </row>
 <key type="PRIMARY" name="">
@@ -1216,8 +1216,8 @@
 <part>iso_code</part>
 </key>
 </table>
-<table x="778" y="757" name="database__continent">
-<row name="id_database" null="0" autoincrement="0">
+<table x="709" y="764" name="database__continent">
+<row name="database_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="database" row="id" />
 </row>
@@ -1226,7 +1226,7 @@
 <default>NULL</default><relation table="continent" row="geonameid" />
 </row>
 <key type="PRIMARY" name="">
-<part>id_database</part>
+<part>database_id</part>
 <part>continent_geonameid</part>
 </key>
 </table>
