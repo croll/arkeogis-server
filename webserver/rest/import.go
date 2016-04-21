@@ -34,6 +34,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/croll/arkeogis-server/databaseimport"
+	"github.com/croll/arkeogis-server/model"
 	routes "github.com/croll/arkeogis-server/webserver/routes"
 )
 
@@ -53,20 +54,31 @@ func init() {
 
 // ImportStep1T struct holds information provided by user
 type ImportStep1T struct {
-	Name              string
-	DatabaseLang      int
-	SelectedContinent int
-	SelectedCountries []int
-	UseGeonames       bool
-	Separator         string
-	EchapCharacter    string
-	File              *routes.File
+	Name               string
+	DatabaseLang       int
+	GeographicalExtent string
+	SelectedContinent  []int
+	SelectedCountries  []int
+	UseGeonames        bool
+	Separator          string
+	EchapCharacter     string
+	File               *routes.File
 }
 
 // ImportStep1 is called by rest
 func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	params := proute.Json.(*ImportStep1T)
+
+	var user interface{}
+	var ok bool
+
+	if user, ok = proute.Session.Get("user"); !ok || user.(model.User).Id == 0 {
+		http.Error(w, "Not logged in", http.StatusForbidden)
+		return
+	}
+
+	fmt.Println(user.(model.User).Username)
 
 	var dbImport *databaseimport.DatabaseImport
 
@@ -109,7 +121,7 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	// Init import
 	dbImport = new(databaseimport.DatabaseImport)
-	err = dbImport.New(parser, 1, params.Name, params.DatabaseLang)
+	err = dbImport.New(parser, 0, params.Name, params.DatabaseLang)
 	if err != nil {
 		parser.AddError(err.Error())
 		sendError(w, parser.Errors)
@@ -117,11 +129,19 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	}
 
 	// Analyze csv headers
-	if err := parser.CheckHeader(); err != nil {
+	if err = parser.CheckHeader(); err != nil {
 		if err != nil {
 			sendError(w, parser.Errors)
 			return
 		}
+	}
+
+	// Record database essentials infos
+	err = dbImport.ProcessEssentialInfos(params.Name, params.GeographicalExtent, params.SelectedContinent, params.SelectedCountries)
+	if err != nil {
+		parser.AddError(err.Error())
+		sendError(w, parser.Errors)
+		return
 	}
 
 	parser.Parse(dbImport.ProcessRecord)

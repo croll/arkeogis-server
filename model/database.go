@@ -24,6 +24,7 @@ package model
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -58,11 +59,12 @@ func (d *Database) GetInfos(tx *sqlx.Tx) (err error) {
 		return err
 	}
 	defer stmt.Close()
-	return stmt.Get(&d, d)
+	return stmt.Get(d, d)
 }
 
 func (d *Database) Create(tx *sqlx.Tx) error {
 	stmt, err := tx.PrepareNamed("INSERT INTO \"database\" (" + Database_InsertStr + ") VALUES (" + Database_InsertValuesStr + ") RETURNING id")
+	fmt.Println(d)
 	if err != nil {
 		return err
 	}
@@ -80,7 +82,7 @@ func (d *Database) Update(tx *sqlx.Tx) error {
 
 func (d *Database) DeleteSites(tx *sqlx.Tx) error {
 
-	var siteIds = make([]int, 0)
+	var siteIds = make([]string, 0)
 
 	stmt, err := tx.PrepareNamed("SELECT id FROM \"site\" WHERE database_id = :id")
 	if err != nil {
@@ -88,18 +90,64 @@ func (d *Database) DeleteSites(tx *sqlx.Tx) error {
 	}
 	defer stmt.Close()
 	err = stmt.Select(&siteIds, d)
+	/*
+		ids := make([]string, len(siteIds))
+		for i, siteID := range siteIds {
+			ids[i] = fmt.Sprintf("%d", siteID)
+		}
+	*/
 
 	fmt.Println(siteIds)
 
 	return nil
 
-	_, err = tx.NamedExec("DELETE FROM \"site_range__charac\" WHERE site_id IN (SELECT id FROM \"site\" WHERE database_id = :id)", d)
-	_, err = tx.NamedExec("DELETE FROM \"site_range__charac_tr\" WHERE site_id IN (SELECT id FROM \"site\" WHERE database_id = :id)", d)
-
-	_, err = tx.NamedExec("DELETE FROM \"site_range\" WHERE site_id IN (SELECT id FROM \"site\" WHERE database_id = :id)", d)
+	_, err = tx.NamedExec("DELETE FROM \"site_range__charac_tr\" WHERE site_id IN ("+strings.Join(siteIds, ",")+")", d)
+	_, err = tx.NamedExec("DELETE FROM \"site_range__charac\" WHERE site_id IN ("+strings.Join(siteIds, ",")+")", d)
+	_, err = tx.NamedExec("DELETE FROM \"site_range\" WHERE site_id IN ("+strings.Join(siteIds, ",")+")", d)
 	if err != nil {
 		return err
 	}
+
+	_, err = tx.NamedExec("DELETE FROM \"site_tr\" WHERE database_id = :id", d)
+	_, err = tx.NamedExec("DELETE FROM \"site\" WHERE database_id = :id", d)
+
+	if err != nil {
+		return err
+	}
+	return err
+}
+
+// AddCountries links countries to a database
+func (d *Database) AddCountries(tx *sqlx.Tx, countryIds []int) error {
+	for _, id := range countryIds {
+		_, err := tx.Exec("INSERT INTO database__countries (database_id, country_geonameid) VALUES ($1, $2)", d.Id, id)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// DeleteCountries unlinks countries to a database
+func (d *Database) DeleteCountries(tx *sqlx.Tx) error {
+	_, err := tx.NamedExec("DELETE FROM \"database__country\" WHERE database_id=:id", d)
+	return err
+}
+
+// AddContinents links continents to a database
+func (d *Database) AddContinents(tx *sqlx.Tx, continentIds []int) error {
+	for _, id := range continentIds {
+		_, err := tx.Exec("INSERT INTO database__continent (database_id, continent_geonameid) VALUES ($1, $2)", d.Id, id)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// DeleteContinents unlinks countries to a database
+func (d *Database) DeleteContinents(tx *sqlx.Tx) error {
+	_, err := tx.NamedExec("DELETE FROM \"database__continent\" WHERE database_id=:id", d)
 	return err
 }
 
