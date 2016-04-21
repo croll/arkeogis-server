@@ -23,7 +23,6 @@ package rest
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -134,13 +133,14 @@ func init() {
 			},
 		},
 		&routes.Route{
-			Path:        "/api/users",
+			Path:        "/api/users/{id:[0-9]+}",
 			Description: "Delete an arkeogis user",
 			Func:        UserDelete,
 			Method:      "DELETE",
 			Permissions: []string{
 			//"AdminUsers",
 			},
+			Params: reflect.TypeOf(UserGetParams{}),
 		},
 		&routes.Route{
 			Path:        "/api/login",
@@ -447,7 +447,54 @@ func UserUpdate(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 // UserDelete delete an user.
 func UserDelete(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
-	fmt.Println("delete")
+	params := proute.Params.(*UserGetParams)
+	tx, err := db.DB.Beginx()
+	if err != nil {
+		log.Println("can't start transaction")
+		userSqlError(w, err)
+		return
+	}
+
+	u := Userinfos{}
+	u.Id = params.Id
+
+	err = u.Get(tx)
+	if err != nil {
+		log.Println("can't get user")
+		userSqlError(w, err)
+		return
+	}
+
+	_, err = tx.Exec("DELETE FROM \"user__group\" where \"user_id\" = $1", u.Id)
+	if err != nil {
+		log.Println("can't remove user from groups")
+		userSqlError(w, err)
+		return
+	}
+
+	_, err = tx.Exec("DELETE FROM \"user__company\" where \"user_id\" = $1", u.Id)
+	if err != nil {
+		log.Println("can't remove user from companies")
+		userSqlError(w, err)
+		return
+	}
+
+	_, err = tx.Exec("DELETE FROM \"user\" where id = $1", u.Id)
+	if err != nil {
+		log.Println("can't delete user")
+		userSqlError(w, err)
+		return
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		log.Println("can't commit")
+		userSqlError(w, err)
+		return
+	}
+	j, err := json.Marshal(u)
+	w.Write(j)
+
 }
 
 // UserInfos return detailed infos on an user
