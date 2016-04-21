@@ -147,11 +147,22 @@ func GroupList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	err := db.DB.Select(&answer.Data,
 		" SELECT * FROM \"group\" g "+
 			" LEFT JOIN \"group_tr\" g_tr ON g.id = g_tr.group_id "+
-			" WHERE g_tr.name ILIKE $1 AND g.type=$2 AND g.id > 0"+
+			" WHERE g_tr.name ILIKE $1 AND g.type=$2 AND g.id > 0 AND g_tr.lang_id=$3"+
 			" ORDER BY "+order+" "+orderdir+
-			" OFFSET $3 "+
-			" LIMIT $4",
-		"%"+params.Filter+"%", params.Type, offset, params.Limit)
+			" OFFSET $4 "+
+			" LIMIT $5",
+		"%"+params.Filter+"%", params.Type, proute.Lang1.Id, offset, params.Limit)
+	/*
+		// get groups
+		err := db.DB.Select(&answer.Data,
+			" SELECT * FROM \"group\" g "+
+				" LEFT JOIN \"group_tr\" g_tr ON g.id = g_tr.group_id "+
+				" WHERE g_tr.name ILIKE $1 AND g.type=$2 AND g.id > 0"+
+				" ORDER BY "+order+" "+orderdir+
+				" OFFSET $3 "+
+				" LIMIT $4",
+			"%"+params.Filter+"%", params.Type, offset, params.Limit)
+	*/
 	if err != nil {
 		log.Println("get groups failed", err)
 		routes.ServerError(w, 500, "INTERNAL ERROR")
