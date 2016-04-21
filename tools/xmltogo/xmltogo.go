@@ -31,6 +31,8 @@ import (
 	"os"
 	"sort"
 	"strings"
+
+	config "github.com/croll/arkeogis-server/config"
 )
 
 // Theses struct are a modelisation of the XML file
@@ -207,7 +209,9 @@ func printPsql(sql Sql) {
 }
 
 func main() {
-	in, err := ioutil.ReadFile("in.xml")
+	filepath := config.DevDistPath + "/src/github.com/croll/arkeogis-server/db-schema.xml"
+	//fmt.Println("Opening: " + filepath)
+	in, err := ioutil.ReadFile(filepath)
 	if err != nil {
 		fmt.Println("Unable to open input file")
 		os.Exit(1)
