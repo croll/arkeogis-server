@@ -47,9 +47,11 @@ func LangList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	langs := []struct {
 		Id      uint32 `json:"id"`
 		IsoCode string `json:"iso_code"`
+		Name    string `json:"name"`
 	}{}
 
-	err := db.DB.Select(&langs, "SELECT id, iso_code as isocode FROM lang WHERE active = true AND iso_code != 'D'")
+	err := db.DB.Select(&langs, "SELECT id, iso_code as isocode, name FROM lang LEFT JOIN lang_tr ON lang_tr.lang_id = lang.id AND lang_tr.lang_id_tr = $1 WHERE active = true AND iso_code != 'D'",
+		proute.Lang1.Id)
 	if err != nil {
 		fmt.Println("err: ", err)
 		return
