@@ -892,7 +892,7 @@
 <row name="created_at" null="0" autoincrement="0">
 <datatype>TIMESTAMP</datatype>
 </row>
-<row name="udpated_at" null="0" autoincrement="0">
+<row name="updated_at" null="0" autoincrement="0">
 <datatype>TIMESTAMP</datatype>
 </row>
 <key type="PRIMARY" name="">
