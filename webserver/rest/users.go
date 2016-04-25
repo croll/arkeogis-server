@@ -169,7 +169,8 @@ func init() {
 func selectTranslated(tabletr string, coltr string, collang string, where string, lang1 int, lang2 int) string {
 	return "(" +
 		//		" SELECT \"" + coltr + "\" " +
-		" SELECT name " +
+		" SELECT \"" + tabletr + "\" " +
+		//" SELECT name " +
 		" FROM \"" + tabletr + "\" " +
 		" WHERE \"" + collang + "\" IN (" + strconv.Itoa(lang1) + "," + strconv.Itoa(lang2) + ",0) " +
 		" AND " + where + " " +
@@ -201,15 +202,16 @@ func selectCityAndCountryAsJson(city_geonameid string, langid int) string {
 func selectGroupAsJson(group_type string, langid int) string {
 	return "" +
 		"SELECT " +
-		//" to_json(array_agg(" + selectTranslated("group_tr", "name", "lang_id", "group_id = g.id", langid, 0) + ")) " +
-		" json_agg((g.id," + selectTranslated("group_tr", "name", "lang_id", "group_id = g.id", langid, 0) + ")) " +
+		//" jsonb_agg(" + selectTranslated("group_tr", "name", "lang_id", "group_id = g.id", langid, 0) + ") " +
+		" to_jsonb(array_agg(" + selectTranslated("group_tr", "name", "lang_id", "group_id = g.id", langid, 0) + ")) " +
+		//" json_agg((g.id," + selectTranslated("group_tr", "name", "lang_id", "group_id = g.id", langid, 0) + ")) " +
 		" FROM user__group u_g " +
 		" LEFT JOIN \"group\" g ON u_g.group_id = g.id " +
 		" WHERE g.type='" + group_type + "' AND u_g.user_id = u.id "
 }
 
 func selectGroupAsJsonNotNull(group_type string, langid int) string {
-	return "COALESCE((" + selectGroupAsJson(group_type, langid) + "), '[]'::json)"
+	return "COALESCE((" + selectGroupAsJson(group_type, langid) + "), '[]'::jsonb)"
 }
 
 func selectCompany(user_id string) string {
