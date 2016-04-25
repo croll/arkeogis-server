@@ -354,7 +354,10 @@ func userSet(w http.ResponseWriter, r *http.Request, proute routes.Proute, creat
 
 	u := proute.Json.(*Usercreate)
 
-	// hack
+	// hack overrides
+	u.User.Password = u.Password
+
+	// hack for city
 	u.City_geonameid = u.CityAndCountry.City.Geonameid
 	log.Println("city : ", u.City_geonameid)
 
@@ -374,6 +377,7 @@ func userSet(w http.ResponseWriter, r *http.Request, proute routes.Proute, creat
 		if err != nil {
 			log.Println("1")
 			userSqlError(w, err)
+			tx.Rollback()
 			return
 		}
 		u.Photo_id = photo.Id
@@ -394,9 +398,12 @@ func userSet(w http.ResponseWriter, r *http.Request, proute routes.Proute, creat
 			return
 		}
 
-		if len(u.Password) == 0 { // if we don't set a new password, we take it back from the db
-			u.Password = tmpuser.Password
+		// if we don't set a new password, we take it back from the db
+		if len(u.User.Password) == 0 {
+			u.User.Password = tmpuser.Password
 		}
+
+		log.Println("updating user id : ", u.Id, u)
 		err = u.Update(tx)
 	}
 	if err != nil {
