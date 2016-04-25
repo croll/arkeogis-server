@@ -89,6 +89,10 @@ type UserGetParams struct {
 	Id int `min:"0" error:"User Id is mandatory"`
 }
 
+type PhotoGetParams struct {
+	Id int `min:"0" error:"Photo Id is mandatory"`
+}
+
 func init() {
 
 	Routes := []*routes.Route{
@@ -153,14 +157,14 @@ func init() {
 			},
 		},
 		&routes.Route{
-			Path:        "/api/users/{id:[0-9]+}/photo",
+			Path:        "/api/users/photo/{id:[0-9]+}",
 			Description: "get user photo (jpg)",
 			Func:        UserPhoto,
 			Method:      "GET",
 			Permissions: []string{
 			//"AdminUsers",
 			},
-			Params: reflect.TypeOf(UserGetParams{}),
+			Params: reflect.TypeOf(PhotoGetParams{}),
 		},
 	}
 	routes.RegisterMultiple(Routes)
@@ -266,7 +270,7 @@ func UserList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	err := db.DB.Select(&answer.Data,
 		"SELECT "+
-			" u.id, u.username, u.created_at, u.updated_at, u.firstname, u.lastname, u.active, u.email, "+
+			" u.id, u.username, u.created_at, u.updated_at, u.firstname, u.lastname, u.active, u.email, u.photo_id, "+
 			" "+selectGroupAsJsonNotNull("user", proute.Lang1.Id)+" as groups_user, "+
 			" "+selectGroupAsJsonNotNull("chronology", proute.Lang1.Id)+" as groups_chronology, "+
 			" "+selectGroupAsJsonNotNull("charac", proute.Lang1.Id)+" as groups_charac, "+
@@ -361,12 +365,19 @@ func userSet(w http.ResponseWriter, r *http.Request, proute routes.Proute, creat
 		return
 	}
 
-	/*
-		// photo...
-		if u.File != nil {
-			u.Photo = string(u.File.Content)
+	// photo...
+	if u.File != nil {
+		photo := model.Photo{
+			Photo: string(u.File.Content),
 		}
-	*/
+		err = photo.Create(tx)
+		if err != nil {
+			log.Println("1")
+			userSqlError(w, err)
+			return
+		}
+		u.Photo_id = photo.Id
+	}
 
 	// save the user
 	if create {
@@ -678,15 +689,16 @@ func UserLogin(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 }
 
 func UserPhoto(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
-	params := proute.Params.(*UserGetParams)
+	params := proute.Params.(*PhotoGetParams)
 
 	var photo []byte
 
-	err := db.DB.Get(&photo, "SELECT photo FROM \"user\" u WHERE id=$1", params.Id)
+	err := db.DB.Get(&photo, "SELECT photo FROM \"photo\" u WHERE id=$1", params.Id)
 
 	if err != nil {
-		log.Println("user photo get failed")
-		return
+		//log.Println("user photo get failed")
+		// user photo get failed, so revert to default
+		//return
 	}
 
 	if len(photo) == 0 {

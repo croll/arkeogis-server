@@ -331,3 +331,41 @@ func (g *Group) GetPermissions(tx *sqlx.Tx) (permissions []Permission, err error
 	err = stmt.Select(&permissions, g)
 	return permissions, err
 }
+
+/*
+ * Photo Object
+ */
+
+// Get the photo from the database
+func (u *Photo) Get(tx *sqlx.Tx) error {
+	var q = "SELECT * FROM \"photo\" WHERE id=:id"
+	stmt, err := tx.PrepareNamed(q)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	return stmt.Get(u, u)
+}
+
+// Create the photo by inserting it in the database
+func (u *Photo) Create(tx *sqlx.Tx) error {
+	stmt, err := tx.PrepareNamed("INSERT INTO \"photo\" (" + Photo_InsertStr + ") VALUES (" + Photo_InsertValuesStr + ") RETURNING id")
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	return stmt.Get(&u.Id, u)
+}
+
+// Update the photo in the database
+func (u *Photo) Update(tx *sqlx.Tx) error {
+	log.Println("update : ", "UPDATE \"photo\" SET "+Photo_UpdateStr+" WHERE id=:id")
+	_, err := tx.NamedExec("UPDATE \"photo\" SET "+Photo_UpdateStr+" WHERE id=:id", u)
+	return err
+}
+
+// Delete the photo from the database
+func (u *Photo) Delete(tx *sqlx.Tx) error {
+	_, err := tx.NamedExec("DELETE FROM \"photo\" WHERE id=:id", u)
+	return err
+}
