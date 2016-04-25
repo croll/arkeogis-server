@@ -41,7 +41,7 @@
 		<type label="Inet CIDR Addr" length="0" sql="CIDR" quote="'"/>
 		<type label="Geometry" length="0" sql="GEOMETRY" quote="'"/>
 	</group>
-</datatypes><table x="63" y="106" name="user">
+</datatypes><table x="72" y="108" name="user">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
@@ -83,8 +83,9 @@
 <datatype>INTEGER</datatype>
 <default>0</default><relation table="city" row="geonameid" />
 </row>
-<row name="photo" null="0" autoincrement="0">
-<datatype>BYTEA</datatype>
+<row name="photo_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="photo" row="id" />
 </row>
 <row name="created_at" null="0" autoincrement="0">
 <datatype>TIMESTAMP</datatype>
@@ -142,7 +143,7 @@
 <part>id</part>
 </key>
 </table>
-<table x="1096" y="17" name="project">
+<table x="1120" y="156" name="project">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
@@ -247,7 +248,7 @@
 <part>chronology_root_id</part>
 </key>
 </table>
-<table x="480" y="28" name="database">
+<table x="478" y="19" name="database">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
@@ -338,7 +339,7 @@
 <part>id</part>
 </key>
 </table>
-<table x="901" y="47" name="site">
+<table x="913" y="41" name="site">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
@@ -431,7 +432,7 @@
 <part>geonameid</part>
 </key>
 </table>
-<table x="505" y="648" name="site_tr">
+<table x="718" y="351" name="site_tr">
 <row name="site_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="site" row="id" />
@@ -448,7 +449,7 @@
 <part>lang_id</part>
 </key>
 </table>
-<table x="888" y="379" name="site_range">
+<table x="908" y="374" name="site_range">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
@@ -770,7 +771,7 @@
 <part>shapefile_id</part>
 </key>
 </table>
-<table x="1075" y="481" name="site_range__charac">
+<table x="1092" y="474" name="site_range__charac">
 <row name="id" null="1" autoincrement="0">
 <datatype>INTEGER</datatype>
 <default>NULL</default></row>
@@ -839,7 +840,7 @@
 <part>lang_id</part>
 </key>
 </table>
-<table x="1313" y="19" name="user_project">
+<table x="1260" y="29" name="user_project">
 <row name="project_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="project" row="id" />
@@ -854,7 +855,7 @@
 <part>project_id</part>
 </key>
 </table>
-<table x="1100" y="229" name="global_project">
+<table x="1067" y="21" name="global_project">
 <row name="project_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="project" row="id" />
@@ -1134,7 +1135,7 @@
 <part>country_geonameid</part>
 </key>
 </table>
-<table x="670" y="167" name="database__handle">
+<table x="679" y="178" name="database__handle">
 <row name="id" null="1" autoincrement="1">
 <datatype>INTEGER</datatype>
 <default>NULL</default></row>
@@ -1230,7 +1231,7 @@
 <part>continent_geonameid</part>
 </key>
 </table>
-<table x="722" y="604" name="lang_tr">
+<table x="738" y="635" name="lang_tr">
 <row name="lang_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="lang" row="id" />
@@ -1256,6 +1257,17 @@
 </row>
 <key type="PRIMARY" name="">
 <part>token</part>
+</key>
+</table>
+<table x="77" y="13" name="photo">
+<row name="id" null="1" autoincrement="1">
+<datatype>INTEGER</datatype>
+<default>NULL</default></row>
+<row name="photo" null="0" autoincrement="0">
+<datatype>BYTEA</datatype>
+</row>
+<key type="PRIMARY" name="">
+<part>id</part>
 </key>
 </table>
 </sql>

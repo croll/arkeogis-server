@@ -166,6 +166,18 @@ func init() {
 	routes.RegisterMultiple(Routes)
 }
 
+func selectTranslated(tabletr string, coltr string, collang string, where string, lang1 int, lang2 int) string {
+	return "(" +
+		//		" SELECT \"" + coltr + "\" " +
+		" SELECT name " +
+		" FROM \"" + tabletr + "\" " +
+		" WHERE \"" + collang + "\" IN (" + strconv.Itoa(lang1) + "," + strconv.Itoa(lang2) + ",0) " +
+		" AND " + where + " " +
+		" ORDER BY idx(array[" + strconv.Itoa(lang1) + "," + strconv.Itoa(lang2) + ",0], \"" + collang + "\") " +
+		" LIMIT 1" +
+		")"
+}
+
 func selectCityAndCountry(city_geonameid string, langid int) string {
 	return "" +
 		"SELECT " +
@@ -186,18 +198,18 @@ func selectCityAndCountryAsJson(city_geonameid string, langid int) string {
 	return "COALESCE((select row_to_json(t) from(" + selectCityAndCountry(city_geonameid, langid) + ") t), '[]'::json)"
 }
 
-func selectGroupAsJson(group_type string) string {
+func selectGroupAsJson(group_type string, langid int) string {
 	return "" +
 		"SELECT " +
-		" array_to_json(array_agg(group_tr.*)) " +
+		//" to_json(array_agg(" + selectTranslated("group_tr", "name", "lang_id", "group_id = g.id", langid, 0) + ")) " +
+		" json_agg((g.id," + selectTranslated("group_tr", "name", "lang_id", "group_id = g.id", langid, 0) + ")) " +
 		" FROM user__group u_g " +
 		" LEFT JOIN \"group\" g ON u_g.group_id = g.id " +
-		" LEFT JOIN group_tr ON g.id = group_tr.group_id " +
-		" WHERE g.type='" + group_type + "' AND u_g.user_id = u.id"
+		" WHERE g.type='" + group_type + "' AND u_g.user_id = u.id "
 }
 
-func selectGroupAsJsonNotNull(group_type string) string {
-	return "COALESCE((" + selectGroupAsJson(group_type) + "), '[]'::json)"
+func selectGroupAsJsonNotNull(group_type string, langid int) string {
+	return "COALESCE((" + selectGroupAsJson(group_type, langid) + "), '[]'::json)"
 }
 
 func selectCompany(user_id string) string {
@@ -253,9 +265,9 @@ func UserList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	err := db.DB.Select(&answer.Data,
 		"SELECT "+
 			" u.id, u.username, u.created_at, u.updated_at, u.firstname, u.lastname, u.active, u.email, "+
-			" "+selectGroupAsJsonNotNull("user")+" as groups_user, "+
-			" "+selectGroupAsJsonNotNull("chronology")+" as groups_chronology, "+
-			" "+selectGroupAsJsonNotNull("charac")+" as groups_charac, "+
+			" "+selectGroupAsJsonNotNull("user", proute.Lang1.Id)+" as groups_user, "+
+			" "+selectGroupAsJsonNotNull("chronology", proute.Lang1.Id)+" as groups_chronology, "+
+			" "+selectGroupAsJsonNotNull("charac", proute.Lang1.Id)+" as groups_charac, "+
 			" "+selectCityAndCountryAsJson("u.city_geonameid", proute.Lang1.Id)+" as countryandcity, "+
 			" "+selectCompanyAsJson("u.id")+" as companies "+
 			" FROM \"user\" u "+
@@ -347,10 +359,12 @@ func userSet(w http.ResponseWriter, r *http.Request, proute routes.Proute, creat
 		return
 	}
 
-	// photo...
-	if u.File != nil {
-		u.Photo = string(u.File.Content)
-	}
+	/*
+		// photo...
+		if u.File != nil {
+			u.Photo = string(u.File.Content)
+		}
+	*/
 
 	// save the user
 	if create {

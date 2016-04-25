@@ -255,6 +255,12 @@ type Permission_tr struct {
 }
 
 
+type Photo struct {
+	Id	int	`db:"id" json:"id"`
+	Photo	string	`db:"photo" json:"photo"`
+}
+
+
 type Project struct {
 	Id	int	`db:"id" json:"id"`
 	Name	string	`db:"name" json:"name" min:"1" error:"PROJECT.FIELD_NAME.T_CHECK_MANDATORY" max:"255" error:"PROJECT.FIELD_NAME.T_CHECK_INCORRECT"`
@@ -425,7 +431,7 @@ type User struct {
 	First_lang_id	int	`db:"first_lang_id" json:"first_lang_id"`	// Lang.Id
 	Second_lang_id	int	`db:"second_lang_id" json:"second_lang_id"`	// Lang.Id
 	City_geonameid	int	`db:"city_geonameid" json:"city_geonameid"`	// City.Geonameid
-	Photo	string	`db:"photo" json:"photo"`
+	Photo_id	int	`db:"photo_id" json:"photo_id"`	// Photo.Id
 	Created_at	time.Time	`db:"created_at" json:"created_at"`
 	Updated_at	time.Time	`db:"updated_at" json:"updated_at"`
 }
@@ -483,9 +489,9 @@ type Wms_map_tr struct {
 }
 
 
-const User_InsertStr = "\"username\", \"firstname\", \"lastname\", \"email\", \"password\", \"description\", \"active\", \"first_lang_id\", \"second_lang_id\", \"city_geonameid\", \"photo\", \"created_at\", \"updated_at\""
-const User_InsertValuesStr = ":username, :firstname, :lastname, :email, :password, :description, :active, :first_lang_id, :second_lang_id, :city_geonameid, :photo, now(), now()"
-const User_UpdateStr = "\"username\" = :username, \"firstname\" = :firstname, \"lastname\" = :lastname, \"email\" = :email, \"password\" = :password, \"description\" = :description, \"active\" = :active, \"first_lang_id\" = :first_lang_id, \"second_lang_id\" = :second_lang_id, \"city_geonameid\" = :city_geonameid, \"photo\" = :photo, \"updated_at\" = now()"
+const User_InsertStr = "\"username\", \"firstname\", \"lastname\", \"email\", \"password\", \"description\", \"active\", \"first_lang_id\", \"second_lang_id\", \"city_geonameid\", \"photo_id\", \"created_at\", \"updated_at\""
+const User_InsertValuesStr = ":username, :firstname, :lastname, :email, :password, :description, :active, :first_lang_id, :second_lang_id, :city_geonameid, :photo_id, now(), now()"
+const User_UpdateStr = "\"username\" = :username, \"firstname\" = :firstname, \"lastname\" = :lastname, \"email\" = :email, \"password\" = :password, \"description\" = :description, \"active\" = :active, \"first_lang_id\" = :first_lang_id, \"second_lang_id\" = :second_lang_id, \"city_geonameid\" = :city_geonameid, \"photo_id\" = :photo_id, \"updated_at\" = now()"
 const Lang_InsertStr = "\"iso_code\", \"active\""
 const Lang_InsertValuesStr = ":iso_code, :active"
 const Lang_UpdateStr = "\"iso_code\" = :iso_code, \"active\" = :active"
@@ -645,3 +651,6 @@ const Lang_tr_UpdateStr = "\"name\" = :name"
 const Session_InsertStr = "\"value\""
 const Session_InsertValuesStr = ":value"
 const Session_UpdateStr = "\"value\" = :value"
+const Photo_InsertStr = "\"photo\""
+const Photo_InsertValuesStr = ":photo"
+const Photo_UpdateStr = "\"photo\" = :photo"
