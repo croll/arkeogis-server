@@ -432,7 +432,7 @@
 <part>geonameid</part>
 </key>
 </table>
-<table x="718" y="351" name="site_tr">
+<table x="772" y="228" name="site_tr">
 <row name="site_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="site" row="id" />
@@ -1070,7 +1070,7 @@
 <part>user_id</part>
 </key>
 </table>
-<table x="285" y="202" name="import">
+<table x="312" y="193" name="import">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
@@ -1092,7 +1092,7 @@
 <part>id</part>
 </key>
 </table>
-<table x="341" y="389" name="license">
+<table x="322" y="385" name="license">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
@@ -1102,21 +1102,6 @@
 <row name="url" null="0" autoincrement="0">
 <datatype>VARCHAR</datatype>
 <default>'NULL'</default></row>
-<key type="PRIMARY" name="">
-<part>id</part>
-</key>
-</table>
-<table x="710" y="39" name="handle">
-<row name="id" null="0" autoincrement="1">
-<datatype>INTEGER</datatype>
-</row>
-<row name="name" null="0" autoincrement="0">
-<datatype>VARCHAR(255)</datatype>
-<comment>min:"1" error:"HANDLE.FIELD_NAME.T_CHECK_MANDATORY" max:"255" error:"HANDLE.FIELD_NAME.T_CHECK_INCORRECT"</comment>
-</row>
-<row name="url" null="0" autoincrement="0">
-<datatype>VARCHAR(255)</datatype>
-</row>
 <key type="PRIMARY" name="">
 <part>id</part>
 </key>
@@ -1135,19 +1120,22 @@
 <part>country_geonameid</part>
 </key>
 </table>
-<table x="679" y="178" name="database__handle">
+<table x="673" y="28" name="database_handle">
 <row name="id" null="1" autoincrement="1">
 <datatype>INTEGER</datatype>
 <default>NULL</default></row>
-<row name="handle_id" null="0" autoincrement="0">
-<datatype>INTEGER</datatype>
-<relation table="handle" row="id" />
-</row>
 <row name="database_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="database" row="id" />
 </row>
-<row name="value" null="0" autoincrement="0">
+<row name="import_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="import" row="id" />
+</row>
+<row name="name" null="0" autoincrement="0">
+<datatype>VARCHAR(255)</datatype>
+</row>
+<row name="url" null="0" autoincrement="0">
 <datatype>VARCHAR(255)</datatype>
 </row>
 <row name="created_at" null="0" autoincrement="0">

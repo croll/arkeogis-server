@@ -148,11 +148,12 @@ type Database__country struct {
 }
 
 
-type Database__handle struct {
+type Database_handle struct {
 	Id	int	`db:"id" json:"id"`
-	Handle_id	int	`db:"handle_id" json:"handle_id"`	// Handle.Id
 	Database_id	int	`db:"database_id" json:"database_id"`	// Database.Id
-	Value	string	`db:"value" json:"value"`
+	Import_id	int	`db:"import_id" json:"import_id"`	// Import.Id
+	Name	string	`db:"name" json:"name"`
+	Url	string	`db:"url" json:"url"`
 	Created_at	time.Time	`db:"created_at" json:"created_at"`
 }
 
@@ -199,13 +200,6 @@ type Group_tr struct {
 	Lang_id	int	`db:"lang_id" json:"lang_id"`	// Lang.Id
 	Name	string	`db:"name" json:"name"`
 	Description	string	`db:"description" json:"description"`
-}
-
-
-type Handle struct {
-	Id	int	`db:"id" json:"id"`
-	Name	string	`db:"name" json:"name" min:"1" error:"HANDLE.FIELD_NAME.T_CHECK_MANDATORY" max:"255" error:"HANDLE.FIELD_NAME.T_CHECK_INCORRECT"`
-	Url	string	`db:"url" json:"url"`
 }
 
 
@@ -624,15 +618,12 @@ const Import_UpdateStr = "\"database_id\" = :database_id, \"user_id\" = :user_id
 const License_InsertStr = "\"name\", \"url\""
 const License_InsertValuesStr = ":name, :url"
 const License_UpdateStr = "\"name\" = :name, \"url\" = :url"
-const Handle_InsertStr = "\"name\", \"url\""
-const Handle_InsertValuesStr = ":name, :url"
-const Handle_UpdateStr = "\"name\" = :name, \"url\" = :url"
 const Database__country_InsertStr = ""
 const Database__country_InsertValuesStr = ""
 const Database__country_UpdateStr = ""
-const Database__handle_InsertStr = "\"handle_id\", \"database_id\", \"value\", \"created_at\""
-const Database__handle_InsertValuesStr = ":handle_id, :database_id, :value, now()"
-const Database__handle_UpdateStr = "\"handle_id\" = :handle_id, \"database_id\" = :database_id, \"value\" = :value"
+const Database_handle_InsertStr = "\"database_id\", \"import_id\", \"name\", \"url\", \"created_at\""
+const Database_handle_InsertValuesStr = ":database_id, :import_id, :name, :url, now()"
+const Database_handle_UpdateStr = "\"database_id\" = :database_id, \"import_id\" = :import_id, \"name\" = :name, \"url\" = :url"
 const Shapefile_authors_InsertStr = ""
 const Shapefile_authors_InsertValuesStr = ""
 const Shapefile_authors_UpdateStr = ""
