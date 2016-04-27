@@ -65,14 +65,17 @@ type SiteRangeFullInfos struct {
 // SiteFullInfos is a meta struct which stores all the informations about a site
 type SiteFullInfos struct {
 	model.Site
+	model.Site_tr
 	CurrentSiteRange SiteRangeFullInfos
-	NbSiteRanges     int
-	Characs          []int
-	HasError         bool
-	Point            *geo.Point
-	Latitude         string
-	Longitude        string
-	Altitude         string
+	//NbSiteRanges     int
+	Characs   []int
+	HasError  bool
+	Point     *geo.Point
+	Latitude  string
+	Longitude string
+	Altitude  string
+	GeonameID string
+	Created   bool
 }
 
 // ImportError is the struct used to return errors, it enhances the errors struct to return more informations like line and field
@@ -112,15 +115,16 @@ func (di *DatabaseImport) AddError(value string, errMsg string, columns ...strin
 
 // DatabaseImport is a meta struct which stores all the informations about a site
 type DatabaseImport struct {
-	SitesProcessed map[string]int
-	Database       *DatabaseFullInfos
-	CurrentSite    *SiteFullInfos
-	Tx             *sqlx.Tx
-	Parser         *Parser
-	ArkeoCharacs   map[string]map[string]int
-	NumberOfSites  int
-	SitesWithError map[string]bool
-	Errors         []*ImportError
+	SitesProcessed  map[string]int
+	Database        *DatabaseFullInfos
+	CurrentSite     *SiteFullInfos
+	Tx              *sqlx.Tx
+	Parser          *Parser
+	ArkeoCharacs    map[string]map[string]int
+	ArkeoCharacsIDs map[int][]int
+	NumberOfSites   int
+	SitesWithError  map[string]bool
+	Errors          []*ImportError
 }
 
 // New creates a new import process
@@ -144,6 +148,8 @@ func (di *DatabaseImport) New(parser *Parser, uid int, databaseName string, lang
 	// TODO: Get only needed characs filtering by user id and project
 	di.ArkeoCharacs = map[string]map[string]int{}
 	di.ArkeoCharacs, err = di.cacheCharacs()
+	di.ArkeoCharacsIDs = map[int][]int{}
+	di.ArkeoCharacsIDs, err = di.cacheCharacsIDs()
 	if err != nil {
 		return err
 	}
@@ -201,6 +207,7 @@ func (di *DatabaseImport) setDefaultValues() {
 func (di *DatabaseImport) ProcessRecord(f *Fields) {
 
 	//fmt.Println(di.Parser.Line, " - ", f)
+	var err error
 
 	// if site id not set and no previous SITE_SOURCE_ID is set, produce an error
 	if di.CurrentSite.Code == "" && f.SITE_SOURCE_ID == "" {
@@ -213,22 +220,37 @@ func (di *DatabaseImport) ProcessRecord(f *Fields) {
 		di.CurrentSite = &SiteFullInfos{}
 		di.CurrentSite.Code = f.SITE_SOURCE_ID
 		di.CurrentSite.Name = f.SITE_NAME
+		di.CurrentSite.Database_id = di.Database.Id
+		di.CurrentSite.Lang_id = di.Database.Default_language
 		di.NumberOfSites++
 		// Process site info
 		di.processSiteInfos(f)
 	} else {
-		di.CurrentSite.NbSiteRanges++
+		//di.CurrentSite.NbSiteRanges++
 		di.processSiteInfos(f)
 		di.checkDifferences(f)
 	}
 
 	// Init the site range if necessary
-	if di.CurrentSite.NbSiteRanges == 0 {
-		di.CurrentSite.CurrentSiteRange = SiteRangeFullInfos{}
-	}
+	// if di.CurrentSite.NbSiteRanges == 0 {
+	di.CurrentSite.CurrentSiteRange = SiteRangeFullInfos{}
+	// }
 
 	// Process site range infos
 	di.processSiteRangeInfos(f)
+
+	// If no error insert site in database
+	if !di.CurrentSite.HasError {
+		if di.CurrentSite.Id == 0 {
+			err = di.CurrentSite.Create(di.Tx)
+			//di.CurrentSite.NbSiteRanges += 1
+		}
+		if err != nil {
+			di.AddError("", err.Error(), "")
+		} else {
+			di.CurrentSite.CurrentSiteRange.Create(di.Tx)
+		}
+	}
 
 }
 
@@ -264,12 +286,13 @@ func (di *DatabaseImport) processDatabaseName(name string) error {
 	return nil
 }
 
+// ProcessEssentialInfos store or update informations about database defined by user at step 1
 func (di *DatabaseImport) ProcessEssentialInfos(name string, geographicalExtent string, selectedContinents []int, selectedCountries []int) error {
 	var err error
 	if di.Database.Exists {
 		// Cache infos received from web form
 		// Get database infos
-		err = di.Database.GetInfos(di.Tx)
+		err = di.Database.Get(di.Tx)
 		if err != nil {
 			return err
 		}
@@ -280,17 +303,24 @@ func (di *DatabaseImport) ProcessEssentialInfos(name string, geographicalExtent 
 		if err != nil {
 			return err
 		}
+
+		// Delete linked countries
 		err = di.Database.DeleteCountries(di.Tx)
 		if err != nil {
 			return err
 		}
+
+		// Delete linked sites
+		di.Database.DeleteSites(di.Tx)
+
 	} else {
 		di.setDefaultValues()
 	}
-	if err != nil {
-		fmt.Println(err)
-		return err
-	}
+
+	di.Database.Name = name
+	di.Database.Geographical_extent = geographicalExtent
+	di.Database.Init = true
+
 	if di.Database.Exists {
 		// Update record
 		err = di.Database.Update(di.Tx)
@@ -301,10 +331,6 @@ func (di *DatabaseImport) ProcessEssentialInfos(name string, geographicalExtent 
 	if err != nil {
 		return err
 	}
-
-	di.Database.Name = name
-	di.Database.Geographical_extent = geographicalExtent
-	di.Database.Init = true
 
 	if len(selectedCountries) > 0 {
 		di.Database.Countries = selectedCountries
@@ -353,6 +379,10 @@ func (di *DatabaseImport) processSiteInfos(f *Fields) {
 				di.CurrentSite.Latitude = f.LATITUDE
 				di.CurrentSite.Longitude = f.LONGITUDE
 				di.CurrentSite.Altitude = f.ALTITUDE
+				di.CurrentSite.Geom, err = di.CurrentSite.Point.ToWKT()
+				if err != nil {
+					di.AddError(f.LONGITUDE+" "+f.LATITUDE, "IMPORT.CSVFIELD_GEOMETRY.T_INVALID", "LATITUDE", "LONGITUDE")
+				}
 			}
 		} else {
 			// User don't want to use Geonames, we are stuck
@@ -360,11 +390,16 @@ func (di *DatabaseImport) processSiteInfos(f *Fields) {
 				di.AddError(f.LONGITUDE+" "+f.LATITUDE, "IMPORT.CSVFIELD_GEO.T_CHECK_LAT_OR_LON_NOT_SET_AND_NO_GEONAMES", "LATITUDE", "LONGITUDE", "GEONAME_ID")
 			} else {
 				// If user chose to use Geonames, and we don't have valid coordinates at this point, use geonames functionality
+				di.CurrentSite.GeonameID = f.GEONAME_ID
 				point, err := di.processGeonames(f)
 				if err == nil {
 					di.CurrentSite.Point = point
 					// Has we used Geonames, site location type is "centroid"
 					di.CurrentSite.Centroid = true
+					di.CurrentSite.Geom, err = di.CurrentSite.Point.ToWKT()
+					if err != nil {
+						di.AddError(f.GEONAME_ID, "IMPORT.CSVFIELD_GEO.T_CHECK_LAT_OR_LON_NOT_SET_AND_NO_GEONAMES", "GEONAME_ID")
+					}
 				}
 			}
 		}
@@ -413,6 +448,11 @@ func (di *DatabaseImport) checkDifferences(f *Fields) {
 		di.AddError(f.LATITUDE, "IMPORT.CSVFIELD_ALL.T_CHECK_ALREADY_DEFINED_VALUE_DIFFERS", "ALTITUDE")
 	}
 
+	// GEONAME ID
+	if f.GEONAME_ID != "" && f.GEONAME_ID != di.CurrentSite.GeonameID {
+		di.AddError(f.GEONAME_ID, "IMPORT.CSVFIELD_ALL.T_CHECK_ALREADY_DEFINED_VALUE_DIFFERS", "GEONAME_ID")
+	}
+
 	// OCCUPATION
 	if f.OCCUPATION != "" {
 		val, err := di.getOccupation(f.OCCUPATION)
@@ -446,6 +486,9 @@ func (di *DatabaseImport) getOccupation(occupation string) (val string, err erro
 }
 
 func (di *DatabaseImport) processSiteRangeInfos(f *Fields) {
+
+	// Site ID
+	di.CurrentSite.CurrentSiteRange.Site_id = di.CurrentSite.Id
 
 	// CARACTERISATIONS
 	characs, _ := di.processCharacs(f)
@@ -633,8 +676,14 @@ func (di *DatabaseImport) processCharacs(f *Fields) ([]int, error) {
 		di.AddError(caracNameToLowerCase+path, "IMPORT.CSVFIELD_CARACTERISATION.T_CHECK_INVALID", "CARAC_LVL"+strconv.Itoa(lvl))
 		return characs, errors.New("invalid charac")
 	}
-	characs = append(characs, caracID)
-	return characs, nil
+	fmt.Println("CARAC: ", caracID)
+	cs := di.ArkeoCharacsIDs[caracID]
+	if len(cs) == 0 {
+		di.AddError(caracNameToLowerCase+path, "IMPORT.CSVFIELD_CARACTERISATION.T_CHECK_INVALID", "CARAC_LVL"+strconv.Itoa(lvl))
+		return characs, errors.New("invalid charac")
+	}
+	fmt.Println(cs)
+	return cs, nil
 }
 
 // cacheCharacs get all Characs from database and cache them
@@ -650,6 +699,28 @@ func (di *DatabaseImport) cacheCharacs() (map[string]map[string]int, error) {
 		if err != nil {
 			return characs, err
 		}
+	}
+	return characs, nil
+}
+
+// cacheCharacsIDs get all Characs Ids from database and cache them
+func (di *DatabaseImport) cacheCharacsIDs() (map[int][]int, error) {
+	characs := map[int][]int{}
+	c, err := model.GetAllCharacPathIDsFromLangID(di.Database.Default_language)
+	if err != nil {
+		return characs, err
+	}
+	for id, path := range c {
+		// Split path
+		aIDs := []int{}
+		for _, cid := range strings.Split(path, "->") {
+			i, err := strconv.Atoi(cid)
+			if err != nil {
+				return characs, err
+			}
+			aIDs = append(aIDs, i)
+		}
+		characs[id] = aIDs
 	}
 	return characs, nil
 }
