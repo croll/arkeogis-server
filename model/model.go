@@ -383,8 +383,6 @@ type Site_range struct {
 	Start_date2	int	`db:"start_date2" json:"start_date2"`
 	End_date1	int	`db:"end_date1" json:"end_date1"`
 	End_date2	int	`db:"end_date2" json:"end_date2"`
-	Knowledge_type	string	`db:"knowledge_type" json:"knowledge_type" enum:"not_documented,literature,prospected_aerial,prospected_pedestrian,surveyed,dig" error:"DATABASE.FIELD_KNOWLEDGE_TYPE.T_CHECK_INCORRECT"`
-	Depth	int	`db:"depth" json:"depth"`
 	Created_at	time.Time	`db:"created_at" json:"created_at"`
 	Updated_at	time.Time	`db:"updated_at" json:"updated_at"`
 }
@@ -395,6 +393,7 @@ type Site_range__charac struct {
 	Site_range_id	int	`db:"site_range_id" json:"site_range_id"`	// Site_range.Id
 	Charac_id	int	`db:"charac_id" json:"charac_id"`	// Charac.Id
 	Exceptional	bool	`db:"exceptional" json:"exceptional"`
+	Knowledge_type	string	`db:"knowledge_type" json:"knowledge_type" enum:"not_documented,literature,prospected_aerial,prospected_pedestrian,surveyed,dig" error:"DATABASE.FIELD_KNOWLEDGE_TYPE.T_CHECK_INCORRECT"`
 }
 
 
@@ -513,9 +512,9 @@ const Project__chronology_UpdateStr = "\"id_group\" = :id_group"
 const Database_InsertStr = "\"name\", \"scale_resolution\", \"geographical_extent\", \"type\", \"owner\", \"source_creation_date\", \"data_set\", \"identifier\", \"source\", \"source_url\", \"publisher\", \"contributor\", \"default_language\", \"relation\", \"coverage\", \"copyright\", \"state\", \"published\", \"license_id\", \"context\", \"context_description\", \"subject\", \"created_at\", \"updated_at\""
 const Database_InsertValuesStr = ":name, :scale_resolution, :geographical_extent, :type, :owner, :source_creation_date, :data_set, :identifier, :source, :source_url, :publisher, :contributor, :default_language, :relation, :coverage, :copyright, :state, :published, :license_id, :context, :context_description, :subject, now(), now()"
 const Database_UpdateStr = "\"name\" = :name, \"scale_resolution\" = :scale_resolution, \"geographical_extent\" = :geographical_extent, \"type\" = :type, \"owner\" = :owner, \"source_creation_date\" = :source_creation_date, \"data_set\" = :data_set, \"identifier\" = :identifier, \"source\" = :source, \"source_url\" = :source_url, \"publisher\" = :publisher, \"contributor\" = :contributor, \"default_language\" = :default_language, \"relation\" = :relation, \"coverage\" = :coverage, \"copyright\" = :copyright, \"state\" = :state, \"published\" = :published, \"license_id\" = :license_id, \"context\" = :context, \"context_description\" = :context_description, \"subject\" = :subject, \"updated_at\" = now()"
-const Site_InsertStr = "\"code\", \"name\", \"city_name\", \"city_geonameid\", \"geom\", \"centroid\", \"occupation\", \"database_id\", \"created_at\", \"updated_at\""
-const Site_InsertValuesStr = ":code, :name, :city_name, :city_geonameid, :geom, :centroid, :occupation, :database_id, now(), now()"
-const Site_UpdateStr = "\"code\" = :code, \"name\" = :name, \"city_name\" = :city_name, \"city_geonameid\" = :city_geonameid, \"geom\" = :geom, \"centroid\" = :centroid, \"occupation\" = :occupation, \"database_id\" = :database_id, \"updated_at\" = now()"
+const Site_InsertStr = "\"id\", \"code\", \"name\", \"city_name\", \"city_geonameid\", \"geom\", \"centroid\", \"occupation\", \"database_id\", \"created_at\", \"updated_at\""
+const Site_InsertValuesStr = ":id, :code, :name, :city_name, :city_geonameid, :geom, :centroid, :occupation, :database_id, now(), now()"
+const Site_UpdateStr = "\"id\" = :id, \"code\" = :code, \"name\" = :name, \"city_name\" = :city_name, \"city_geonameid\" = :city_geonameid, \"geom\" = :geom, \"centroid\" = :centroid, \"occupation\" = :occupation, \"database_id\" = :database_id, \"updated_at\" = now()"
 const Database_tr_InsertStr = "\"description\", \"geographical_limit\", \"bibliography\""
 const Database_tr_InsertValuesStr = ":description, :geographical_limit, :bibliography"
 const Database_tr_UpdateStr = "\"description\" = :description, \"geographical_limit\" = :geographical_limit, \"bibliography\" = :bibliography"
@@ -525,9 +524,9 @@ const City_UpdateStr = "\"country_geonameid\" = :country_geonameid, \"geom\" = :
 const Site_tr_InsertStr = "\"description\""
 const Site_tr_InsertValuesStr = ":description"
 const Site_tr_UpdateStr = "\"description\" = :description"
-const Site_range_InsertStr = "\"site_id\", \"start_date1\", \"start_date2\", \"end_date1\", \"end_date2\", \"knowledge_type\", \"depth\", \"created_at\", \"updated_at\""
-const Site_range_InsertValuesStr = ":site_id, :start_date1, :start_date2, :end_date1, :end_date2, :knowledge_type, :depth, now(), now()"
-const Site_range_UpdateStr = "\"site_id\" = :site_id, \"start_date1\" = :start_date1, \"start_date2\" = :start_date2, \"end_date1\" = :end_date1, \"end_date2\" = :end_date2, \"knowledge_type\" = :knowledge_type, \"depth\" = :depth, \"updated_at\" = now()"
+const Site_range_InsertStr = "\"site_id\", \"start_date1\", \"start_date2\", \"end_date1\", \"end_date2\", \"created_at\", \"updated_at\""
+const Site_range_InsertValuesStr = ":site_id, :start_date1, :start_date2, :end_date1, :end_date2, now(), now()"
+const Site_range_UpdateStr = "\"site_id\" = :site_id, \"start_date1\" = :start_date1, \"start_date2\" = :start_date2, \"end_date1\" = :end_date1, \"end_date2\" = :end_date2, \"updated_at\" = now()"
 const Site_range__charac_tr_InsertStr = "\"comment\", \"bibliography\""
 const Site_range__charac_tr_InsertValuesStr = ":comment, :bibliography"
 const Site_range__charac_tr_UpdateStr = "\"comment\" = :comment, \"bibliography\" = :bibliography"
@@ -561,9 +560,9 @@ const Project__wms_map_UpdateStr = ""
 const Project__shapefile_InsertStr = ""
 const Project__shapefile_InsertValuesStr = ""
 const Project__shapefile_UpdateStr = ""
-const Site_range__charac_InsertStr = "\"site_range_id\", \"charac_id\", \"exceptional\""
-const Site_range__charac_InsertValuesStr = ":site_range_id, :charac_id, :exceptional"
-const Site_range__charac_UpdateStr = "\"site_range_id\" = :site_range_id, \"charac_id\" = :charac_id, \"exceptional\" = :exceptional"
+const Site_range__charac_InsertStr = "\"site_range_id\", \"charac_id\", \"exceptional\", \"knowledge_type\""
+const Site_range__charac_InsertValuesStr = ":site_range_id, :charac_id, :exceptional, :knowledge_type"
+const Site_range__charac_UpdateStr = "\"site_range_id\" = :site_range_id, \"charac_id\" = :charac_id, \"exceptional\" = :exceptional, \"knowledge_type\" = :knowledge_type"
 const Project__charac_InsertStr = ""
 const Project__charac_InsertValuesStr = ""
 const Project__charac_UpdateStr = ""

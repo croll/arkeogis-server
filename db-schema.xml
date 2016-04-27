@@ -183,7 +183,7 @@
 <part>id</part>
 </key>
 </table>
-<table x="1321" y="763" name="chronology">
+<table x="1341" y="827" name="chronology">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
@@ -248,7 +248,7 @@
 <part>chronology_root_id</part>
 </key>
 </table>
-<table x="478" y="19" name="database">
+<table x="475" y="89" name="database">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
@@ -339,7 +339,7 @@
 <part>id</part>
 </key>
 </table>
-<table x="913" y="41" name="site">
+<table x="921" y="37" name="site">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
@@ -378,7 +378,7 @@
 <row name="updated_at" null="0" autoincrement="0">
 <datatype>TIMESTAMP</datatype>
 </row>
-<key type="PRIMARY" name="">
+<key type="INDEX" name="">
 <part>id</part>
 </key>
 <key type="INDEX" name="">
@@ -432,7 +432,7 @@
 <part>geonameid</part>
 </key>
 </table>
-<table x="772" y="228" name="site_tr">
+<table x="724" y="266" name="site_tr">
 <row name="site_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="site" row="id" />
@@ -449,7 +449,7 @@
 <part>lang_id</part>
 </key>
 </table>
-<table x="908" y="374" name="site_range">
+<table x="900" y="366" name="site_range">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
@@ -469,13 +469,6 @@
 <row name="end_date2" null="1" autoincrement="0">
 <datatype>INTEGER</datatype>
 <default>NULL</default></row>
-<row name="knowledge_type" null="0" autoincrement="0">
-<datatype>BIT('not_documented', 'literature', 'prospected_aerial', 'prospected_pedestrian', 'surveyed', 'dig')</datatype>
-<comment>enum:"not_documented,literature,prospected_aerial,prospected_pedestrian,surveyed,dig" error:"DATABASE.FIELD_KNOWLEDGE_TYPE.T_CHECK_INCORRECT"</comment>
-</row>
-<row name="depth" null="0" autoincrement="0">
-<datatype>INTEGER</datatype>
-</row>
 <row name="created_at" null="0" autoincrement="0">
 <datatype>TIMESTAMP</datatype>
 </row>
@@ -486,7 +479,7 @@
 <part>id</part>
 </key>
 </table>
-<table x="1055" y="637" name="site_range__charac_tr">
+<table x="1082" y="623" name="site_range__charac_tr">
 <row name="site_range__charac_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="site_range__charac" row="id" />
@@ -532,7 +525,7 @@
 <part>name</part>
 </key>
 </table>
-<table x="1528" y="472" name="charac_tr">
+<table x="1530" y="461" name="charac_tr">
 <row name="lang_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="lang" row="id" />
@@ -552,7 +545,7 @@
 <part>charac_id</part>
 </key>
 </table>
-<table x="1352" y="470" name="charac">
+<table x="1334" y="525" name="charac">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
@@ -576,7 +569,7 @@
 <part>id</part>
 </key>
 </table>
-<table x="35" y="754" name="wms_map">
+<table x="31" y="799" name="wms_map">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
@@ -622,7 +615,7 @@
 <part>id</part>
 </key>
 </table>
-<table x="51" y="1209" name="wms_map_tr">
+<table x="17" y="1193" name="wms_map_tr">
 <row name="wms_map_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="wms_map" row="id" />
@@ -771,7 +764,7 @@
 <part>shapefile_id</part>
 </key>
 </table>
-<table x="1092" y="474" name="site_range__charac">
+<table x="1080" y="463" name="site_range__charac">
 <row name="id" null="1" autoincrement="0">
 <datatype>INTEGER</datatype>
 <default>NULL</default></row>
@@ -786,6 +779,10 @@
 <row name="exceptional" null="0" autoincrement="0">
 <datatype>BOOLEAN</datatype>
 <default>'false'</default></row>
+<row name="knowledge_type" null="0" autoincrement="0">
+<datatype>BIT('not_documented', 'literature', 'prospected_aerial', 'prospected_pedestrian', 'surveyed', 'dig')</datatype>
+<comment>enum:"not_documented,literature,prospected_aerial,prospected_pedestrian,surveyed,dig" error:"DATABASE.FIELD_KNOWLEDGE_TYPE.T_CHECK_INCORRECT"</comment>
+</row>
 <key type="PRIMARY" name="">
 <part>id</part>
 </key>
@@ -864,7 +861,7 @@
 <part>project_id</part>
 </key>
 </table>
-<table x="1318" y="1024" name="project__chronology_tr">
+<table x="1348" y="1104" name="project__chronology_tr">
 <row name="project__chronology_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 </row>
