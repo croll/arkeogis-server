@@ -57,7 +57,7 @@ type ImportStep1T struct {
 	Name               string
 	DatabaseLang       int
 	GeographicalExtent string
-	SelectedContinent  []int
+	SelectedContinents []int
 	SelectedCountries  []int
 	UseGeonames        bool
 	Separator          string
@@ -82,9 +82,7 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	var dbImport *databaseimport.DatabaseImport
 
-	fmt.Println("_______________________")
 	fmt.Println(params)
-	fmt.Println("_______________________")
 	filepath := "./uploaded/" + params.File.Name
 
 	outfile, err := os.Create(filepath)
@@ -137,7 +135,7 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	}
 
 	// Record database essentials infos
-	err = dbImport.ProcessEssentialInfos(params.Name, params.GeographicalExtent, params.SelectedContinent, params.SelectedCountries)
+	err = dbImport.ProcessEssentialInfos(params.Name, params.GeographicalExtent, params.SelectedContinents, params.SelectedCountries)
 	if err != nil {
 		parser.AddError(err.Error())
 		sendError(w, parser.Errors)

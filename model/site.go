@@ -21,14 +21,23 @@
 
 package model
 
-import (
-	//	"database/sql"
-	//	db "github.com/croll/arkeogis-server/db"
-	"github.com/jmoiron/sqlx"
-)
+import
+//	"database/sql"
+//	db "github.com/croll/arkeogis-server/db"
+
+"github.com/jmoiron/sqlx"
+
+func (s *Site) Get(tx *sqlx.Tx) (err error) {
+	stmt, err := tx.PrepareNamed("SELECT * from \"site\" WHERE id=:id")
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	return stmt.Get(s, s)
+}
 
 func (s *Site) Create(tx *sqlx.Tx) error {
-	stmt, err := tx.PrepareNamed("INSERT INTO \"site\" (code, name, city_geonameid, geom, centroid, occupation, database_id, created_at, updated_at) VALUES (:code, :name, :city_geonameid, :geom, :centroid, :occupation, :database_id, :now(), now()) RETURNING id")
+	stmt, err := tx.PrepareNamed("INSERT INTO \"site\" (" + Site_InsertStr + ") VALUES (" + Site_InsertValuesStr + ") RETURNING id")
 	if err != nil {
 		return err
 	}
@@ -37,14 +46,10 @@ func (s *Site) Create(tx *sqlx.Tx) error {
 }
 
 func (s *Site) Update(tx *sqlx.Tx) error {
-	_, err := tx.NamedExec("UPDATE \"site\" SET code=:code, name=:name, city_geonameid=:city_geonameid, geom=:geom, centroid=:centroid, occupation=:occupation, database_id=:database_id, updated_at=:updated_at", s)
+	_, err := tx.NamedExec("UPDATE \"site\" SET "+Site_UpdateStr+" WHERE id=:id", s)
 	if err != nil {
 		return err
 	}
-	return nil
-}
-
-func (s *Site) AddSiteRange(tx *sqlx.Tx) error {
 	return nil
 }
 
@@ -52,4 +57,13 @@ func (s *Site) AddSiteRange(tx *sqlx.Tx) error {
 type Site_range_tr struct {
 	Bibliography string
 	Comment      string
+}
+
+func (sr *Site_range) Create(tx *sqlx.Tx) error {
+	stmt, err := tx.PrepareNamed("INSERT INTO \"site_range\" (" + Site_range_InsertStr + ") VALUES (" + Site_range_InsertValuesStr + ") RETURNING id")
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	return stmt.Get(&sr.Id, sr)
 }
