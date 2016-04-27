@@ -58,7 +58,6 @@ type DatabaseFullInfos struct {
 // about a site range
 type SiteRangeFullInfos struct {
 	model.Site_range
-	model.Site_range_tr
 	Characs []int
 }
 
@@ -518,32 +517,34 @@ func (di *DatabaseImport) processSiteRangeInfos(f *Fields) {
 	// fmt.Println("Parsed dates", dates)
 
 	// STATE_OF_KNOWLEDGE
-	switch strings.ToLower(f.STATE_OF_KNOWLEDGE) {
-	case di.lowerTranslation("IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_NOT_DOCUMENTED"):
-		di.CurrentSite.CurrentSiteRange.Knowledge_type = "not_documented"
-	case di.lowerTranslation("IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_LITERATURE"):
-		di.CurrentSite.CurrentSiteRange.Knowledge_type = "literature"
-	case di.lowerTranslation("IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_PROSPECTED_AERIAL"):
-		di.CurrentSite.CurrentSiteRange.Knowledge_type = "prospected_aerial"
-	case di.lowerTranslation("IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_PROSPECTED_PEDESTRIAN"):
-		di.CurrentSite.CurrentSiteRange.Knowledge_type = "prospected_pedestrian"
-	case di.lowerTranslation("IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_SURVEYED"):
-		di.CurrentSite.CurrentSiteRange.Knowledge_type = "surveyed"
-	case di.lowerTranslation("IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_DIG"):
-		di.CurrentSite.CurrentSiteRange.Knowledge_type = "dig"
-	default:
-		if f.STATE_OF_KNOWLEDGE == "" {
-			di.AddError(f.STATE_OF_KNOWLEDGE, "IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_CHECK_EMPTY", "STATE_OF_KNOWLEDGE")
-		} else {
-			di.AddError(f.STATE_OF_KNOWLEDGE, "IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_CHECK_INVALID", "STATE_OF_KNOWLEDGE")
+	/*
+		switch strings.ToLower(f.STATE_OF_KNOWLEDGE) {
+		case di.lowerTranslation("IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_NOT_DOCUMENTED"):
+			di.CurrentSite.CurrentSiteRange.Knowledge_type = "not_documented"
+		case di.lowerTranslation("IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_LITERATURE"):
+			di.CurrentSite.CurrentSiteRange.Knowledge_type = "literature"
+		case di.lowerTranslation("IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_PROSPECTED_AERIAL"):
+			di.CurrentSite.CurrentSiteRange.Knowledge_type = "prospected_aerial"
+		case di.lowerTranslation("IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_PROSPECTED_PEDESTRIAN"):
+			di.CurrentSite.CurrentSiteRange.Knowledge_type = "prospected_pedestrian"
+		case di.lowerTranslation("IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_SURVEYED"):
+			di.CurrentSite.CurrentSiteRange.Knowledge_type = "surveyed"
+		case di.lowerTranslation("IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_DIG"):
+			di.CurrentSite.CurrentSiteRange.Knowledge_type = "dig"
+		default:
+			if f.STATE_OF_KNOWLEDGE == "" {
+				di.AddError(f.STATE_OF_KNOWLEDGE, "IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_CHECK_EMPTY", "STATE_OF_KNOWLEDGE")
+			} else {
+				di.AddError(f.STATE_OF_KNOWLEDGE, "IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_CHECK_INVALID", "STATE_OF_KNOWLEDGE")
+			}
 		}
-	}
+	*/
 
 	// BIBLIOGRAPHY
-	di.CurrentSite.CurrentSiteRange.Bibliography = f.BIBLIOGRAPHY
+	//di.CurrentSite.CurrentSiteRange.Bibliography = f.BIBLIOGRAPHY
 
 	// COMMENTS
-	di.CurrentSite.CurrentSiteRange.Comment = f.COMMENTS
+	//di.CurrentSite.CurrentSiteRange.Comment = f.COMMENTS
 
 }
 
