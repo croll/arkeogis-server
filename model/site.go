@@ -53,12 +53,6 @@ func (s *Site) Update(tx *sqlx.Tx) error {
 	return nil
 }
 
-//// @beve: hack added so compilation work...
-type Site_range_tr struct {
-	Bibliography string
-	Comment      string
-}
-
 func (sr *Site_range) Create(tx *sqlx.Tx) error {
 	stmt, err := tx.PrepareNamed("INSERT INTO \"site_range\" (" + Site_range_InsertStr + ") VALUES (" + Site_range_InsertValuesStr + ") RETURNING id")
 	if err != nil {
