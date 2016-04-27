@@ -77,6 +77,29 @@ func GetCharacPathsFromLangID(name string, langID int) (caracs map[string]int, e
 	return
 }
 
+func GetAllCharacPathIDsFromLangID(langID int) (caracs map[int]string, err error) {
+	caracs = map[int]string{}
+	rows, err := db.DB.Query("WITH RECURSIVE nodes_cte(id, path) AS (SELECT ca.id, cat.charac_id::TEXT AS path FROM charac AS ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON cat.lang_id = lang.id WHERE lang.id = $1 AND ca.parent_id = 0 UNION ALL SELECT ca.id, (p.path|| '->' || ca.id) FROM nodes_cte AS p, charac AS ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON cat.lang_id = lang.id WHERE lang.id = $1 AND ca.parent_id = p.id) SELECT * FROM nodes_cte AS n ORDER BY n.id ASC", langID)
+	if err != nil {
+		return
+	}
+	defer rows.Close()
+	var (
+		id   int
+		path string
+	)
+	for rows.Next() {
+		if err = rows.Scan(&id, &path); err != nil {
+			return
+		}
+		caracs[id] = path
+	}
+	if err = rows.Err(); err != nil {
+		return
+	}
+	return
+}
+
 func GetAllCharacsRootFromLangId(langId int) (caracsRoot map[string]int, err error) {
 	caracsRoot = map[string]int{}
 	rows, err := db.DB.Query("SELECT id, name FROM charac ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id WHERE ca.parent_id = 0 AND cat.lang_id = $1", langId)
@@ -100,4 +123,6 @@ func GetAllCharacsRootFromLangId(langId int) (caracsRoot map[string]int, err err
 	return
 }
 
-//WITH RECURSIVE nodes_cte(id, path) AS (SELECT ca.id, cat.name::TEXT AS path FROM charac AS ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON cat.lang_id = lang.id WHERE lang.id = 48 AND ca.parent_id = 0 UNION ALL SELECT ca.id, (p.path || '->' || cat.name) FROM nodes_cte AS p, charac AS ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON cat.lang_id = lang.id WHERE lang.id = 48 AND ca.parent_id = p.id) SELECT * FROM nodes_cte AS n ORDER BY n.id ASC
+//WITH RECURSIVE nodes_cte(id, path) AS (SELECT ca.id, cat.name::TEXT AS path FROM charac AS ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON cat.lang_id = lang.id WHERE lang.id = 47 AND ca.parent_id = 0 UNION ALL SELECT ca.id, (p.path || '->' || cat.name) FROM nodes_cte AS p, charac AS ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON cat.lang_id = lang.id WHERE lang.id = 47 AND ca.parent_id = p.id) SELECT * FROM nodes_cte AS n ORDER BY n.id ASC
+
+//WITH RECURSIVE nodes_cte(id, path) AS (SELECT ca.id, cat.charac_id::TEXT AS path FROM charac AS ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON cat.lang_id = lang.id WHERE lang.id = 47 AND ca.parent_id = 0 UNION ALL SELECT ca.id, (p.path|| '->' || ca.id) FROM nodes_cte AS p, charac AS ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON cat.lang_id = lang.id WHERE lang.id = 47 AND ca.parent_id = p.id) SELECT * FROM nodes_cte AS n ORDER BY n.id ASC
