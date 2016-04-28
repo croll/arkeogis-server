@@ -261,7 +261,7 @@
 <comment>enum:"undefined,object,site,watershed,micro-region,region,country,continent,world" error:"DATABASE.FIELD_SCALE_RESOLUTION.T_CHECK_INCORRECT"</comment>
 </row>
 <row name="geographical_extent" null="0" autoincrement="0">
-<datatype>BIT('undefined','country','continent','world')</datatype>
+<datatype>BIT('undefined','country','continent','international_waters','world')</datatype>
 <comment>enum:"undefined,country,continent,international_waters,world" error:"DATABASE.FIELD_GEOGRAPHICAL_EXTENT.T_CHECK_INCORRECT"</comment>
 </row>
 <row name="type" null="0" autoincrement="0">
