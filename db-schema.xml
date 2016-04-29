@@ -339,7 +339,7 @@
 <part>id</part>
 </key>
 </table>
-<table x="921" y="37" name="site">
+<table x="909" y="44" name="site">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
@@ -378,7 +378,7 @@
 <row name="updated_at" null="0" autoincrement="0">
 <datatype>TIMESTAMP</datatype>
 </row>
-<key type="INDEX" name="">
+<key type="PRIMARY" name="">
 <part>id</part>
 </key>
 <key type="INDEX" name="">
@@ -436,6 +436,7 @@
 <row name="site_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="site" row="id" />
+<comment>xmltopsql:"ondelete:cascade"</comment>
 </row>
 <row name="lang_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
@@ -449,13 +450,14 @@
 <part>lang_id</part>
 </key>
 </table>
-<table x="900" y="366" name="site_range">
+<table x="909" y="374" name="site_range">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
 <row name="site_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="site" row="id" />
+<comment>xmltopsql:"ondelete:cascade"</comment>
 </row>
 <row name="start_date1" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
@@ -483,6 +485,7 @@
 <row name="site_range__charac_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="site_range__charac" row="id" />
+<comment>xmltopsql:"ondelete:cascade"</comment>
 </row>
 <row name="lang_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
@@ -771,6 +774,7 @@
 <row name="site_range_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="site_range" row="id" />
+<comment>xmltopsql:"ondelete:cascade"</comment>
 </row>
 <row name="charac_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
