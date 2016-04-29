@@ -652,7 +652,9 @@ func UserLogin(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		lang1.Iso_code = "en"
 		err = lang1.Get(tx)
 		if err != nil {
+			tx.Rollback()
 			log.Fatal("can't load lang1 !")
+			return
 		}
 	}
 
@@ -661,11 +663,20 @@ func UserLogin(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		lang2.Iso_code = "fr"
 		err = lang2.Get(tx)
 		if err != nil {
+			tx.Rollback()
 			log.Fatal("can't load lang2 !")
+			return
 		}
 	}
 
 	log.Println("langs: ", lang1, lang2)
+
+	permissions, err := user.GetPermissions(tx)
+	if err != nil {
+		tx.Rollback()
+		log.Fatal("can't get permissions!")
+		return
+	}
 
 	err = tx.Commit()
 	if err != nil {
@@ -678,17 +689,19 @@ func UserLogin(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	}
 
 	type answer struct {
-		User  model.User
-		Token string
-		Lang1 model.Lang `json:"lang1"`
-		Lang2 model.Lang `json:"lang2"`
+		User        model.User
+		Token       string
+		Lang1       model.Lang         `json:"lang1"`
+		Lang2       model.Lang         `json:"lang2"`
+		Permissions []model.Permission `json:"permissions"`
 	}
 
 	a := answer{
-		User:  user,
-		Token: token,
-		Lang1: lang1,
-		Lang2: lang2,
+		User:        user,
+		Token:       token,
+		Lang1:       lang1,
+		Lang2:       lang2,
+		Permissions: permissions,
 	}
 
 	j, err := json.Marshal(a)
