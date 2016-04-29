@@ -115,7 +115,7 @@ func printPsql(sql Sql) {
 	constraints := ""
 	indexes := ""
 
-	var constraintRegexp = regexp.MustCompile(`^xmltopsql:"([a-z]+)\:{1}([a-z]+)"`)
+	var constraintRegexp = regexp.MustCompile(`xmltopsql:"([a-z]+)\:{1}([a-z]+)"`)
 
 	for i1 := range sql.Tables {
 		table := &sql.Tables[i1]
@@ -131,7 +131,7 @@ func printPsql(sql Sql) {
 			// use comment to define constraint params
 			constraintFromComment := ""
 			if len(row.Comment) > 0 {
-				tmp := constraintRegexp.FindStringSubmatch(row.Comment)
+				tmp := constraintRegexp.FindStringSubmatch(strings.ToLower(row.Comment))
 				if len(tmp) == 3 {
 						switch(tmp[1]) {
 						case "ondelete":
