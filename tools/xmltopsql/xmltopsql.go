@@ -31,6 +31,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"regexp"
 
 	config "github.com/croll/arkeogis-server/config"
 )
@@ -49,6 +50,7 @@ type Row struct {
 	Autoincrement int        `xml:"autoincrement,attr"`
 	Datatype      string     `xml:"datatype"`
 	Default       string     `xml:"default"`
+	Comment       string     `xml:"comment"`
 	Relations     []Relation `xml:"relation"`
 	PsqlType      string
 }
@@ -113,6 +115,8 @@ func printPsql(sql Sql) {
 	constraints := ""
 	indexes := ""
 
+	var constraintRegexp = regexp.MustCompile(`^xmltopsql:"([a-z]+)\:{1}([a-z]+)"`)
+
 	for i1 := range sql.Tables {
 		table := &sql.Tables[i1]
 		creates += fmt.Sprintf("CREATE TABLE \"%s\" (\n", table.Name)
@@ -123,6 +127,20 @@ func printPsql(sql Sql) {
 				nullstr = " NOT NULL"
 			}
 			row.PsqlType = mysqlToPsqlType(*row)
+
+			// use comment to define constraint params
+			constraintFromComment := ""
+			if len(row.Comment) > 0 {
+				tmp := constraintRegexp.FindStringSubmatch(row.Comment)
+				if len(tmp) == 3 {
+						switch(tmp[1]) {
+						case "ondelete":
+							constraintFromComment = "ON DELETE "+strings.ToUpper(tmp[2])
+						case "onupdate":
+							constraintFromComment = "ON UPDATE "+strings.ToUpper(tmp[2])
+						}
+				}
+			}
 
 			// special case for enums in postgres, we have to create a type
 			if strings.Index(row.Datatype, "ENUM(") == 0 {
@@ -138,7 +156,7 @@ func printPsql(sql Sql) {
 
 			// create all foreign keys
 			for _, relation := range row.Relations {
-				constraints += fmt.Sprintf("ALTER TABLE \"%s\" ADD CONSTRAINT \"c_%s.%s\" FOREIGN KEY (\"%s\") REFERENCES \"%s\" (\"%s\") DEFERRABLE INITIALLY DEFERRED;\n", table.Name, table.Name, row.Name, row.Name, relation.Table, relation.Row)
+				constraints += fmt.Sprintf("ALTER TABLE \"%s\" ADD CONSTRAINT \"c_%s.%s\" FOREIGN KEY (\"%s\") REFERENCES \"%s\" (\"%s\") %s DEFERRABLE INITIALLY DEFERRED;\n", table.Name, table.Name, row.Name, row.Name, relation.Table, relation.Row, constraintFromComment)
 
 				// also create an index for the foreign key.
 				indexes += fmt.Sprintf("CREATE INDEX \"i_%s.%s\" ON \"%s\" (\"%s\");\n",

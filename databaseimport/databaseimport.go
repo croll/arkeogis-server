@@ -29,6 +29,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"log"
 
 	db "github.com/croll/arkeogis-server/db"
 	"github.com/croll/arkeogis-server/geo"
@@ -54,11 +55,18 @@ type DatabaseFullInfos struct {
 	Init       bool
 }
 
+// CharacsFullInfos holds information about characs linked to site range
+type CharacFullInfos struct {
+	model.Site_range__charac
+	model.Site_range__charac_tr
+}
+
 // SiteRangeFullInfos is a meta struct which stores all the informationss
 // about a site range
 type SiteRangeFullInfos struct {
 	model.Site_range
-	Characs []int
+	Characs []CharacFullInfos
+	CurrentCharac CharacFullInfos
 }
 
 // SiteFullInfos is a meta struct which stores all the informations about a site
@@ -114,16 +122,17 @@ func (di *DatabaseImport) AddError(value string, errMsg string, columns ...strin
 
 // DatabaseImport is a meta struct which stores all the informations about a site
 type DatabaseImport struct {
-	SitesProcessed  map[string]int
-	Database        *DatabaseFullInfos
-	CurrentSite     *SiteFullInfos
-	Tx              *sqlx.Tx
-	Parser          *Parser
-	ArkeoCharacs    map[string]map[string]int
-	ArkeoCharacsIDs map[int][]int
-	NumberOfSites   int
-	SitesWithError  map[string]bool
-	Errors          []*ImportError
+	SitesProcessed   map[string]int
+	Database         *DatabaseFullInfos
+	CurrentSite      *SiteFullInfos
+	Tx               *sqlx.Tx
+	Parser           *Parser
+	ArkeoCharacs     map[string]map[string]int
+	//ArkeoCharacsIDs  map[int][]int
+	NumberOfSites    int
+	SitesWithError   map[string]bool
+	CachedSiteRanges map[string]int
+	Errors           []*ImportError
 }
 
 // New creates a new import process
@@ -147,11 +156,17 @@ func (di *DatabaseImport) New(parser *Parser, uid int, databaseName string, lang
 	// TODO: Get only needed characs filtering by user id and project
 	di.ArkeoCharacs = map[string]map[string]int{}
 	di.ArkeoCharacs, err = di.cacheCharacs()
-	di.ArkeoCharacsIDs = map[int][]int{}
-	di.ArkeoCharacsIDs, err = di.cacheCharacsIDs()
 	if err != nil {
 		return err
 	}
+	/* di.ArkeoCharacsIDs = map[int][]int{}
+	di.ArkeoCharacsIDs, err = di.cacheCharacsIDs()
+	if err != nil {
+		return err
+	}*/
+
+	// Cache site range ids
+	di.CachedSiteRanges = map[string]int{}
 
 	// Field DATABASE_SOURCE_NAME
 	if di.Database.Name == "" {
@@ -237,17 +252,29 @@ func (di *DatabaseImport) ProcessRecord(f *Fields) {
 
 	// Process site range infos
 	di.processSiteRangeInfos(f)
+	// Process chara infos
+	di.processCharacInfos(f)
 
 	// If no error insert site in database
 	if !di.CurrentSite.HasError {
 		if di.CurrentSite.Id == 0 {
 			err = di.CurrentSite.Create(di.Tx)
+			// Site ID
+			fmt.Println(di.CurrentSite)
+			fmt.Println(di.CurrentSite.Id)
+			di.CurrentSite.CurrentSiteRange.Site_id = di.CurrentSite.Id
 			//di.CurrentSite.NbSiteRanges += 1
+		} else {
+			err = di.CurrentSite.Update(di.Tx)
 		}
 		if err != nil {
+			log.Println(err.Error())
 			di.AddError("", err.Error(), "")
 		} else {
-			di.CurrentSite.CurrentSiteRange.Create(di.Tx)
+			err = di.insertSiteRangeInfos(f)
+			if err == nil {
+				di.insertCharacInfos(f)
+			}
 		}
 	}
 
@@ -286,7 +313,7 @@ func (di *DatabaseImport) processDatabaseName(name string) error {
 }
 
 // ProcessEssentialInfos store or update informations about database defined by user at step 1
-func (di *DatabaseImport) ProcessEssentialInfos(name string, geographicalExtent string, selectedContinents []int, selectedCountries []int) error {
+func (di *DatabaseImport) ProcessEssentialDatabaseInfos(name string, geographicalExtent string, selectedContinents []int, selectedCountries []int) error {
 	var err error
 	if di.Database.Exists {
 		// Cache infos received from web form
@@ -484,70 +511,6 @@ func (di *DatabaseImport) getOccupation(occupation string) (val string, err erro
 	return
 }
 
-func (di *DatabaseImport) processSiteRangeInfos(f *Fields) {
-
-	// Site ID
-	di.CurrentSite.CurrentSiteRange.Site_id = di.CurrentSite.Id
-
-	// CARACTERISATIONS
-	characs, _ := di.processCharacs(f)
-	di.CurrentSite.CurrentSiteRange.Characs = characs
-
-	// STARTING_PERIOD
-	// fmt.Println("Starting period", f.STARTING_PERIOD)
-	startingDates, err := di.parseDates(f.STARTING_PERIOD)
-	if err != nil {
-		di.AddError(f.STARTING_PERIOD, "IMPORT.CSVFIELD_STARTING_PERIOD.T_CHECK_INVALID", "STARTING_PERIOD")
-	} else {
-		di.CurrentSite.CurrentSiteRange.Start_date1 = startingDates[0]
-		di.CurrentSite.CurrentSiteRange.Start_date2 = startingDates[1]
-	}
-	// fmt.Println("Parsed dates", dates)
-	// fmt.Println("Start_date1", di.CurrentSite.CurrentSiteRange.Start_date1)
-	// fmt.Println("Start_date2", di.CurrentSite.CurrentSiteRange.Start_date2)
-
-	// ENDING_PERIOD
-	endingDates, err := di.parseDates(f.ENDING_PERIOD)
-	if err != nil {
-		di.AddError(f.ENDING_PERIOD, "IMPORT.CSVFIELD_ENDING_PERIOD.T_CHECK_INVALID", "ENDING_PERIOD")
-	} else {
-		di.CurrentSite.CurrentSiteRange.End_date1 = endingDates[0]
-		di.CurrentSite.CurrentSiteRange.End_date2 = endingDates[1]
-	}
-	// fmt.Println("Parsed dates", dates)
-
-	// STATE_OF_KNOWLEDGE
-	/*
-		switch strings.ToLower(f.STATE_OF_KNOWLEDGE) {
-		case di.lowerTranslation("IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_NOT_DOCUMENTED"):
-			di.CurrentSite.CurrentSiteRange.Knowledge_type = "not_documented"
-		case di.lowerTranslation("IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_LITERATURE"):
-			di.CurrentSite.CurrentSiteRange.Knowledge_type = "literature"
-		case di.lowerTranslation("IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_PROSPECTED_AERIAL"):
-			di.CurrentSite.CurrentSiteRange.Knowledge_type = "prospected_aerial"
-		case di.lowerTranslation("IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_PROSPECTED_PEDESTRIAN"):
-			di.CurrentSite.CurrentSiteRange.Knowledge_type = "prospected_pedestrian"
-		case di.lowerTranslation("IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_SURVEYED"):
-			di.CurrentSite.CurrentSiteRange.Knowledge_type = "surveyed"
-		case di.lowerTranslation("IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_DIG"):
-			di.CurrentSite.CurrentSiteRange.Knowledge_type = "dig"
-		default:
-			if f.STATE_OF_KNOWLEDGE == "" {
-				di.AddError(f.STATE_OF_KNOWLEDGE, "IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_CHECK_EMPTY", "STATE_OF_KNOWLEDGE")
-			} else {
-				di.AddError(f.STATE_OF_KNOWLEDGE, "IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_CHECK_INVALID", "STATE_OF_KNOWLEDGE")
-			}
-		}
-	*/
-
-	// BIBLIOGRAPHY
-	//di.CurrentSite.CurrentSiteRange.Bibliography = f.BIBLIOGRAPHY
-
-	// COMMENTS
-	//di.CurrentSite.CurrentSiteRange.Comment = f.COMMENTS
-
-}
-
 // processGeoDatas analyzes and process csv fields related to geo informations
 func (di *DatabaseImport) processGeoDatas(f *Fields) (*geo.Point, error) {
 	var point *geo.Point
@@ -640,21 +603,73 @@ func (di *DatabaseImport) processGeonames(f *Fields) (*geo.Point, error) {
 	return point, nil
 }
 
+func (di *DatabaseImport) processSiteRangeInfos(f *Fields) {
+
+	fmt.Println("CURRENT SITE ID", di.CurrentSite.CurrentSiteRange.Site_id)
+
+	// STARTING_PERIOD
+	// fmt.Println("Starting period", f.STARTING_PERIOD)
+	startingDates, err := di.parseDates(f.STARTING_PERIOD)
+	if err != nil {
+		di.AddError(f.STARTING_PERIOD, "IMPORT.CSVFIELD_STARTING_PERIOD.T_CHECK_INVALID", "STARTING_PERIOD")
+	} else {
+		di.CurrentSite.CurrentSiteRange.Start_date1 = startingDates[0]
+		di.CurrentSite.CurrentSiteRange.Start_date2 = startingDates[1]
+	}
+	// fmt.Println("Parsed dates", dates)
+	// fmt.Println("Start_date1", di.CurrentSite.CurrentSiteRange.Start_date1)
+	// fmt.Println("Start_date2", di.CurrentSite.CurrentSiteRange.Start_date2)
+
+	// ENDING_PERIOD
+	endingDates, err := di.parseDates(f.ENDING_PERIOD)
+	if err != nil {
+		di.AddError(f.ENDING_PERIOD, "IMPORT.CSVFIELD_ENDING_PERIOD.T_CHECK_INVALID", "ENDING_PERIOD")
+	} else {
+		di.CurrentSite.CurrentSiteRange.End_date1 = endingDates[0]
+		di.CurrentSite.CurrentSiteRange.End_date2 = endingDates[1]
+	}
+
+	// BIBLIOGRAPHY
+	//di.CurrentSite.CurrentSiteRange.Bibliography = f.BIBLIOGRAPHY
+
+	// COMMENTS
+	//di.CurrentSite.CurrentSiteRange.Comment = f.COMMENTS
+
+}
+func (di *DatabaseImport) insertSiteRangeInfos(f *Fields) error {
+
+	// If site range is not cached, create it
+	siteRangeHash := strconv.Itoa(di.CurrentSite.CurrentSiteRange.Start_date1) + strconv.Itoa(di.CurrentSite.CurrentSiteRange.Start_date2) + strconv.Itoa(di.CurrentSite.CurrentSiteRange.End_date1) + strconv.Itoa(di.CurrentSite.CurrentSiteRange.End_date2)
+
+	if id, ok := di.CachedSiteRanges[siteRangeHash]; !ok {
+		err := di.CurrentSite.CurrentSiteRange.Create(di.Tx)
+		if err != nil {
+			di.AddError("", "IMPORT.PROCESS_SITE_RANGE.T_ERROR", "")
+			return err
+		}
+		di.CachedSiteRanges[siteRangeHash] = di.CurrentSite.CurrentSiteRange.Id
+		return nil
+	} else {
+		di.CurrentSite.CurrentSiteRange.Id = id
+	}
+
+	return nil
+}
+
 // processCharacs analyses the fields of each charac for each level
 // It verify if charac of any level exists and if true, assign it to the site range
-func (di *DatabaseImport) processCharacs(f *Fields) ([]int, error) {
-	var characs []int
+func (di *DatabaseImport) processCharacInfos(f *Fields) error {
 	path := ""
 	lvl := 1
 	if f.CARAC_NAME == "" {
 		di.AddError(f.CARAC_NAME, "IMPORT.CSVFIELD_CARAC_NAME.T_CHECK_EMPTY", "CARAC_NAME")
-		return characs, errors.New("invalid carac name")
+		return errors.New("invalid carac name")
 	}
 	if f.CARAC_LVL1 != "" {
 		path += "->" + strings.ToLower(f.CARAC_LVL1)
 	} else {
 		di.AddError(f.CARAC_NAME, "IMPORT.CSVFIELD_CARAC_LVL1.T_CHECK_EMPTY")
-		return characs, errors.New("no lvl1 carac")
+		return errors.New("no lvl1 carac")
 	}
 	if f.CARAC_LVL2 != "" {
 		path += "->" + strings.ToLower(f.CARAC_LVL2)
@@ -675,16 +690,62 @@ func (di *DatabaseImport) processCharacs(f *Fields) ([]int, error) {
 	if caracID == 0 {
 		fmt.Println("NOT FOUND: ", caracNameToLowerCase+path)
 		di.AddError(caracNameToLowerCase+path, "IMPORT.CSVFIELD_CARACTERISATION.T_CHECK_INVALID", "CARAC_LVL"+strconv.Itoa(lvl))
-		return characs, errors.New("invalid charac")
+		return errors.New("invalid charac")
 	}
-	fmt.Println("CARAC: ", caracID)
+	/*
 	cs := di.ArkeoCharacsIDs[caracID]
 	if len(cs) == 0 {
 		di.AddError(caracNameToLowerCase+path, "IMPORT.CSVFIELD_CARACTERISATION.T_CHECK_INVALID", "CARAC_LVL"+strconv.Itoa(lvl))
-		return characs, errors.New("invalid charac")
+		return errors.New("invalid charac")
 	}
 	fmt.Println(cs)
-	return cs, nil
+	*/
+
+	//	STATE_OF_KNOWLEDGE
+		switch strings.ToLower(f.STATE_OF_KNOWLEDGE) {
+		case di.lowerTranslation("IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_NOT_DOCUMENTED"):
+			di.CurrentSite.CurrentSiteRange.CurrentCharac.Knowledge_type = "not_documented"
+		case di.lowerTranslation("IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_LITERATURE"):
+			di.CurrentSite.CurrentSiteRange.CurrentCharac.Knowledge_type = "literature"
+		case di.lowerTranslation("IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_PROSPECTED_AERIAL"):
+			di.CurrentSite.CurrentSiteRange.CurrentCharac.Knowledge_type = "prospected_aerial"
+		case di.lowerTranslation("IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_PROSPECTED_PEDESTRIAN"):
+			di.CurrentSite.CurrentSiteRange.CurrentCharac.Knowledge_type = "prospected_pedestrian"
+		case di.lowerTranslation("IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_SURVEYED"):
+			di.CurrentSite.CurrentSiteRange.CurrentCharac.Knowledge_type = "surveyed"
+		case di.lowerTranslation("IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_DIG"):
+			di.CurrentSite.CurrentSiteRange.CurrentCharac.Knowledge_type = "dig"
+		default:
+			if f.STATE_OF_KNOWLEDGE == "" {
+				di.AddError(f.STATE_OF_KNOWLEDGE, "IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_CHECK_EMPTY", "STATE_OF_KNOWLEDGE")
+			} else {
+				di.AddError(f.STATE_OF_KNOWLEDGE, "IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_CHECK_INVALID", "STATE_OF_KNOWLEDGE")
+			}
+			return errors.New("Bad value for knoledge type")
+		}
+
+	// EXCEPTIONAL
+	switch strings.ToLower(f.CARAC_EXP) {
+	case di.lowerTranslation("IMPORT.CSVFIELD_ALL.T_LABEL_YES"):
+		di.CurrentSite.CurrentSiteRange.CurrentCharac.Exceptional = true
+	case di.lowerTranslation("IMPORT.CSVFIELD_ALL.T_LABEL_NO"):
+		di.CurrentSite.CurrentSiteRange.CurrentCharac.Exceptional = false
+	default:
+		if f.CARAC_EXP == "" {
+			di.AddError(f.CARAC_EXP, "IMPORT.CSVFIELD_CARAC_EXP.T_CHECK_EMPTY", "CARAC_EXP")
+		} else {
+			di.AddError(f.CARAC_EXP, "IMPORT.CSVFIELD_CARAC_EXP.T_CHECK_INVALID", "CARAC_EXP")
+		}
+		return errors.New("Bad value for exceptional")
+	}
+
+	// Set current charac id to be linked
+	di.CurrentSite.CurrentSiteRange.CurrentCharac.Charac_id = caracID
+
+	// Set site range id to be linked
+	di.CurrentSite.CurrentSiteRange.CurrentCharac.Site_range_id = di.CurrentSite.CurrentSiteRange.Id
+	return nil
+
 }
 
 // cacheCharacs get all Characs from database and cache them
@@ -724,6 +785,12 @@ func (di *DatabaseImport) cacheCharacsIDs() (map[int][]int, error) {
 		characs[id] = aIDs
 	}
 	return characs, nil
+}
+
+func (di *DatabaseImport) insertCharacInfos(f *Fields) error {
+	// characs, _ := di.processCharacs(f)
+	// di.CurrentSite.CurrentSiteRange.Characs = characs
+	return nil
 }
 
 // valueAsBool analyses YES/NO translatable values to bool

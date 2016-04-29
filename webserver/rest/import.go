@@ -135,7 +135,7 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	}
 
 	// Record database essentials infos
-	err = dbImport.ProcessEssentialInfos(params.Name, params.GeographicalExtent, params.SelectedContinents, params.SelectedCountries)
+	err = dbImport.ProcessEssentialDatabaseInfos(params.Name, params.GeographicalExtent, params.SelectedContinents, params.SelectedCountries)
 	if err != nil {
 		parser.AddError(err.Error())
 		sendError(w, parser.Errors)

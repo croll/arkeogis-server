@@ -21,11 +21,13 @@
 
 package model
 
-import
+import (
+"github.com/jmoiron/sqlx"
+"fmt"
+)
 //	"database/sql"
 //	db "github.com/croll/arkeogis-server/db"
 
-"github.com/jmoiron/sqlx"
 
 func (s *Site) Get(tx *sqlx.Tx) (err error) {
 	stmt, err := tx.PrepareNamed("SELECT * from \"site\" WHERE id=:id")
@@ -54,6 +56,7 @@ func (s *Site) Update(tx *sqlx.Tx) error {
 }
 
 func (sr *Site_range) Create(tx *sqlx.Tx) error {
+	fmt.Println("CREATE SITE RANGE")
 	stmt, err := tx.PrepareNamed("INSERT INTO \"site_range\" (" + Site_range_InsertStr + ") VALUES (" + Site_range_InsertValuesStr + ") RETURNING id")
 	if err != nil {
 		return err
