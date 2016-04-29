@@ -28,9 +28,7 @@ import (
 
 	db "github.com/croll/arkeogis-server/db"
 	"github.com/croll/arkeogis-server/model"
-	//model "github.com/croll/arkeogis-server/model"
 	routes "github.com/croll/arkeogis-server/webserver/routes"
-	//"github.com/gorilla/mux"
 	"net/http"
 )
 
@@ -41,26 +39,11 @@ type CountryListParams struct {
 func init() {
 	Routes := []*routes.Route{
 		&routes.Route{
-			Path:   "/api/countries",
-			Func:   CountryCreate,
-			Method: "POST",
-		},
-		&routes.Route{
 			Path:        "/api/countries",
 			Description: "Search for countries available on our world, using a search string",
 			Func:        CountryList,
 			Params:      reflect.TypeOf(CountryListParams{}),
 			Method:      "GET",
-		},
-		&routes.Route{
-			Path:   "/api/countries",
-			Func:   CountryUpdate,
-			Method: "PUT",
-		},
-		&routes.Route{
-			Path:   "/api/countries",
-			Func:   CountryDelete,
-			Method: "DELETE",
 		},
 	}
 	routes.RegisterMultiple(Routes)
@@ -77,29 +60,13 @@ func CountryList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	countries := []row{}
 
-	err := db.DB.Select(&countries, "SELECT country.*, country_tr.* FROM \"country\" JOIN country_tr ON country_tr.country_geonameid = country.geonameid LEFT JOIN lang ON country_tr.lang_id = lang.id WHERE (lang.id = $1 OR lang.id = 0) AND (name_ascii ILIKE $2 OR name ILIKE $2)", proute.Lang1.Id, params.Search+"%")
+	err := db.DB.Select(&countries, "SELECT country.*, country_tr.* FROM \"country\" JOIN country_tr ON country_tr.country_geonameid = country.geonameid LEFT JOIN lang ON country_tr.lang_id = lang.id WHERE (lang.id = $1) AND (name_ascii ILIKE $2 OR name ILIKE $2)", proute.Lang1.Id, params.Search+"%")
 	if err != nil {
 		fmt.Println("err: ", err)
 		return
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	j, err := json.Marshal(countries)
 	w.Write(j)
-}
-
-func CountryCreate(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
-	fmt.Println("request :", r)
-}
-
-func CountryUpdate(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
-	//params := mux.Vars(r)
-	//uid := params["id"]
-	//email := r.FormValue("email")
-}
-
-func CountryDelete(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
-}
-
-func CountryInfos(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
-	w.Header().Set("Allow", "DELETE,GET,HEAD,OPTIONS,POST,PUT")
 }

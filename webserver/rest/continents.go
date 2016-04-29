@@ -28,10 +28,12 @@ import (
 	"reflect"
 
 	db "github.com/croll/arkeogis-server/db"
+	"github.com/croll/arkeogis-server/model"
 	routes "github.com/croll/arkeogis-server/webserver/routes"
 )
 
 type ContinentsListParams struct {
+	Search string
 }
 
 func init() {
@@ -49,14 +51,17 @@ func init() {
 
 func ContinentsList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
-	//params := proute.Params.(*ContinentsListParams)
+	params := proute.Params.(*ContinentsListParams)
 
-	continents := []struct {
-		Geonameid uint32 `json:"geonameid"`
-		Name      string `json:"name"`
-	}{}
+	type row struct {
+		model.Continent
+		model.Continent_tr
+	}
 
-	err := db.DB.Select(&continents, "SELECT geonameid, name FROM continent LEFT JOIN continent_tr ON continent.geonameid = continent_tr.continent_geonameid LEFT JOIN lang ON continent_tr.lang_id = lang.id WHERE active = true AND continent.iso_code != 'U' AND (lang.Id = $1 OR lang.iso_code = 'D')", proute.Lang1.Id)
+	continents := []row{}
+
+	err := db.DB.Select(&continents, "SELECT continent.*, continent_tr.* FROM \"continent\" JOIN continent_tr ON continent_tr.continent_geonameid = continent.geonameid LEFT JOIN lang ON continent_tr.lang_id = lang.id WHERE (lang.id = $1) AND (name_ascii ILIKE $2 OR name ILIKE $2)", proute.Lang1.Id, params.Search+"%")
+
 	if err != nil {
 		fmt.Println("err: ", err)
 		return
