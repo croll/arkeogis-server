@@ -25,8 +25,6 @@ import (
 "github.com/jmoiron/sqlx"
 "fmt"
 )
-//	"database/sql"
-//	db "github.com/croll/arkeogis-server/db"
 
 
 func (s *Site) Get(tx *sqlx.Tx) (err error) {
@@ -56,11 +54,16 @@ func (s *Site) Update(tx *sqlx.Tx) error {
 }
 
 func (sr *Site_range) Create(tx *sqlx.Tx) error {
-	fmt.Println("CREATE SITE RANGE")
 	stmt, err := tx.PrepareNamed("INSERT INTO \"site_range\" (" + Site_range_InsertStr + ") VALUES (" + Site_range_InsertValuesStr + ") RETURNING id")
 	if err != nil {
 		return err
 	}
 	defer stmt.Close()
 	return stmt.Get(&sr.Id, sr)
+}
+
+func (sr *Site_range) AddCharac(tx *sqlx.Tx, charac Site_range__charac, charac_tr Site_range__charac_tr) error {
+	fmt.Println("ID", charac.Id)
+
+	return nil
 }

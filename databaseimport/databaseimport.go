@@ -43,9 +43,9 @@ type UserChoices struct {
 	UseGeonames bool
 }
 
-// DatabaseFullInfos is a meta struct which stores all the informations about
+// DatabaseInfos is a meta struct which stores all the informations about
 // a database
-type DatabaseFullInfos struct {
+type DatabaseInfos struct {
 	model.Database
 	model.Database_tr
 	Authors    []int
@@ -55,27 +55,11 @@ type DatabaseFullInfos struct {
 	Init       bool
 }
 
-// CharacsFullInfos holds information about characs linked to site range
-type CharacFullInfos struct {
-	model.Site_range__charac
-	model.Site_range__charac_tr
-}
-
-// SiteRangeFullInfos is a meta struct which stores all the informationss
-// about a site range
-type SiteRangeFullInfos struct {
-	model.Site_range
-	Characs []CharacFullInfos
-	CurrentCharac CharacFullInfos
-}
-
-// SiteFullInfos is a meta struct which stores all the informations about a site
-type SiteFullInfos struct {
+// SiteInfos is a meta struct which stores all the informations about a site
+type SiteInfos struct {
 	model.Site
 	model.Site_tr
-	CurrentSiteRange SiteRangeFullInfos
 	//NbSiteRanges     int
-	Characs   []int
 	HasError  bool
 	Point     *geo.Point
 	Latitude  string
@@ -83,6 +67,12 @@ type SiteFullInfos struct {
 	Altitude  string
 	GeonameID string
 	Created   bool
+}
+
+// CharacsInfos holds information about characs linked to site range
+type SiteRangeCharacInfos struct {
+	model.Site_range__charac
+	model.Site_range__charac_tr
 }
 
 // ImportError is the struct used to return errors, it enhances the errors struct to return more informations like line and field
@@ -123,8 +113,10 @@ func (di *DatabaseImport) AddError(value string, errMsg string, columns ...strin
 // DatabaseImport is a meta struct which stores all the informations about a site
 type DatabaseImport struct {
 	SitesProcessed   map[string]int
-	Database         *DatabaseFullInfos
-	CurrentSite      *SiteFullInfos
+	Database         *DatabaseInfos
+	CurrentSite      *SiteInfos
+	CurrentSiteRange *model.Site_range
+	CurrentSiteRangeCharac    *SiteRangeCharacInfos
 	Tx               *sqlx.Tx
 	Parser           *Parser
 	ArkeoCharacs     map[string]map[string]int
@@ -138,10 +130,12 @@ type DatabaseImport struct {
 // New creates a new import process
 func (di *DatabaseImport) New(parser *Parser, uid int, databaseName string, langID int) error {
 	var err error
-	di.Database = &DatabaseFullInfos{}
+	di.Database = &DatabaseInfos{}
 	di.Database.Owner = uid
 	di.Database.Default_language = langID
-	di.CurrentSite = &SiteFullInfos{}
+	di.CurrentSite = &SiteInfos{}
+	di.CurrentSiteRange = &model.Site_range{}
+	di.CurrentSiteRangeCharac = &SiteRangeCharacInfos{}
 	di.Parser = parser
 	di.NumberOfSites = 0
 	di.SitesWithError = map[string]bool{}
@@ -229,9 +223,9 @@ func (di *DatabaseImport) ProcessRecord(f *Fields) {
 		return
 	}
 
-	// If site code is not empty and differs, create a new instance of SiteFullInfos to store datas
+	// If site code is not empty and differs, create a new instance of SiteInfos to store datas
 	if f.SITE_SOURCE_ID != "" && f.SITE_SOURCE_ID != di.CurrentSite.Code {
-		di.CurrentSite = &SiteFullInfos{}
+		di.CurrentSite = &SiteInfos{}
 		di.CurrentSite.Code = f.SITE_SOURCE_ID
 		di.CurrentSite.Name = f.SITE_NAME
 		di.CurrentSite.Database_id = di.Database.Id
@@ -247,7 +241,7 @@ func (di *DatabaseImport) ProcessRecord(f *Fields) {
 
 	// Init the site range if necessary
 	// if di.CurrentSite.NbSiteRanges == 0 {
-	di.CurrentSite.CurrentSiteRange = SiteRangeFullInfos{}
+	di.CurrentSiteRange = &model.Site_range{}
 	// }
 
 	// Process site range infos
@@ -262,7 +256,7 @@ func (di *DatabaseImport) ProcessRecord(f *Fields) {
 			// Site ID
 			fmt.Println(di.CurrentSite)
 			fmt.Println(di.CurrentSite.Id)
-			di.CurrentSite.CurrentSiteRange.Site_id = di.CurrentSite.Id
+			di.CurrentSiteRange.Site_id = di.CurrentSite.Id
 			//di.CurrentSite.NbSiteRanges += 1
 		} else {
 			err = di.CurrentSite.Update(di.Tx)
@@ -271,9 +265,9 @@ func (di *DatabaseImport) ProcessRecord(f *Fields) {
 			log.Println(err.Error())
 			di.AddError("", err.Error(), "")
 		} else {
-			err = di.insertSiteRangeInfos(f)
+			err = di.insertSiteRangeInfos()
 			if err == nil {
-				di.insertCharacInfos(f)
+				di.insertCharacInfos()
 			}
 		}
 	}
@@ -605,7 +599,7 @@ func (di *DatabaseImport) processGeonames(f *Fields) (*geo.Point, error) {
 
 func (di *DatabaseImport) processSiteRangeInfos(f *Fields) {
 
-	fmt.Println("CURRENT SITE ID", di.CurrentSite.CurrentSiteRange.Site_id)
+	fmt.Println("CURRENT SITE ID", di.CurrentSiteRange.Site_id)
 
 	// STARTING_PERIOD
 	// fmt.Println("Starting period", f.STARTING_PERIOD)
@@ -613,44 +607,38 @@ func (di *DatabaseImport) processSiteRangeInfos(f *Fields) {
 	if err != nil {
 		di.AddError(f.STARTING_PERIOD, "IMPORT.CSVFIELD_STARTING_PERIOD.T_CHECK_INVALID", "STARTING_PERIOD")
 	} else {
-		di.CurrentSite.CurrentSiteRange.Start_date1 = startingDates[0]
-		di.CurrentSite.CurrentSiteRange.Start_date2 = startingDates[1]
+		di.CurrentSiteRange.Start_date1 = startingDates[0]
+		di.CurrentSiteRange.Start_date2 = startingDates[1]
 	}
 	// fmt.Println("Parsed dates", dates)
-	// fmt.Println("Start_date1", di.CurrentSite.CurrentSiteRange.Start_date1)
-	// fmt.Println("Start_date2", di.CurrentSite.CurrentSiteRange.Start_date2)
+	// fmt.Println("Start_date1", di.CurrentSiteRange.Start_date1)
+	// fmt.Println("Start_date2", di.CurrentSiteRange.Start_date2)
 
 	// ENDING_PERIOD
 	endingDates, err := di.parseDates(f.ENDING_PERIOD)
 	if err != nil {
 		di.AddError(f.ENDING_PERIOD, "IMPORT.CSVFIELD_ENDING_PERIOD.T_CHECK_INVALID", "ENDING_PERIOD")
 	} else {
-		di.CurrentSite.CurrentSiteRange.End_date1 = endingDates[0]
-		di.CurrentSite.CurrentSiteRange.End_date2 = endingDates[1]
+		di.CurrentSiteRange.End_date1 = endingDates[0]
+		di.CurrentSiteRange.End_date2 = endingDates[1]
 	}
 
-	// BIBLIOGRAPHY
-	//di.CurrentSite.CurrentSiteRange.Bibliography = f.BIBLIOGRAPHY
-
-	// COMMENTS
-	//di.CurrentSite.CurrentSiteRange.Comment = f.COMMENTS
-
 }
-func (di *DatabaseImport) insertSiteRangeInfos(f *Fields) error {
+func (di *DatabaseImport) insertSiteRangeInfos() error {
 
 	// If site range is not cached, create it
-	siteRangeHash := strconv.Itoa(di.CurrentSite.CurrentSiteRange.Start_date1) + strconv.Itoa(di.CurrentSite.CurrentSiteRange.Start_date2) + strconv.Itoa(di.CurrentSite.CurrentSiteRange.End_date1) + strconv.Itoa(di.CurrentSite.CurrentSiteRange.End_date2)
+	siteRangeHash := strconv.Itoa(di.CurrentSiteRange.Start_date1) + strconv.Itoa(di.CurrentSiteRange.Start_date2) + strconv.Itoa(di.CurrentSiteRange.End_date1) + strconv.Itoa(di.CurrentSiteRange.End_date2)
 
 	if id, ok := di.CachedSiteRanges[siteRangeHash]; !ok {
-		err := di.CurrentSite.CurrentSiteRange.Create(di.Tx)
+		err := di.CurrentSiteRange.Create(di.Tx)
 		if err != nil {
 			di.AddError("", "IMPORT.PROCESS_SITE_RANGE.T_ERROR", "")
 			return err
 		}
-		di.CachedSiteRanges[siteRangeHash] = di.CurrentSite.CurrentSiteRange.Id
+		di.CachedSiteRanges[siteRangeHash] = di.CurrentSiteRange.Id
 		return nil
 	} else {
-		di.CurrentSite.CurrentSiteRange.Id = id
+		di.CurrentSiteRange.Id = id
 	}
 
 	return nil
@@ -704,17 +692,17 @@ func (di *DatabaseImport) processCharacInfos(f *Fields) error {
 	//	STATE_OF_KNOWLEDGE
 		switch strings.ToLower(f.STATE_OF_KNOWLEDGE) {
 		case di.lowerTranslation("IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_NOT_DOCUMENTED"):
-			di.CurrentSite.CurrentSiteRange.CurrentCharac.Knowledge_type = "not_documented"
+			di.CurrentSiteRangeCharac.Knowledge_type = "not_documented"
 		case di.lowerTranslation("IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_LITERATURE"):
-			di.CurrentSite.CurrentSiteRange.CurrentCharac.Knowledge_type = "literature"
+			di.CurrentSiteRangeCharac.Knowledge_type = "literature"
 		case di.lowerTranslation("IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_PROSPECTED_AERIAL"):
-			di.CurrentSite.CurrentSiteRange.CurrentCharac.Knowledge_type = "prospected_aerial"
+			di.CurrentSiteRangeCharac.Knowledge_type = "prospected_aerial"
 		case di.lowerTranslation("IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_PROSPECTED_PEDESTRIAN"):
-			di.CurrentSite.CurrentSiteRange.CurrentCharac.Knowledge_type = "prospected_pedestrian"
+			di.CurrentSiteRangeCharac.Knowledge_type = "prospected_pedestrian"
 		case di.lowerTranslation("IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_SURVEYED"):
-			di.CurrentSite.CurrentSiteRange.CurrentCharac.Knowledge_type = "surveyed"
+			di.CurrentSiteRangeCharac.Knowledge_type = "surveyed"
 		case di.lowerTranslation("IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_DIG"):
-			di.CurrentSite.CurrentSiteRange.CurrentCharac.Knowledge_type = "dig"
+			di.CurrentSiteRangeCharac.Knowledge_type = "dig"
 		default:
 			if f.STATE_OF_KNOWLEDGE == "" {
 				di.AddError(f.STATE_OF_KNOWLEDGE, "IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_CHECK_EMPTY", "STATE_OF_KNOWLEDGE")
@@ -727,9 +715,9 @@ func (di *DatabaseImport) processCharacInfos(f *Fields) error {
 	// EXCEPTIONAL
 	switch strings.ToLower(f.CARAC_EXP) {
 	case di.lowerTranslation("IMPORT.CSVFIELD_ALL.T_LABEL_YES"):
-		di.CurrentSite.CurrentSiteRange.CurrentCharac.Exceptional = true
+		di.CurrentSiteRangeCharac.Exceptional = true
 	case di.lowerTranslation("IMPORT.CSVFIELD_ALL.T_LABEL_NO"):
-		di.CurrentSite.CurrentSiteRange.CurrentCharac.Exceptional = false
+		di.CurrentSiteRangeCharac.Exceptional = false
 	default:
 		if f.CARAC_EXP == "" {
 			di.AddError(f.CARAC_EXP, "IMPORT.CSVFIELD_CARAC_EXP.T_CHECK_EMPTY", "CARAC_EXP")
@@ -739,11 +727,17 @@ func (di *DatabaseImport) processCharacInfos(f *Fields) error {
 		return errors.New("Bad value for exceptional")
 	}
 
+	// BIBLIOGRAPHY
+	di.CurrentSiteRangeCharac.Bibliography = f.BIBLIOGRAPHY
+
+	// COMMENTS
+	di.CurrentSiteRangeCharac.Comment = f.COMMENTS
+
 	// Set current charac id to be linked
-	di.CurrentSite.CurrentSiteRange.CurrentCharac.Charac_id = caracID
+	di.CurrentSiteRangeCharac.Charac_id = caracID
 
 	// Set site range id to be linked
-	di.CurrentSite.CurrentSiteRange.CurrentCharac.Site_range_id = di.CurrentSite.CurrentSiteRange.Id
+	di.CurrentSiteRangeCharac.Site_range_id = di.CurrentSiteRange.Id
 	return nil
 
 }
@@ -787,9 +781,8 @@ func (di *DatabaseImport) cacheCharacsIDs() (map[int][]int, error) {
 	return characs, nil
 }
 
-func (di *DatabaseImport) insertCharacInfos(f *Fields) error {
-	// characs, _ := di.processCharacs(f)
-	// di.CurrentSite.CurrentSiteRange.Characs = characs
+func (di *DatabaseImport) insertCharacInfos() error {
+	di.CurrentSiteRange.AddCharac(di.Tx, di.CurrentSiteRangeCharac.Site_range__charac, di.CurrentSiteRangeCharac.Site_range__charac_tr)
 	return nil
 }
 
