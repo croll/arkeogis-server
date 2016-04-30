@@ -248,7 +248,7 @@
 <part>chronology_root_id</part>
 </key>
 </table>
-<table x="475" y="89" name="database">
+<table x="475" y="103" name="database">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
@@ -310,10 +310,6 @@
 <datatype>BIT('undefined','in-progress', 'finished')</datatype>
 <comment>enum:"undefined,in-progress,finished" error:"DATABASE.FIELD_STATE.T_CHECK_INCORRECT"</comment>
 </row>
-<row name="published" null="0" autoincrement="0">
-<datatype>BOOLEAN</datatype>
-<default>'false'</default><comment>enum:"0,1" error:"DATABASE.FIELD_PUBLISHED.T_CHECK_INCORRECT"</comment>
-</row>
 <row name="license_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="license" row="id" />
@@ -329,6 +325,12 @@
 <datatype>TEXT</datatype>
 <comment>min:"1" error:"DATABASE.FIELD_SUBJECT.T_CHECK_MANDATORY" max:"255" error:"DATABASE.FIELD_SUBJECT.T_CHECK_INCORRECT"</comment>
 </row>
+<row name="published" null="0" autoincrement="0">
+<datatype>BOOLEAN</datatype>
+<default>'false'</default></row>
+<row name="soft_deleted" null="0" autoincrement="0">
+<datatype>BOOLEAN</datatype>
+<default>'false'</default></row>
 <row name="created_at" null="0" autoincrement="0">
 <datatype>TIMESTAMP</datatype>
 </row>
@@ -389,6 +391,7 @@
 <row name="database_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="database" row="id" />
+<comment>xmltopsql:"ondelete:cascade"</comment>
 </row>
 <row name="lang_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
@@ -768,7 +771,7 @@
 </key>
 </table>
 <table x="1080" y="463" name="site_range__charac">
-<row name="id" null="1" autoincrement="0">
+<row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 <default>NULL</default></row>
 <row name="site_range_id" null="0" autoincrement="0">
@@ -1071,7 +1074,7 @@
 <part>user_id</part>
 </key>
 </table>
-<table x="312" y="193" name="import">
+<table x="297" y="192" name="import">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
@@ -1107,10 +1110,11 @@
 <part>id</part>
 </key>
 </table>
-<table x="468" y="757" name="database__country">
+<table x="464" y="763" name="database__country">
 <row name="database_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="database" row="id" />
+<comment>xmltopsql:"ondelete:cascade"</comment>
 </row>
 <row name="country_geonameid" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
@@ -1128,6 +1132,7 @@
 <row name="database_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="database" row="id" />
+<comment>xmltopsql:"ondelete:cascade"</comment>
 </row>
 <row name="import_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
@@ -1206,10 +1211,11 @@
 <part>iso_code</part>
 </key>
 </table>
-<table x="709" y="764" name="database__continent">
+<table x="709" y="756" name="database__continent">
 <row name="database_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="database" row="id" />
+<comment>xmltopsql:"ondelete:cascade"</comment>
 </row>
 <row name="continent_geonameid" null="1" autoincrement="0">
 <datatype>INTEGER</datatype>

@@ -120,11 +120,12 @@ type Database struct {
 	Coverage	string	`db:"coverage" json:"coverage"`
 	Copyright	string	`db:"copyright" json:"copyright"`
 	State	string	`db:"state" json:"state" enum:"undefined,in-progress,finished" error:"DATABASE.FIELD_STATE.T_CHECK_INCORRECT"`
-	Published	bool	`db:"published" json:"published" enum:"0,1" error:"DATABASE.FIELD_PUBLISHED.T_CHECK_INCORRECT"`
 	License_id	int	`db:"license_id" json:"license_id"`	// License.Id
 	Context	string	`db:"context" json:"context" enum:"undefined,academic-work,contract,research_team,other" error:"DATABASE.FIELD_CONTEXT.T_CHECK_INCORRECT"`
 	Context_description	string	`db:"context_description" json:"context_description"`
 	Subject	string	`db:"subject" json:"subject" min:"1" error:"DATABASE.FIELD_SUBJECT.T_CHECK_MANDATORY" max:"255" error:"DATABASE.FIELD_SUBJECT.T_CHECK_INCORRECT"`
+	Published	bool	`db:"published" json:"published"`
+	Soft_deleted	bool	`db:"soft_deleted" json:"soft_deleted"`
 	Created_at	time.Time	`db:"created_at" json:"created_at"`
 	Updated_at	time.Time	`db:"updated_at" json:"updated_at"`
 }
@@ -137,20 +138,20 @@ type Database__authors struct {
 
 
 type Database__continent struct {
-	Database_id	int	`db:"database_id" json:"database_id"`	// Database.Id
+	Database_id	int	`db:"database_id" json:"database_id" xmltopsql:"ondelete:cascade"`	// Database.Id
 	Continent_geonameid	int	`db:"continent_geonameid" json:"continent_geonameid"`	// Continent.Geonameid
 }
 
 
 type Database__country struct {
-	Database_id	int	`db:"database_id" json:"database_id"`	// Database.Id
+	Database_id	int	`db:"database_id" json:"database_id" xmltopsql:"ondelete:cascade"`	// Database.Id
 	Country_geonameid	int	`db:"country_geonameid" json:"country_geonameid"`	// Country.Geonameid
 }
 
 
 type Database_handle struct {
 	Id	int	`db:"id" json:"id"`
-	Database_id	int	`db:"database_id" json:"database_id"`	// Database.Id
+	Database_id	int	`db:"database_id" json:"database_id" xmltopsql:"ondelete:cascade"`	// Database.Id
 	Import_id	int	`db:"import_id" json:"import_id"`	// Import.Id
 	Name	string	`db:"name" json:"name"`
 	Url	string	`db:"url" json:"url"`
@@ -159,7 +160,7 @@ type Database_handle struct {
 
 
 type Database_tr struct {
-	Database_id	int	`db:"database_id" json:"database_id"`	// Database.Id
+	Database_id	int	`db:"database_id" json:"database_id" xmltopsql:"ondelete:cascade"`	// Database.Id
 	Lang_id	int	`db:"lang_id" json:"lang_id"`	// Lang.Id
 	Description	string	`db:"description" json:"description"`
 	Geographical_limit	sql.NullString	`db:"geographical_limit" json:"geographical_limit"`
@@ -378,7 +379,7 @@ type Site struct {
 
 type Site_range struct {
 	Id	int	`db:"id" json:"id"`
-	Site_id	int	`db:"site_id" json:"site_id"`	// Site.Id
+	Site_id	int	`db:"site_id" json:"site_id" xmltopsql:"ondelete:cascade"`	// Site.Id
 	Start_date1	int	`db:"start_date1" json:"start_date1"`
 	Start_date2	int	`db:"start_date2" json:"start_date2"`
 	End_date1	int	`db:"end_date1" json:"end_date1"`
@@ -390,7 +391,7 @@ type Site_range struct {
 
 type Site_range__charac struct {
 	Id	int	`db:"id" json:"id"`
-	Site_range_id	int	`db:"site_range_id" json:"site_range_id"`	// Site_range.Id
+	Site_range_id	int	`db:"site_range_id" json:"site_range_id" xmltopsql:"ondelete:cascade"`	// Site_range.Id
 	Charac_id	int	`db:"charac_id" json:"charac_id"`	// Charac.Id
 	Exceptional	bool	`db:"exceptional" json:"exceptional"`
 	Knowledge_type	string	`db:"knowledge_type" json:"knowledge_type" enum:"not_documented,literature,prospected_aerial,prospected_pedestrian,surveyed,dig" error:"DATABASE.FIELD_KNOWLEDGE_TYPE.T_CHECK_INCORRECT"`
@@ -398,7 +399,7 @@ type Site_range__charac struct {
 
 
 type Site_range__charac_tr struct {
-	Site_range__charac_id	int	`db:"site_range__charac_id" json:"site_range__charac_id"`	// Site_range__charac.Id
+	Site_range__charac_id	int	`db:"site_range__charac_id" json:"site_range__charac_id" xmltopsql:"ondelete:cascade"`	// Site_range__charac.Id
 	Lang_id	int	`db:"lang_id" json:"lang_id"`	// Lang.Id
 	Comment	string	`db:"comment" json:"comment"`
 	Bibliography	string	`db:"bibliography" json:"bibliography"`
@@ -406,7 +407,7 @@ type Site_range__charac_tr struct {
 
 
 type Site_tr struct {
-	Site_id	int	`db:"site_id" json:"site_id"`	// Site.Id
+	Site_id	int	`db:"site_id" json:"site_id" xmltopsql:"ondelete:cascade"`	// Site.Id
 	Lang_id	int	`db:"lang_id" json:"lang_id"`	// Lang.Id
 	Description	string	`db:"description" json:"description"`
 }
@@ -509,9 +510,9 @@ const Chronology_tr_UpdateStr = "\"name\" = :name, \"description\" = :descriptio
 const Project__chronology_InsertStr = "\"id_group\""
 const Project__chronology_InsertValuesStr = ":id_group"
 const Project__chronology_UpdateStr = "\"id_group\" = :id_group"
-const Database_InsertStr = "\"name\", \"scale_resolution\", \"geographical_extent\", \"type\", \"owner\", \"source_creation_date\", \"data_set\", \"identifier\", \"source\", \"source_url\", \"publisher\", \"contributor\", \"default_language\", \"relation\", \"coverage\", \"copyright\", \"state\", \"published\", \"license_id\", \"context\", \"context_description\", \"subject\", \"created_at\", \"updated_at\""
-const Database_InsertValuesStr = ":name, :scale_resolution, :geographical_extent, :type, :owner, :source_creation_date, :data_set, :identifier, :source, :source_url, :publisher, :contributor, :default_language, :relation, :coverage, :copyright, :state, :published, :license_id, :context, :context_description, :subject, now(), now()"
-const Database_UpdateStr = "\"name\" = :name, \"scale_resolution\" = :scale_resolution, \"geographical_extent\" = :geographical_extent, \"type\" = :type, \"owner\" = :owner, \"source_creation_date\" = :source_creation_date, \"data_set\" = :data_set, \"identifier\" = :identifier, \"source\" = :source, \"source_url\" = :source_url, \"publisher\" = :publisher, \"contributor\" = :contributor, \"default_language\" = :default_language, \"relation\" = :relation, \"coverage\" = :coverage, \"copyright\" = :copyright, \"state\" = :state, \"published\" = :published, \"license_id\" = :license_id, \"context\" = :context, \"context_description\" = :context_description, \"subject\" = :subject, \"updated_at\" = now()"
+const Database_InsertStr = "\"name\", \"scale_resolution\", \"geographical_extent\", \"type\", \"owner\", \"source_creation_date\", \"data_set\", \"identifier\", \"source\", \"source_url\", \"publisher\", \"contributor\", \"default_language\", \"relation\", \"coverage\", \"copyright\", \"state\", \"license_id\", \"context\", \"context_description\", \"subject\", \"published\", \"soft_deleted\", \"created_at\", \"updated_at\""
+const Database_InsertValuesStr = ":name, :scale_resolution, :geographical_extent, :type, :owner, :source_creation_date, :data_set, :identifier, :source, :source_url, :publisher, :contributor, :default_language, :relation, :coverage, :copyright, :state, :license_id, :context, :context_description, :subject, :published, :soft_deleted, now(), now()"
+const Database_UpdateStr = "\"name\" = :name, \"scale_resolution\" = :scale_resolution, \"geographical_extent\" = :geographical_extent, \"type\" = :type, \"owner\" = :owner, \"source_creation_date\" = :source_creation_date, \"data_set\" = :data_set, \"identifier\" = :identifier, \"source\" = :source, \"source_url\" = :source_url, \"publisher\" = :publisher, \"contributor\" = :contributor, \"default_language\" = :default_language, \"relation\" = :relation, \"coverage\" = :coverage, \"copyright\" = :copyright, \"state\" = :state, \"license_id\" = :license_id, \"context\" = :context, \"context_description\" = :context_description, \"subject\" = :subject, \"published\" = :published, \"soft_deleted\" = :soft_deleted, \"updated_at\" = now()"
 const Site_InsertStr = "\"code\", \"name\", \"city_name\", \"city_geonameid\", \"geom\", \"centroid\", \"occupation\", \"database_id\", \"created_at\", \"updated_at\""
 const Site_InsertValuesStr = ":code, :name, :city_name, :city_geonameid, :geom, :centroid, :occupation, :database_id, now(), now()"
 const Site_UpdateStr = "\"code\" = :code, \"name\" = :name, \"city_name\" = :city_name, \"city_geonameid\" = :city_geonameid, \"geom\" = :geom, \"centroid\" = :centroid, \"occupation\" = :occupation, \"database_id\" = :database_id, \"updated_at\" = now()"
