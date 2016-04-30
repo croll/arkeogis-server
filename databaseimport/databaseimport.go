@@ -378,11 +378,9 @@ func (di *DatabaseImport) processSiteInfos(f *Fields) {
 	}
 
 	// CITY_CENTROID
-	if f.CITY_CENTROID != "" {
-		val, err := di.valueAsBool("CITY_CENTROID", f.CITY_CENTROID)
-		if err == nil {
-			di.CurrentSite.Centroid = val
-		}
+	val, err := di.valueAsBool("CITY_CENTROID", f.CITY_CENTROID)
+	if err == nil {
+		di.CurrentSite.Centroid = val
 	}
 
 	// If only one of lat or lon empty
@@ -445,11 +443,9 @@ func (di *DatabaseImport) checkDifferences(f *Fields) {
 	}
 
 	// CITY_CENTROID
-	if f.CITY_CENTROID != "" {
-		val, err := di.valueAsBool("CITY_CENTROID", f.CITY_CENTROID)
-		if err == nil && val != di.CurrentSite.Centroid {
-			di.AddError(f.CITY_CENTROID, "IMPORT.CSVFIELD_ALL.T_CHECK_ALREADY_DEFINED_VALUE_DIFFERS", "CITY_CENTROID")
-		}
+	val, err := di.valueAsBool("CITY_CENTROID", f.CITY_CENTROID)
+	if err == nil && val != di.CurrentSite.Centroid {
+		di.AddError(f.CITY_CENTROID, "IMPORT.CSVFIELD_ALL.T_CHECK_ALREADY_DEFINED_VALUE_DIFFERS", "CITY_CENTROID")
 	}
 
 	// LONGITUDE
@@ -711,6 +707,7 @@ func (di *DatabaseImport) processCharacInfos(f *Fields) error {
 		}
 
 	// EXCEPTIONAL
+	/*
 	switch strings.ToLower(f.CARAC_EXP) {
 	case di.lowerTranslation("IMPORT.CSVFIELD_ALL.T_LABEL_YES"):
 		di.CurrentSiteRangeCharac.Exceptional = true
@@ -723,6 +720,12 @@ func (di *DatabaseImport) processCharacInfos(f *Fields) error {
 			di.AddError(f.CARAC_EXP, "IMPORT.CSVFIELD_CARAC_EXP.T_CHECK_INVALID", "CARAC_EXP")
 		}
 		return errors.New("Bad value for exceptional")
+	}
+	*/
+
+	val, err := di.valueAsBool("CARAC_EXP", f.CARAC_EXP)
+	if err == nil {
+		di.CurrentSiteRangeCharac.Exceptional = val
 	}
 
 	// BIBLIOGRAPHY
@@ -801,15 +804,20 @@ func (di *DatabaseImport) insertCharacInfos() error {
 
 // valueAsBool analyses YES/NO translatable values to bool
 func (di *DatabaseImport) valueAsBool(fieldName, val string) (choosenValue bool, err error) {
-	if strings.ToLower(val) == di.lowerTranslation("IMPORT.CSVFIELD_ALL.T_LABEL_YES") {
+	switch strings.ToLower(val) {
+	case di.lowerTranslation("IMPORT.CSVFIELD_ALL.T_LABEL_YES"):
 		choosenValue = true
-	} else if strings.ToLower(val) == di.lowerTranslation("IMPORT.CSVFIELD_ALL.T_LABEL_NO") {
+	case di.lowerTranslation("IMPORT.CSVFIELD_ALL.T_LABEL_NO"):
 		choosenValue = false
-	} else {
-		di.AddError(val, "IMPORT.CSVFIELD_ALL.T_CHECK_WRONG_VALUE", fieldName)
-		return
+	default:
+		if val == "" {
+			di.AddError(val, "IMPORT.CSVFIELD_ALL.T_CHECK_EMPTY", fieldName)
+		} else {
+			di.AddError(val, "IMPORT.CSVFIELD_ALL.T_CHECK_INVALID", fieldName)
+		}
+		return choosenValue, errors.New("Bad value for "+fieldName)
 	}
-	return
+	return choosenValue, nil
 }
 
 // lowerTranslation return translation in lower case
