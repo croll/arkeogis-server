@@ -773,7 +773,7 @@
 <table x="1080" y="463" name="site_range__charac">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
-<default>NULL</default></row>
+</row>
 <row name="site_range_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="site_range" row="id" />
