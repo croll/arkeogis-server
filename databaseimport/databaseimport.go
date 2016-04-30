@@ -119,6 +119,7 @@ type DatabaseImport struct {
 	CurrentSiteRangeCharac    *SiteRangeCharacInfos
 	Tx               *sqlx.Tx
 	Parser           *Parser
+	Uid	int
 	ArkeoCharacs     map[string]map[string]int
 	//ArkeoCharacsIDs  map[int][]int
 	NumberOfSites    int
@@ -131,7 +132,7 @@ type DatabaseImport struct {
 func (di *DatabaseImport) New(parser *Parser, uid int, databaseName string, langID int) error {
 	var err error
 	di.Database = &DatabaseInfos{}
-	di.Database.Owner = uid
+	di.Uid = uid
 	di.Database.Default_language = langID
 	di.CurrentSite = &SiteInfos{}
 	di.Parser = parser
@@ -345,6 +346,7 @@ func (di *DatabaseImport) ProcessEssentialDatabaseInfos(name string, geographica
 		err = di.Database.Update(di.Tx)
 	} else {
 		// Create record
+		di.Database.Owner = di.Uid
 		err = di.Database.Create(di.Tx)
 	}
 	if err != nil {
@@ -921,4 +923,9 @@ func (di *DatabaseImport) parseDates(period string) ([2]int, error) {
 	// fmt.Println("----")
 
 	return dates, nil
+}
+
+func (di *DatabaseImport) Save(filename string) error {
+	i := model.Import{Database_id: di.Database.Id, User_id: di.Uid, Filename: filename}
+	return i.Create(di.Tx)
 }

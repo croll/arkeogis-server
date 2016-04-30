@@ -151,12 +151,21 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		}
 	*/
 
-	err = dbImport.Tx.Commit()
-
-	if err != nil {
-		parser.AddError(err.Error())
-		sendError(w, parser.Errors)
-		return
+	if len(dbImport.SitesWithError) > 0 {
+		err = dbImport.Tx.Rollback()
+	} else {
+		err = dbImport.Save(params.File.Name)
+		err = dbImport.Tx.Commit()
+		if err != nil {
+			parser.AddError(err.Error())
+			sendError(w, parser.Errors)
+			return
+		}
+		if err != nil {
+			parser.AddError(err.Error())
+			sendError(w, parser.Errors)
+			return
+		}
 	}
 
 	// Prepare response
