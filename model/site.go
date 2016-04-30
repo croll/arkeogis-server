@@ -23,7 +23,6 @@ package model
 
 import (
 "github.com/jmoiron/sqlx"
-"fmt"
 )
 
 
@@ -60,10 +59,4 @@ func (sr *Site_range) Create(tx *sqlx.Tx) error {
 	}
 	defer stmt.Close()
 	return stmt.Get(&sr.Id, sr)
-}
-
-func (sr *Site_range) AddCharac(tx *sqlx.Tx, charac Site_range__charac, charac_tr Site_range__charac_tr) error {
-	fmt.Println("ID", charac.Id)
-
-	return nil
 }

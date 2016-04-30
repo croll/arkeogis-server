@@ -134,8 +134,6 @@ func (di *DatabaseImport) New(parser *Parser, uid int, databaseName string, lang
 	di.Database.Owner = uid
 	di.Database.Default_language = langID
 	di.CurrentSite = &SiteInfos{}
-	di.CurrentSiteRange = &model.Site_range{}
-	di.CurrentSiteRangeCharac = &SiteRangeCharacInfos{}
 	di.Parser = parser
 	di.NumberOfSites = 0
 	di.SitesWithError = map[string]bool{}
@@ -226,6 +224,8 @@ func (di *DatabaseImport) ProcessRecord(f *Fields) {
 	// If site code is not empty and differs, create a new instance of SiteInfos to store datas
 	if f.SITE_SOURCE_ID != "" && f.SITE_SOURCE_ID != di.CurrentSite.Code {
 		di.CurrentSite = &SiteInfos{}
+		di.CurrentSiteRange = &model.Site_range{}
+		di.CurrentSiteRangeCharac = &SiteRangeCharacInfos{}
 		di.CurrentSite.Code = f.SITE_SOURCE_ID
 		di.CurrentSite.Name = f.SITE_NAME
 		di.CurrentSite.Database_id = di.Database.Id
@@ -241,7 +241,6 @@ func (di *DatabaseImport) ProcessRecord(f *Fields) {
 
 	// Init the site range if necessary
 	// if di.CurrentSite.NbSiteRanges == 0 {
-	di.CurrentSiteRange = &model.Site_range{}
 	// }
 
 	// Process site range infos
@@ -254,21 +253,20 @@ func (di *DatabaseImport) ProcessRecord(f *Fields) {
 		if di.CurrentSite.Id == 0 {
 			err = di.CurrentSite.Create(di.Tx)
 			// Site ID
-			fmt.Println(di.CurrentSite)
-			fmt.Println(di.CurrentSite.Id)
 			di.CurrentSiteRange.Site_id = di.CurrentSite.Id
 			//di.CurrentSite.NbSiteRanges += 1
 		} else {
 			err = di.CurrentSite.Update(di.Tx)
 		}
+		if err == nil {
+			err = di.insertSiteRangeInfos()
+			if err == nil {
+				err = di.insertCharacInfos()
+			}
+		}
 		if err != nil {
 			log.Println(err.Error())
 			di.AddError("", err.Error(), "")
-		} else {
-			err = di.insertSiteRangeInfos()
-			if err == nil {
-				di.insertCharacInfos()
-			}
 		}
 	}
 
@@ -278,6 +276,7 @@ func (di *DatabaseImport) ProcessRecord(f *Fields) {
 // create or update the sql entry
 func (di *DatabaseImport) processDatabaseName(name string) error {
 	var err error
+
 	// Store database name
 	di.Database.Name = name
 
@@ -599,8 +598,6 @@ func (di *DatabaseImport) processGeonames(f *Fields) (*geo.Point, error) {
 
 func (di *DatabaseImport) processSiteRangeInfos(f *Fields) {
 
-	fmt.Println("CURRENT SITE ID", di.CurrentSiteRange.Site_id)
-
 	// STARTING_PERIOD
 	// fmt.Println("Starting period", f.STARTING_PERIOD)
 	startingDates, err := di.parseDates(f.STARTING_PERIOD)
@@ -627,7 +624,8 @@ func (di *DatabaseImport) processSiteRangeInfos(f *Fields) {
 func (di *DatabaseImport) insertSiteRangeInfos() error {
 
 	// If site range is not cached, create it
-	siteRangeHash := strconv.Itoa(di.CurrentSiteRange.Start_date1) + strconv.Itoa(di.CurrentSiteRange.Start_date2) + strconv.Itoa(di.CurrentSiteRange.End_date1) + strconv.Itoa(di.CurrentSiteRange.End_date2)
+	fmt.Println("SITE ID", di.CurrentSite.Id)
+	siteRangeHash := strconv.Itoa(di.CurrentSite.Id) + strconv.Itoa(di.CurrentSiteRange.Start_date1) + strconv.Itoa(di.CurrentSiteRange.Start_date2) + strconv.Itoa(di.CurrentSiteRange.End_date1) + strconv.Itoa(di.CurrentSiteRange.End_date2)
 
 	if id, ok := di.CachedSiteRanges[siteRangeHash]; !ok {
 		err := di.CurrentSiteRange.Create(di.Tx)
@@ -781,9 +779,24 @@ func (di *DatabaseImport) cacheCharacsIDs() (map[int][]int, error) {
 	return characs, nil
 }
 
+
+
 func (di *DatabaseImport) insertCharacInfos() error {
-	di.CurrentSiteRange.AddCharac(di.Tx, di.CurrentSiteRangeCharac.Site_range__charac, di.CurrentSiteRangeCharac.Site_range__charac_tr)
-	return nil
+	var err error
+	di.CurrentSiteRangeCharac.Site_range_id = di.CurrentSiteRange.Id
+	stmt, err := di.Tx.PrepareNamed("INSERT INTO \"site_range__charac\" (" + model.Site_range__charac_InsertStr + ") VALUES (" + model.Site_range__charac_InsertValuesStr + ") RETURNING id")
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	err = stmt.Get(&di.CurrentSiteRangeCharac.Site_range__charac_id, di.CurrentSiteRangeCharac)
+	if err != nil {
+		return err
+	}
+
+	di.CurrentSiteRangeCharac.Lang_id = di.Database.Default_language
+	_, err = di.Tx.NamedExec("INSERT INTO \"site_range__charac_tr\" (\"site_range__charac_id\", \"lang_id\", \"bibliography\", \"comment\") VALUES (:site_range__charac_id, :lang_id, :bibliography, :comment)", di.CurrentSiteRangeCharac)
+	return err
 }
 
 // valueAsBool analyses YES/NO translatable values to bool
