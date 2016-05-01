@@ -96,6 +96,10 @@ func mysqlToPsqlType(row Row) string {
 		return "geography(POINT,4326)"
 	}
 
+	if row.Datatype == "VARCHAR(POINTZ)" {
+		return "geography(POINTZ,4326)"
+	}
+
 	if row.Datatype == "VARCHAR(POLYGON)" {
 		return "geography(POLYGON,4326)"
 	}

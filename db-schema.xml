@@ -362,6 +362,9 @@
 <row name="geom" null="0" autoincrement="0">
 <datatype>VARCHAR(POINT)</datatype>
 </row>
+<row name="geom_3d" null="0" autoincrement="0">
+<datatype>VARCHAR(POINTZ)</datatype>
+</row>
 <row name="centroid" null="0" autoincrement="0">
 <datatype>BOOLEAN</datatype>
 <comment>enum:"0,1" error:"SITE.FIELD_CENTROID.T_CHECK_MANDATORY"</comment>
@@ -385,6 +388,7 @@
 </key>
 <key type="INDEX" name="">
 <part>geom</part>
+<part>geom_3d</part>
 </key>
 </table>
 <table x="249" y="509" name="database_tr">
@@ -659,9 +663,9 @@
 <row name="filename" null="1" autoincrement="0">
 <datatype>VARCHAR(255)</datatype>
 <default>NULL</default></row>
-<row name="geom" null="1" autoincrement="0">
+<row name="geom" null="0" autoincrement="0">
 <datatype>VARCHAR(MULTIPOLYGON)</datatype>
-<default>NULL</default></row>
+</row>
 <row name="min_scale" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 </row>
