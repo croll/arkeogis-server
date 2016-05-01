@@ -82,6 +82,14 @@ func (p *Point) ToWKT() (string, error) {
 	return p.Geom.ToWKT()
 }
 
+// ToWKT is a conveniance function which returns the WKT 2D string of a Point
+func (p *Point) ToWKT_2d() (string, error) {
+	if !p.IsValid() {
+		return "", errors.New("Invalid point")
+	}
+	return "POINT("+strconv.FormatFloat(p.X, 'f', -1, 64)+" "+strconv.FormatFloat(p.Y, 'f', -1, 64)+")", nil
+}
+
 // ToWGS84 is used to convert a x,y and z (optional) coordinates from specified
 // epsg to WGS84
 // A new point is returned, leaving original point untouched
