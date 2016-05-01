@@ -331,7 +331,7 @@ type Shapefile struct {
 	Creator_user_id	int	`db:"creator_user_id" json:"creator_user_id"`	// User.Id
 	Source_creation_date	time.Time	`db:"source_creation_date" json:"source_creation_date"`
 	Filename	sql.NullString	`db:"filename" json:"filename"`
-	Geom	sql.NullString	`db:"geom" json:"geom"`
+	Geom	string	`db:"geom" json:"geom"`
 	Min_scale	int	`db:"min_scale" json:"min_scale"`
 	Max_scale	int	`db:"max_scale" json:"max_scale"`
 	Start_date1	int	`db:"start_date1" json:"start_date1"`
@@ -369,6 +369,7 @@ type Site struct {
 	City_name	string	`db:"city_name" json:"city_name"`
 	City_geonameid	int	`db:"city_geonameid" json:"city_geonameid"`
 	Geom	string	`db:"geom" json:"geom"`
+	Geom_3d	string	`db:"geom_3d" json:"geom_3d"`
 	Centroid	bool	`db:"centroid" json:"centroid" enum:"0,1" error:"SITE.FIELD_CENTROID.T_CHECK_MANDATORY"`
 	Occupation	string	`db:"occupation" json:"occupation" enum:"not_documented,single,continuous,multiple" error:"SITE.FIELD_OCCUPATION.T_CHECK_INCORRECT"`
 	Database_id	int	`db:"database_id" json:"database_id"`	// Database.Id
@@ -513,9 +514,9 @@ const Project__chronology_UpdateStr = "\"id_group\" = :id_group"
 const Database_InsertStr = "\"name\", \"scale_resolution\", \"geographical_extent\", \"type\", \"owner\", \"source_creation_date\", \"data_set\", \"identifier\", \"source\", \"source_url\", \"publisher\", \"contributor\", \"default_language\", \"relation\", \"coverage\", \"copyright\", \"state\", \"license_id\", \"context\", \"context_description\", \"subject\", \"published\", \"soft_deleted\", \"created_at\", \"updated_at\""
 const Database_InsertValuesStr = ":name, :scale_resolution, :geographical_extent, :type, :owner, :source_creation_date, :data_set, :identifier, :source, :source_url, :publisher, :contributor, :default_language, :relation, :coverage, :copyright, :state, :license_id, :context, :context_description, :subject, :published, :soft_deleted, now(), now()"
 const Database_UpdateStr = "\"name\" = :name, \"scale_resolution\" = :scale_resolution, \"geographical_extent\" = :geographical_extent, \"type\" = :type, \"owner\" = :owner, \"source_creation_date\" = :source_creation_date, \"data_set\" = :data_set, \"identifier\" = :identifier, \"source\" = :source, \"source_url\" = :source_url, \"publisher\" = :publisher, \"contributor\" = :contributor, \"default_language\" = :default_language, \"relation\" = :relation, \"coverage\" = :coverage, \"copyright\" = :copyright, \"state\" = :state, \"license_id\" = :license_id, \"context\" = :context, \"context_description\" = :context_description, \"subject\" = :subject, \"published\" = :published, \"soft_deleted\" = :soft_deleted, \"updated_at\" = now()"
-const Site_InsertStr = "\"code\", \"name\", \"city_name\", \"city_geonameid\", \"geom\", \"centroid\", \"occupation\", \"database_id\", \"created_at\", \"updated_at\""
-const Site_InsertValuesStr = ":code, :name, :city_name, :city_geonameid, :geom, :centroid, :occupation, :database_id, now(), now()"
-const Site_UpdateStr = "\"code\" = :code, \"name\" = :name, \"city_name\" = :city_name, \"city_geonameid\" = :city_geonameid, \"geom\" = :geom, \"centroid\" = :centroid, \"occupation\" = :occupation, \"database_id\" = :database_id, \"updated_at\" = now()"
+const Site_InsertStr = "\"code\", \"name\", \"city_name\", \"city_geonameid\", \"geom\", \"geom_3d\", \"centroid\", \"occupation\", \"database_id\", \"created_at\", \"updated_at\""
+const Site_InsertValuesStr = ":code, :name, :city_name, :city_geonameid, :geom, :geom_3d, :centroid, :occupation, :database_id, now(), now()"
+const Site_UpdateStr = "\"code\" = :code, \"name\" = :name, \"city_name\" = :city_name, \"city_geonameid\" = :city_geonameid, \"geom\" = :geom, \"geom_3d\" = :geom_3d, \"centroid\" = :centroid, \"occupation\" = :occupation, \"database_id\" = :database_id, \"updated_at\" = now()"
 const Database_tr_InsertStr = "\"description\", \"geographical_limit\", \"bibliography\""
 const Database_tr_InsertValuesStr = ":description, :geographical_limit, :bibliography"
 const Database_tr_UpdateStr = "\"description\" = :description, \"geographical_limit\" = :geographical_limit, \"bibliography\" = :bibliography"

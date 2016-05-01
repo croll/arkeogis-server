@@ -231,6 +231,7 @@ func (di *DatabaseImport) ProcessRecord(f *Fields) {
 		di.CurrentSite.Name = f.SITE_NAME
 		di.CurrentSite.Database_id = di.Database.Id
 		di.CurrentSite.Lang_id = di.Database.Default_language
+		di.CurrentSite.Geom_3d = "POINT(0 0 0)"
 		di.NumberOfSites++
 		// Process site info
 		di.processSiteInfos(f)
@@ -398,9 +399,15 @@ func (di *DatabaseImport) processSiteInfos(f *Fields) {
 				di.CurrentSite.Latitude = f.LATITUDE
 				di.CurrentSite.Longitude = f.LONGITUDE
 				di.CurrentSite.Altitude = f.ALTITUDE
-				di.CurrentSite.Geom, err = di.CurrentSite.Point.ToWKT()
+				di.CurrentSite.Geom, err = di.CurrentSite.Point.ToWKT_2d()
 				if err != nil {
 					di.AddError(f.LONGITUDE+" "+f.LATITUDE, "IMPORT.CSVFIELD_GEOMETRY.T_INVALID", "LATITUDE", "LONGITUDE")
+				}
+				if di.CurrentSite.Altitude != "" {
+					di.CurrentSite.Geom_3d, err = di.CurrentSite.Point.ToWKT()
+					if err != nil {
+						di.AddError(f.LONGITUDE+" "+f.LATITUDE, "IMPORT.CSVFIELD_GEOMETRY.T_INVALID", "LATITUDE", "LONGITUDE")
+					}
 				}
 			}
 		} else {
@@ -423,6 +430,7 @@ func (di *DatabaseImport) processSiteInfos(f *Fields) {
 			}
 		}
 	}
+
 
 	// OCCUPATION
 	if f.OCCUPATION == "" {
@@ -532,7 +540,7 @@ func (di *DatabaseImport) processGeoDatas(f *Fields) (*geo.Point, error) {
 		hasError = true
 	}
 	// Parse ALTITUDE
-	// If no altitude set, we have a 2D Point
+	// If no altitude set it to -9999
 	if f.ALTITUDE != "" {
 		alt, err := strconv.ParseFloat(f.ALTITUDE, 64)
 		if err != nil {
@@ -622,7 +630,6 @@ func (di *DatabaseImport) processSiteRangeInfos(f *Fields) {
 func (di *DatabaseImport) insertSiteRangeInfos() error {
 
 	// If site range is not cached, create it
-	fmt.Println("SITE ID", di.CurrentSite.Id)
 	siteRangeHash := strconv.Itoa(di.CurrentSite.Id) + strconv.Itoa(di.CurrentSiteRange.Start_date1) + strconv.Itoa(di.CurrentSiteRange.Start_date2) + strconv.Itoa(di.CurrentSiteRange.End_date1) + strconv.Itoa(di.CurrentSiteRange.End_date2)
 
 	if id, ok := di.CachedSiteRanges[siteRangeHash]; !ok {
