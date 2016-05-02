@@ -46,7 +46,9 @@ func init() {
 			Func:        ImportStep1,
 			Method:      "POST",
 			Json:        reflect.TypeOf(ImportStep1T{}),
-			Permissions: []string{},
+			Permissions: []string{
+				"import",
+			},
 		},
 	}
 	routes.RegisterMultiple(Routes)

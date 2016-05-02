@@ -53,11 +53,9 @@ func init() {
 			Method:      "PUT",
 			Params:      reflect.TypeOf(TranslateSaveParams{}),
 			Json:        reflect.TypeOf(make(map[string]interface{}, 0)),
-			/*
-				Permissions: []string{
-					"PermTranslatesAdmin",
-				},
-			*/
+			Permissions: []string{
+				"langeditor",
+			},
 		},
 		&routes.Route{
 			Path:        "/api/translates",
@@ -65,6 +63,9 @@ func init() {
 			Func:        TranslatesList,
 			Method:      "GET",
 			Params:      reflect.TypeOf(TranslateListParams{}),
+			Permissions: []string{
+				"langeditor",
+			},
 		},
 	}
 	routes.RegisterMultiple(Routes)

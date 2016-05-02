@@ -103,7 +103,7 @@ func init() {
 			Method:      "POST",
 			Json:        reflect.TypeOf(Usercreate{}),
 			Permissions: []string{
-			//"AdminUsers",
+				"adminusers",
 			},
 		},
 		&routes.Route{
@@ -112,7 +112,7 @@ func init() {
 			Func:        UserList,
 			Method:      "GET",
 			Permissions: []string{
-			//"AdminUsers",
+				"adminusers",
 			},
 			Params: reflect.TypeOf(UserListParams{}),
 		},
@@ -122,7 +122,7 @@ func init() {
 			Func:        UserInfos,
 			Method:      "GET",
 			Permissions: []string{
-			//"AdminUsers",
+				"adminusers",
 			},
 			Params: reflect.TypeOf(UserGetParams{}),
 		},
@@ -133,7 +133,7 @@ func init() {
 			Method:      "POST",
 			Json:        reflect.TypeOf(Usercreate{}),
 			Permissions: []string{
-			//"AdminUsers",
+				"adminusers",
 			},
 		},
 		&routes.Route{
@@ -142,7 +142,7 @@ func init() {
 			Func:        UserDelete,
 			Method:      "DELETE",
 			Permissions: []string{
-			//"AdminUsers",
+				"adminusers",
 			},
 			Params: reflect.TypeOf(UserGetParams{}),
 		},
@@ -153,7 +153,7 @@ func init() {
 			Method:      "POST",
 			Json:        reflect.TypeOf(Userlogin{}),
 			Permissions: []string{
-			//"AdminUsers",
+			//"adminusers",
 			},
 		},
 		&routes.Route{
@@ -162,7 +162,7 @@ func init() {
 			Func:        UserPhoto,
 			Method:      "GET",
 			Permissions: []string{
-			//"AdminUsers",
+			//"adminusers",
 			},
 			Params: reflect.TypeOf(PhotoGetParams{}),
 		},
