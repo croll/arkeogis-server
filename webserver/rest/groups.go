@@ -70,7 +70,7 @@ func init() {
 			Func:        GroupList,
 			Method:      "GET",
 			Permissions: []string{
-			//"AdminGroups",
+				"adminusers",
 			},
 			Params: reflect.TypeOf(GroupListParams{}),
 		},
@@ -80,7 +80,7 @@ func init() {
 			Func:        GroupGet,
 			Method:      "GET",
 			Permissions: []string{
-			//"AdminGroups",
+				"adminusers",
 			},
 			Params: reflect.TypeOf(GroupGetParams{}),
 		},
@@ -91,7 +91,7 @@ func init() {
 			Method:      "POST",
 			Json:        reflect.TypeOf(GroupSetPost{}),
 			Permissions: []string{
-			//"AdminGroups",
+				"adminusers",
 			},
 		},
 		/*&routes.Route{
