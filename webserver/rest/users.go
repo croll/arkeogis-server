@@ -677,6 +677,7 @@ func UserLogin(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		log.Fatal("can't get permissions!")
 		return
 	}
+	log.Println("permissions : ", permissions)
 
 	err = tx.Commit()
 	if err != nil {

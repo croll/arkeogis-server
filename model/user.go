@@ -293,6 +293,7 @@ func (u *User) Login(tx *sqlx.Tx) (ok bool, err error) {
 
 // GetPermissions return an array of Permissions that the user have
 func (u *User) GetPermissions(tx *sqlx.Tx) (permissions []Permission, err error) {
+	permissions = make([]Permission, 0)
 	stmt, err := tx.PrepareNamed("SELECT p.* FROM permission p,user__group ug, group__permission gp WHERE ug.user_id = :id AND ug.group_id = gp.group_id AND gp.permission_id = p.id GROUP BY p.id")
 	if err != nil {
 		return nil, err
@@ -322,6 +323,7 @@ func (u *User) HavePermissions(tx *sqlx.Tx, permissions ...string) (ok bool, err
 
 // GetPermissions return an array of Permissions that the group have
 func (g *Group) GetPermissions(tx *sqlx.Tx) (permissions []Permission, err error) {
+	permissions = []Permission{}
 	log.Println("TODO: Group.GetPermissions() => This function was not tested. If it work fine, please, remove this log comment!")
 	stmt, err := tx.PrepareNamed("SELECT p.* FROM permission p, group__permission gp WHERE gp.group_id = :id AND gp.permission_id = p.id GROUP BY p.id")
 	if err != nil {
