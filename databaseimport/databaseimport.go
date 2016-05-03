@@ -553,6 +553,7 @@ func (di *DatabaseImport) processGeoDatas(f *Fields) (*geo.Point, error) {
 	}
 	if err != nil {
 		di.AddError(f.PROJECTION_SYSTEM, "IMPORT.CSVFIELD_GEO.T_ERROR_UNABLE_TO_GET_WKT", "EPSG", "LATITUDE", "LONGITUDE")
+		hasError = true
 	}
 	// Datas are already in WGS84, leave it untouched
 	if epsg == 4326 {
@@ -574,7 +575,11 @@ func (di *DatabaseImport) processGeoDatas(f *Fields) (*geo.Point, error) {
 	}
 	if hasError {
 		di.AddError(f.PROJECTION_SYSTEM+" "+f.LONGITUDE+" "+f.LATITUDE, "IMPORT.CSVFIELD_GEO.T_ERROR_UNABLE_TO_CREATE_GEOMETRY", "EPSG", "LATITUDE", "LONGITUDE")
-		return nil, err
+		if err != nil {
+			return nil, err
+		} else {
+			return nil, errors.New("Error parsing coordinates")
+		}
 	}
 	return pointToBeReturned, nil
 }
