@@ -24,7 +24,6 @@ package rest
 import (
 	//	"github.com/croll/arkeogis-server/csvimport"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -82,7 +81,6 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	var dbImport *databaseimport.DatabaseImport
 
-	fmt.Println(params)
 	filepath := "./uploaded/" + params.File.Name
 
 	outfile, err := os.Create(filepath)

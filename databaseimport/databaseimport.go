@@ -133,7 +133,7 @@ func (di *DatabaseImport) New(parser *Parser, uid int, databaseName string, lang
 	var err error
 	di.Database = &DatabaseInfos{}
 	di.Uid = uid
-	fmt.Println("USER ID: ",di.Uid)
+	di.Database.Owner = di.Uid
 	di.Database.Default_language = langID
 	di.CurrentSite = &SiteInfos{}
 	di.Parser = parser
@@ -168,6 +168,7 @@ func (di *DatabaseImport) New(parser *Parser, uid int, databaseName string, lang
 			if di.Database.Init == false {
 				if err = di.processDatabaseName(databaseName); err != nil {
 					di.AddError(databaseName, "IMPORT.CSVFIELD_DATABASE_SOURCE_NAME.T_CHECK_INVALID", "DATABASE_SOURCE_NAME")
+					return err
 				}
 				return err
 			}
@@ -297,7 +298,7 @@ func (di *DatabaseImport) processDatabaseName(name string) error {
 
 	if alreadyExists {
 		di.AddError("", "IMPORT.FORM_DATABASE_NAME.T_CHECK_OTHER_USER_HAS_DB_WITH_SAME_NAME", "DATABASE_NAME")
-		return err
+		return errors.New("Database already exists with same name and owned by another user.")
 	}
 
 	di.Database.Exists, err = di.Database.DoesExist(di.Tx)
@@ -348,7 +349,6 @@ func (di *DatabaseImport) ProcessEssentialDatabaseInfos(name string, geographica
 		err = di.Database.Update(di.Tx)
 	} else {
 		// Create record
-		di.Database.Owner = di.Uid
 		err = di.Database.Create(di.Tx)
 	}
 	if err != nil {
@@ -700,7 +700,7 @@ func (di *DatabaseImport) processCharacInfos(f *Fields) error {
 	caracNameToLowerCase := strings.ToLower(f.CARAC_NAME)
 	caracID := di.ArkeoCharacs[caracNameToLowerCase][caracNameToLowerCase+path]
 	if caracID == 0 {
-		fmt.Println("NOT FOUND: ", caracNameToLowerCase+path)
+		log.Println("NOT FOUND: ", caracNameToLowerCase+path)
 		di.AddError(caracNameToLowerCase+path, "IMPORT.CSVFIELD_CARACTERISATION.T_CHECK_INVALID", "CARAC_LVL"+strconv.Itoa(lvl))
 		return errors.New("invalid charac")
 	}
