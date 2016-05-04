@@ -49,6 +49,36 @@ func init() {
 				"import",
 			},
 		},
+		&routes.Route{
+			Path:        "/api/import/step3",
+			Description: "Third step of ArkeoGIS import procedure",
+			Func:        ImportStep3,
+			Method:      "POST",
+			Json:        reflect.TypeOf(ImportStep3T{}),
+			Permissions: []string{
+				"import",
+			},
+		},
+		&routes.Route{
+			Path:        "/api/import/step4",
+			Description: "Four step of ArkeoGIS import procedure",
+			Func:        ImportStep4,
+			Method:      "POST",
+			Json:        reflect.TypeOf(ImportStep4T{}),
+			Permissions: []string{
+				"import",
+			},
+		},
+		&routes.Route{
+			Path:        "/api/import/step5",
+			Description: "Last step of ArkeoGIS import procedure",
+			Func:        ImportStep5,
+			Method:      "GET",
+			Json:        reflect.TypeOf(ImportStep5T{}),
+			Permissions: []string{
+				"import",
+			},
+		},
 	}
 	routes.RegisterMultiple(Routes)
 }
@@ -219,3 +249,21 @@ func writeResponse(w http.ResponseWriter, numberOfSites int, sitesWithError []st
 	w.Write(lok)
 }
 */
+
+type ImportStep3T struct {
+}
+
+func ImportStep3(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+}
+
+type ImportStep4T struct {
+}
+
+func ImportStep4(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+}
+
+type ImportStep5T struct {
+}
+
+func ImportStep5(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+}

@@ -125,15 +125,16 @@ func DatabaseInfos(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 	}
 	d := model.DatabaseFullInfos{}
 	d.Id = params.Id
+	//fmt.Println(d)
 
-	err = d.Get(tx)
-	//log.Println("user id : ", params.Id, "user : ", u)
-	err = tx.Commit()
+	dbInfos, err := d.GetFullInfosRepresentation(tx, proute.Lang1.Id)
+
 	if err != nil {
-		log.Println("can't commit")
-		userSqlError(w, err)
-		return
+		log.Println(err)
 	}
-	j, err := json.Marshal(d)
+
+	//fmt.Println(dbInfos)
+
+	j, err := json.Marshal(dbInfos)
 	w.Write(j)
 }

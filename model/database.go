@@ -23,9 +23,27 @@ package model
 
 import (
 	"database/sql"
-
 	"github.com/jmoiron/sqlx"
+	"fmt"
 )
+
+type DatabaseAuthor struct {
+	id string
+	firstname string
+	lastname string
+}
+
+type DatabaseFullInfos struct {
+	Database
+	Database_tr
+	Imports []Import
+	Countries []Country `json: "countries"`
+	Continents []Continent `json: "continents"`
+	Handles []Database_handle `json: "handles"`
+	Authors []DatabaseAuthor `json: "authors"`
+	NumberOfSites int `json: "numberOfSites"`
+	Owner_name string `json: "ownerName"`
+}
 
 func (d *Database) DoesExist(tx *sqlx.Tx) (exists bool, err error) {
 	exists = false
@@ -60,6 +78,36 @@ func (d *Database) Get(tx *sqlx.Tx) (err error) {
 	return stmt.Get(d, d)
 }
 
+func (d *Database) GetFullInfosRepresentation(tx *sqlx.Tx, langID int) (db DatabaseFullInfos, err error) {
+	db = DatabaseFullInfos{}
+	err = tx.Get(&db, "SELECT name, scale_resolution, geographical_extent, type, source_creation_date, data_set, identifier, source, source_url, publisher, contributor, default_language, relation, coverage, copyright, state, license_id, context, context_description, subject, published, soft_deleted, d.created_at, d.updated_at, firstname || ' ' || lastname as owner_name FROM \"database\" d LEFT JOIN \"user\" u ON d.owner = u.id WHERE d.id = $1", d.Id)
+	if err != nil {
+		return
+	}
+	db.Authors, err = d.GetAuthorsList(tx)
+	if err != nil {
+		return
+	}
+	db.Countries, err = d.GetCountriesList(tx, langID)
+	if err != nil {
+		return
+	}
+	db.Continents, err = d.GetContinentsList(tx, langID)
+	if err != nil {
+		return
+	}
+	db.Imports, err = d.GetImportsList(tx)
+	if err != nil {
+		return
+	}
+	db.NumberOfSites, err = d.GetNumberOfSites(tx)
+	if err != nil {
+		return
+	}
+	fmt.Println(db)
+	return
+}
+
 func (d *Database) Create(tx *sqlx.Tx) error {
 	stmt, err := tx.PrepareNamed("INSERT INTO \"database\" (" + Database_InsertStr + ") VALUES (" + Database_InsertValuesStr + ") RETURNING id")
 	if err != nil {
@@ -78,43 +126,14 @@ func (d *Database) Update(tx *sqlx.Tx) error {
 }
 
 func (d *Database) DeleteSites(tx *sqlx.Tx) error {
-
 	_, err := tx.NamedExec("DELETE FROM \"site\" WHERE database_id=:id", d)
 	return err
+}
 
-	//var siteIds = make([]string, 0)
-
-	/*
-			stmt, err := tx.PrepareNamed("SELECT id FROM \"site\" WHERE database_id = :id")
-			if err != nil {
-				return err
-			}
-			defer stmt.Close()
-			err = stmt.Select(&siteIds, d)
-				ids := make([]string, len(siteIds))
-				for i, siteID := range siteIds {
-					ids[i] = fmt.Sprintf("%d", siteID)
-				}
-
-		fmt.Println(siteIds)
-
-		return nil
-
-		_, err = tx.NamedExec("DELETE FROM \"site_range__charac_tr\" WHERE site_id IN ("+strings.Join(siteIds, ",")+")", d)
-		_, err = tx.NamedExec("DELETE FROM \"site_range__charac\" WHERE site_id IN ("+strings.Join(siteIds, ",")+")", d)
-		_, err = tx.NamedExec("DELETE FROM \"site_range\" WHERE site_id IN ("+strings.Join(siteIds, ",")+")", d)
-		if err != nil {
-			return err
-		}
-
-		_, err = tx.NamedExec("DELETE FROM \"site_tr\" WHERE database_id = :id", d)
-		_, err = tx.NamedExec("DELETE FROM \"site\" WHERE database_id = :id", d)
-
-		if err != nil {
-			return err
-		}
-		return err
-	*/
+func (d *Database) GetCountriesList(tx *sqlx.Tx, langID int) ([]Country, error) {
+	countries := []Country{}
+	err := tx.Select(countries, "SELECT geonameid, iso_code, geom FROM country c LEFT JOIN database__country dc ON c.geonameid = dc.country_geonameid WHERE dc.database_id = $1", d.Id)
+	return countries, err
 }
 
 // AddCountries links countries to a database
@@ -125,13 +144,19 @@ func (d *Database) AddCountries(tx *sqlx.Tx, countryIds []int) error {
 			return err
 		}
 	}
-	return nil
+return nil
 }
 
 // DeleteCountries unlinks countries to a database
 func (d *Database) DeleteCountries(tx *sqlx.Tx) error {
 	_, err := tx.NamedExec("DELETE FROM \"database__country\" WHERE database_id=:id", d)
 	return err
+}
+
+func (d *Database) GetContinentsList(tx *sqlx.Tx, langID int) ([]Continent, error) {
+	continents := []Continent{}
+	err := tx.Select(continents, "SELECT geonameid, iso_code, geom FROM continent c LEFT JOIN database__continentdc ON c.geonameid = dc.continent_geonameid WHERE dc.database_id = $1", d.Id)
+	return continents, err
 }
 
 // AddContinents links continents to a database
@@ -151,24 +176,9 @@ func (d *Database) DeleteContinents(tx *sqlx.Tx) error {
 	return err
 }
 
-func (d *Database) GetAuthors(tx *sqlx.Tx) ([]int, error) {
-	authors := []int{}
-	rows, err := tx.Query("SELECT user_id FROM database__author WHERE database_id = $1", d.Id)
-	if err != nil {
-		return authors, err
-	}
-	defer rows.Close()
-	for rows.Next() {
-		var id int
-		if err := rows.Scan(&id); err != nil {
-			return authors, err
-		}
-		authors = append(authors, id)
-	}
-	if err := rows.Err(); err != nil {
-		return authors, err
-	}
-	return authors, nil
+func (d *Database) GetAuthorsList(tx *sqlx.Tx) (authors []DatabaseAuthor, err error) {
+	err = tx.Select(&authors, "SELECT u.id, u.firstname, u.lastname FROM \"user\" u LEFT JOIN database__authors da ON u.id = da.user_id WHERE da.database_id = $1", d.Id)
+	return
 }
 
 func (d *Database) SetAuthors(tx *sqlx.Tx, authors []int) error {
@@ -183,6 +193,30 @@ func (d *Database) SetAuthors(tx *sqlx.Tx, authors []int) error {
 	return nil
 }
 
-func (d *Database) DeleteAuthor(tx *sql.Tx) error {
-	return nil
+func (d *Database) DeleteAuthors(tx *sqlx.Tx) error {
+	_, err := tx.NamedExec("DELETE FROM \"database__authors\" WHERE database_id=:id", d)
+	return err
+}
+
+func (d *Database) GetHandlesList(tx *sqlx.Tx) (handles []Database_handle, err error) {
+	handles = []Database_handle{}
+	err = tx.Select(&handles, "SELECT import_id, name, url, created_at FROM database_handle WHERE database_id = $1", d.Id)
+	return
+}
+
+func (d *Database) GetImportsList(tx *sqlx.Tx) (imports []Import, err error) {
+	imports = []Import{}
+	err = tx.Select(&imports, "SELECT i.id, u.firstname, u.lastname, i.filename, i.created_at FROM import i LEFT JOIN user u ON i.user_id = u.id WHERE database_id = $1", d.Id)
+	return
+}
+
+func (d *Database) GetLastImport(tx *sqlx.Tx) (imp Import, err error) {
+	imp = Import{}
+	err = tx.Get(&imp, "SELECT id, filename FROM import WHERE database_id = $1 ORDER by id DESC LIMIT 1", d.Id)
+	return
+}
+
+func (d *Database) GetNumberOfSites(tx *sqlx.Tx) (nb int, err error) {
+	err = tx.Get(&nb, "SELECT count(*) FROM sites WHERE database_id = $1", d.Id)
+	return
 }
