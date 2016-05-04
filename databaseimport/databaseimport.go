@@ -392,6 +392,7 @@ func (di *DatabaseImport) processSiteInfos(f *Fields) {
 	} else {
 		// If lat and lon not empty, process geo datas
 		if f.LATITUDE != "" && f.LONGITUDE != "" {
+			skip := false
 			point, err := di.processGeoDatas(f)
 			if err == nil {
 				di.CurrentSite.Point = point
@@ -399,14 +400,28 @@ func (di *DatabaseImport) processSiteInfos(f *Fields) {
 				di.CurrentSite.Latitude = f.LATITUDE
 				di.CurrentSite.Longitude = f.LONGITUDE
 				di.CurrentSite.Altitude = f.ALTITUDE
-				di.CurrentSite.Geom, err = di.CurrentSite.Point.ToWKT_2d()
-				if err != nil {
-					di.AddError(f.LONGITUDE+" "+f.LATITUDE, "IMPORT.CSVFIELD_GEOMETRY.T_INVALID", "LATITUDE", "LONGITUDE")
+				if (strings.Contains(f.LATITUDE, ",")) {
+					di.AddError(f.LATITUDE, "IMPORT.CSVFIELD_GEOMETRY.T_COMMA_DETECTED", "LATITUDE")
+					skip = true
 				}
-				if di.CurrentSite.Altitude != "" {
-					di.CurrentSite.Geom_3d, err = di.CurrentSite.Point.ToWKT()
+				if (strings.Contains(f.LONGITUDE, ",")) {
+					di.AddError(f.LONGITUDE, "IMPORT.CSVFIELD_GEOMETRY.T_COMMA_DETECTED", "LONGITUDE")
+					skip = true
+				}
+				if (strings.Contains(f.ALTITUDE, ",")) {
+					di.AddError(f.ALTITUDE, "IMPORT.CSVFIELD_GEOMETRY.T_COMMA_DETECTED", "ALTITUDE")
+					skip = true
+				}
+				if !skip {
+					di.CurrentSite.Geom, err = di.CurrentSite.Point.ToWKT_2d()
 					if err != nil {
 						di.AddError(f.LONGITUDE+" "+f.LATITUDE, "IMPORT.CSVFIELD_GEOMETRY.T_INVALID", "LATITUDE", "LONGITUDE")
+					}
+					if di.CurrentSite.Altitude != "" {
+						di.CurrentSite.Geom_3d, err = di.CurrentSite.Point.ToWKT()
+						if err != nil {
+							di.AddError(f.LONGITUDE+" "+f.LATITUDE+" "+f.ALTITUDE, "IMPORT.CSVFIELD_GEOMETRY.T_INVALID", "LATITUDE", "LONGITUDE", "ALTITUDE")
+						}
 					}
 				}
 			}
