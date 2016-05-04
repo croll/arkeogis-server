@@ -25,11 +25,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"reflect"
+	"log"
 
 	db "github.com/croll/arkeogis-server/db"
 	"github.com/croll/arkeogis-server/model"
 	routes "github.com/croll/arkeogis-server/webserver/routes"
 )
+
+type DatabaseGetParams struct {
+	Id int `min:"0" error:"Database Id is mandatory"`
+}
 
 func init() {
 	Routes := []*routes.Route{
@@ -38,6 +44,14 @@ func init() {
 			Description: "Get list of all databases in arkeogis",
 			Func:        DatabasesList,
 			Method:      "GET",
+		},
+		&routes.Route{
+			Path:        "/api/database/{id:[0-9]+}",
+			Description: "Get infos on an arkeogis database",
+			Func:        DatabaseInfos,
+			Method:      "GET",
+			Permissions: []string{},
+			Params: reflect.TypeOf(DatabaseGetParams{}),
 		},
 		&routes.Route{
 			Path:        "/api/licences",
@@ -98,4 +112,28 @@ func DatabaseEnumList(w http.ResponseWriter, r *http.Request, proute routes.Prou
 	db.DB.Select(&enums.Context, "SELECT unnest(enum_range(NULL::database_context))")
 	db.DB.Select(&enums.Context, "SELECT unnest(enum_range(NULL::database_context))")
 	fmt.Println(enums)
+}
+
+// UserInfos return detailed infos on an user
+func DatabaseInfos(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+	params := proute.Params.(*DatabaseGetParams)
+	tx, err := db.DB.Beginx()
+	if err != nil {
+		log.Println("can't start transaction")
+		userSqlError(w, err)
+		return
+	}
+	d := model.DatabaseFullInfos{}
+	d.Id = params.Id
+
+	err = d.Get(tx)
+	//log.Println("user id : ", params.Id, "user : ", u)
+	err = tx.Commit()
+	if err != nil {
+		log.Println("can't commit")
+		userSqlError(w, err)
+		return
+	}
+	j, err := json.Marshal(d)
+	w.Write(j)
 }
