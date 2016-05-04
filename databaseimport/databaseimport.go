@@ -133,6 +133,7 @@ func (di *DatabaseImport) New(parser *Parser, uid int, databaseName string, lang
 	var err error
 	di.Database = &DatabaseInfos{}
 	di.Uid = uid
+	fmt.Println("USER ID: ",di.Uid)
 	di.Database.Default_language = langID
 	di.CurrentSite = &SiteInfos{}
 	di.Parser = parser

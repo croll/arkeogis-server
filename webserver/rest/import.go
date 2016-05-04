@@ -80,8 +80,6 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		return
 	}
 
-	fmt.Println(user.(model.User).Username)
-
 	var dbImport *databaseimport.DatabaseImport
 
 	fmt.Println(params)
@@ -121,7 +119,7 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	// Init import
 	dbImport = new(databaseimport.DatabaseImport)
-	err = dbImport.New(parser, 0, params.Name, params.DatabaseLang)
+	err = dbImport.New(parser, user.(model.User).Id, params.Name, params.DatabaseLang)
 	if err != nil {
 		parser.AddError(err.Error())
 		sendError(w, parser.Errors)
