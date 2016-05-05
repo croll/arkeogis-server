@@ -30,11 +30,21 @@ import (
 	config "github.com/croll/arkeogis-server/config"
 	"github.com/croll/arkeogis-server/webserver/rest"
 	routes "github.com/croll/arkeogis-server/webserver/routes"
+	"os"
+	"log"
 )
 
 func StartServer() {
 	fmt.Println("starting web server...")
 	rest.P()
+	// Log to file
+	f, err := os.OpenFile("logs/arkeogis.log", os.O_RDWR | os.O_CREATE | os.O_APPEND, 0666)
+	if err != nil {
+	    log.Fatal("Error opening log file: %v", err)
+	}
+	defer f.Close()
+	log.SetOutput(f)
+	// Configure Negroni and start server
 	Negroni := negroni.New(
 		negroni.NewRecovery(),
 		negroni.HandlerFunc(authMiddleware),
