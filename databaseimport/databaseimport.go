@@ -309,7 +309,7 @@ func (di *DatabaseImport) processDatabaseName(name string) error {
 	return nil
 }
 
-// ProcessEssentialInfos store or update informations about database defined by user at step 1
+// ProcessEssentialDatabaseInfos store or update informations about database defined by user at step 1
 func (di *DatabaseImport) ProcessEssentialDatabaseInfos(name string, geographicalExtent string, selectedContinents []int, selectedCountries []int) error {
 	var err error
 	if di.Database.Exists {
@@ -356,6 +356,7 @@ func (di *DatabaseImport) ProcessEssentialDatabaseInfos(name string, geographica
 	}
 
 	if len(selectedCountries) > 0 {
+		fmt.Println(selectedCountries)
 		di.Database.Countries = selectedCountries
 		err = di.Database.AddCountries(di.Tx, selectedCountries)
 		if err != nil {
@@ -364,7 +365,7 @@ func (di *DatabaseImport) ProcessEssentialDatabaseInfos(name string, geographica
 	}
 
 	if len(selectedContinents) > 0 {
-		di.Database.Continents = selectedContinents
+		di.Database.Continents = selectedContinents 
 		err = di.Database.AddContinents(di.Tx, selectedContinents)
 		if err != nil {
 			return err

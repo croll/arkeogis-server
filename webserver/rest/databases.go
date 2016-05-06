@@ -24,15 +24,16 @@ package rest
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"reflect"
-	"log"
 
 	db "github.com/croll/arkeogis-server/db"
 	"github.com/croll/arkeogis-server/model"
 	routes "github.com/croll/arkeogis-server/webserver/routes"
 )
 
+// DatabaseGetParams are params received by REST query
 type DatabaseGetParams struct {
 	Id int `min:"0" error:"Database Id is mandatory"`
 }
@@ -51,12 +52,12 @@ func init() {
 			Func:        DatabaseInfos,
 			Method:      "GET",
 			Permissions: []string{},
-			Params: reflect.TypeOf(DatabaseGetParams{}),
+			Params:      reflect.TypeOf(DatabaseGetParams{}),
 		},
 		&routes.Route{
 			Path:        "/api/licences",
 			Description: "Get list of licenses",
-			Func:        LicenseList,
+			Func:        LicensesList,
 			Method:      "GET",
 			Permissions: []string{
 			//"AdminUsers",
@@ -66,7 +67,7 @@ func init() {
 	routes.RegisterMultiple(Routes)
 }
 
-// DatabaseList returns the list of databases
+// DatabasesList returns the list of databases
 func DatabasesList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	databases := []model.Database{}
 	err := db.DB.Select(&databases, "SELECT * FROM \"database\"")
@@ -79,8 +80,8 @@ func DatabasesList(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 	w.Write(l)
 }
 
-// DatabaseList returns the list of licenses which can be assigned to databases
-func LicenseList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+// LicensesList returns the list of licenses which can be assigned to databases
+func LicensesList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	databases := []model.License{}
 	err := db.DB.Select(&databases, "SELECT * FROM \"license\"")
 	if err != nil {
@@ -114,7 +115,7 @@ func DatabaseEnumList(w http.ResponseWriter, r *http.Request, proute routes.Prou
 	fmt.Println(enums)
 }
 
-// UserInfos return detailed infos on an user
+// DatabaseInfos return detailed infos on an user
 func DatabaseInfos(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	params := proute.Params.(*DatabaseGetParams)
 	tx, err := db.DB.Beginx()
@@ -135,6 +136,6 @@ func DatabaseInfos(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 
 	//fmt.Println(dbInfos)
 
-	j, err := json.Marshal(dbInfos)
+	j, _ := json.Marshal(dbInfos)
 	w.Write(j)
 }

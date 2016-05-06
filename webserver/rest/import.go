@@ -28,7 +28,7 @@ import (
 	"net/http"
 	"os"
 	"reflect"
-	//	"strings"
+	// "fmt"
 
 	"unicode/utf8"
 
@@ -86,10 +86,10 @@ func init() {
 // ImportStep1T struct holds information provided by user
 type ImportStep1T struct {
 	Name               string
-	DatabaseLang       int
-	GeographicalExtent string
-	SelectedContinents []int
-	SelectedCountries  []int
+	Default_language int
+	Geographical_extent string
+	Continents []model.Continent
+	Countries  []model.Country
 	UseGeonames        bool
 	Separator          string
 	EchapCharacter     string
@@ -127,7 +127,7 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	}
 
 	// Parse the file
-	parser, err := databaseimport.NewParser(filepath, params.DatabaseLang)
+	parser, err := databaseimport.NewParser(filepath, params.Default_language)
 	if err != nil {
 		parser.AddError("IMPORT.CSV_FILE.T_ERROR_PARSING_FAILED")
 	}
@@ -147,7 +147,7 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	// Init import
 	dbImport = new(databaseimport.DatabaseImport)
-	err = dbImport.New(parser, user.(model.User).Id, params.Name, params.DatabaseLang)
+	err = dbImport.New(parser, user.(model.User).Id, params.Name, params.Default_language)
 	if err != nil {
 		parser.AddError(err.Error())
 		sendError(w, parser.Errors)
@@ -163,7 +163,15 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	}
 
 	// Record database essentials infos
-	err = dbImport.ProcessEssentialDatabaseInfos(params.Name, params.GeographicalExtent, params.SelectedContinents, params.SelectedCountries)
+	var continentsID = make([]int, 0)
+	for _, c := range params.Continents {
+		continentsID = append(continentsID, c.Geonameid)
+	}
+	var countriesID = make([]int, 0)
+	for _, c := range params.Countries {
+		countriesID = append(countriesID, c.Geonameid)
+	}
+	err = dbImport.ProcessEssentialDatabaseInfos(params.Name, params.Geographical_extent, continentsID, countriesID)
 	if err != nil {
 		parser.AddError(err.Error())
 		sendError(w, parser.Errors)

@@ -23,28 +23,32 @@ package model
 
 import (
 	"database/sql"
-	"github.com/jmoiron/sqlx"
 	"fmt"
+
+	"github.com/jmoiron/sqlx"
 )
 
+// DatabaseAuthor stores essential informations about an author
 type DatabaseAuthor struct {
-	id string
-	firstname string
-	lastname string
+	Id        string
+	Firstname string
+	Lastname  string
 }
 
+// DatabaseFullInfos stores all informations about a database
 type DatabaseFullInfos struct {
 	Database
 	Database_tr
-	Imports []Import
-	Countries []Country `json: "countries"`
-	Continents []Continent `json: "continents"`
-	Handles []Database_handle `json: "handles"`
-	Authors []DatabaseAuthor `json: "authors"`
-	NumberOfSites int `json: "numberOfSites"`
-	Owner_name string `json: "ownerName"`
+	Imports       []Import
+	Countries     []Country         `json:"countries"`
+	Continents    []Continent       `json:"continents"`
+	Handles       []Database_handle `json:"handles"`
+	Authors       []DatabaseAuthor  `json:"authors"`
+	NumberOfSites int               `json:"number_of_sites"`
+	Owner_name    string            `json:"owner_name"`
 }
 
+// DoesExist check if database exist with a name and an owner
 func (d *Database) DoesExist(tx *sqlx.Tx) (exists bool, err error) {
 	exists = false
 	err = tx.QueryRowx("SELECT id FROM \"database\" WHERE name = $1 AND owner = $2", d.Name, d.Owner).Scan(&d.Id)
@@ -57,6 +61,7 @@ func (d *Database) DoesExist(tx *sqlx.Tx) (exists bool, err error) {
 	return true, nil
 }
 
+// AnotherExistsWithSameName checks if database already exists with same name and owned by another user
 func (d *Database) AnotherExistsWithSameName(tx *sqlx.Tx) (exists bool, err error) {
 	exists = false
 	err = tx.QueryRowx("SELECT id FROM \"database\" WHERE name = $1 AND owner != $2", d.Name, d.Owner).Scan(&d.Id)
@@ -69,6 +74,7 @@ func (d *Database) AnotherExistsWithSameName(tx *sqlx.Tx) (exists bool, err erro
 	return true, nil
 }
 
+// Get retrieves informations about a database stored in the main table
 func (d *Database) Get(tx *sqlx.Tx) (err error) {
 	stmt, err := tx.PrepareNamed("SELECT * from \"database\" WHERE id=:id")
 	if err != nil {
@@ -78,9 +84,10 @@ func (d *Database) Get(tx *sqlx.Tx) (err error) {
 	return stmt.Get(d, d)
 }
 
+// GetFullInfosRepresentation returns all informations about a database
 func (d *Database) GetFullInfosRepresentation(tx *sqlx.Tx, langID int) (db DatabaseFullInfos, err error) {
 	db = DatabaseFullInfos{}
-	err = tx.Get(&db, "SELECT name, scale_resolution, geographical_extent, type, source_creation_date, data_set, identifier, source, source_url, publisher, contributor, default_language, relation, coverage, copyright, state, license_id, context, context_description, subject, published, soft_deleted, d.created_at, d.updated_at, firstname || ' ' || lastname as owner_name FROM \"database\" d LEFT JOIN \"user\" u ON d.owner = u.id WHERE d.id = $1", d.Id)
+	err = tx.Get(&db, "SELECT name, scale_resolution, geographical_extent, type, source_creation_date, owner, data_set, identifier, source, source_url, publisher, contributor, default_language, relation, coverage, copyright, state, license_id, context, context_description, subject, published, soft_deleted, d.created_at, d.updated_at, firstname || ' ' || lastname as owner_name FROM \"database\" d LEFT JOIN \"user\" u ON d.owner = u.id WHERE d.id = $1", d.Id)
 	if err != nil {
 		return
 	}
@@ -108,6 +115,7 @@ func (d *Database) GetFullInfosRepresentation(tx *sqlx.Tx, langID int) (db Datab
 	return
 }
 
+// Create insert the database into arkeogis db
 func (d *Database) Create(tx *sqlx.Tx) error {
 	stmt, err := tx.PrepareNamed("INSERT INTO \"database\" (" + Database_InsertStr + ") VALUES (" + Database_InsertValuesStr + ") RETURNING id")
 	if err != nil {
@@ -117,6 +125,7 @@ func (d *Database) Create(tx *sqlx.Tx) error {
 	return stmt.Get(&d.Id, d)
 }
 
+// Update database informations
 func (d *Database) Update(tx *sqlx.Tx) error {
 	_, err := tx.NamedExec("UPDATE \"database\" SET "+Database_UpdateStr+" WHERE id=:id", d)
 	if err != nil {
@@ -125,11 +134,13 @@ func (d *Database) Update(tx *sqlx.Tx) error {
 	return nil
 }
 
+// DeleteSites deletes all sites linked to a database
 func (d *Database) DeleteSites(tx *sqlx.Tx) error {
 	_, err := tx.NamedExec("DELETE FROM \"site\" WHERE database_id=:id", d)
 	return err
 }
 
+// GetCountriesList lists all countries linked to a database
 func (d *Database) GetCountriesList(tx *sqlx.Tx, langID int) ([]Country, error) {
 	countries := []Country{}
 	err := tx.Select(countries, "SELECT geonameid, iso_code, geom FROM country c LEFT JOIN database__country dc ON c.geonameid = dc.country_geonameid WHERE dc.database_id = $1", d.Id)
@@ -144,7 +155,7 @@ func (d *Database) AddCountries(tx *sqlx.Tx, countryIds []int) error {
 			return err
 		}
 	}
-return nil
+	return nil
 }
 
 // DeleteCountries unlinks countries to a database
@@ -153,6 +164,7 @@ func (d *Database) DeleteCountries(tx *sqlx.Tx) error {
 	return err
 }
 
+// GetCountriesList lists all continents linked to a database
 func (d *Database) GetContinentsList(tx *sqlx.Tx, langID int) ([]Continent, error) {
 	continents := []Continent{}
 	err := tx.Select(continents, "SELECT geonameid, iso_code, geom FROM continent c LEFT JOIN database__continentdc ON c.geonameid = dc.continent_geonameid WHERE dc.database_id = $1", d.Id)
@@ -176,11 +188,13 @@ func (d *Database) DeleteContinents(tx *sqlx.Tx) error {
 	return err
 }
 
+// GetAuthorsList lists all user designed as author of a database
 func (d *Database) GetAuthorsList(tx *sqlx.Tx) (authors []DatabaseAuthor, err error) {
 	err = tx.Select(&authors, "SELECT u.id, u.firstname, u.lastname FROM \"user\" u LEFT JOIN database__authors da ON u.id = da.user_id WHERE da.database_id = $1", d.Id)
 	return
 }
 
+// SetAUthors links users as authors to a database
 func (d *Database) SetAuthors(tx *sqlx.Tx, authors []int) error {
 	/*
 		for _, uid := range authors {
@@ -193,29 +207,40 @@ func (d *Database) SetAuthors(tx *sqlx.Tx, authors []int) error {
 	return nil
 }
 
+// GetOwnerInfos get all informations about the owner of the database
+func (d *Database) GetOwnerInfos(tx *sqlx.Tx) (owner DatabaseAuthor, err error) {
+	err = tx.Get(owner, "SELECT * FROM \"user\" u LEFT JOIN \"database\" d ON u.id = d.owner WHERE d.id = $1", d.Id)
+	return
+}
+
+// DeleteAuthors deletes the author linked to a database
 func (d *Database) DeleteAuthors(tx *sqlx.Tx) error {
 	_, err := tx.NamedExec("DELETE FROM \"database__authors\" WHERE database_id=:id", d)
 	return err
 }
 
+// GetHandlesList lists all handles linked to a database
 func (d *Database) GetHandlesList(tx *sqlx.Tx) (handles []Database_handle, err error) {
 	handles = []Database_handle{}
 	err = tx.Select(&handles, "SELECT import_id, name, url, created_at FROM database_handle WHERE database_id = $1", d.Id)
 	return
 }
 
+// GetImportsList lists all informations about an import (date, filename, etc)
 func (d *Database) GetImportsList(tx *sqlx.Tx) (imports []Import, err error) {
 	imports = []Import{}
 	err = tx.Select(&imports, "SELECT i.id, u.firstname, u.lastname, i.filename, i.created_at FROM import i LEFT JOIN user u ON i.user_id = u.id WHERE database_id = $1", d.Id)
 	return
 }
 
+// GetLastImport lists last import informations
 func (d *Database) GetLastImport(tx *sqlx.Tx) (imp Import, err error) {
 	imp = Import{}
 	err = tx.Get(&imp, "SELECT id, filename FROM import WHERE database_id = $1 ORDER by id DESC LIMIT 1", d.Id)
 	return
 }
 
+// GetNumberOfSites returns an int which represent the number of sites linked to a database
 func (d *Database) GetNumberOfSites(tx *sqlx.Tx) (nb int, err error) {
 	err = tx.Get(&nb, "SELECT count(*) FROM sites WHERE database_id = $1", d.Id)
 	return
