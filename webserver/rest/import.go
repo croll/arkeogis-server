@@ -209,11 +209,13 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	}
 
 	response := struct {
+		DatabaseId     int `json:"database_id"`
 		NumberOfSites  int                           `json:"nbSites"`
 		SitesWithError []string                      `json:"sitesWithError"`
 		Errors         []*databaseimport.ImportError `json:"errors"`
 		Lines          int                           `json:"nbLines"`
 	}{
+	    DatabaseId:     dbImport.Database.Id,
 		NumberOfSites:  dbImport.NumberOfSites,
 		SitesWithError: sitesWithError,
 		Errors:         dbImport.Errors,
