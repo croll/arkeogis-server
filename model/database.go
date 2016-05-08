@@ -23,7 +23,7 @@ package model
 
 import (
 	"database/sql"
-	"fmt"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -35,13 +35,35 @@ type DatabaseAuthor struct {
 	Lastname  string
 }
 
+// CountryInfos store country info and translations
+type CountryInfos struct {
+	Country
+	Country_tr
+	Country_geonameid int            `json:'-'`
+	Lang_id           int            `json:'-'`
+	Created_at        time.Time      `json:"-"`
+	Updated_at        time.Time      `json:"-"`
+	Geom              sql.NullString `json:"-"`
+}
+
+// ContinentInfos store country info and translations
+type ContinentInfos struct {
+	Continent
+	Continent_tr
+	Continent_geonameid int            `json:'-'`
+	Lang_id             int            `json:'-'`
+	Created_at          time.Time      `json:"-"`
+	Updated_at          time.Time      `json:"-"`
+	Geom                sql.NullString `json:"-"`
+}
+
 // DatabaseFullInfos stores all informations about a database
 type DatabaseFullInfos struct {
 	Database
 	Database_tr
 	Imports       []Import
-	Countries     []Country         `json:"countries"`
-	Continents    []Continent       `json:"continents"`
+	Countries     []CountryInfos    `json:"countries"`
+	Continents    []ContinentInfos  `json:"continents"`
 	Handles       []Database_handle `json:"handles"`
 	Authors       []DatabaseAuthor  `json:"authors"`
 	NumberOfSites int               `json:"number_of_sites"`
@@ -111,7 +133,6 @@ func (d *Database) GetFullInfosRepresentation(tx *sqlx.Tx, langID int) (db Datab
 	if err != nil {
 		return
 	}
-	fmt.Println(db)
 	return
 }
 
@@ -141,9 +162,9 @@ func (d *Database) DeleteSites(tx *sqlx.Tx) error {
 }
 
 // GetCountriesList lists all countries linked to a database
-func (d *Database) GetCountriesList(tx *sqlx.Tx, langID int) ([]Country, error) {
-	countries := []Country{}
-	err := tx.Select(countries, "SELECT geonameid, iso_code, geom FROM country c LEFT JOIN database__country dc ON c.geonameid = dc.country_geonameid WHERE dc.database_id = $1", d.Id)
+func (d *Database) GetCountriesList(tx *sqlx.Tx, langID int) ([]CountryInfos, error) {
+	countries := []CountryInfos{}
+	err := tx.Select(&countries, "SELECT ct.name, c.geonameid, c.iso_code, c.geom FROM country c LEFT JOIN database__country dc ON c.geonameid = dc.country_geonameid LEFT JOIN country_tr ct ON c.geonameid = ct.country_geonameid WHERE dc.database_id = $1 and ct.lang_id = $2", d.Id, langID)
 	return countries, err
 }
 
@@ -164,10 +185,10 @@ func (d *Database) DeleteCountries(tx *sqlx.Tx) error {
 	return err
 }
 
-// GetCountriesList lists all continents linked to a database
-func (d *Database) GetContinentsList(tx *sqlx.Tx, langID int) ([]Continent, error) {
-	continents := []Continent{}
-	err := tx.Select(continents, "SELECT geonameid, iso_code, geom FROM continent c LEFT JOIN database__continentdc ON c.geonameid = dc.continent_geonameid WHERE dc.database_id = $1", d.Id)
+// GetContinentsList lists all continents linked to a database
+func (d *Database) GetContinentsList(tx *sqlx.Tx, langID int) ([]ContinentInfos, error) {
+	continents := []ContinentInfos{}
+	err := tx.Select(continents, "SELECT ct.name, c.geonameid, c.iso_code, c.geom FROM continent c LEFT JOIN database__continent dc ON c.geonameid = dc.continent_geonameid LEFT JOIN continent_tr ct ON c.geonameid = ct.continent_geonameid WHERE dc.database_id = $1 AND ct.lang_id = $2", d.Id, langID)
 	return continents, err
 }
 
@@ -194,7 +215,7 @@ func (d *Database) GetAuthorsList(tx *sqlx.Tx) (authors []DatabaseAuthor, err er
 	return
 }
 
-// SetAUthors links users as authors to a database
+// SetAuthors links users as authors to a database
 func (d *Database) SetAuthors(tx *sqlx.Tx, authors []int) error {
 	/*
 		for _, uid := range authors {
