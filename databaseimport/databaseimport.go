@@ -1,5 +1,4 @@
 /* ArkeoGIS - The Geographic Information System for Archaeologists
- * Copyright (C) 2015-2016 CROLL SAS
  *
  * Authors :
  *  Christophe Beveraggi <beve@croll.fr>
@@ -24,12 +23,12 @@ package databaseimport
 import (
 	"errors"
 	"fmt"
+	"log"
 	"math"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
-	"log"
 
 	db "github.com/croll/arkeogis-server/db"
 	"github.com/croll/arkeogis-server/geo"
@@ -112,15 +111,15 @@ func (di *DatabaseImport) AddError(value string, errMsg string, columns ...strin
 
 // DatabaseImport is a meta struct which stores all the informations about a site
 type DatabaseImport struct {
-	SitesProcessed   map[string]int
-	Database         *DatabaseInfos
-	CurrentSite      *SiteInfos
-	CurrentSiteRange *model.Site_range
-	CurrentSiteRangeCharac    *SiteRangeCharacInfos
-	Tx               *sqlx.Tx
-	Parser           *Parser
-	Uid	int
-	ArkeoCharacs     map[string]map[string]int
+	SitesProcessed         map[string]int
+	Database               *DatabaseInfos
+	CurrentSite            *SiteInfos
+	CurrentSiteRange       *model.Site_range
+	CurrentSiteRangeCharac *SiteRangeCharacInfos
+	Tx                     *sqlx.Tx
+	Parser                 *Parser
+	Uid                    int
+	ArkeoCharacs           map[string]map[string]int
 	//ArkeoCharacsIDs  map[int][]int
 	NumberOfSites    int
 	SitesWithError   map[string]bool
@@ -202,8 +201,6 @@ func (di *DatabaseImport) setDefaultValues() {
 	di.Database.Relation = ""
 	di.Database.Coverage = ""
 	di.Database.Copyright = ""
-	di.Database.Context = "undefined"
-	di.Database.Context_description = ""
 	di.Database.Subject = ""
 	di.Database.State = "undefined"
 	di.Database.Published = false
@@ -365,7 +362,7 @@ func (di *DatabaseImport) ProcessEssentialDatabaseInfos(name string, geographica
 	}
 
 	if len(selectedContinents) > 0 {
-		di.Database.Continents = selectedContinents 
+		di.Database.Continents = selectedContinents
 		err = di.Database.AddContinents(di.Tx, selectedContinents)
 		if err != nil {
 			return err
@@ -402,15 +399,15 @@ func (di *DatabaseImport) processSiteInfos(f *Fields) {
 				di.CurrentSite.Latitude = f.LATITUDE
 				di.CurrentSite.Longitude = f.LONGITUDE
 				di.CurrentSite.Altitude = f.ALTITUDE
-				if (strings.Contains(f.LATITUDE, ",")) {
+				if strings.Contains(f.LATITUDE, ",") {
 					di.AddError(f.LATITUDE, "IMPORT.CSVFIELD_GEOMETRY.T_COMMA_DETECTED", "LATITUDE")
 					skip = true
 				}
-				if (strings.Contains(f.LONGITUDE, ",")) {
+				if strings.Contains(f.LONGITUDE, ",") {
 					di.AddError(f.LONGITUDE, "IMPORT.CSVFIELD_GEOMETRY.T_COMMA_DETECTED", "LONGITUDE")
 					skip = true
 				}
-				if (strings.Contains(f.ALTITUDE, ",")) {
+				if strings.Contains(f.ALTITUDE, ",") {
 					di.AddError(f.ALTITUDE, "IMPORT.CSVFIELD_GEOMETRY.T_COMMA_DETECTED", "ALTITUDE")
 					skip = true
 				}
@@ -447,7 +444,6 @@ func (di *DatabaseImport) processSiteInfos(f *Fields) {
 			}
 		}
 	}
-
 
 	// OCCUPATION
 	if f.OCCUPATION == "" {
@@ -706,52 +702,52 @@ func (di *DatabaseImport) processCharacInfos(f *Fields) error {
 		return errors.New("invalid charac")
 	}
 	/*
-	cs := di.ArkeoCharacsIDs[caracID]
-	if len(cs) == 0 {
-		di.AddError(caracNameToLowerCase+path, "IMPORT.CSVFIELD_CARACTERISATION.T_CHECK_INVALID", "CARAC_LVL"+strconv.Itoa(lvl))
-		return errors.New("invalid charac")
-	}
-	fmt.Println(cs)
+		cs := di.ArkeoCharacsIDs[caracID]
+		if len(cs) == 0 {
+			di.AddError(caracNameToLowerCase+path, "IMPORT.CSVFIELD_CARACTERISATION.T_CHECK_INVALID", "CARAC_LVL"+strconv.Itoa(lvl))
+			return errors.New("invalid charac")
+		}
+		fmt.Println(cs)
 	*/
 
 	//	STATE_OF_KNOWLEDGE
-		switch strings.ToLower(f.STATE_OF_KNOWLEDGE) {
-		case di.lowerTranslation("IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_NOT_DOCUMENTED"):
-			di.CurrentSiteRangeCharac.Knowledge_type = "not_documented"
-		case di.lowerTranslation("IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_LITERATURE"):
-			di.CurrentSiteRangeCharac.Knowledge_type = "literature"
-		case di.lowerTranslation("IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_PROSPECTED_AERIAL"):
-			di.CurrentSiteRangeCharac.Knowledge_type = "prospected_aerial"
-		case di.lowerTranslation("IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_PROSPECTED_PEDESTRIAN"):
-			di.CurrentSiteRangeCharac.Knowledge_type = "prospected_pedestrian"
-		case di.lowerTranslation("IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_SURVEYED"):
-			di.CurrentSiteRangeCharac.Knowledge_type = "surveyed"
-		case di.lowerTranslation("IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_DIG"):
-			di.CurrentSiteRangeCharac.Knowledge_type = "dig"
-		default:
-			if f.STATE_OF_KNOWLEDGE == "" {
-				di.AddError(f.STATE_OF_KNOWLEDGE, "IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_CHECK_EMPTY", "STATE_OF_KNOWLEDGE")
-			} else {
-				di.AddError(f.STATE_OF_KNOWLEDGE, "IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_CHECK_INVALID", "STATE_OF_KNOWLEDGE")
-			}
-			return errors.New("Bad value for knoledge type")
+	switch strings.ToLower(f.STATE_OF_KNOWLEDGE) {
+	case di.lowerTranslation("IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_NOT_DOCUMENTED"):
+		di.CurrentSiteRangeCharac.Knowledge_type = "not_documented"
+	case di.lowerTranslation("IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_LITERATURE"):
+		di.CurrentSiteRangeCharac.Knowledge_type = "literature"
+	case di.lowerTranslation("IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_PROSPECTED_AERIAL"):
+		di.CurrentSiteRangeCharac.Knowledge_type = "prospected_aerial"
+	case di.lowerTranslation("IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_PROSPECTED_PEDESTRIAN"):
+		di.CurrentSiteRangeCharac.Knowledge_type = "prospected_pedestrian"
+	case di.lowerTranslation("IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_SURVEYED"):
+		di.CurrentSiteRangeCharac.Knowledge_type = "surveyed"
+	case di.lowerTranslation("IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_DIG"):
+		di.CurrentSiteRangeCharac.Knowledge_type = "dig"
+	default:
+		if f.STATE_OF_KNOWLEDGE == "" {
+			di.AddError(f.STATE_OF_KNOWLEDGE, "IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_CHECK_EMPTY", "STATE_OF_KNOWLEDGE")
+		} else {
+			di.AddError(f.STATE_OF_KNOWLEDGE, "IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_CHECK_INVALID", "STATE_OF_KNOWLEDGE")
 		}
+		return errors.New("Bad value for knoledge type")
+	}
 
 	// EXCEPTIONAL
 	/*
-	switch strings.ToLower(f.CARAC_EXP) {
-	case di.lowerTranslation("IMPORT.CSVFIELD_ALL.T_LABEL_YES"):
-		di.CurrentSiteRangeCharac.Exceptional = true
-	case di.lowerTranslation("IMPORT.CSVFIELD_ALL.T_LABEL_NO"):
-		di.CurrentSiteRangeCharac.Exceptional = false
-	default:
-		if f.CARAC_EXP == "" {
-			di.AddError(f.CARAC_EXP, "IMPORT.CSVFIELD_CARAC_EXP.T_CHECK_EMPTY", "CARAC_EXP")
-		} else {
-			di.AddError(f.CARAC_EXP, "IMPORT.CSVFIELD_CARAC_EXP.T_CHECK_INVALID", "CARAC_EXP")
+		switch strings.ToLower(f.CARAC_EXP) {
+		case di.lowerTranslation("IMPORT.CSVFIELD_ALL.T_LABEL_YES"):
+			di.CurrentSiteRangeCharac.Exceptional = true
+		case di.lowerTranslation("IMPORT.CSVFIELD_ALL.T_LABEL_NO"):
+			di.CurrentSiteRangeCharac.Exceptional = false
+		default:
+			if f.CARAC_EXP == "" {
+				di.AddError(f.CARAC_EXP, "IMPORT.CSVFIELD_CARAC_EXP.T_CHECK_EMPTY", "CARAC_EXP")
+			} else {
+				di.AddError(f.CARAC_EXP, "IMPORT.CSVFIELD_CARAC_EXP.T_CHECK_INVALID", "CARAC_EXP")
+			}
+			return errors.New("Bad value for exceptional")
 		}
-		return errors.New("Bad value for exceptional")
-	}
 	*/
 
 	val, err := di.valueAsBool("CARAC_EXP", f.CARAC_EXP)
@@ -813,8 +809,6 @@ func (di *DatabaseImport) cacheCharacsIDs() (map[int][]int, error) {
 	return characs, nil
 }
 
-
-
 func (di *DatabaseImport) insertCharacInfos() error {
 	var err error
 	di.CurrentSiteRangeCharac.Site_range_id = di.CurrentSiteRange.Id
@@ -846,7 +840,7 @@ func (di *DatabaseImport) valueAsBool(fieldName, val string) (choosenValue bool,
 		} else {
 			di.AddError(val, "IMPORT.CSVFIELD_ALL.T_CHECK_INVALID", fieldName)
 		}
-		return choosenValue, errors.New("Bad value for "+fieldName)
+		return choosenValue, errors.New("Bad value for " + fieldName)
 	}
 	return choosenValue, nil
 }

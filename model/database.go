@@ -60,14 +60,15 @@ type ContinentInfos struct {
 // DatabaseFullInfos stores all informations about a database
 type DatabaseFullInfos struct {
 	Database
-	Database_tr
 	Imports       []Import
-	Countries     []CountryInfos    `json:"countries"`
-	Continents    []ContinentInfos  `json:"continents"`
-	Handles       []Database_handle `json:"handles"`
-	Authors       []DatabaseAuthor  `json:"authors"`
-	NumberOfSites int               `json:"number_of_sites"`
-	Owner_name    string            `json:"owner_name"`
+	Countries     []CountryInfos     `json:"countries"`
+	Continents    []ContinentInfos   `json:"continents"`
+	Handles       []Database_handle  `json:"handles"`
+	Authors       []DatabaseAuthor   `json:"authors"`
+	Contexts      []Database_context `json:"contexts"`
+	Translations  []Database_tr      `json:"translations"`
+	NumberOfSites int                `json:"number_of_sites"`
+	Owner_name    string             `json:"owner_name"`
 }
 
 // DoesExist check if database exist with a name and an owner
@@ -109,7 +110,7 @@ func (d *Database) Get(tx *sqlx.Tx) (err error) {
 // GetFullInfosRepresentation returns all informations about a database
 func (d *Database) GetFullInfosRepresentation(tx *sqlx.Tx, langID int) (db DatabaseFullInfos, err error) {
 	db = DatabaseFullInfos{}
-	err = tx.Get(&db, "SELECT name, scale_resolution, geographical_extent, type, source_creation_date, owner, data_set, identifier, source, source_url, publisher, contributor, default_language, relation, coverage, copyright, state, license_id, context, context_description, subject, published, soft_deleted, d.created_at, d.updated_at, firstname || ' ' || lastname as owner_name FROM \"database\" d LEFT JOIN \"user\" u ON d.owner = u.id WHERE d.id = $1", d.Id)
+	err = tx.Get(&db, "SELECT name, scale_resolution, geographical_extent, type, source_creation_date, owner, data_set, identifier, source, source_url, publisher, contributor, default_language, relation, coverage, copyright, state, license_id, subject, published, soft_deleted, d.created_at, d.updated_at, firstname || ' ' || lastname as owner_name FROM \"database\" d LEFT JOIN \"user\" u ON d.owner = u.id WHERE d.id = $1", d.Id)
 	if err != nil {
 		return
 	}
@@ -130,6 +131,10 @@ func (d *Database) GetFullInfosRepresentation(tx *sqlx.Tx, langID int) (db Datab
 		return
 	}
 	db.NumberOfSites, err = d.GetNumberOfSites(tx)
+	if err != nil {
+		return
+	}
+	db.Translations, err = d.GetTranslations(tx)
 	if err != nil {
 		return
 	}
@@ -258,6 +263,13 @@ func (d *Database) GetImportsList(tx *sqlx.Tx) (imports []Import, err error) {
 func (d *Database) GetLastImport(tx *sqlx.Tx) (imp Import, err error) {
 	imp = Import{}
 	err = tx.Get(&imp, "SELECT id, filename FROM import WHERE database_id = $1 ORDER by id DESC LIMIT 1", d.Id)
+	return
+}
+
+// GetTranslations lists all translated fields from database
+func (d *Database) GetTranslations(tx *sqlx.Tx) (translations []Database_tr, err error) {
+	translations = []Database_tr{}
+	err = tx.Select(&translations, "SELECT * FROM database_tr  WHERE database_id = $1", d.Id)
 	return
 }
 
