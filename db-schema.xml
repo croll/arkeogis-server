@@ -100,7 +100,7 @@
 <part>username</part>
 </key>
 </table>
-<table x="727" y="479" name="lang">
+<table x="923" y="596" name="lang">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
@@ -248,7 +248,7 @@
 <part>chronology_root_id</part>
 </key>
 </table>
-<table x="475" y="103" name="database">
+<table x="488" y="108" name="database">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
@@ -313,13 +313,6 @@
 <row name="license_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="license" row="id" />
-</row>
-<row name="context" null="0" autoincrement="0">
-<datatype>BIT('undefined','academic-work','contract','research_team','other')</datatype>
-<comment>enum:"undefined,academic-work,contract,research_team,other" error:"DATABASE.FIELD_CONTEXT.T_CHECK_INCORRECT"</comment>
-</row>
-<row name="context_description" null="0" autoincrement="0">
-<datatype>TEXT</datatype>
 </row>
 <row name="subject" null="0" autoincrement="0">
 <datatype>TEXT</datatype>
@@ -391,7 +384,7 @@
 <part>geom_3d</part>
 </key>
 </table>
-<table x="249" y="509" name="database_tr">
+<table x="254" y="519" name="database_tr">
 <row name="database_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="database" row="id" />
@@ -404,11 +397,14 @@
 <row name="description" null="0" autoincrement="0">
 <datatype>TEXT</datatype>
 </row>
-<row name="geographical_limit" null="1" autoincrement="0">
-<datatype>VARCHAR(255)</datatype>
-<default>NULL</default></row>
+<row name="geographical_limit" null="0" autoincrement="0">
+<datatype>TEXT</datatype>
+</row>
 <row name="bibliography" null="0" autoincrement="0">
-<datatype>VARCHAR(255)</datatype>
+<datatype>TEXT</datatype>
+</row>
+<row name="context_description" null="0" autoincrement="0">
+<datatype>TEXT</datatype>
 </row>
 <key type="PRIMARY" name="">
 <part>database_id</part>
@@ -1129,7 +1125,7 @@
 <part>country_geonameid</part>
 </key>
 </table>
-<table x="673" y="28" name="database_handle">
+<table x="682" y="65" name="database_handle">
 <row name="id" null="1" autoincrement="1">
 <datatype>INTEGER</datatype>
 <default>NULL</default></row>
@@ -1215,7 +1211,7 @@
 <part>iso_code</part>
 </key>
 </table>
-<table x="709" y="756" name="database__continent">
+<table x="681" y="786" name="database__continent">
 <row name="database_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="database" row="id" />
@@ -1230,7 +1226,7 @@
 <part>continent_geonameid</part>
 </key>
 </table>
-<table x="738" y="635" name="lang_tr">
+<table x="920" y="715" name="lang_tr">
 <row name="lang_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="lang" row="id" />
@@ -1264,6 +1260,21 @@
 <default>NULL</default></row>
 <row name="photo" null="0" autoincrement="0">
 <datatype>BYTEA</datatype>
+</row>
+<key type="PRIMARY" name="">
+<part>id</part>
+</key>
+</table>
+<table x="682" y="409" name="database_context">
+<row name="id" null="1" autoincrement="1">
+<datatype>INTEGER</datatype>
+<default>NULL</default></row>
+<row name="database_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="database" row="id" />
+</row>
+<row name="context" null="0" autoincrement="0">
+<datatype>BIT('undefined','academic-work','contract','research_team','other')</datatype>
 </row>
 <key type="PRIMARY" name="">
 <part>id</part>

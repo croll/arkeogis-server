@@ -1,434 +1,494 @@
 package model
 
 import (
-	"database/sql"
 	"time"
+	"database/sql"
 )
 
 type Charac struct {
-	Id             int       `db:"id" json:"id"`
-	Parent_id      int       `db:"parent_id" json:"parent_id"`
-	Order          int       `db:"order" json:"order"`
-	Author_user_id int       `db:"author_user_id" json:"author_user_id"` // User.Id
-	Created_at     time.Time `db:"created_at" json:"created_at"`
-	Updated_at     time.Time `db:"updated_at" json:"updated_at"`
+	Id	int	`db:"id" json:"id"`
+	Parent_id	int	`db:"parent_id" json:"parent_id"`
+	Order	int	`db:"order" json:"order"`
+	Author_user_id	int	`db:"author_user_id" json:"author_user_id"`	// User.Id
+	Created_at	time.Time	`db:"created_at" json:"created_at"`
+	Updated_at	time.Time	`db:"updated_at" json:"updated_at"`
 }
+
 
 type Charac_tr struct {
-	Lang_id     int    `db:"lang_id" json:"lang_id"`     // Lang.Id
-	Charac_id   int    `db:"charac_id" json:"charac_id"` // Charac.Id
-	Name        string `db:"name" json:"name"`
-	Description string `db:"description" json:"description"`
+	Lang_id	int	`db:"lang_id" json:"lang_id"`	// Lang.Id
+	Charac_id	int	`db:"charac_id" json:"charac_id"`	// Charac.Id
+	Name	string	`db:"name" json:"name"`
+	Description	string	`db:"description" json:"description"`
 }
+
 
 type Chronology struct {
-	Id         int       `db:"id" json:"id"`
-	Parent_id  int       `db:"parent_id" json:"parent_id"` // Chronology.Id
-	Start_date int       `db:"start_date" json:"start_date"`
-	End_date   int       `db:"end_date" json:"end_date"`
-	Color      string    `db:"color" json:"color"`
-	Created_at time.Time `db:"created_at" json:"created_at"`
-	Updated_at time.Time `db:"updated_at" json:"updated_at"`
+	Id	int	`db:"id" json:"id"`
+	Parent_id	int	`db:"parent_id" json:"parent_id"`	// Chronology.Id
+	Start_date	int	`db:"start_date" json:"start_date"`
+	End_date	int	`db:"end_date" json:"end_date"`
+	Color	string	`db:"color" json:"color"`
+	Created_at	time.Time	`db:"created_at" json:"created_at"`
+	Updated_at	time.Time	`db:"updated_at" json:"updated_at"`
 }
+
 
 type Chronology_tr struct {
-	Lang_id       int    `db:"lang_id" json:"lang_id"`             // Lang.Id
-	Chronology_id int    `db:"chronology_id" json:"chronology_id"` // Chronology.Id
-	Name          string `db:"name" json:"name"`
-	Description   string `db:"description" json:"description"`
+	Lang_id	int	`db:"lang_id" json:"lang_id"`	// Lang.Id
+	Chronology_id	int	`db:"chronology_id" json:"chronology_id"`	// Chronology.Id
+	Name	string	`db:"name" json:"name"`
+	Description	string	`db:"description" json:"description"`
 }
+
 
 type City struct {
-	Geonameid         int            `db:"geonameid" json:"geonameid"`
-	Country_geonameid int            `db:"country_geonameid" json:"country_geonameid"` // Country.Geonameid
-	Geom              sql.NullString `db:"geom" json:"geom"`
-	Geom_centroid     string         `db:"geom_centroid" json:"geom_centroid"`
-	Created_at        time.Time      `db:"created_at" json:"created_at"`
-	Updated_at        time.Time      `db:"updated_at" json:"updated_at"`
+	Geonameid	int	`db:"geonameid" json:"geonameid"`
+	Country_geonameid	int	`db:"country_geonameid" json:"country_geonameid"`	// Country.Geonameid
+	Geom	sql.NullString	`db:"geom" json:"geom"`
+	Geom_centroid	string	`db:"geom_centroid" json:"geom_centroid"`
+	Created_at	time.Time	`db:"created_at" json:"created_at"`
+	Updated_at	time.Time	`db:"updated_at" json:"updated_at"`
 }
+
 
 type City_tr struct {
-	City_geonameid int    `db:"city_geonameid" json:"city_geonameid"` // City.Geonameid
-	Lang_id        int    `db:"lang_id" json:"lang_id"`               // Lang.Id
-	Name           string `db:"name" json:"name"`
-	Name_ascii     string `db:"name_ascii" json:"name_ascii"`
+	City_geonameid	int	`db:"city_geonameid" json:"city_geonameid"`	// City.Geonameid
+	Lang_id	int	`db:"lang_id" json:"lang_id"`	// Lang.Id
+	Name	string	`db:"name" json:"name"`
+	Name_ascii	string	`db:"name_ascii" json:"name_ascii"`
 }
+
 
 type Company struct {
-	Id             int    `db:"id" json:"id"`
-	Name           string `db:"name" json:"name"`
-	City_geonameid int    `db:"city_geonameid" json:"city_geonameid"` // City.Geonameid
+	Id	int	`db:"id" json:"id"`
+	Name	string	`db:"name" json:"name"`
+	City_geonameid	int	`db:"city_geonameid" json:"city_geonameid"`	// City.Geonameid
 }
+
 
 type Continent struct {
-	Geonameid  int            `db:"geonameid" json:"geonameid"`
-	Iso_code   string         `db:"iso_code" json:"iso_code"`
-	Geom       sql.NullString `db:"geom" json:"geom"`
-	Created_at time.Time      `db:"created_at" json:"created_at"`
-	Updated_at time.Time      `db:"updated_at" json:"updated_at"`
+	Geonameid	int	`db:"geonameid" json:"geonameid"`
+	Iso_code	string	`db:"iso_code" json:"iso_code"`
+	Geom	sql.NullString	`db:"geom" json:"geom"`
+	Created_at	time.Time	`db:"created_at" json:"created_at"`
+	Updated_at	time.Time	`db:"updated_at" json:"updated_at"`
 }
+
 
 type Continent_tr struct {
-	Continent_geonameid int    `db:"continent_geonameid" json:"continent_geonameid"`
-	Lang_id             int    `db:"lang_id" json:"lang_id"` // Lang.Id
-	Name                string `db:"name" json:"name"`
-	Name_ascii          string `db:"name_ascii" json:"name_ascii"`
+	Continent_geonameid	int	`db:"continent_geonameid" json:"continent_geonameid"`
+	Lang_id	int	`db:"lang_id" json:"lang_id"`	// Lang.Id
+	Name	string	`db:"name" json:"name"`
+	Name_ascii	string	`db:"name_ascii" json:"name_ascii"`
 }
+
 
 type Country struct {
-	Geonameid  int            `db:"geonameid" json:"geonameid"`
-	Iso_code   sql.NullString `db:"iso_code" json:"iso_code"`
-	Geom       sql.NullString `db:"geom" json:"geom"`
-	Created_at time.Time      `db:"created_at" json:"created_at"`
-	Updated_at time.Time      `db:"updated_at" json:"updated_at"`
+	Geonameid	int	`db:"geonameid" json:"geonameid"`
+	Iso_code	sql.NullString	`db:"iso_code" json:"iso_code"`
+	Geom	sql.NullString	`db:"geom" json:"geom"`
+	Created_at	time.Time	`db:"created_at" json:"created_at"`
+	Updated_at	time.Time	`db:"updated_at" json:"updated_at"`
 }
+
 
 type Country_tr struct {
-	Country_geonameid int    `db:"country_geonameid" json:"country_geonameid"` // Country.Geonameid
-	Lang_id           int    `db:"lang_id" json:"lang_id"`                     // Lang.Id
-	Name              string `db:"name" json:"name"`
-	Name_ascii        string `db:"name_ascii" json:"name_ascii"`
+	Country_geonameid	int	`db:"country_geonameid" json:"country_geonameid"`	// Country.Geonameid
+	Lang_id	int	`db:"lang_id" json:"lang_id"`	// Lang.Id
+	Name	string	`db:"name" json:"name"`
+	Name_ascii	string	`db:"name_ascii" json:"name_ascii"`
 }
+
 
 type Database struct {
-	Id                   int       `db:"id" json:"id"`
-	Name                 string    `db:"name" json:"name" min:"1" max:"255" error:"DATABASE.FIELD_NAME.T_CHECK_MANDATORY"`
-	Scale_resolution     string    `db:"scale_resolution" json:"scale_resolution" enum:"undefined,object,site,watershed,micro-region,region,country,continent,world" error:"DATABASE.FIELD_SCALE_RESOLUTION.T_CHECK_INCORRECT"`
-	Geographical_extent  string    `db:"geographical_extent" json:"geographical_extent" enum:"undefined,country,continent,international_waters,world" error:"DATABASE.FIELD_GEOGRAPHICAL_EXTENT.T_CHECK_INCORRECT"`
-	Type                 string    `db:"type" json:"type" enum:"undefined,inventory,research,literary-work" error:"DATABASE.FIELD_TYPE.T_CHECK_INCORRECT"`
-	Owner                int       `db:"owner" json:"owner"` // User.Id
-	Source_creation_date time.Time `db:"source_creation_date" json:"source_creation_date"`
-	Data_set             string    `db:"data_set" json:"data_set"`
-	Identifier           string    `db:"identifier" json:"identifier"`
-	Source               string    `db:"source" json:"source"`
-	Source_url           string    `db:"source_url" json:"source_url"`
-	Publisher            string    `db:"publisher" json:"publisher"`
-	Contributor          string    `db:"contributor" json:"contributor"`
-	Default_language     int       `db:"default_language" json:"default_language"` // Lang.Id
-	Relation             string    `db:"relation" json:"relation"`
-	Coverage             string    `db:"coverage" json:"coverage"`
-	Copyright            string    `db:"copyright" json:"copyright"`
-	State                string    `db:"state" json:"state" enum:"undefined,in-progress,finished" error:"DATABASE.FIELD_STATE.T_CHECK_INCORRECT"`
-	License_id           int       `db:"license_id" json:"license_id"` // License.Id
-	Context              string    `db:"context" json:"context" enum:"undefined,academic-work,contract,research_team,other" error:"DATABASE.FIELD_CONTEXT.T_CHECK_INCORRECT"`
-	Context_description  string    `db:"context_description" json:"context_description"`
-	Subject              string    `db:"subject" json:"subject" min:"1" error:"DATABASE.FIELD_SUBJECT.T_CHECK_MANDATORY" max:"255" error:"DATABASE.FIELD_SUBJECT.T_CHECK_INCORRECT"`
-	Published            bool      `db:"published" json:"published"`
-	Soft_deleted         bool      `db:"soft_deleted" json:"soft_deleted"`
-	Created_at           time.Time `db:"created_at" json:"created_at"`
-	Updated_at           time.Time `db:"updated_at" json:"updated_at"`
+	Id	int	`db:"id" json:"id"`
+	Name	string	`db:"name" json:"name" min:"1" max:"255" error:"DATABASE.FIELD_NAME.T_CHECK_MANDATORY"`
+	Scale_resolution	string	`db:"scale_resolution" json:"scale_resolution" enum:"undefined,object,site,watershed,micro-region,region,country,continent,world" error:"DATABASE.FIELD_SCALE_RESOLUTION.T_CHECK_INCORRECT"`
+	Geographical_extent	string	`db:"geographical_extent" json:"geographical_extent" enum:"undefined,country,continent,international_waters,world" error:"DATABASE.FIELD_GEOGRAPHICAL_EXTENT.T_CHECK_INCORRECT"`
+	Type	string	`db:"type" json:"type" enum:"undefined,inventory,research,literary-work" error:"DATABASE.FIELD_TYPE.T_CHECK_INCORRECT"`
+	Owner	int	`db:"owner" json:"owner"`	// User.Id
+	Source_creation_date	time.Time	`db:"source_creation_date" json:"source_creation_date"`
+	Data_set	string	`db:"data_set" json:"data_set"`
+	Identifier	string	`db:"identifier" json:"identifier"`
+	Source	string	`db:"source" json:"source"`
+	Source_url	string	`db:"source_url" json:"source_url"`
+	Publisher	string	`db:"publisher" json:"publisher"`
+	Contributor	string	`db:"contributor" json:"contributor"`
+	Default_language	int	`db:"default_language" json:"default_language"`	// Lang.Id
+	Relation	string	`db:"relation" json:"relation"`
+	Coverage	string	`db:"coverage" json:"coverage"`
+	Copyright	string	`db:"copyright" json:"copyright"`
+	State	string	`db:"state" json:"state" enum:"undefined,in-progress,finished" error:"DATABASE.FIELD_STATE.T_CHECK_INCORRECT"`
+	License_id	int	`db:"license_id" json:"license_id"`	// License.Id
+	Subject	string	`db:"subject" json:"subject" min:"1" error:"DATABASE.FIELD_SUBJECT.T_CHECK_MANDATORY" max:"255" error:"DATABASE.FIELD_SUBJECT.T_CHECK_INCORRECT"`
+	Published	bool	`db:"published" json:"published"`
+	Soft_deleted	bool	`db:"soft_deleted" json:"soft_deleted"`
+	Created_at	time.Time	`db:"created_at" json:"created_at"`
+	Updated_at	time.Time	`db:"updated_at" json:"updated_at"`
 }
+
 
 type Database__authors struct {
-	Database_id int `db:"database_id" json:"database_id"` // Database.Id
-	User_id     int `db:"user_id" json:"user_id"`         // User.Id
+	Database_id	int	`db:"database_id" json:"database_id"`	// Database.Id
+	User_id	int	`db:"user_id" json:"user_id"`	// User.Id
 }
+
 
 type Database__continent struct {
-	Database_id         int `db:"database_id" json:"database_id" xmltopsql:"ondelete:cascade"` // Database.Id
-	Continent_geonameid int `db:"continent_geonameid" json:"continent_geonameid"`              // Continent.Geonameid
+	Database_id	int	`db:"database_id" json:"database_id" xmltopsql:"ondelete:cascade"`	// Database.Id
+	Continent_geonameid	int	`db:"continent_geonameid" json:"continent_geonameid"`	// Continent.Geonameid
 }
+
 
 type Database__country struct {
-	Database_id       int `db:"database_id" json:"database_id" xmltopsql:"ondelete:cascade"` // Database.Id
-	Country_geonameid int `db:"country_geonameid" json:"country_geonameid"`                  // Country.Geonameid
+	Database_id	int	`db:"database_id" json:"database_id" xmltopsql:"ondelete:cascade"`	// Database.Id
+	Country_geonameid	int	`db:"country_geonameid" json:"country_geonameid"`	// Country.Geonameid
 }
+
+
+type Database_context struct {
+	Id	int	`db:"id" json:"id"`
+	Database_id	int	`db:"database_id" json:"database_id"`	// Database.Id
+	Context	string	`db:"context" json:"context"`
+}
+
 
 type Database_handle struct {
-	Id          int       `db:"id" json:"id"`
-	Database_id int       `db:"database_id" json:"database_id" xmltopsql:"ondelete:cascade"` // Database.Id
-	Import_id   int       `db:"import_id" json:"import_id"`                                  // Import.Id
-	Name        string    `db:"name" json:"name"`
-	Url         string    `db:"url" json:"url"`
-	Created_at  time.Time `db:"created_at" json:"created_at"`
+	Id	int	`db:"id" json:"id"`
+	Database_id	int	`db:"database_id" json:"database_id" xmltopsql:"ondelete:cascade"`	// Database.Id
+	Import_id	int	`db:"import_id" json:"import_id"`	// Import.Id
+	Name	string	`db:"name" json:"name"`
+	Url	string	`db:"url" json:"url"`
+	Created_at	time.Time	`db:"created_at" json:"created_at"`
 }
+
 
 type Database_tr struct {
-	Database_id        int            `db:"database_id" json:"database_id" xmltopsql:"ondelete:cascade"` // Database.Id
-	Lang_id            int            `db:"lang_id" json:"lang_id"`                                      // Lang.Id
-	Description        string         `db:"description" json:"description"`
-	Geographical_limit sql.NullString `db:"geographical_limit" json:"geographical_limit"`
-	Bibliography       string         `db:"bibliography" json:"bibliography"`
+	Database_id	int	`db:"database_id" json:"database_id" xmltopsql:"ondelete:cascade"`	// Database.Id
+	Lang_id	int	`db:"lang_id" json:"lang_id"`	// Lang.Id
+	Description	string	`db:"description" json:"description"`
+	Geographical_limit	string	`db:"geographical_limit" json:"geographical_limit"`
+	Bibliography	string	`db:"bibliography" json:"bibliography"`
+	Context_description	string	`db:"context_description" json:"context_description"`
 }
+
 
 type Geographical_zone struct {
-	Id   int    `db:"id" json:"id"`
-	Name string `db:"name" json:"name"`
-	Geom string `db:"geom" json:"geom"`
+	Id	int	`db:"id" json:"id"`
+	Name	string	`db:"name" json:"name"`
+	Geom	string	`db:"geom" json:"geom"`
 }
+
 
 type Global_project struct {
-	Project_id int `db:"project_id" json:"project_id"` // Project.Id
+	Project_id	int	`db:"project_id" json:"project_id"`	// Project.Id
 }
+
 
 type Group struct {
-	Id         int       `db:"id" json:"id"`
-	Type       string    `db:"type" json:"type"`
-	Created_at time.Time `db:"created_at" json:"created_at"`
-	Updated_at time.Time `db:"updated_at" json:"updated_at"`
+	Id	int	`db:"id" json:"id"`
+	Type	string	`db:"type" json:"type"`
+	Created_at	time.Time	`db:"created_at" json:"created_at"`
+	Updated_at	time.Time	`db:"updated_at" json:"updated_at"`
 }
+
 
 type Group__permission struct {
-	Group_id      int       `db:"group_id" json:"group_id"`           // Group.Id
-	Permission_id int       `db:"permission_id" json:"permission_id"` // Permission.Id
-	Created_at    time.Time `db:"created_at" json:"created_at"`
-	Updated_at    time.Time `db:"updated_at" json:"updated_at"`
+	Group_id	int	`db:"group_id" json:"group_id"`	// Group.Id
+	Permission_id	int	`db:"permission_id" json:"permission_id"`	// Permission.Id
+	Created_at	time.Time	`db:"created_at" json:"created_at"`
+	Updated_at	time.Time	`db:"updated_at" json:"updated_at"`
 }
+
 
 type Group_tr struct {
-	Group_id    int    `db:"group_id" json:"group_id"` // Group.Id
-	Lang_id     int    `db:"lang_id" json:"lang_id"`   // Lang.Id
-	Name        string `db:"name" json:"name"`
-	Description string `db:"description" json:"description"`
+	Group_id	int	`db:"group_id" json:"group_id"`	// Group.Id
+	Lang_id	int	`db:"lang_id" json:"lang_id"`	// Lang.Id
+	Name	string	`db:"name" json:"name"`
+	Description	string	`db:"description" json:"description"`
 }
+
 
 type Import struct {
-	Id          int       `db:"id" json:"id"`
-	Database_id int       `db:"database_id" json:"database_id"` // Database.Id
-	User_id     int       `db:"user_id" json:"user_id"`         // User.Id
-	Filename    string    `db:"filename" json:"filename"`
-	Created_at  time.Time `db:"created_at" json:"created_at"`
+	Id	int	`db:"id" json:"id"`
+	Database_id	int	`db:"database_id" json:"database_id"`	// Database.Id
+	User_id	int	`db:"user_id" json:"user_id"`	// User.Id
+	Filename	string	`db:"filename" json:"filename"`
+	Created_at	time.Time	`db:"created_at" json:"created_at"`
 }
+
 
 type Lang struct {
-	Id       int    `db:"id" json:"id"`
-	Iso_code string `db:"iso_code" json:"iso_code"`
-	Active   bool   `db:"active" json:"active"`
+	Id	int	`db:"id" json:"id"`
+	Iso_code	string	`db:"iso_code" json:"iso_code"`
+	Active	bool	`db:"active" json:"active"`
 }
+
 
 type Lang_tr struct {
-	Lang_id    int    `db:"lang_id" json:"lang_id"`       // Lang.Id
-	Lang_id_tr int    `db:"lang_id_tr" json:"lang_id_tr"` // Lang.Id
-	Name       string `db:"name" json:"name"`
+	Lang_id	int	`db:"lang_id" json:"lang_id"`	// Lang.Id
+	Lang_id_tr	int	`db:"lang_id_tr" json:"lang_id_tr"`	// Lang.Id
+	Name	string	`db:"name" json:"name"`
 }
+
 
 type License struct {
-	Id   int    `db:"id" json:"id"`
-	Name string `db:"name" json:"name"`
-	Url  string `db:"url" json:"url"`
+	Id	int	`db:"id" json:"id"`
+	Name	string	`db:"name" json:"name"`
+	Url	string	`db:"url" json:"url"`
 }
+
 
 type Permission struct {
-	Id         int       `db:"id" json:"id"`
-	Name       string    `db:"name" json:"name"`
-	Created_at time.Time `db:"created_at" json:"created_at"`
-	Updated_at time.Time `db:"updated_at" json:"updated_at"`
+	Id	int	`db:"id" json:"id"`
+	Name	string	`db:"name" json:"name"`
+	Created_at	time.Time	`db:"created_at" json:"created_at"`
+	Updated_at	time.Time	`db:"updated_at" json:"updated_at"`
 }
+
 
 type Permission_tr struct {
-	Permission_id int    `db:"permission_id" json:"permission_id"` // Permission.Id
-	Lang_id       int    `db:"lang_id" json:"lang_id"`             // Lang.Id
-	Name          string `db:"name" json:"name"`
-	Description   string `db:"description" json:"description"`
+	Permission_id	int	`db:"permission_id" json:"permission_id"`	// Permission.Id
+	Lang_id	int	`db:"lang_id" json:"lang_id"`	// Lang.Id
+	Name	string	`db:"name" json:"name"`
+	Description	string	`db:"description" json:"description"`
 }
+
 
 type Photo struct {
-	Id    int    `db:"id" json:"id"`
-	Photo string `db:"photo" json:"photo"`
+	Id	int	`db:"id" json:"id"`
+	Photo	string	`db:"photo" json:"photo"`
 }
+
 
 type Project struct {
-	Id                   int       `db:"id" json:"id"`
-	Name                 string    `db:"name" json:"name" min:"1" error:"PROJECT.FIELD_NAME.T_CHECK_MANDATORY" max:"255" error:"PROJECT.FIELD_NAME.T_CHECK_INCORRECT"`
-	User_id              int       `db:"user_id" json:"user_id"`                           // User.Id
-	Geographical_zone_id int       `db:"geographical_zone_id" json:"geographical_zone_id"` // Geographical_zone.Id
-	Created_at           time.Time `db:"created_at" json:"created_at"`
-	Updated_at           time.Time `db:"updated_at" json:"updated_at"`
+	Id	int	`db:"id" json:"id"`
+	Name	string	`db:"name" json:"name" min:"1" error:"PROJECT.FIELD_NAME.T_CHECK_MANDATORY" max:"255" error:"PROJECT.FIELD_NAME.T_CHECK_INCORRECT"`
+	User_id	int	`db:"user_id" json:"user_id"`	// User.Id
+	Geographical_zone_id	int	`db:"geographical_zone_id" json:"geographical_zone_id"`	// Geographical_zone.Id
+	Created_at	time.Time	`db:"created_at" json:"created_at"`
+	Updated_at	time.Time	`db:"updated_at" json:"updated_at"`
 }
+
 
 type Project__charac struct {
-	Project__characs_set_id int `db:"project__characs_set_id" json:"project__characs_set_id"` // Project__characs_set.Id
-	Charac_id               int `db:"charac_id" json:"charac_id"`                             // Charac.Id
+	Project__characs_set_id	int	`db:"project__characs_set_id" json:"project__characs_set_id"`	// Project__characs_set.Id
+	Charac_id	int	`db:"charac_id" json:"charac_id"`	// Charac.Id
 }
+
 
 type Project__characs_set struct {
-	Id                                 int `db:"id" json:"id"`
-	Project_id                         int `db:"project_id" json:"project_id"`                                                 // Project.Id
-	Copied_from_project__charac_set_id int `db:"copied_from_project__charac_set_id" json:"copied_from_project__charac_set_id"` // Project__characs_set.Id
+	Id	int	`db:"id" json:"id"`
+	Project_id	int	`db:"project_id" json:"project_id"`	// Project.Id
+	Copied_from_project__charac_set_id	int	`db:"copied_from_project__charac_set_id" json:"copied_from_project__charac_set_id"`	// Project__characs_set.Id
 }
+
 
 type Project__characs_set_tr struct {
-	Project__characs_set_id int    `db:"project__characs_set_id" json:"project__characs_set_id"` // Project__characs_set.Id
-	Lang_id                 int    `db:"lang_id" json:"lang_id"`                                 // Lang.Id
-	Name                    string `db:"name" json:"name"`
-	Description             string `db:"description" json:"description"`
+	Project__characs_set_id	int	`db:"project__characs_set_id" json:"project__characs_set_id"`	// Project__characs_set.Id
+	Lang_id	int	`db:"lang_id" json:"lang_id"`	// Lang.Id
+	Name	string	`db:"name" json:"name"`
+	Description	string	`db:"description" json:"description"`
 }
+
 
 type Project__chronology struct {
-	Project_id         int `db:"project_id" json:"project_id"`                 // Project.Id
-	Chronology_root_id int `db:"chronology_root_id" json:"chronology_root_id"` // Chronology.Id
-	Id_group           int `db:"id_group" json:"id_group"`                     // Group.Id
+	Project_id	int	`db:"project_id" json:"project_id"`	// Project.Id
+	Chronology_root_id	int	`db:"chronology_root_id" json:"chronology_root_id"`	// Chronology.Id
+	Id_group	int	`db:"id_group" json:"id_group"`	// Group.Id
 }
+
 
 type Project__chronology_tr struct {
-	Project__chronology_id int    `db:"project__chronology_id" json:"project__chronology_id"`
-	Lang_id                int    `db:"lang_id" json:"lang_id"` // Lang.Id
-	Name                   string `db:"name" json:"name"`
-	Description            string `db:"description" json:"description"`
+	Project__chronology_id	int	`db:"project__chronology_id" json:"project__chronology_id"`
+	Lang_id	int	`db:"lang_id" json:"lang_id"`	// Lang.Id
+	Name	string	`db:"name" json:"name"`
+	Description	string	`db:"description" json:"description"`
 }
+
 
 type Project__databases struct {
-	Project_id  int `db:"project_id" json:"project_id"`   // Project.Id
-	Database_id int `db:"database_id" json:"database_id"` // Database.Id
+	Project_id	int	`db:"project_id" json:"project_id"`	// Project.Id
+	Database_id	int	`db:"database_id" json:"database_id"`	// Database.Id
 }
+
 
 type Project__shapefile struct {
-	Project_id   int `db:"project_id" json:"project_id"`     // Project.Id
-	Shapefile_id int `db:"shapefile_id" json:"shapefile_id"` // Shapefile.Id
+	Project_id	int	`db:"project_id" json:"project_id"`	// Project.Id
+	Shapefile_id	int	`db:"shapefile_id" json:"shapefile_id"`	// Shapefile.Id
 }
+
 
 type Project__wms_map struct {
-	Project_id int `db:"project_id" json:"project_id"` // Project.Id
-	Wms_map_id int `db:"wms_map_id" json:"wms_map_id"` // Wms_map.Id
+	Project_id	int	`db:"project_id" json:"project_id"`	// Project.Id
+	Wms_map_id	int	`db:"wms_map_id" json:"wms_map_id"`	// Wms_map.Id
 }
+
 
 type Session struct {
-	Token string `db:"token" json:"token"`
-	Value string `db:"value" json:"value"`
+	Token	string	`db:"token" json:"token"`
+	Value	string	`db:"value" json:"value"`
 }
+
 
 type Shapefile struct {
-	Id                   int            `db:"id" json:"id"`
-	Creator_user_id      int            `db:"creator_user_id" json:"creator_user_id"` // User.Id
-	Source_creation_date time.Time      `db:"source_creation_date" json:"source_creation_date"`
-	Filename             sql.NullString `db:"filename" json:"filename"`
-	Geom                 string         `db:"geom" json:"geom"`
-	Min_scale            int            `db:"min_scale" json:"min_scale"`
-	Max_scale            int            `db:"max_scale" json:"max_scale"`
-	Start_date1          int            `db:"start_date1" json:"start_date1"`
-	Start_date2          int            `db:"start_date2" json:"start_date2"`
-	End_date1            int            `db:"end_date1" json:"end_date1"`
-	End_date2            int            `db:"end_date2" json:"end_date2"`
-	Published            bool           `db:"published" json:"published" enum:"0,1" error:"SHAPEFILE.FIELD_PUBLISHED.T_CHECK_INCORRECT"`
-	License_name         string         `db:"license_name" json:"license_name"`
-	Odbl_license         bool           `db:"odbl_license" json:"odbl_license" enum:"0,1" error:"SHAPEFILE.FIELD_ODBL_LICENSE.T_CHECK_INCORRECT"`
-	Created_at           time.Time      `db:"created_at" json:"created_at"`
-	Updated_at           time.Time      `db:"updated_at" json:"updated_at"`
+	Id	int	`db:"id" json:"id"`
+	Creator_user_id	int	`db:"creator_user_id" json:"creator_user_id"`	// User.Id
+	Source_creation_date	time.Time	`db:"source_creation_date" json:"source_creation_date"`
+	Filename	sql.NullString	`db:"filename" json:"filename"`
+	Geom	string	`db:"geom" json:"geom"`
+	Min_scale	int	`db:"min_scale" json:"min_scale"`
+	Max_scale	int	`db:"max_scale" json:"max_scale"`
+	Start_date1	int	`db:"start_date1" json:"start_date1"`
+	Start_date2	int	`db:"start_date2" json:"start_date2"`
+	End_date1	int	`db:"end_date1" json:"end_date1"`
+	End_date2	int	`db:"end_date2" json:"end_date2"`
+	Published	bool	`db:"published" json:"published" enum:"0,1" error:"SHAPEFILE.FIELD_PUBLISHED.T_CHECK_INCORRECT"`
+	License_name	string	`db:"license_name" json:"license_name"`
+	Odbl_license	bool	`db:"odbl_license" json:"odbl_license" enum:"0,1" error:"SHAPEFILE.FIELD_ODBL_LICENSE.T_CHECK_INCORRECT"`
+	Created_at	time.Time	`db:"created_at" json:"created_at"`
+	Updated_at	time.Time	`db:"updated_at" json:"updated_at"`
 }
+
 
 type Shapefile_authors struct {
-	Shapefile_id int `db:"shapefile_id" json:"shapefile_id"` // Shapefile.Id
-	User_id      int `db:"user_id" json:"user_id"`           // User.Id
+	Shapefile_id	int	`db:"shapefile_id" json:"shapefile_id"`	// Shapefile.Id
+	User_id	int	`db:"user_id" json:"user_id"`	// User.Id
 }
+
 
 type Shapefile_tr struct {
-	Shapefile_id int    `db:"shapefile_id" json:"shapefile_id"` // Shapefile.Id
-	Lang_id      int    `db:"lang_id" json:"lang_id"`           // Lang.Id
-	Name         string `db:"name" json:"name" min:"1" error:"SHAPEFILE.FIELD_NAME.T_CHECK_MANDATORY" max:"255" error:"SHAPEFILE_TR.FIELD_NAME.T_CHECK_INCORRECT"`
-	Description  string `db:"description" json:"description"`
-	Attribution  string `db:"attribution" json:"attribution"`
-	Bibiography  string `db:"bibiography" json:"bibiography"`
+	Shapefile_id	int	`db:"shapefile_id" json:"shapefile_id"`	// Shapefile.Id
+	Lang_id	int	`db:"lang_id" json:"lang_id"`	// Lang.Id
+	Name	string	`db:"name" json:"name" min:"1" error:"SHAPEFILE.FIELD_NAME.T_CHECK_MANDATORY" max:"255" error:"SHAPEFILE_TR.FIELD_NAME.T_CHECK_INCORRECT"`
+	Description	string	`db:"description" json:"description"`
+	Attribution	string	`db:"attribution" json:"attribution"`
+	Bibiography	string	`db:"bibiography" json:"bibiography"`
 }
+
 
 type Site struct {
-	Id             int       `db:"id" json:"id"`
-	Code           string    `db:"code" json:"code" min:"1" error:"SITE.FIELD_CODE.T_CHECK_MANDATORY" max:"255" error:"SITE.FIELD_CODE.T_CHECK_INCORRECT"`
-	Name           string    `db:"name" json:"name" min:"1" error:"SITE.FIELD_NAME.T_CHECK_MANDATORY" max:"255" error:"SITE.FIELD_NAME.T_CHECK_INCORRECT"`
-	City_name      string    `db:"city_name" json:"city_name"`
-	City_geonameid int       `db:"city_geonameid" json:"city_geonameid"`
-	Geom           string    `db:"geom" json:"geom"`
-	Geom_3d        string    `db:"geom_3d" json:"geom_3d"`
-	Centroid       bool      `db:"centroid" json:"centroid" enum:"0,1" error:"SITE.FIELD_CENTROID.T_CHECK_MANDATORY"`
-	Occupation     string    `db:"occupation" json:"occupation" enum:"not_documented,single,continuous,multiple" error:"SITE.FIELD_OCCUPATION.T_CHECK_INCORRECT"`
-	Database_id    int       `db:"database_id" json:"database_id"` // Database.Id
-	Created_at     time.Time `db:"created_at" json:"created_at"`
-	Updated_at     time.Time `db:"updated_at" json:"updated_at"`
+	Id	int	`db:"id" json:"id"`
+	Code	string	`db:"code" json:"code" min:"1" error:"SITE.FIELD_CODE.T_CHECK_MANDATORY" max:"255" error:"SITE.FIELD_CODE.T_CHECK_INCORRECT"`
+	Name	string	`db:"name" json:"name" min:"1" error:"SITE.FIELD_NAME.T_CHECK_MANDATORY" max:"255" error:"SITE.FIELD_NAME.T_CHECK_INCORRECT"`
+	City_name	string	`db:"city_name" json:"city_name"`
+	City_geonameid	int	`db:"city_geonameid" json:"city_geonameid"`
+	Geom	string	`db:"geom" json:"geom"`
+	Geom_3d	string	`db:"geom_3d" json:"geom_3d"`
+	Centroid	bool	`db:"centroid" json:"centroid" enum:"0,1" error:"SITE.FIELD_CENTROID.T_CHECK_MANDATORY"`
+	Occupation	string	`db:"occupation" json:"occupation" enum:"not_documented,single,continuous,multiple" error:"SITE.FIELD_OCCUPATION.T_CHECK_INCORRECT"`
+	Database_id	int	`db:"database_id" json:"database_id"`	// Database.Id
+	Created_at	time.Time	`db:"created_at" json:"created_at"`
+	Updated_at	time.Time	`db:"updated_at" json:"updated_at"`
 }
+
 
 type Site_range struct {
-	Id          int       `db:"id" json:"id"`
-	Site_id     int       `db:"site_id" json:"site_id" xmltopsql:"ondelete:cascade"` // Site.Id
-	Start_date1 int       `db:"start_date1" json:"start_date1"`
-	Start_date2 int       `db:"start_date2" json:"start_date2"`
-	End_date1   int       `db:"end_date1" json:"end_date1"`
-	End_date2   int       `db:"end_date2" json:"end_date2"`
-	Created_at  time.Time `db:"created_at" json:"created_at"`
-	Updated_at  time.Time `db:"updated_at" json:"updated_at"`
+	Id	int	`db:"id" json:"id"`
+	Site_id	int	`db:"site_id" json:"site_id" xmltopsql:"ondelete:cascade"`	// Site.Id
+	Start_date1	int	`db:"start_date1" json:"start_date1"`
+	Start_date2	int	`db:"start_date2" json:"start_date2"`
+	End_date1	int	`db:"end_date1" json:"end_date1"`
+	End_date2	int	`db:"end_date2" json:"end_date2"`
+	Created_at	time.Time	`db:"created_at" json:"created_at"`
+	Updated_at	time.Time	`db:"updated_at" json:"updated_at"`
 }
+
 
 type Site_range__charac struct {
-	Id             int    `db:"id" json:"id"`
-	Site_range_id  int    `db:"site_range_id" json:"site_range_id" xmltopsql:"ondelete:cascade"` // Site_range.Id
-	Charac_id      int    `db:"charac_id" json:"charac_id"`                                      // Charac.Id
-	Exceptional    bool   `db:"exceptional" json:"exceptional"`
-	Knowledge_type string `db:"knowledge_type" json:"knowledge_type" enum:"not_documented,literature,prospected_aerial,prospected_pedestrian,surveyed,dig" error:"DATABASE.FIELD_KNOWLEDGE_TYPE.T_CHECK_INCORRECT"`
+	Id	int	`db:"id" json:"id"`
+	Site_range_id	int	`db:"site_range_id" json:"site_range_id" xmltopsql:"ondelete:cascade"`	// Site_range.Id
+	Charac_id	int	`db:"charac_id" json:"charac_id"`	// Charac.Id
+	Exceptional	bool	`db:"exceptional" json:"exceptional"`
+	Knowledge_type	string	`db:"knowledge_type" json:"knowledge_type" enum:"not_documented,literature,prospected_aerial,prospected_pedestrian,surveyed,dig" error:"DATABASE.FIELD_KNOWLEDGE_TYPE.T_CHECK_INCORRECT"`
 }
+
 
 type Site_range__charac_tr struct {
-	Site_range__charac_id int    `db:"site_range__charac_id" json:"site_range__charac_id" xmltopsql:"ondelete:cascade"` // Site_range__charac.Id
-	Lang_id               int    `db:"lang_id" json:"lang_id"`                                                          // Lang.Id
-	Comment               string `db:"comment" json:"comment"`
-	Bibliography          string `db:"bibliography" json:"bibliography"`
+	Site_range__charac_id	int	`db:"site_range__charac_id" json:"site_range__charac_id" xmltopsql:"ondelete:cascade"`	// Site_range__charac.Id
+	Lang_id	int	`db:"lang_id" json:"lang_id"`	// Lang.Id
+	Comment	string	`db:"comment" json:"comment"`
+	Bibliography	string	`db:"bibliography" json:"bibliography"`
 }
+
 
 type Site_tr struct {
-	Site_id     int    `db:"site_id" json:"site_id" xmltopsql:"ondelete:cascade"` // Site.Id
-	Lang_id     int    `db:"lang_id" json:"lang_id"`                              // Lang.Id
-	Description string `db:"description" json:"description"`
+	Site_id	int	`db:"site_id" json:"site_id" xmltopsql:"ondelete:cascade"`	// Site.Id
+	Lang_id	int	`db:"lang_id" json:"lang_id"`	// Lang.Id
+	Description	string	`db:"description" json:"description"`
 }
+
 
 type User struct {
-	Id             int       `db:"id" json:"id"`
-	Username       string    `db:"username" json:"username" min:"2" max:"32" error:"USER.FIELD_USERNAME.T_CHECK_INCORRECT"`
-	Firstname      string    `db:"firstname" json:"firstname"`
-	Lastname       string    `db:"lastname" json:"lastname" min:"1" error:"USER.FIELD_LASTNAME.T_CHECK_MANDATORY" max:"32" error:"USER.FIELD_LASTNAME.T_CHECK_INCORRECT"`
-	Email          string    `db:"email" json:"email" email:"1" error:"USER.FIELD_EMAIL.T_CHECK_INCORRECT"`
-	Password       string    `db:"password" json:"password" min:"6" max:"32" error:"USER.FIELD_PASSWORD.T_CHECK_INCORRECT"`
-	Description    string    `db:"description" json:"description" min:"1" max:"2048" error:"USER.FIELD_DESCRIPTION.T_CHECK_MANDATORY"`
-	Active         bool      `db:"active" json:"active"`
-	First_lang_id  int       `db:"first_lang_id" json:"first_lang_id"`   // Lang.Id
-	Second_lang_id int       `db:"second_lang_id" json:"second_lang_id"` // Lang.Id
-	City_geonameid int       `db:"city_geonameid" json:"city_geonameid"` // City.Geonameid
-	Photo_id       int       `db:"photo_id" json:"photo_id"`             // Photo.Id
-	Created_at     time.Time `db:"created_at" json:"created_at"`
-	Updated_at     time.Time `db:"updated_at" json:"updated_at"`
+	Id	int	`db:"id" json:"id"`
+	Username	string	`db:"username" json:"username" min:"2" max:"32" error:"USER.FIELD_USERNAME.T_CHECK_INCORRECT"`
+	Firstname	string	`db:"firstname" json:"firstname"`
+	Lastname	string	`db:"lastname" json:"lastname" min:"1" error:"USER.FIELD_LASTNAME.T_CHECK_MANDATORY" max:"32" error:"USER.FIELD_LASTNAME.T_CHECK_INCORRECT"`
+	Email	string	`db:"email" json:"email" email:"1" error:"USER.FIELD_EMAIL.T_CHECK_INCORRECT"`
+	Password	string	`db:"password" json:"password" min:"6" max:"32" error:"USER.FIELD_PASSWORD.T_CHECK_INCORRECT"`
+	Description	string	`db:"description" json:"description" min:"1" max:"2048" error:"USER.FIELD_DESCRIPTION.T_CHECK_MANDATORY"`
+	Active	bool	`db:"active" json:"active"`
+	First_lang_id	int	`db:"first_lang_id" json:"first_lang_id"`	// Lang.Id
+	Second_lang_id	int	`db:"second_lang_id" json:"second_lang_id"`	// Lang.Id
+	City_geonameid	int	`db:"city_geonameid" json:"city_geonameid"`	// City.Geonameid
+	Photo_id	int	`db:"photo_id" json:"photo_id"`	// Photo.Id
+	Created_at	time.Time	`db:"created_at" json:"created_at"`
+	Updated_at	time.Time	`db:"updated_at" json:"updated_at"`
 }
+
 
 type User__company struct {
-	User_id    int `db:"user_id" json:"user_id"`       // User.Id
-	Company_id int `db:"company_id" json:"company_id"` // Company.Id
+	User_id	int	`db:"user_id" json:"user_id"`	// User.Id
+	Company_id	int	`db:"company_id" json:"company_id"`	// Company.Id
 }
+
 
 type User__group struct {
-	Group_id int `db:"group_id" json:"group_id"` // Group.Id
-	User_id  int `db:"user_id" json:"user_id"`   // User.Id
+	Group_id	int	`db:"group_id" json:"group_id"`	// Group.Id
+	User_id	int	`db:"user_id" json:"user_id"`	// User.Id
 }
+
 
 type User_preferences struct {
-	User_id int    `db:"user_id" json:"user_id"` // User.Id
-	Key     string `db:"key" json:"key"`
-	Value   string `db:"value" json:"value"`
+	User_id	int	`db:"user_id" json:"user_id"`	// User.Id
+	Key	string	`db:"key" json:"key"`
+	Value	string	`db:"value" json:"value"`
 }
+
 
 type User_project struct {
-	Project_id int `db:"project_id" json:"project_id"` // Project.Id
-	Start_date int `db:"start_date" json:"start_date"`
-	End_date   int `db:"end_date" json:"end_date"`
+	Project_id	int	`db:"project_id" json:"project_id"`	// Project.Id
+	Start_date	int	`db:"start_date" json:"start_date"`
+	End_date	int	`db:"end_date" json:"end_date"`
 }
+
 
 type Wms_map struct {
-	Id                   int            `db:"id" json:"id"`
-	Creator_user_id      int            `db:"creator_user_id" json:"creator_user_id"` // User.Id
-	Url                  sql.NullString `db:"url" json:"url" min:"1" error:"WMS_MAP.FIELD_URL.T_CHECK_MANDATORY" max:"255" error:"WMS_MAP.FIELD_URL.T_CHECK_INCORRECT"`
-	Source_creation_date time.Time      `db:"source_creation_date" json:"source_creation_date"`
-	Min_scale            int            `db:"min_scale" json:"min_scale"`
-	Max_scale            int            `db:"max_scale" json:"max_scale"`
-	Start_date1          int            `db:"start_date1" json:"start_date1"`
-	Start_date2          int            `db:"start_date2" json:"start_date2"`
-	End_date1            int            `db:"end_date1" json:"end_date1"`
-	End_date2            int            `db:"end_date2" json:"end_date2"`
-	Published            bool           `db:"published" json:"published"`
-	Created_at           time.Time      `db:"created_at" json:"created_at"`
-	Updated_at           time.Time      `db:"updated_at" json:"updated_at"`
+	Id	int	`db:"id" json:"id"`
+	Creator_user_id	int	`db:"creator_user_id" json:"creator_user_id"`	// User.Id
+	Url	sql.NullString	`db:"url" json:"url" min:"1" error:"WMS_MAP.FIELD_URL.T_CHECK_MANDATORY" max:"255" error:"WMS_MAP.FIELD_URL.T_CHECK_INCORRECT"`
+	Source_creation_date	time.Time	`db:"source_creation_date" json:"source_creation_date"`
+	Min_scale	int	`db:"min_scale" json:"min_scale"`
+	Max_scale	int	`db:"max_scale" json:"max_scale"`
+	Start_date1	int	`db:"start_date1" json:"start_date1"`
+	Start_date2	int	`db:"start_date2" json:"start_date2"`
+	End_date1	int	`db:"end_date1" json:"end_date1"`
+	End_date2	int	`db:"end_date2" json:"end_date2"`
+	Published	bool	`db:"published" json:"published"`
+	Created_at	time.Time	`db:"created_at" json:"created_at"`
+	Updated_at	time.Time	`db:"updated_at" json:"updated_at"`
 }
 
+
 type Wms_map_tr struct {
-	Wms_map_id  int    `db:"wms_map_id" json:"wms_map_id"` // Wms_map.Id
-	Lang_id     int    `db:"lang_id" json:"lang_id"`       // Lang.Id
-	Name        string `db:"name" json:"name" min:"1" error:"WMS_MAP.FIELD_NAME.T_CHECK_MANDATORY" max:"255" error:"WMS_MAP_TR.FIELD_NAME.T_CHECK_INCORRECT"`
-	Attribution string `db:"attribution" json:"attribution"`
-	Copyright   string `db:"copyright" json:"copyright"`
+	Wms_map_id	int	`db:"wms_map_id" json:"wms_map_id"`	// Wms_map.Id
+	Lang_id	int	`db:"lang_id" json:"lang_id"`	// Lang.Id
+	Name	string	`db:"name" json:"name" min:"1" error:"WMS_MAP.FIELD_NAME.T_CHECK_MANDATORY" max:"255" error:"WMS_MAP_TR.FIELD_NAME.T_CHECK_INCORRECT"`
+	Attribution	string	`db:"attribution" json:"attribution"`
+	Copyright	string	`db:"copyright" json:"copyright"`
 }
+
 
 const User_InsertStr = "\"username\", \"firstname\", \"lastname\", \"email\", \"password\", \"description\", \"active\", \"first_lang_id\", \"second_lang_id\", \"city_geonameid\", \"photo_id\", \"created_at\", \"updated_at\""
 const User_InsertValuesStr = ":username, :firstname, :lastname, :email, :password, :description, :active, :first_lang_id, :second_lang_id, :city_geonameid, :photo_id, now(), now()"
@@ -457,15 +517,15 @@ const Chronology_tr_UpdateStr = "\"name\" = :name, \"description\" = :descriptio
 const Project__chronology_InsertStr = "\"id_group\""
 const Project__chronology_InsertValuesStr = ":id_group"
 const Project__chronology_UpdateStr = "\"id_group\" = :id_group"
-const Database_InsertStr = "\"name\", \"scale_resolution\", \"geographical_extent\", \"type\", \"owner\", \"source_creation_date\", \"data_set\", \"identifier\", \"source\", \"source_url\", \"publisher\", \"contributor\", \"default_language\", \"relation\", \"coverage\", \"copyright\", \"state\", \"license_id\", \"context\", \"context_description\", \"subject\", \"published\", \"soft_deleted\", \"created_at\", \"updated_at\""
-const Database_InsertValuesStr = ":name, :scale_resolution, :geographical_extent, :type, :owner, :source_creation_date, :data_set, :identifier, :source, :source_url, :publisher, :contributor, :default_language, :relation, :coverage, :copyright, :state, :license_id, :context, :context_description, :subject, :published, :soft_deleted, now(), now()"
-const Database_UpdateStr = "\"name\" = :name, \"scale_resolution\" = :scale_resolution, \"geographical_extent\" = :geographical_extent, \"type\" = :type, \"owner\" = :owner, \"source_creation_date\" = :source_creation_date, \"data_set\" = :data_set, \"identifier\" = :identifier, \"source\" = :source, \"source_url\" = :source_url, \"publisher\" = :publisher, \"contributor\" = :contributor, \"default_language\" = :default_language, \"relation\" = :relation, \"coverage\" = :coverage, \"copyright\" = :copyright, \"state\" = :state, \"license_id\" = :license_id, \"context\" = :context, \"context_description\" = :context_description, \"subject\" = :subject, \"published\" = :published, \"soft_deleted\" = :soft_deleted, \"updated_at\" = now()"
+const Database_InsertStr = "\"name\", \"scale_resolution\", \"geographical_extent\", \"type\", \"owner\", \"source_creation_date\", \"data_set\", \"identifier\", \"source\", \"source_url\", \"publisher\", \"contributor\", \"default_language\", \"relation\", \"coverage\", \"copyright\", \"state\", \"license_id\", \"subject\", \"published\", \"soft_deleted\", \"created_at\", \"updated_at\""
+const Database_InsertValuesStr = ":name, :scale_resolution, :geographical_extent, :type, :owner, :source_creation_date, :data_set, :identifier, :source, :source_url, :publisher, :contributor, :default_language, :relation, :coverage, :copyright, :state, :license_id, :subject, :published, :soft_deleted, now(), now()"
+const Database_UpdateStr = "\"name\" = :name, \"scale_resolution\" = :scale_resolution, \"geographical_extent\" = :geographical_extent, \"type\" = :type, \"owner\" = :owner, \"source_creation_date\" = :source_creation_date, \"data_set\" = :data_set, \"identifier\" = :identifier, \"source\" = :source, \"source_url\" = :source_url, \"publisher\" = :publisher, \"contributor\" = :contributor, \"default_language\" = :default_language, \"relation\" = :relation, \"coverage\" = :coverage, \"copyright\" = :copyright, \"state\" = :state, \"license_id\" = :license_id, \"subject\" = :subject, \"published\" = :published, \"soft_deleted\" = :soft_deleted, \"updated_at\" = now()"
 const Site_InsertStr = "\"code\", \"name\", \"city_name\", \"city_geonameid\", \"geom\", \"geom_3d\", \"centroid\", \"occupation\", \"database_id\", \"created_at\", \"updated_at\""
 const Site_InsertValuesStr = ":code, :name, :city_name, :city_geonameid, :geom, :geom_3d, :centroid, :occupation, :database_id, now(), now()"
 const Site_UpdateStr = "\"code\" = :code, \"name\" = :name, \"city_name\" = :city_name, \"city_geonameid\" = :city_geonameid, \"geom\" = :geom, \"geom_3d\" = :geom_3d, \"centroid\" = :centroid, \"occupation\" = :occupation, \"database_id\" = :database_id, \"updated_at\" = now()"
-const Database_tr_InsertStr = "\"description\", \"geographical_limit\", \"bibliography\""
-const Database_tr_InsertValuesStr = ":description, :geographical_limit, :bibliography"
-const Database_tr_UpdateStr = "\"description\" = :description, \"geographical_limit\" = :geographical_limit, \"bibliography\" = :bibliography"
+const Database_tr_InsertStr = "\"description\", \"geographical_limit\", \"bibliography\", \"context_description\""
+const Database_tr_InsertValuesStr = ":description, :geographical_limit, :bibliography, :context_description"
+const Database_tr_UpdateStr = "\"description\" = :description, \"geographical_limit\" = :geographical_limit, \"bibliography\" = :bibliography, \"context_description\" = :context_description"
 const City_InsertStr = "\"country_geonameid\", \"geom\", \"geom_centroid\", \"created_at\", \"updated_at\""
 const City_InsertValuesStr = ":country_geonameid, :geom, :geom_centroid, now(), now()"
 const City_UpdateStr = "\"country_geonameid\" = :country_geonameid, \"geom\" = :geom, \"geom_centroid\" = :geom_centroid, \"updated_at\" = now()"
@@ -592,3 +652,6 @@ const Session_UpdateStr = "\"value\" = :value"
 const Photo_InsertStr = "\"photo\""
 const Photo_InsertValuesStr = ":photo"
 const Photo_UpdateStr = "\"photo\" = :photo"
+const Database_context_InsertStr = "\"database_id\", \"context\""
+const Database_context_InsertValuesStr = ":database_id, :context"
+const Database_context_UpdateStr = "\"database_id\" = :database_id, \"context\" = :context"
