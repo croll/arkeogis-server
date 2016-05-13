@@ -344,9 +344,20 @@ func (di *DatabaseImport) ProcessEssentialDatabaseInfos(name string, geographica
 	if di.Database.Exists {
 		// Update record
 		err = di.Database.Update(di.Tx)
+		if err != nil {
+			return err
+		}
+		di.Database.DeleteAuthors(di.Tx)
+		a := []int{di.Uid}
+		err = di.Database.SetAuthors(di.Tx, a)
 	} else {
 		// Create record
 		err = di.Database.Create(di.Tx)
+		if err != nil {
+			return err
+		}
+		a := []int{di.Uid}
+		err = di.Database.SetAuthors(di.Tx, a)
 	}
 	if err != nil {
 		return err
