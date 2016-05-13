@@ -115,7 +115,7 @@ func DatabaseEnumList(w http.ResponseWriter, r *http.Request, proute routes.Prou
 	fmt.Println(enums)
 }
 
-// DatabaseInfos return detailed infos on an user
+// DatabaseInfos return detailed infos on an database
 func DatabaseInfos(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	params := proute.Params.(*DatabaseGetParams)
 	tx, err := db.DB.Beginx()
@@ -133,8 +133,6 @@ func DatabaseInfos(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 	if err != nil {
 		log.Println(err)
 	}
-
-	//fmt.Println(dbInfos)
 
 	j, _ := json.Marshal(dbInfos)
 	w.Write(j)

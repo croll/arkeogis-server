@@ -110,10 +110,21 @@ func (d *Database) Get(tx *sqlx.Tx) (err error) {
 // GetFullInfosRepresentation returns all informations about a database
 func (d *Database) GetFullInfosRepresentation(tx *sqlx.Tx, langID int) (db DatabaseFullInfos, err error) {
 	db = DatabaseFullInfos{}
-	err = tx.Get(&db, "SELECT name, scale_resolution, geographical_extent, type, source_creation_date, owner, data_set, identifier, source, source_url, publisher, contributor, default_language, relation, coverage, copyright, state, license_id, subject, published, soft_deleted, d.created_at, d.updated_at, firstname || ' ' || lastname as owner_name FROM \"database\" d LEFT JOIN \"user\" u ON d.owner = u.id WHERE d.id = $1", d.Id)
-	if err != nil {
+
+	if d.Id == 0 {
+		db.Imports = make([]Import, 0)
+		db.Countries = make([]CountryInfos, 0)
+		db.Continents = make([]ContinentInfos, 0)
+		db.Handles = make([]Database_handle, 0)
+		db.Authors = make([]DatabaseAuthor, 0)
+		db.Contexts = make([]Database_context, 0)
+		db.Translations = make([]Database_tr, 0)
+		db.NumberOfSites = 0
 		return
 	}
+
+	err = tx.Get(&db, "SELECT name, scale_resolution, geographical_extent, type, source_creation_date, owner, data_set, identifier, source, source_url, publisher, contributor, default_language, relation, coverage, copyright, state, license_id, subject, published, soft_deleted, d.created_at, d.updated_at, firstname || ' ' || lastname as owner_name FROM \"database\" d LEFT JOIN \"user\" u ON d.owner = u.id WHERE d.id = $1", d.Id)
+
 	db.Authors, err = d.GetAuthorsList(tx)
 	if err != nil {
 		return
@@ -222,14 +233,12 @@ func (d *Database) GetAuthorsList(tx *sqlx.Tx) (authors []DatabaseAuthor, err er
 
 // SetAuthors links users as authors to a database
 func (d *Database) SetAuthors(tx *sqlx.Tx, authors []int) error {
-	/*
-		for _, uid := range authors {
-				_, err := tx.In("INSERT INTO \"database__author\" database_id, user_id VALUES ", uid, d.Id)
-				if err != nil {
-					return err
-				}
+	for _, uid := range authors {
+		_, err := tx.Exec("INSERT INTO \"database__authors\" (database_id, user_id) VALUES ($1, $2)", d.Id, uid)
+		if err != nil {
+			return err
 		}
-	*/
+	}
 	return nil
 }
 
