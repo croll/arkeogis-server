@@ -23,6 +23,7 @@ package rest
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -93,6 +94,10 @@ type PhotoGetParams struct {
 	Id int `min:"0" error:"Photo Id is mandatory"`
 }
 
+type UserSearchParams struct {
+	Text string `min:"0" error:"Search string is mandatory"`
+}
+
 func init() {
 
 	Routes := []*routes.Route{
@@ -125,6 +130,14 @@ func init() {
 				"adminusers",
 			},
 			Params: reflect.TypeOf(UserGetParams{}),
+		},
+		&routes.Route{
+			Path:        "/api/users/{text:[a-zA-Z]+}",
+			Description: "Search from arkeogis users",
+			Func:        UserSearch,
+			Method:      "GET",
+			Permissions: []string{},
+			Params:      reflect.TypeOf(UserSearchParams{}),
 		},
 		&routes.Route{
 			Path:        "/api/users/{id:[0-9]+}",
@@ -733,4 +746,26 @@ func UserPhoto(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	w.Header().Set("Content-Type", "image/jpeg")
 	w.Header().Set("Content-Length", strconv.Itoa(len(photo)))
 	w.Write(photo)
+}
+
+// UserSearch returns minimalist informations about users
+func UserSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+
+	fmt.Println(proute.Params)
+	params := proute.Params.(*UserSearchParams)
+
+	var users []struct {
+		Id       int    `json:"id"`
+		Fullname string `json:"fullname"`
+	}
+
+	err := db.DB.Select(&users, "SELECT id, firstname || ' ' || lastname as fullname FROM \"user\" WHERE firstname ilike $1 OR lastname ilike $1 AND active = true", "%"+params.Text+"%")
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	u, _ := json.Marshal(users)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(u)
 }
