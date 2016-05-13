@@ -85,15 +85,15 @@ func init() {
 
 // ImportStep1T struct holds information provided by user
 type ImportStep1T struct {
-	Name               string
-	Default_language int
+	Name                string
+	Default_language    int
 	Geographical_extent string
-	Continents []model.Continent
-	Countries  []model.Country
-	UseGeonames        bool
-	Separator          string
-	EchapCharacter     string
-	File               *routes.File
+	Continents          []model.Continent
+	Countries           []model.Country
+	UseGeonames         bool
+	Separator           string
+	EchapCharacter      string
+	File                *routes.File
 }
 
 // ImportStep1 is called by rest
@@ -209,13 +209,13 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	}
 
 	response := struct {
-		DatabaseId     int `json:"database_id"`
+		DatabaseId     int                           `json:"database_id"`
 		NumberOfSites  int                           `json:"nbSites"`
 		SitesWithError []string                      `json:"sitesWithError"`
 		Errors         []*databaseimport.ImportError `json:"errors"`
 		Lines          int                           `json:"nbLines"`
 	}{
-	    DatabaseId:     dbImport.Database.Id,
+		DatabaseId:     dbImport.Database.Id,
 		NumberOfSites:  dbImport.NumberOfSites,
 		SitesWithError: sitesWithError,
 		Errors:         dbImport.Errors,
