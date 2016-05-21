@@ -33,6 +33,7 @@ import (
 	"strings"
 
 	config "github.com/croll/arkeogis-server/config"
+	db "github.com/croll/arkeogis-server/db"
 )
 
 var translations map[string]map[string]string // [lang][key]
@@ -246,7 +247,7 @@ func BuildJSON(trans map[string]string) string {
 	return fmt.Sprintf("%s", res)
 }
 
-// Write JSON where it should be, using map of strings
+// WriteJSON writes json where it should be, using map of strings
 func WriteJSON(trans map[string]interface{}, lang string, side string) (err error) {
 	var filename string
 	filename, err = makeFilePath(lang, side, false)
@@ -264,4 +265,13 @@ func WriteJSON(trans map[string]interface{}, lang string, side string) (err erro
 	err = ioutil.WriteFile(filename, ([]byte)(j), 0777)
 
 	return
+}
+
+// GetQueryTranslationsAsJSON load translations from database
+func GetQueryTranslationsAsJSON(tableName, where string, fields ...string) string {
+	var f = "*"
+	if len(fields) > 0 {
+		f = strings.Join(fields, ", tbl.")
+	}
+	return db.AsJSON("SELECT tbl." + f + ", la.iso_code FROM " + tableName + " tbl LEFT JOIN lang la ON tbl.lang_id = la.id WHERE " + where)
 }
