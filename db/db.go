@@ -23,12 +23,13 @@ package arkeogis
 
 import (
 	"fmt"
-	config "github.com/croll/arkeogis-server/config"
-	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq"
 	"log"
 	"reflect"
 	"strings"
+
+	config "github.com/croll/arkeogis-server/config"
+	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 )
 
 var DB *sqlx.DB
@@ -56,4 +57,8 @@ func formatConnexionString() string {
 	c = strings.Trim(c, " ")
 	fmt.Println("*** postgres str :" + c)
 	return c
+}
+
+func AsJSON(query string) string {
+	return "SELECT array_to_json(array_agg(row_to_json(t))) FROM (" + query + ") t"
 }
