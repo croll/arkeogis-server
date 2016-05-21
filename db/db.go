@@ -22,6 +22,7 @@
 package arkeogis
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"reflect"
@@ -59,6 +60,13 @@ func formatConnexionString() string {
 	return c
 }
 
-func AsJSON(query string) string {
-	return "SELECT array_to_json(array_agg(row_to_json(t))) FROM (" + query + ") t"
+func AsJSON(query string, wrapTo ...string) (q string, err error) {
+	q = "SELECT array_to_json(array_agg(row_to_json(t))) FROM (" + query + ") t"
+	switch l := len(wrapTo); {
+	case l > 1:
+		err = errors.New("Only one var name please.")
+	case l == 1:
+		q = "SELECT ('{" + wrapTo[0] + ": ' || (" + q + ") || '}')"
+	}
+	return
 }
