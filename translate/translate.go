@@ -268,10 +268,10 @@ func WriteJSON(trans map[string]interface{}, lang string, side string) (err erro
 }
 
 // GetQueryTranslationsAsJSON load translations from database
-func GetQueryTranslationsAsJSON(tableName, where, wrapTo string, noBrace bool, fields ...string) string {
+func GetQueryTranslationsAsJSON(tableName, where, wrapTo string, fields ...string) string {
 	var f = "*"
 	if len(fields) > 0 {
 		f = strings.Join(fields, ", tbl.")
 	}
-	return db.AsJSON("SELECT tbl."+f+", la.iso_code FROM "+tableName+" tbl LEFT JOIN lang la ON tbl.lang_id = la.id WHERE "+where, wrapTo, noBrace)
+	return db.AsJSON("SELECT tbl."+f+", la.iso_code FROM "+tableName+" tbl LEFT JOIN lang la ON tbl.lang_id = la.id WHERE "+where, true, wrapTo, true)
 }
