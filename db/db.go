@@ -59,23 +59,29 @@ func formatConnexionString() string {
 	return c
 }
 
-func AsJSON(query string, wrapTo string) (q string) {
+func AsJSON(query string, wrapTo string, noBrace bool) (q string) {
 	q = "SELECT array_to_json(array_agg(row_to_json(t))) FROM (" + query + ") t"
 	if wrapTo != "" {
-		q = "SELECT ('{\"" + wrapTo + "\": ' || (" + q + ") || '}')"
+		if noBrace {
+			q = "SELECT ('\"" + wrapTo + "\": ' || (" + q + "))"
+		} else {
+			q = "SELECT ('{\"" + wrapTo + "\": ' || (" + q + ") || '}')"
+		}
 	}
 	return
 }
 
 func JSONQueryBuilder(subQueries []string, databaseName, where string) string {
-	outp := "SELECT (" + strings.Join(subQueries, "), (") + ") FROM " + databaseName + " WHERE " + where
-	/*
-		outp := "SELECT "
-		for k, sq := range subQueries {
-			outp += "(" + sq + ") AS q" + strconv.Itoa(k) + " || '-' || "
-			fmt.Println(outp)
+	//outp := "SELECT (" + strings.Join(subQueries, "), (") + ") FROM " + databaseName + " WHERE " + where
+	outp := "SELECT('{' || (SELECT "
+	for k, sq := range subQueries {
+		outp += "COALESCE((" + sq + "), '')"
+		if k < len(subQueries)-1 {
+			outp += " || ',' || "
 		}
-		outp += " FROM " + databaseName + " WHERE " + where
-	*/
+		fmt.Println(outp)
+	}
+	outp += " FROM " + databaseName + " WHERE " + where
+	outp += ") || '}')"
 	return outp
 }
