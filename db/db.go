@@ -26,7 +26,6 @@ import (
 	"log"
 	"reflect"
 	"regexp"
-	"strconv"
 	"strings"
 
 	config "github.com/croll/arkeogis-server/config"
@@ -81,8 +80,8 @@ var rgxp = regexp.MustCompile(`^SELECT \('"(\w+)":`)
 
 func JSONQueryBuilder(subQueries []string, databaseName, where string) string {
 	outp := "SELECT('{' || (SELECT "
+	emptyJSON := ""
 	for k, sq := range subQueries {
-		emptyJSON := "'\"q" + strconv.Itoa(k) + "\": null"
 		m := rgxp.FindStringSubmatch(sq)
 		if len(m) > 0 {
 			emptyJSON = "\"" + m[1] + "\": null"
