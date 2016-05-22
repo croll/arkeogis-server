@@ -25,6 +25,7 @@ import (
 	"fmt"
 	"log"
 	"reflect"
+	"strconv"
 	"strings"
 
 	config "github.com/croll/arkeogis-server/config"
@@ -75,7 +76,7 @@ func JSONQueryBuilder(subQueries []string, databaseName, where string) string {
 	//outp := "SELECT (" + strings.Join(subQueries, "), (") + ") FROM " + databaseName + " WHERE " + where
 	outp := "SELECT('{' || (SELECT "
 	for k, sq := range subQueries {
-		outp += "COALESCE((" + sq + "), '')"
+		outp += "COALESCE((" + sq + "), '\"q" + strconv.Itoa(k) + "\": null')"
 		if k < len(subQueries)-1 {
 			outp += " || ',' || "
 		}
