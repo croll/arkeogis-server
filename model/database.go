@@ -155,13 +155,13 @@ func (d *Database) GetFullInfosRepresentation(tx *sqlx.Tx, langID int) (db Datab
 	return
 }
 
-// GetDbFullInfosAsJSON returns all infos about a database
+// GetFullInfosAsJSON returns all infos about a database
 func (d *Database) GetFullInfosAsJSON(tx *sqlx.Tx, langID int) (jsonString string, err error) {
 
 	// dbid := strconv.Itoa(databaseID)
 	lid := strconv.Itoa(langID)
 
-	var q = make([]string, 6)
+	var q = make([]string, 7)
 
 	q[0] = db.AsJSON("SELECT name, scale_resolution, geographical_extent, type, source_creation_date, owner, data_set, identifier, source, source_url, publisher, contributor, default_language, relation, coverage, copyright, state, license_id, subject, published, soft_deleted, db.created_at, db.updated_at, firstname || ' ' || lastname as owner_name, (SELECT count(*) FROM site WHERE database_id = db.id) as number_of_sites FROM \"database\" db LEFT JOIN \"user\" u ON db.owner = u.id WHERE db.id = d.id", false, "infos", true)
 
@@ -173,7 +173,9 @@ func (d *Database) GetFullInfosAsJSON(tx *sqlx.Tx, langID int) (jsonString strin
 
 	q[4] = db.AsJSON("SELECT i.id, u.firstname, u.lastname, i.filename, i.created_at FROM import i LEFT JOIN \"user\" u ON i.user_id = u.id WHERE database_id = d.id", true, "imports", true)
 
-	q[5], _ = translate.GetQueryTranslationsAsJSONObject("database_tr", "database_id = d.id", true, "description", "bibliography")
+	q[5] = db.AsJSON("SELECT context FROM database_context WHERE database_id = d.id", true, "contexts", true)
+
+	q[6], _ = translate.GetQueryTranslationsAsJSONObject("database_tr", "database_id = d.id", "translations", true, "description", "bibliography", "geographical_limit", "context_description")
 
 	// fmt.Println(q[0])
 	// fmt.Println(q[1])
