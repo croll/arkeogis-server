@@ -173,7 +173,7 @@ func (d *Database) GetFullInfosAsJSON(tx *sqlx.Tx, langID int) (jsonString strin
 
 	q[4] = db.AsJSON("SELECT i.id, u.firstname, u.lastname, i.filename, i.created_at FROM import i LEFT JOIN \"user\" u ON i.user_id = u.id WHERE database_id = d.id", true, "imports", true)
 
-	q[5] = translate.GetQueryTranslationsAsJSON("database_tr", "database_id = d.id", "translations")
+	q[5], _ = translate.GetQueryTranslationsAsJSONObject("database_tr", "database_id = d.id", "description", "bibliography")
 
 	// fmt.Println(q[0])
 	// fmt.Println(q[1])

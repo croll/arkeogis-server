@@ -275,3 +275,21 @@ func GetQueryTranslationsAsJSON(tableName, where, wrapTo string, fields ...strin
 	}
 	return db.AsJSON("SELECT tbl."+f+", la.iso_code FROM "+tableName+" tbl LEFT JOIN lang la ON tbl.lang_id = la.id WHERE "+where, true, wrapTo, true)
 }
+
+// GetQueryTranslationsAsJSONObject load translations from database
+func GetQueryTranslationsAsJSONObject(tableName, where string, fields ...string) (jsonQuery string, err error) {
+	jsonQuery = "SELECT '{\"translations\": {' || "
+	numFields := len(fields)
+	if numFields == 0 {
+		return "", errors.New("GetQueryTranslationsAsJSONObject: You have to provide at least one field")
+	}
+	for k, f := range fields {
+		jsonQuery += "'\"" + f + "\": ' || json_object_agg(la.iso_code, tbl." + f + ")"
+		if k < numFields-1 {
+			jsonQuery += " || ',' || "
+		}
+	}
+	jsonQuery += " || '}}'"
+	jsonQuery += " FROM " + tableName + " tbl LEFT JOIN lang la ON tbl.lang_id = la.id WHERE " + where
+	return
+}
