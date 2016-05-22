@@ -128,12 +128,12 @@ func DatabaseInfos(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 	d.Id = params.Id
 	//fmt.Println(d)
 
-	dbInfos, err := d.GetFullInfosRepresentation(tx, proute.Lang1.Id)
+	dbInfos, err := d.GetFullInfosAsJSON(tx, proute.Lang1.Id)
 
 	if err != nil {
 		log.Println(err)
 	}
 
-	j, _ := json.Marshal(dbInfos)
-	w.Write(j)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(dbInfos))
 }

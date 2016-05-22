@@ -61,8 +61,12 @@ func formatConnexionString() string {
 	return c
 }
 
-func AsJSON(query string, wrapTo string, noBrace bool) (q string) {
-	q = "SELECT array_to_json(array_agg(row_to_json(t))) FROM (" + query + ") t"
+func AsJSON(query string, asArray bool, wrapTo string, noBrace bool) (q string) {
+	if asArray {
+		q = "SELECT array_to_json(array_agg(row_to_json(t))) FROM (" + query + ") t"
+	} else {
+		q = "SELECT row_to_json(t) FROM (" + query + ") t"
+	}
 	if wrapTo != "" {
 		if noBrace {
 			q = "SELECT ('\"" + wrapTo + "\": ' || (" + q + "))"
@@ -76,9 +80,7 @@ func AsJSON(query string, wrapTo string, noBrace bool) (q string) {
 var rgxp = regexp.MustCompile(`^SELECT \('"(\w+)":`)
 
 func JSONQueryBuilder(subQueries []string, databaseName, where string) string {
-	//outp := "SELECT (" + strings.Join(subQueries, "), (") + ") FROM " + databaseName + " WHERE " + where
 	outp := "SELECT('{' || (SELECT "
-	// outp += "COALESCE((" + sq + "), '\"q" + strconv.Itoa(k) + "\": null')"
 	for k, sq := range subQueries {
 		emptyJSON := "'\"q" + strconv.Itoa(k) + "\": null"
 		m := rgxp.FindStringSubmatch(sq)
@@ -89,7 +91,6 @@ func JSONQueryBuilder(subQueries []string, databaseName, where string) string {
 		if k < len(subQueries)-1 {
 			outp += " || ',' || "
 		}
-		//	fmt.Println(outp)
 	}
 	outp += " FROM " + databaseName + " WHERE " + where
 	outp += ") || '}')"

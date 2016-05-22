@@ -85,15 +85,17 @@ func init() {
 
 // ImportStep1T struct holds information provided by user
 type ImportStep1T struct {
-	Name                string
-	Default_language    int
-	Geographical_extent string
-	Continents          []model.Continent
-	Countries           []model.Country
-	UseGeonames         bool
-	Separator           string
-	EchapCharacter      string
-	File                *routes.File
+	Infos struct {
+		Name                string
+		Geographical_extent string
+	}
+	Default_language int
+	Continents       []model.Continent
+	Countries        []model.Country
+	UseGeonames      bool
+	Separator        string
+	EchapCharacter   string
+	File             *routes.File
 }
 
 // ImportStep1 is called by rest
@@ -147,7 +149,7 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	// Init import
 	dbImport = new(databaseimport.DatabaseImport)
-	err = dbImport.New(parser, user.(model.User).Id, params.Name, params.Default_language)
+	err = dbImport.New(parser, user.(model.User).Id, params.Infos.Name, params.Default_language)
 	if err != nil {
 		parser.AddError(err.Error())
 		sendError(w, parser.Errors)
@@ -171,7 +173,7 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	for _, c := range params.Countries {
 		countriesID = append(countriesID, c.Geonameid)
 	}
-	err = dbImport.ProcessEssentialDatabaseInfos(params.Name, params.Geographical_extent, continentsID, countriesID)
+	err = dbImport.ProcessEssentialDatabaseInfos(params.Infos.Name, params.Infos.Geographical_extent, continentsID, countriesID)
 	if err != nil {
 		parser.AddError(err.Error())
 		sendError(w, parser.Errors)
