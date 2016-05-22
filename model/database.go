@@ -164,10 +164,8 @@ func GetDbFullInfosAsJSON(databaseID, langID int) string {
 
 	var q = make([]string, 6)
 
-	// queries[0] = db.AsJSON("SELECT name, scale_resolution, geographical_extent, type, source_creation_date, owner, data_set, identifier, source, source_url, publisher, contributor, default_language, relation, coverage, copyright, state, license_id, subject, published, soft_deleted, d.created_at, d.updated_at, firstname || ' ' || lastname as owner_name, (SELECT count(*) FROM site  WHERE database_id = d.id) as number_of_sites FROM \"database\" d LEFT JOIN \"user\" u ON d.owner = u.id WHERE d.id = "+dbid, "database")
 	q[0] = db.AsJSON("SELECT name, scale_resolution, geographical_extent, type, source_creation_date, owner, data_set, identifier, source, source_url, publisher, contributor, default_language, relation, coverage, copyright, state, license_id, subject, published, soft_deleted, db.created_at, db.updated_at, firstname || ' ' || lastname as owner_name, (SELECT count(*) FROM site WHERE database_id = db.id) as number_of_sites FROM \"database\" db LEFT JOIN \"user\" u ON db.owner = u.id WHERE db.id = d.id", "database", true)
 
-	// queries[1] = db.AsJSON("SELECT u.id, u.firstname, u.lastname FROM \"user\" u LEFT JOIN database__authors da ON u.id = da.user_id WHERE da.database_id = "+dbid, "authors")
 	q[1] = db.AsJSON("SELECT u.id, u.firstname, u.lastname FROM \"user\" u LEFT JOIN database__authors da ON u.id = da.user_id WHERE da.database_id = d.id", "authors", true)
 
 	q[2] = db.AsJSON("SELECT ct.name, c.geonameid, c.iso_code, c.geom FROM country c LEFT JOIN database__country dc ON c.geonameid = dc.country_geonameid LEFT JOIN country_tr ct ON c.geonameid = ct.country_geonameid WHERE dc.database_id = d.id and ct.lang_id = "+lid, "countries", true)
@@ -178,12 +176,12 @@ func GetDbFullInfosAsJSON(databaseID, langID int) string {
 
 	q[5] = translate.GetQueryTranslationsAsJSON("database_tr", "database_id = d.id", "translations", true)
 
-	fmt.Println(q[0])
-	fmt.Println(q[1])
-	fmt.Println(q[2])
-	fmt.Println(q[3])
-	fmt.Println(q[4])
-	fmt.Println(q[5])
+	// fmt.Println(q[0])
+	// fmt.Println(q[1])
+	// fmt.Println(q[2])
+	// fmt.Println(q[3])
+	// fmt.Println(q[4])
+	// fmt.Println(q[5])
 
 	fmt.Println(db.JSONQueryBuilder(q, "database d", "d.id = "+dbid))
 

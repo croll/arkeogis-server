@@ -25,6 +25,7 @@ import (
 	"fmt"
 	"log"
 	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -72,15 +73,23 @@ func AsJSON(query string, wrapTo string, noBrace bool) (q string) {
 	return
 }
 
+var rgxp = regexp.MustCompile(`^SELECT \('"(\w+)":`)
+
 func JSONQueryBuilder(subQueries []string, databaseName, where string) string {
 	//outp := "SELECT (" + strings.Join(subQueries, "), (") + ") FROM " + databaseName + " WHERE " + where
 	outp := "SELECT('{' || (SELECT "
+	// outp += "COALESCE((" + sq + "), '\"q" + strconv.Itoa(k) + "\": null')"
 	for k, sq := range subQueries {
-		outp += "COALESCE((" + sq + "), '\"q" + strconv.Itoa(k) + "\": null')"
+		emptyJSON := "'\"q" + strconv.Itoa(k) + "\": null"
+		m := rgxp.FindStringSubmatch(sq)
+		if len(m) > 0 {
+			emptyJSON = "\"" + m[1] + "\": null"
+		}
+		outp += "COALESCE((" + sq + "), '" + emptyJSON + "')"
 		if k < len(subQueries)-1 {
 			outp += " || ',' || "
 		}
-		fmt.Println(outp)
+		//	fmt.Println(outp)
 	}
 	outp += " FROM " + databaseName + " WHERE " + where
 	outp += ") || '}')"
