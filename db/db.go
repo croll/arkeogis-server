@@ -22,7 +22,6 @@
 package arkeogis
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"reflect"
@@ -60,13 +59,23 @@ func formatConnexionString() string {
 	return c
 }
 
-func AsJSON(query string, wrapTo ...string) (q string, err error) {
+func AsJSON(query string, wrapTo string) (q string) {
 	q = "SELECT array_to_json(array_agg(row_to_json(t))) FROM (" + query + ") t"
-	switch l := len(wrapTo); {
-	case l > 1:
-		err = errors.New("Only one var name please.")
-	case l == 1:
-		q = "SELECT ('{" + wrapTo[0] + ": ' || (" + q + ") || '}')"
+	if wrapTo != "" {
+		q = "SELECT ('{\"" + wrapTo + "\": ' || (" + q + ") || '}')"
 	}
 	return
+}
+
+func JSONQueryBuilder(subQueries []string, databaseName, where string) string {
+	outp := "SELECT (" + strings.Join(subQueries, "), (") + ") FROM " + databaseName + " WHERE " + where
+	/*
+		outp := "SELECT "
+		for k, sq := range subQueries {
+			outp += "(" + sq + ") AS q" + strconv.Itoa(k) + " || '-' || "
+			fmt.Println(outp)
+		}
+		outp += " FROM " + databaseName + " WHERE " + where
+	*/
+	return outp
 }

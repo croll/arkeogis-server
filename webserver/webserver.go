@@ -26,21 +26,25 @@ import (
 	"net/http"
 	"strconv"
 
+	"log"
+	"os"
+
 	"github.com/codegangsta/negroni"
 	config "github.com/croll/arkeogis-server/config"
+	"github.com/croll/arkeogis-server/model"
 	"github.com/croll/arkeogis-server/webserver/rest"
 	routes "github.com/croll/arkeogis-server/webserver/routes"
-	"os"
-	"log"
 )
 
 func StartServer() {
 	fmt.Println("starting web server...")
 	rest.P()
+	// test
+	model.GetDbFullInfosAsJSON(1, 47)
 	// Log to file
-	f, err := os.OpenFile("logs/arkeogis.log", os.O_RDWR | os.O_CREATE | os.O_APPEND, 0666)
+	f, err := os.OpenFile("logs/arkeogis.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
-	    log.Fatal("Error opening log file: %v", err)
+		log.Fatal("Error opening log file: %v", err)
 	}
 	defer f.Close()
 	log.SetOutput(f)

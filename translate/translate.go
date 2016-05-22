@@ -268,7 +268,7 @@ func WriteJSON(trans map[string]interface{}, lang string, side string) (err erro
 }
 
 // GetQueryTranslationsAsJSON load translations from database
-func GetQueryTranslationsAsJSON(tableName, where, wrapTo string, fields ...string) (string, error) {
+func GetQueryTranslationsAsJSON(tableName, where, wrapTo string, fields ...string) string {
 	var f = "*"
 	if len(fields) > 0 {
 		f = strings.Join(fields, ", tbl.")
