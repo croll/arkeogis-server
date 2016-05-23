@@ -23,12 +23,14 @@ package arkeogis
 
 import (
 	"fmt"
+	"log"
+	"reflect"
+	"regexp"
+	"strings"
+
 	config "github.com/croll/arkeogis-server/config"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
-	"log"
-	"reflect"
-	"strings"
 )
 
 var DB *sqlx.DB
@@ -56,4 +58,40 @@ func formatConnexionString() string {
 	c = strings.Trim(c, " ")
 	fmt.Println("*** postgres str :" + c)
 	return c
+}
+
+func AsJSON(query string, asArray bool, wrapTo string, noBrace bool) (q string) {
+	if asArray {
+		q = "SELECT array_to_json(array_agg(row_to_json(t))) FROM (" + query + ") t"
+	} else {
+		q = "SELECT row_to_json(t) FROM (" + query + ") t"
+	}
+	if wrapTo != "" {
+		if noBrace {
+			q = "SELECT ('\"" + wrapTo + "\": ' || (" + q + "))"
+		} else {
+			q = "SELECT ('{\"" + wrapTo + "\": ' || (" + q + ") || '}')"
+		}
+	}
+	return
+}
+
+var rgxp = regexp.MustCompile(`^SELECT \('"(\w+)":`)
+
+func JSONQueryBuilder(subQueries []string, databaseName, where string) string {
+	outp := "SELECT('{' || (SELECT "
+	emptyJSON := ""
+	for k, sq := range subQueries {
+		m := rgxp.FindStringSubmatch(sq)
+		if len(m) > 0 {
+			emptyJSON = "\"" + m[1] + "\": null"
+		}
+		outp += "COALESCE((" + sq + "), '" + emptyJSON + "')"
+		if k < len(subQueries)-1 {
+			outp += " || ',' || "
+		}
+	}
+	outp += " FROM " + databaseName + " WHERE " + where
+	outp += ") || '}')"
+	return outp
 }

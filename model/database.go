@@ -23,8 +23,11 @@ package model
 
 import (
 	"database/sql"
+	"strconv"
 	"time"
 
+	db "github.com/croll/arkeogis-server/db"
+	"github.com/croll/arkeogis-server/translate"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -39,8 +42,8 @@ type DatabaseAuthor struct {
 type CountryInfos struct {
 	Country
 	Country_tr
-	Country_geonameid int            `json:'-'`
-	Lang_id           int            `json:'-'`
+	Country_geonameid int            `json:"-"`
+	Lang_id           int            `json:"-"`
 	Created_at        time.Time      `json:"-"`
 	Updated_at        time.Time      `json:"-"`
 	Geom              sql.NullString `json:"-"`
@@ -50,8 +53,8 @@ type CountryInfos struct {
 type ContinentInfos struct {
 	Continent
 	Continent_tr
-	Continent_geonameid int            `json:'-'`
-	Lang_id             int            `json:'-'`
+	Continent_geonameid int            `json:"-"`
+	Lang_id             int            `json:"-"`
 	Created_at          time.Time      `json:"-"`
 	Updated_at          time.Time      `json:"-"`
 	Geom                sql.NullString `json:"-"`
@@ -150,6 +153,45 @@ func (d *Database) GetFullInfosRepresentation(tx *sqlx.Tx, langID int) (db Datab
 		return
 	}
 	return
+}
+
+// GetFullInfosAsJSON returns all infos about a database
+func (d *Database) GetFullInfosAsJSON(tx *sqlx.Tx, langID int) (jsonString string, err error) {
+
+	// dbid := strconv.Itoa(databaseID)
+	lid := strconv.Itoa(langID)
+
+	var q = make([]string, 7)
+
+	q[0] = db.AsJSON("SELECT name, scale_resolution, geographical_extent, type, source_creation_date, owner, data_set, identifier, source, source_url, publisher, contributor, default_language, relation, coverage, copyright, state, license_id, subject, published, soft_deleted, db.created_at, db.updated_at, firstname || ' ' || lastname as owner_name, (SELECT count(*) FROM site WHERE database_id = db.id) as number_of_sites FROM \"database\" db LEFT JOIN \"user\" u ON db.owner = u.id WHERE db.id = d.id", false, "infos", true)
+
+	q[1] = db.AsJSON("SELECT u.id, u.firstname, u.lastname FROM \"user\" u LEFT JOIN database__authors da ON u.id = da.user_id WHERE da.database_id = d.id", true, "authors", true)
+
+	q[2] = db.AsJSON("SELECT ct.name, c.geonameid, c.iso_code, c.geom FROM country c LEFT JOIN database__country dc ON c.geonameid = dc.country_geonameid LEFT JOIN country_tr ct ON c.geonameid = ct.country_geonameid WHERE dc.database_id = d.id and ct.lang_id = "+lid, true, "countries", true)
+
+	q[3] = db.AsJSON("SELECT ct.name, c.geonameid, c.iso_code, c.geom FROM continent c LEFT JOIN database__continent dc ON c.geonameid = dc.continent_geonameid LEFT JOIN continent_tr ct ON c.geonameid = ct.continent_geonameid WHERE dc.database_id = d.id AND ct.lang_id = "+lid, true, "continents", true)
+
+	q[4] = db.AsJSON("SELECT i.id, u.firstname, u.lastname, i.filename, i.created_at FROM import i LEFT JOIN \"user\" u ON i.user_id = u.id WHERE database_id = d.id", true, "imports", true)
+
+	q[5] = db.AsJSON("SELECT context FROM database_context WHERE database_id = d.id", true, "contexts", true)
+
+	q[6], _ = translate.GetQueryTranslationsAsJSONObject("database_tr", "database_id = d.id", "translations", true, "description", "bibliography", "geographical_limit", "context_description")
+
+	// fmt.Println(q[0])
+	// fmt.Println(q[1])
+	// fmt.Println(q[2])
+	// fmt.Println(q[3])
+	// fmt.Println(q[4])
+	// fmt.Println(q[5])
+
+	err = tx.Get(&jsonString, db.JSONQueryBuilder(q, "database d", "d.id = "+strconv.Itoa(d.Id)))
+
+	if jsonString == "" {
+		jsonString = "null"
+	}
+
+	return
+
 }
 
 // Create insert the database into arkeogis db
@@ -264,7 +306,7 @@ func (d *Database) GetHandlesList(tx *sqlx.Tx) (handles []Database_handle, err e
 // GetImportsList lists all informations about an import (date, filename, etc)
 func (d *Database) GetImportsList(tx *sqlx.Tx) (imports []Import, err error) {
 	imports = []Import{}
-	err = tx.Select(&imports, "SELECT i.id, u.firstname, u.lastname, i.filename, i.created_at FROM import i LEFT JOIN user u ON i.user_id = u.id WHERE database_id = $1", d.Id)
+	err = tx.Select(&imports, "SELECT i.id, u.firstname, u.lastname, i.filename, i.created_at FROM import i LEFT JOIN \"user\" u ON i.user_id = u.id WHERE database_id = $1", d.Id)
 	return
 }
 
@@ -278,12 +320,12 @@ func (d *Database) GetLastImport(tx *sqlx.Tx) (imp Import, err error) {
 // GetTranslations lists all translated fields from database
 func (d *Database) GetTranslations(tx *sqlx.Tx) (translations []Database_tr, err error) {
 	translations = []Database_tr{}
-	err = tx.Select(&translations, "SELECT * FROM database_tr  WHERE database_id = $1", d.Id)
+	err = tx.Select(&translations, "SELECT * FROM database_tr WHERE database_id = $1", d.Id)
 	return
 }
 
 // GetNumberOfSites returns an int which represent the number of sites linked to a database
 func (d *Database) GetNumberOfSites(tx *sqlx.Tx) (nb int, err error) {
-	err = tx.Get(&nb, "SELECT count(*) FROM sites WHERE database_id = $1", d.Id)
+	err = tx.Get(&nb, "SELECT count(*) FROM site WHERE database_id = $1", d.Id)
 	return
 }

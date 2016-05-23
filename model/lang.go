@@ -42,11 +42,22 @@ func (l *Lang) Get(tx *sqlx.Tx) error {
 	return stmt.Get(l, l)
 }
 
-// GetActiveLangs return an array of Lang object which are actives only
+// GetActiveLangs returns an array of Lang object which are actives only
 func GetActiveLangs() ([]Lang, error) {
 
 	langs := []Lang{}
 	err := db.DB.Select(&langs, "SELECT id, iso_code AS isocode FROM lang WHERE active = true AND iso_code != 'D'")
+	if err != nil {
+		return langs, err
+	}
+	return langs, nil
+}
+
+// GetLangs returns an array of Lang objects
+func GetLangs() ([]Lang, error) {
+
+	langs := []Lang{}
+	err := db.DB.Select(&langs, "SELECT id, iso_code AS isocode FROM lang WHERE AND iso_code != 'D'")
 	if err != nil {
 		return langs, err
 	}

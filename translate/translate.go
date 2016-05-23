@@ -33,6 +33,7 @@ import (
 	"strings"
 
 	config "github.com/croll/arkeogis-server/config"
+	db "github.com/croll/arkeogis-server/db"
 )
 
 var translations map[string]map[string]string // [lang][key]
@@ -246,7 +247,7 @@ func BuildJSON(trans map[string]string) string {
 	return fmt.Sprintf("%s", res)
 }
 
-// Write JSON where it should be, using map of strings
+// WriteJSON writes json where it should be, using map of strings
 func WriteJSON(trans map[string]interface{}, lang string, side string) (err error) {
 	var filename string
 	filename, err = makeFilePath(lang, side, false)
@@ -263,5 +264,44 @@ func WriteJSON(trans map[string]interface{}, lang string, side string) (err erro
 	log.Println("writing file : ", filename)
 	err = ioutil.WriteFile(filename, ([]byte)(j), 0777)
 
+	return
+}
+
+// GetQueryTranslationsAsJSON load translations from database
+func GetQueryTranslationsAsJSON(tableName, where, wrapTo string, fields ...string) string {
+	var f = "*"
+	if len(fields) > 0 {
+		f = strings.Join(fields, ", tbl.")
+	}
+	return db.AsJSON("SELECT tbl."+f+", la.iso_code FROM "+tableName+" tbl LEFT JOIN lang la ON tbl.lang_id = la.id WHERE "+where, true, wrapTo, true)
+}
+
+// GetQueryTranslationsAsJSONObject load translations from database
+func GetQueryTranslationsAsJSONObject(tableName, where string, wrapTo string, noBrace bool, fields ...string) (jsonQuery string, err error) {
+
+	if wrapTo == "" {
+		wrapTo = "translations"
+	}
+
+	jsonQuery = "SELECT '"
+	if noBrace == false {
+		jsonQuery += "{"
+	}
+	jsonQuery += "\"" + wrapTo + "\": {' || "
+	numFields := len(fields)
+	if numFields == 0 {
+		return "", errors.New("GetQueryTranslationsAsJSONObject: You have to provide at least one field")
+	}
+	for k, f := range fields {
+		jsonQuery += "'\"" + f + "\": ' || json_object_agg(la.iso_code, tbl." + f + ")"
+		if k < numFields-1 {
+			jsonQuery += " || ',' || "
+		}
+	}
+	jsonQuery += " || '}'"
+	if noBrace == false {
+		jsonQuery += " || '}'"
+	}
+	jsonQuery += " FROM " + tableName + " tbl LEFT JOIN lang la ON tbl.lang_id = la.id WHERE " + where
 	return
 }
