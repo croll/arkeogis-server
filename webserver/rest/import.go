@@ -24,11 +24,12 @@ package rest
 import (
 	//	"github.com/croll/arkeogis-server/csvimport"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"reflect"
-	// "fmt"
+	"time"
 
 	"unicode/utf8"
 
@@ -263,9 +264,34 @@ func writeResponse(w http.ResponseWriter, numberOfSites int, sitesWithError []st
 */
 
 type ImportStep3T struct {
+	DatabaseID           int
+	Authors              []int
+	Type                 string
+	Source_creation_date time.Time
+	Contexts             []string
+	License_Id           int
+	Scale_resolution     string
+	Subject              string
+	State                string
+	Description          []struct {
+		LangID string
+		Text   string
+	}
 }
 
 func ImportStep3(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+
+	params := proute.Json.(*ImportStep3T)
+
+	fmt.Println("PARAMS STEP 3:")
+	fmt.Println(params)
+
+	//tx, err := db.DB.Beginx()
+	//if err != nil {
+	//return errors.New("Can't start transaction for database import step3")
+	//}
+
+	//db.BD.Query("UPDATE \"database\" SET (\"type\", source_creation_date, license_id, scale_resolution, subject, state) VALUES (:type, :source_creation_date, :license_id, :scale_resolution, :subject, :state)")
 }
 
 type ImportStep4T struct {

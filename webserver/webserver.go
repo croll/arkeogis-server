@@ -43,6 +43,10 @@ func StartServer() {
 	if err != nil {
 		log.Fatalf("Error opening log file: %v", err)
 	}
+	// Test
+	// tx, err := db.DB.Beginx()
+	// d := model.Database{Id: 13}
+	// d.GetSitesAsJSON(tx, 47)
 	defer f.Close()
 	log.SetOutput(f)
 	// Configure Negroni and start server
