@@ -28,6 +28,7 @@ import (
 	"net/http"
 
 	db "github.com/croll/arkeogis-server/db"
+	"github.com/croll/arkeogis-server/translate"
 
 	routes "github.com/croll/arkeogis-server/webserver/routes"
 	sqlx_types "github.com/jmoiron/sqlx/types"
@@ -55,7 +56,12 @@ func CharacsAll(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	characs := []row{}
 
-	err := db.DB.Select(&characs, "select parent_id, id, to_json((select array_agg(charac_tr.*) from charac_tr where charac_tr.charac_id = charac.id)) as tr FROM charac order by parent_id, \"order\", id")
+	//err := db.DB.Select(&characs, "select parent_id, id, to_json((select array_agg(charac_tr.*) from charac_tr where charac_tr.charac_id = charac.id)) as tr FROM charac order by parent_id, \"order\", id")
+	transquery, err := translate.GetQueryTranslationsAsJSONObject("charac_tr", "tbl.charac_id = charac.id", "", false, "name")
+	q := "select parent_id, id, (" + transquery + ") as tr FROM charac order by parent_id, \"order\", id"
+	fmt.Println("q: ", q)
+	err = db.DB.Select(&characs, q)
+	fmt.Println("characs: ", characs)
 	if err != nil {
 		fmt.Println("err: ", err)
 		return
