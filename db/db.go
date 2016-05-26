@@ -95,3 +95,61 @@ func JSONQueryBuilder(subQueries []string, databaseName, where string) string {
 	outp += ") || '}')"
 	return outp
 }
+
+//'{ "type": "FeatureCollection", "features": [' || ']}'
+
+/*
+SELECT '{' ||
+	'"site": ' || (
+		SELECT row_to_json(site_infos) FROM (SELECT code, name, city_name, city_geonameid, centroid, occupation, created_at, updated_at FROM site WHERE id = s.id) site_infos
+	) ||
+	'"site_ranges": ' || (
+		SELECT  array_to_json(array_agg(row_to_json(q_src))) FROM (
+			SELECT *,
+			(
+				SELECT array_to_json(array_agg(row_to_json(q_src2))) FROM (
+					SELECT src.*, srctr.comment, srctr.bibliography FROM site_range__charac src LEFT JOIN site_range__charac_tr srctr ON src.id = srctr.site_range__charac_id WHERE src.site_range_id IN (SELECT site_range_id FROM site_range__charac WHERE srctr.lang_id = 47 AND site_range_id = sr.id)
+				) q_src2
+			) characs
+	   	FROM site_range sr WHERE sr.site_id = s.id) q_src
+	)
+	|| '}'
+FROM site s WHERE id = 1;
+*/
+
+/*
+SELECT id,
+	(
+		SELECT (
+			SELECT '{"site_ranges": ' || array_to_json(array_agg(row_to_json(q_src))) || ', "characs": ' ||
+			(
+			SELECT array_to_json(array_agg(row_to_json(q_src2))) FROM (SELECT src.*, srctr.comment, srctr.bibliography FROM site_range__charac src LEFT JOIN site_range__charac_tr srctr ON src.id = srctr.site_range__charac_id WHERE src.site_range_id IN (SELECT id FROM site_range__charac WHERE srctr.lang_id = 47 AND site_range_id IN (SELECT id FROM site_range WHERE site_range.site_id = s.id)) ) q_src2
+			) || '}' FROM (SELECT * FROM site_range sr WHERE sr.site_id = s.id) q_src
+		)
+	) site_ranges_list
+FROM site s WHERE id = 13;
+
+*/
+//FROM site s WHERE database_id = 13;
+
+/*
+SELECT s.id, ST_AsText(geom),
+	(
+		SELECT (
+			SELECT array_to_json(array_agg(row_to_json(q_src))) || ' ' ||
+			(
+			SELECT array_to_json(array_agg(row_to_json(q_src2))) FROM (SELECT * FROM site_range__charac src WHERE src.site_range_id IS NOT NULL) q_src2
+			) characs_list FROM (SELECT id FROM site_range sr WHERE sr.id = s.id) q_src
+		)
+	) site_ranges_list
+FROM site s WHERE s.id = 1;
+*/
+
+/*
+SELECT s.id, ST_AsText(geom),
+	(
+		SELECT
+			array_to_json(array_agg(row_to_json(q_src))) FROM (SELECT * FROM site_range sr WHERE sr.id = s.id) q_src
+	) site_ranges_list
+FROM site s WHERE s.database_id = 13;
+*/
