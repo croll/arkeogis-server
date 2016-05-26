@@ -35,7 +35,7 @@ import (
 func init() {
 	Routes := []*routes.Route{
 		&routes.Route{
-			Path:        "/api/search/sites",
+			Path:        "/api/search/sites/{id:[0-9]+}",
 			Description: "Get list of all databases in arkeogis",
 			Func:        SearchSites,
 			Method:      "GET",
@@ -47,15 +47,13 @@ func init() {
 
 // DatabaseGetParams are params received by REST query
 type SearchSitesParams struct {
-	Database_id []int
+	Id int
 }
 
 // GetSitesAsJSON returns all infos about a database
 func SearchSites(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	params := proute.Params.(*SearchSitesParams)
-
-	fmt.Println(params)
 
 	tx, err := db.DB.Beginx()
 	if err != nil {
@@ -77,7 +75,7 @@ func SearchSites(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	q += "			SELECT *,"
 	q += "			("
 	q += "				SELECT array_to_json(array_agg(row_to_json(q_src2))) FROM ("
-	q += "					SELECT src.*, srctr.comment, srctr.bibliography FROM site_range__charac src LEFT JOIN site_range__charac_tr srctr ON src.id = srctr.site_range__charac_id WHERE src.site_range_id IN (SELECT site_range_id FROM site_range__charac WHERE srctr.lang_id = $1 AND site_range_id = sr.id)"
+	q += "					SELECT src.*, srctr.comment, srctr.bibliography FROM site_range__charac src LEFT JOIN site_range__charac_tr srctr ON src.id = srctr.site_range__charac_id WHERE src.site_range_id IN (SELECT site_range_id FROM site_range__charac WHERE site_range_id = sr.id)"
 	q += "				) q_src2"
 	q += "			) characs"
 	q += "	   	FROM site_range sr WHERE sr.site_id = s.id) q_src"
@@ -85,9 +83,9 @@ func SearchSites(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	q += "	 FROM (SELECT code, name, city_name, city_geonameid, centroid, occupation, created_at, updated_at FROM site WHERE id = s.id) site_infos"
 	q += ")"
 	q += "|| '}}'"
-	q += " FROM site s WHERE database_id = 29"
+	q += " FROM site s WHERE database_id = $1"
 
-	err = tx.Select(&jsonResult, q, 47)
+	err = tx.Select(&jsonResult, q, params.Id)
 
 	if err != nil {
 		fmt.Println(err.Error())
