@@ -279,15 +279,17 @@ func GetQueryTranslationsAsJSON(tableName, where, wrapTo string, fields ...strin
 // GetQueryTranslationsAsJSONObject load translations from database
 func GetQueryTranslationsAsJSONObject(tableName, where string, wrapTo string, noBrace bool, fields ...string) (jsonQuery string, err error) {
 
-	if wrapTo == "" {
-		wrapTo = "translations"
-	}
-
 	jsonQuery = "SELECT '"
+
 	if noBrace == false {
 		jsonQuery += "{"
 	}
-	jsonQuery += "\"" + wrapTo + "\": {' || "
+	if wrapTo != "" {
+		jsonQuery += "\"" + wrapTo + "\": {' || "
+	} else {
+		jsonQuery += "' || "
+
+	}
 	numFields := len(fields)
 	if numFields == 0 {
 		return "", errors.New("GetQueryTranslationsAsJSONObject: You have to provide at least one field")
@@ -298,10 +300,13 @@ func GetQueryTranslationsAsJSONObject(tableName, where string, wrapTo string, no
 			jsonQuery += " || ',' || "
 		}
 	}
-	jsonQuery += " || '}'"
+	if wrapTo != "" {
+		jsonQuery += " || '}'"
+	}
 	if noBrace == false {
 		jsonQuery += " || '}'"
 	}
 	jsonQuery += " FROM " + tableName + " tbl LEFT JOIN lang la ON tbl.lang_id = la.id WHERE " + where
+	fmt.Println(jsonQuery)
 	return
 }
