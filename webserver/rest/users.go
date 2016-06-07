@@ -37,6 +37,7 @@ import (
 	model "github.com/croll/arkeogis-server/model"
 	routes "github.com/croll/arkeogis-server/webserver/routes"
 	"github.com/croll/arkeogis-server/webserver/session"
+	"github.com/jmoiron/sqlx"
 	sqlx_types "github.com/jmoiron/sqlx/types"
 	"github.com/lib/pq"
 )
@@ -165,9 +166,14 @@ func init() {
 			Func:        UserLogin,
 			Method:      "POST",
 			Json:        reflect.TypeOf(Userlogin{}),
-			Permissions: []string{
-			//"adminusers",
-			},
+			Permissions: []string{},
+		},
+		&routes.Route{
+			Path:        "/api/relogin",
+			Description: "ReLogin to arkeogis, using session",
+			Func:        UserReLogin,
+			Method:      "GET",
+			Permissions: []string{},
 		},
 		&routes.Route{
 			Path:        "/api/users/photo/{id:[0-9]+}",
@@ -609,6 +615,65 @@ func UserInfos(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	w.Write(j)
 }
 
+type LoginAnswer struct {
+	User        model.User
+	Token       string
+	Lang1       model.Lang         `json:"lang1"`
+	Lang2       model.Lang         `json:"lang2"`
+	Permissions []model.Permission `json:"permissions"`
+}
+
+func loginAnswer(w http.ResponseWriter, tx *sqlx.Tx, user model.User, token string) (LoginAnswer, error) {
+	// get langs
+	lang1 := model.Lang{
+		Id: user.First_lang_id,
+	}
+	lang2 := model.Lang{
+		Id: user.Second_lang_id,
+	}
+
+	err := lang1.Get(tx)
+	if err != nil {
+		lang1.Iso_code = "en"
+		err = lang1.Get(tx)
+		if err != nil {
+			userSqlError(w, err)
+			return LoginAnswer{}, err
+		}
+	}
+
+	err = lang2.Get(tx)
+	if err != nil {
+		lang2.Iso_code = "fr"
+		err = lang2.Get(tx)
+		if err != nil {
+			tx.Rollback()
+			log.Fatal("can't load lang2 !")
+			return LoginAnswer{}, err
+		}
+	}
+
+	log.Println("langs: ", lang1, lang2)
+
+	permissions, err := user.GetPermissions(tx)
+	if err != nil {
+		tx.Rollback()
+		log.Fatal("can't get permissions!")
+		return LoginAnswer{}, err
+	}
+	log.Println("permissions : ", permissions)
+
+	a := LoginAnswer{
+		User:        user,
+		Token:       token,
+		Lang1:       lang1,
+		Lang2:       lang2,
+		Permissions: permissions,
+	}
+
+	return a, nil
+}
+
 // UserLogin Check Login
 func UserLogin(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
@@ -652,70 +717,59 @@ func UserLogin(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	s.Values["user_id"] = user.Id
 	s.Values["user"] = user
 
-	// get langs
-	lang1 := model.Lang{
-		Id: user.First_lang_id,
-	}
-	lang2 := model.Lang{
-		Id: user.Second_lang_id,
-	}
-
-	err = lang1.Get(tx)
+	a, err := loginAnswer(w, tx, user, token)
 	if err != nil {
-		lang1.Iso_code = "en"
-		err = lang1.Get(tx)
-		if err != nil {
-			tx.Rollback()
-			log.Fatal("can't load lang1 !")
-			return
-		}
-	}
-
-	err = lang2.Get(tx)
-	if err != nil {
-		lang2.Iso_code = "fr"
-		err = lang2.Get(tx)
-		if err != nil {
-			tx.Rollback()
-			log.Fatal("can't load lang2 !")
-			return
-		}
-	}
-
-	log.Println("langs: ", lang1, lang2)
-
-	permissions, err := user.GetPermissions(tx)
-	if err != nil {
+		log.Println("Login answer build failed : ", err)
 		tx.Rollback()
-		log.Fatal("can't get permissions!")
 		return
 	}
-	log.Println("permissions : ", permissions)
 
 	err = tx.Commit()
 	if err != nil {
-		if err, ok := err.(*pq.Error); ok {
-			log.Println("commit user failed, pq error:", err.Code.Name())
-		} else {
-			log.Println("commit user failed !", err)
-		}
+		userSqlError(w, err)
 		return
 	}
 
-	type answer struct {
-		User        model.User
-		Token       string
-		Lang1       model.Lang         `json:"lang1"`
-		Lang2       model.Lang         `json:"lang2"`
-		Permissions []model.Permission `json:"permissions"`
+	j, err := json.Marshal(a)
+	w.Write(j)
+}
+
+// UserLogin Check Login
+func UserReLogin(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+
+	time.Sleep(1 * time.Second) // limit rate
+
+	u, ok := proute.Session.Get("user")
+	if !ok || u == nil {
+		log.Println("relogin failed")
+		return
+	}
+	user, ok := u.(model.User)
+	if !ok {
+		log.Println("bad user object")
+		return
 	}
 
-	a := answer{
-		User:        user,
-		Token:       token,
-		Lang1:       lang1,
-		Lang2:       lang2,
-		Permissions: permissions,
+	log.Println("RELogin ", user.Username, " => ", ok)
+
+	tx, err := db.DB.Beginx()
+	if err != nil {
+		log.Panicln("Can't start transaction")
+		return
+	}
+
+	token := r.Header.Get("Authorization")
+	a, err := loginAnswer(w, tx, user, token)
+	if err != nil {
+		log.Println("Login answer build failed : ", err)
+		tx.Rollback()
+		return
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		userSqlError(w, err)
+		return
 	}
 
 	j, err := json.Marshal(a)
