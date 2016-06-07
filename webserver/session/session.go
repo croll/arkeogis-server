@@ -22,8 +22,15 @@
 package session
 
 import (
+	"bytes"
+	"encoding/base64"
+	"encoding/gob"
+	"fmt"
+	"io/ioutil"
 	"math/rand"
 	"time"
+
+	"github.com/croll/arkeogis-server/model"
 )
 
 var sessionDuration time.Duration
@@ -100,6 +107,7 @@ func (session *Session) GetIntDef(key string, def int) int {
 // Set any value to a key string.
 func (session *Session) Set(key string, value interface{}) {
 	session.Values[key] = value
+	SaveSessions()
 }
 
 var sessions map[string]*Session
@@ -108,6 +116,9 @@ func init() {
 	sessionDuration = 7 * 24 * time.Hour // 7 days
 	sessions = make(map[string]*Session, 0)
 	rand.Seed(time.Now().UnixNano())
+	gob.Register(map[string]*Session{})
+	gob.Register(model.User{})
+	LoadSessions()
 }
 
 // GetSession return the Session instance of the given token. if no session was found for this token, a transient session will be given
@@ -158,4 +169,51 @@ func BuildRandomToken() string {
 		b[i] = letterRunes[rand.Intn(len(letterRunes))]
 	}
 	return string(b)
+}
+
+func SaveSessions() {
+	cleanup()
+
+	b := bytes.Buffer{}
+	e := gob.NewEncoder(&b)
+	err := e.Encode(sessions)
+	if err != nil {
+		fmt.Println(`failed gob Encode`, err)
+		return
+	}
+	sessions_str := base64.StdEncoding.EncodeToString(b.Bytes())
+
+	err = ioutil.WriteFile("/tmp/arkeogis-sessions.gob.b64", ([]byte)(sessions_str), 0777)
+	if err != nil {
+		fmt.Println(`failed to save sessions`, err)
+		return
+	}
+}
+
+// go binary decoder
+func LoadSessions() {
+	in, err := ioutil.ReadFile("/tmp/arkeogis-sessions.gob.b64")
+	if err != nil {
+		fmt.Println(`failed to open session file`, err)
+		return
+	}
+
+	m := map[string]*Session{}
+	by, err := base64.StdEncoding.DecodeString((string)(in))
+	if err != nil {
+		fmt.Println(`failed base64 Decode`, err)
+		return
+	}
+	b := bytes.Buffer{}
+	b.Write(by)
+	d := gob.NewDecoder(&b)
+	err = d.Decode(&m)
+	if err != nil {
+		fmt.Println(`failed gob Decode`, err)
+		return
+	}
+
+	sessions = m
+
+	fmt.Println("sessions loaded: ", m)
 }
