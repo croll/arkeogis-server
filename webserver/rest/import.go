@@ -34,6 +34,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/croll/arkeogis-server/databaseimport"
+	db "github.com/croll/arkeogis-server/db"
 	"github.com/croll/arkeogis-server/model"
 	routes "github.com/croll/arkeogis-server/webserver/routes"
 )
@@ -89,14 +90,14 @@ type ImportStep1T struct {
 	Infos struct {
 		Name                string
 		Geographical_extent string
+		Default_language    int
 	}
-	Default_language int
-	Continents       []model.Continent
-	Countries        []model.Country
-	UseGeonames      bool
-	Separator        string
-	EchapCharacter   string
-	File             *routes.File
+	Continents     []model.Continent
+	Countries      []model.Country
+	UseGeonames    bool
+	Separator      string
+	EchapCharacter string
+	File           *routes.File
 }
 
 // ImportStep1 is called by rest
@@ -105,8 +106,8 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	params := proute.Json.(*ImportStep1T)
 
 	var user interface{}
-	var ok bool
 
+	var ok bool
 	if user, ok = proute.Session.Get("user"); !ok || user.(model.User).Id == 0 {
 		http.Error(w, "Not logged in", http.StatusForbidden)
 		return
@@ -130,7 +131,7 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	}
 
 	// Parse the file
-	parser, err := databaseimport.NewParser(filepath, params.Default_language)
+	parser, err := databaseimport.NewParser(filepath, params.Infos.Default_language)
 	if err != nil {
 		parser.AddError("IMPORT.CSV_FILE.T_ERROR_PARSING_FAILED")
 	}
@@ -150,7 +151,7 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	// Init import
 	dbImport = new(databaseimport.DatabaseImport)
-	err = dbImport.New(parser, user.(model.User).Id, params.Infos.Name, params.Default_language)
+	err = dbImport.New(parser, user.(model.User).Id, params.Infos.Name, params.Infos.Default_language)
 	if err != nil {
 		parser.AddError(err.Error())
 		sendError(w, parser.Errors)
@@ -264,18 +265,18 @@ func writeResponse(w http.ResponseWriter, numberOfSites int, sitesWithError []st
 */
 
 type ImportStep3T struct {
-	DatabaseID           int
+	ID                   int
 	Authors              []int
 	Type                 string
 	Source_creation_date time.Time
 	Contexts             []string
-	License_Id           int
+	License_ID           int
 	Scale_resolution     string
 	Subject              string
 	State                string
 	Description          []struct {
-		LangID string
-		Text   string
+		Lang_ID int
+		Text    string
 	}
 }
 
@@ -286,12 +287,18 @@ func ImportStep3(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	fmt.Println("PARAMS STEP 3:")
 	fmt.Println(params)
 
-	//tx, err := db.DB.Beginx()
-	//if err != nil {
-	//return errors.New("Can't start transaction for database import step3")
-	//}
+	tx, err := db.DB.Beginx()
+	if err != nil {
+		http.Error(w, "Error saving step3 informations: "+err.Error(), http.StatusBadRequest)
+		return
+	}
 
-	//db.BD.Query("UPDATE \"database\" SET (\"type\", source_creation_date, license_id, scale_resolution, subject, state) VALUES (:type, :source_creation_date, :license_id, :scale_resolution, :subject, :state)")
+	_, err = tx.NamedExec("UPDATE \"database\" SET \"type\" = :type, source_creation_date = :source_creation_date, license_id = :license_id, scale_resolution = :scale_resolution, subject = :=subject, state = :state WHERE id = :id", params)
+
+	if err != nil {
+		http.Error(w, "Error saving step3 informations: "+err.Error(), http.StatusBadRequest)
+	}
+
 }
 
 type ImportStep4T struct {
