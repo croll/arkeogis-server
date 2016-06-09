@@ -176,6 +176,13 @@ func init() {
 			Permissions: []string{},
 		},
 		&routes.Route{
+			Path:        "/api/logout",
+			Description: "Logout from arkeogis, using session",
+			Func:        UserLogout,
+			Method:      "GET",
+			Permissions: []string{},
+		},
+		&routes.Route{
 			Path:        "/api/users/photo/{id:[0-9]+}",
 			Description: "get user photo (jpg)",
 			Func:        UserPhoto,
@@ -759,6 +766,62 @@ func UserReLogin(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	}
 
 	token := r.Header.Get("Authorization")
+	a, err := loginAnswer(w, tx, user, token)
+	if err != nil {
+		log.Println("Login answer build failed : ", err)
+		tx.Rollback()
+		return
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		userSqlError(w, err)
+		return
+	}
+
+	j, err := json.Marshal(a)
+	w.Write(j)
+}
+
+// UserLogout will destroy it's session
+func UserLogout(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+	time.Sleep(1 * time.Second) // limit rate
+
+	u, ok := proute.Session.Get("user")
+	if ok {
+		user, ok := u.(model.User)
+		log.Println("Logout ", user.Username, " => ", ok)
+	}
+
+	token := r.Header.Get("Authorization")
+	session.DestroySession(token)
+
+	tx, err := db.DB.Beginx()
+	if err != nil {
+		log.Panicln("Can't start transaction for creating a new user")
+		return
+	}
+
+	user := model.User{
+		Id: 0,
+	}
+
+	err = user.Get(tx)
+	user.Password = "" // immediatly erase password field
+
+	if err != nil {
+		log.Println("Failed to load anonymous user ")
+		tx.Rollback()
+		ArkeoError(w, "401", "Bad thing appned")
+		return
+	}
+
+	log.Println("Logout ", user.Username)
+
+	token, s := session.NewSession()
+	s.Values["user_id"] = user.Id
+	s.Values["user"] = user
+
 	a, err := loginAnswer(w, tx, user, token)
 	if err != nil {
 		log.Println("Login answer build failed : ", err)

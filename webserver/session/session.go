@@ -138,6 +138,13 @@ func GetSession(token string) *Session {
 	}
 }
 
+// DestroySession destroy a session by token
+func DestroySession(token string) {
+	if _, ok := sessions[token]; ok {
+		delete(sessions, token)
+	}
+}
+
 // NewSession return a new Session instance, with a new token.
 func NewSession() (token string, s *Session) {
 	token = BuildRandomToken()
