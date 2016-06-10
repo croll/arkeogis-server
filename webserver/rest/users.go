@@ -744,7 +744,7 @@ func UserLogin(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 // UserLogin Check Login
 func UserReLogin(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
-	time.Sleep(1 * time.Second) // limit rate
+	//time.Sleep(1 * time.Second) // limit rate
 
 	u, ok := proute.Session.Get("user")
 	if !ok || u == nil {
