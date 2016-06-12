@@ -356,6 +356,7 @@ type ImportStep4T struct {
 	Editor                        string
 	Contributor                   string
 	Source_description            string
+	Context_description           string
 	Source_url                    string
 	Source_declared_creation_date time.Time
 	Source_relation               string
@@ -405,16 +406,44 @@ func ImportStep4(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		return
 	}
 
-	// For now context description is not translatable but store it in database_tr anyway
-	var context_desc = []struct {
+	// For now source relation is not translatable but store it in database_tr anyway
+	var source_relation = []struct {
 		Lang_ID int
 		Text    string
 	}{
 		{proute.Lang1.Id, params.Source_relation},
 	}
+	err = d.SetTranslations(tx, "source_relation", source_relation)
+	if err != nil {
+		log.Println("Error setting source relation: ", err)
+		userSqlError(w, err)
+		return
+	}
+
+	// For now context description is not translatable but store it in database_tr anyway
+	var context_desc = []struct {
+		Lang_ID int
+		Text    string
+	}{
+		{proute.Lang1.Id, params.Context_description},
+	}
 	err = d.SetTranslations(tx, "context_description", context_desc)
 	if err != nil {
 		log.Println("Error setting context description: ", err)
+		userSqlError(w, err)
+		return
+	}
+
+	err = d.SetTranslations(tx, "geographical_limit", params.Geographical_Limit)
+	if err != nil {
+		log.Println("Error setting geographical limit: ", err)
+		userSqlError(w, err)
+		return
+	}
+
+	err = d.SetTranslations(tx, "bibliography", params.Bibliography)
+	if err != nil {
+		log.Println("Error setting bibliography: ", err)
 		userSqlError(w, err)
 		return
 	}
@@ -439,11 +468,9 @@ func ImportStep4(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	}
 
 	if currentHandle.Identifier == params.Source_identifier {
-		fmt.Println("UPDATE HANDLE")
 		handle.Id = currentHandle.Id
 		err = d.UpdateHandle(tx, handle)
 	} else {
-		fmt.Println("CREATE HANDLE")
 		_, err = d.AddHandle(tx, handle)
 	}
 
