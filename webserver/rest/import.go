@@ -190,7 +190,7 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		}
 	*/
 
-	err = dbImport.Save(params.File.Name)
+	import_id, err := dbImport.Save(params.File.Name)
 	if err != nil {
 		parser.AddError(err.Error())
 		sendError(w, parser.Errors)
@@ -213,12 +213,14 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	response := struct {
 		DatabaseId     int                           `json:"database_id"`
+		ImportId       int                           `json:"import_id"`
 		NumberOfSites  int                           `json:"nbSites"`
 		SitesWithError []string                      `json:"sitesWithError"`
 		Errors         []*databaseimport.ImportError `json:"errors"`
 		Lines          int                           `json:"nbLines"`
 	}{
 		DatabaseId:     dbImport.Database.Id,
+		ImportId:       import_id,
 		NumberOfSites:  dbImport.NumberOfSites,
 		SitesWithError: sitesWithError,
 		Errors:         dbImport.Errors,
@@ -343,27 +345,20 @@ func ImportStep3(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		return
 	}
 
-	// _, err = tx.NamedExec("UPDATE \"database\" SET \"type\" = :type, source_creation_date = :source_creation_date, license_id = :license_id, scale_resolution = :scale_resolution, subject = :subject, state = :state WHERE id = :id", params)
-
-	if err != nil {
-		log.Println("Error saving step3 informations: " + err.Error())
-		tx.Rollback()
-		http.Error(w, "Error saving step3 informations: "+err.Error(), http.StatusBadRequest)
-	}
-
 	tx.Commit()
 
 }
 
 type ImportStep4T struct {
 	Id                            int
+	Import_ID                     int
 	Structure                     string
 	Contributor                   string
-	Resource                      string
 	Source_description            string
 	Source_url                    string
 	Source_declared_creation_date time.Time
 	Source_relation               string
+	Source_identifier             string
 	Geographical_Limit            []struct {
 		Lang_ID int
 		Text    string
@@ -395,12 +390,6 @@ func ImportStep4(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		return
 	}
 
-	if err != nil {
-		log.Println("Error saving step4 informations: " + err.Error())
-		tx.Rollback()
-		http.Error(w, "Error saving step4 informations: "+err.Error(), http.StatusBadRequest)
-	}
-
 	// For now source description is not translatable but store it in database_tr anyway
 	var source_desc = []struct {
 		Lang_ID int
@@ -425,6 +414,36 @@ func ImportStep4(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	err = d.SetTranslations(tx, "context_description", context_desc)
 	if err != nil {
 		log.Println("Error setting context description: ", err)
+		userSqlError(w, err)
+		return
+	}
+
+	// Database handle
+
+	currentHandle, err := d.GetLastHandle(tx)
+
+	if err != nil {
+		log.Println("Error getting last handle: ", err)
+		userSqlError(w, err)
+		return
+	}
+
+	handle := &model.Database_handle{
+		Import_id:  params.Import_ID,
+		Identifier: params.Source_identifier,
+		Url:        params.Source_url,
+		Declared_creation_date: params.Source_declared_creation_date,
+		Created_at:             time.Now(),
+	}
+
+	if currentHandle.Identifier == params.Source_identifier {
+		err = d.UpdateHandle(tx, handle)
+	} else {
+		_, err = d.AddHandle(tx, handle)
+	}
+
+	if err != nil {
+		log.Println("Error setting handle informations: ", err)
 		userSqlError(w, err)
 		return
 	}

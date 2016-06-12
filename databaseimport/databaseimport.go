@@ -953,7 +953,9 @@ func (di *DatabaseImport) parseDates(period string) ([2]int, error) {
 	return dates, nil
 }
 
-func (di *DatabaseImport) Save(filename string) error {
-	i := model.Import{Database_id: di.Database.Id, User_id: di.Uid, Filename: filename}
-	return i.Create(di.Tx)
+func (di *DatabaseImport) Save(filename string) (int, error) {
+	var err error
+	i := model.Import{Database_id: di.Database.Id, User_id: di.Uid, Filename: filename, Number_of_lines: di.Parser.Line - 1}
+	err = i.Create(di.Tx)
+	return i.Id, err
 }
