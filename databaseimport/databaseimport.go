@@ -193,7 +193,7 @@ func (di *DatabaseImport) setDefaultValues() {
 	di.Database.Geographical_extent = "undefined"
 	di.Database.Type = "undefined"
 	di.Database.Source_description = ""
-	di.Database.Publisher = ""
+	di.Database.Editor = ""
 	di.Database.Contributor = ""
 	di.Database.State = "undefined"
 	di.Database.Published = false

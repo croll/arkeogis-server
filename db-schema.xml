@@ -272,11 +272,11 @@
 <datatype>INTEGER</datatype>
 <relation table="user" row="id" />
 </row>
-<row name="publisher" null="0" autoincrement="0">
-<datatype>VARCHAR(255)</datatype>
+<row name="editor" null="0" autoincrement="0">
+<datatype>TEXT</datatype>
 </row>
 <row name="contributor" null="0" autoincrement="0">
-<datatype>VARCHAR</datatype>
+<datatype>TEXT</datatype>
 </row>
 <row name="default_language" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
@@ -1076,11 +1076,11 @@
 <row name="filename" null="0" autoincrement="0">
 <datatype>VARCHAR(255)</datatype>
 </row>
-<row name="created_at" null="0" autoincrement="0">
-<datatype>TIMESTAMP</datatype>
-</row>
 <row name="number_of_lines" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
+</row>
+<row name="created_at" null="0" autoincrement="0">
+<datatype>TIMESTAMP</datatype>
 </row>
 <key type="PRIMARY" name="">
 <part>id</part>
