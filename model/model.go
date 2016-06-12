@@ -117,7 +117,6 @@ type Database struct {
 	License_id	int	`db:"license_id" json:"license_id"`	// License.Id
 	Subject	string	`db:"subject" json:"subject" min:"1" error:"DATABASE.FIELD_SUBJECT.T_CHECK_MANDATORY" max:"255" error:"DATABASE.FIELD_SUBJECT.T_CHECK_INCORRECT"`
 	Published	bool	`db:"published" json:"published"`
-	Source_description	string	`db:"source_description" json:"source_description"`
 	Soft_deleted	bool	`db:"soft_deleted" json:"soft_deleted"`
 	Declared_creation_date	time.Time	`db:"declared_creation_date" json:"declared_creation_date"`
 	Created_at	time.Time	`db:"created_at" json:"created_at"`
@@ -168,6 +167,7 @@ type Database_tr struct {
 	Geographical_limit	string	`db:"geographical_limit" json:"geographical_limit"`
 	Bibliography	string	`db:"bibliography" json:"bibliography"`
 	Context_description	string	`db:"context_description" json:"context_description"`
+	Source_description	string	`db:"source_description" json:"source_description"`
 }
 
 
@@ -514,15 +514,15 @@ const Chronology_tr_UpdateStr = "\"name\" = :name, \"description\" = :descriptio
 const Project__chronology_InsertStr = "\"id_group\""
 const Project__chronology_InsertValuesStr = ":id_group"
 const Project__chronology_UpdateStr = "\"id_group\" = :id_group"
-const Database_InsertStr = "\"name\", \"scale_resolution\", \"geographical_extent\", \"type\", \"owner\", \"publisher\", \"contributor\", \"default_language\", \"relation\", \"copyright\", \"state\", \"license_id\", \"subject\", \"published\", \"source_description\", \"soft_deleted\", \"declared_creation_date\", \"created_at\", \"updated_at\""
-const Database_InsertValuesStr = ":name, :scale_resolution, :geographical_extent, :type, :owner, :publisher, :contributor, :default_language, :relation, :copyright, :state, :license_id, :subject, :published, :source_description, :soft_deleted, :declared_creation_date, now(), now()"
-const Database_UpdateStr = "\"name\" = :name, \"scale_resolution\" = :scale_resolution, \"geographical_extent\" = :geographical_extent, \"type\" = :type, \"owner\" = :owner, \"publisher\" = :publisher, \"contributor\" = :contributor, \"default_language\" = :default_language, \"relation\" = :relation, \"copyright\" = :copyright, \"state\" = :state, \"license_id\" = :license_id, \"subject\" = :subject, \"published\" = :published, \"source_description\" = :source_description, \"soft_deleted\" = :soft_deleted, \"declared_creation_date\" = :declared_creation_date, \"updated_at\" = now()"
+const Database_InsertStr = "\"name\", \"scale_resolution\", \"geographical_extent\", \"type\", \"owner\", \"publisher\", \"contributor\", \"default_language\", \"relation\", \"copyright\", \"state\", \"license_id\", \"subject\", \"published\", \"soft_deleted\", \"declared_creation_date\", \"created_at\", \"updated_at\""
+const Database_InsertValuesStr = ":name, :scale_resolution, :geographical_extent, :type, :owner, :publisher, :contributor, :default_language, :relation, :copyright, :state, :license_id, :subject, :published, :soft_deleted, :declared_creation_date, now(), now()"
+const Database_UpdateStr = "\"name\" = :name, \"scale_resolution\" = :scale_resolution, \"geographical_extent\" = :geographical_extent, \"type\" = :type, \"owner\" = :owner, \"publisher\" = :publisher, \"contributor\" = :contributor, \"default_language\" = :default_language, \"relation\" = :relation, \"copyright\" = :copyright, \"state\" = :state, \"license_id\" = :license_id, \"subject\" = :subject, \"published\" = :published, \"soft_deleted\" = :soft_deleted, \"declared_creation_date\" = :declared_creation_date, \"updated_at\" = now()"
 const Site_InsertStr = "\"code\", \"name\", \"city_name\", \"city_geonameid\", \"geom\", \"geom_3d\", \"centroid\", \"occupation\", \"database_id\", \"created_at\", \"updated_at\""
 const Site_InsertValuesStr = ":code, :name, :city_name, :city_geonameid, :geom, :geom_3d, :centroid, :occupation, :database_id, now(), now()"
 const Site_UpdateStr = "\"code\" = :code, \"name\" = :name, \"city_name\" = :city_name, \"city_geonameid\" = :city_geonameid, \"geom\" = :geom, \"geom_3d\" = :geom_3d, \"centroid\" = :centroid, \"occupation\" = :occupation, \"database_id\" = :database_id, \"updated_at\" = now()"
-const Database_tr_InsertStr = "\"description\", \"geographical_limit\", \"bibliography\", \"context_description\""
-const Database_tr_InsertValuesStr = ":description, :geographical_limit, :bibliography, :context_description"
-const Database_tr_UpdateStr = "\"description\" = :description, \"geographical_limit\" = :geographical_limit, \"bibliography\" = :bibliography, \"context_description\" = :context_description"
+const Database_tr_InsertStr = "\"description\", \"geographical_limit\", \"bibliography\", \"context_description\", \"source_description\""
+const Database_tr_InsertValuesStr = ":description, :geographical_limit, :bibliography, :context_description, :source_description"
+const Database_tr_UpdateStr = "\"description\" = :description, \"geographical_limit\" = :geographical_limit, \"bibliography\" = :bibliography, \"context_description\" = :context_description, \"source_description\" = :source_description"
 const City_InsertStr = "\"country_geonameid\", \"geom\", \"geom_centroid\", \"created_at\", \"updated_at\""
 const City_InsertValuesStr = ":country_geonameid, :geom, :geom_centroid, now(), now()"
 const City_UpdateStr = "\"country_geonameid\" = :country_geonameid, \"geom\" = :geom, \"geom_centroid\" = :geom_centroid, \"updated_at\" = now()"
