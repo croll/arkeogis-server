@@ -195,9 +195,6 @@ func (di *DatabaseImport) setDefaultValues() {
 	di.Database.Source_description = ""
 	di.Database.Publisher = ""
 	di.Database.Contributor = ""
-	di.Database.Relation = ""
-	di.Database.Copyright = ""
-	di.Database.Subject = ""
 	di.Database.State = "undefined"
 	di.Database.Published = false
 	di.Database.License_id = 0
