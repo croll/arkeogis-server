@@ -248,7 +248,7 @@
 <part>chronology_root_id</part>
 </key>
 </table>
-<table x="488" y="108" name="database">
+<table x="486" y="88" name="database">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
@@ -272,21 +272,6 @@
 <datatype>INTEGER</datatype>
 <relation table="user" row="id" />
 </row>
-<row name="source_creation_date" null="0" autoincrement="0">
-<datatype>TIMESTAMP</datatype>
-</row>
-<row name="data_set" null="0" autoincrement="0">
-<datatype>VARCHAR(255)</datatype>
-</row>
-<row name="identifier" null="0" autoincrement="0">
-<datatype>VARCHAR(255)</datatype>
-</row>
-<row name="source" null="0" autoincrement="0">
-<datatype>VARCHAR(255)</datatype>
-</row>
-<row name="source_url" null="0" autoincrement="0">
-<datatype>VARCHAR(255)</datatype>
-</row>
 <row name="publisher" null="0" autoincrement="0">
 <datatype>VARCHAR(255)</datatype>
 </row>
@@ -298,9 +283,6 @@
 <relation table="lang" row="id" />
 </row>
 <row name="relation" null="0" autoincrement="0">
-<datatype>VARCHAR(255)</datatype>
-</row>
-<row name="coverage" null="0" autoincrement="0">
 <datatype>VARCHAR(255)</datatype>
 </row>
 <row name="copyright" null="0" autoincrement="0">
@@ -321,9 +303,15 @@
 <row name="published" null="0" autoincrement="0">
 <datatype>BOOLEAN</datatype>
 <default>'false'</default></row>
+<row name="source_description" null="0" autoincrement="0">
+<datatype>TEXT</datatype>
+</row>
 <row name="soft_deleted" null="0" autoincrement="0">
 <datatype>BOOLEAN</datatype>
 <default>'false'</default></row>
+<row name="declared_creation_date" null="0" autoincrement="0">
+<datatype>TIMESTAMP</datatype>
+</row>
 <row name="created_at" null="0" autoincrement="0">
 <datatype>TIMESTAMP</datatype>
 </row>
@@ -435,7 +423,7 @@
 <part>geonameid</part>
 </key>
 </table>
-<table x="724" y="266" name="site_tr">
+<table x="697" y="370" name="site_tr">
 <row name="site_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="site" row="id" />
@@ -1074,7 +1062,7 @@
 <part>user_id</part>
 </key>
 </table>
-<table x="297" y="192" name="import">
+<table x="301" y="181" name="import">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
@@ -1125,7 +1113,7 @@
 <part>country_geonameid</part>
 </key>
 </table>
-<table x="682" y="65" name="database_handle">
+<table x="693" y="117" name="database_handle">
 <row name="id" null="1" autoincrement="1">
 <datatype>INTEGER</datatype>
 <default>NULL</default></row>
@@ -1138,11 +1126,14 @@
 <datatype>INTEGER</datatype>
 <relation table="import" row="id" />
 </row>
-<row name="name" null="0" autoincrement="0">
+<row name="identifier" null="0" autoincrement="0">
 <datatype>VARCHAR(255)</datatype>
 </row>
 <row name="url" null="0" autoincrement="0">
 <datatype>VARCHAR(255)</datatype>
+</row>
+<row name="declared_creation_date" null="0" autoincrement="0">
+<datatype>TIMESTAMP</datatype>
 </row>
 <row name="created_at" null="0" autoincrement="0">
 <datatype>TIMESTAMP</datatype>
@@ -1265,7 +1256,7 @@
 <part>id</part>
 </key>
 </table>
-<table x="682" y="409" name="database_context">
+<table x="687" y="517" name="database_context">
 <row name="id" null="1" autoincrement="1">
 <datatype>INTEGER</datatype>
 <default>NULL</default></row>

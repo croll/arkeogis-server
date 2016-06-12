@@ -122,12 +122,12 @@ func (d *Database) GetFullInfosRepresentation(tx *sqlx.Tx, langID int) (db Datab
 		db.Authors = make([]DatabaseAuthor, 0)
 		db.Contexts = make([]Database_context, 0)
 		db.Translations = make([]Database_tr, 0)
+		db.Handles = make([]Database_handle, 0)
 		db.NumberOfSites = 0
 		return
 	}
 
-	err = tx.Get(&db, "SELECT name, scale_resolution, geographical_extent, type, source_creation_date, owner, data_set, identifier, source, source_url, publisher, contributor, default_language, relation, coverage, copyright, state, license_id, subject, published, soft_deleted, d.created_at, d.updated_at, firstname || ' ' || lastname as owner_name FROM \"database\" d LEFT JOIN \"user\" u ON d.owner = u.id WHERE d.id = $1", d.Id)
-
+	err = tx.Get(&db, "SELECT name, scale_resolution, geographical_extent, type, declared_creation_date, owner, data_set, identifier, source_description, source_url, publisher, contributor, default_language, relation, coverage, copyright, state, license_id, subject, published, soft_deleted, d.created_at, d.updated_at, firstname || ' ' || lastname as owner_name FROM \"database\" d LEFT JOIN \"user\" u ON d.owner = u.id WHERE d.id = $1", d.Id)
 	db.Authors, err = d.GetAuthorsList(tx)
 	if err != nil {
 		return
@@ -137,6 +137,10 @@ func (d *Database) GetFullInfosRepresentation(tx *sqlx.Tx, langID int) (db Datab
 		return
 	}
 	db.Continents, err = d.GetContinentsList(tx, langID)
+	if err != nil {
+		return
+	}
+	db.Handles, err = d.GetHandles(tx)
 	if err != nil {
 		return
 	}
@@ -163,7 +167,7 @@ func (d *Database) GetFullInfosAsJSON(tx *sqlx.Tx, langID int) (jsonString strin
 
 	var q = make([]string, 7)
 
-	q[0] = db.AsJSON("SELECT name, scale_resolution, geographical_extent, type, source_creation_date, owner, data_set, identifier, source, source_url, publisher, contributor, default_language, relation, coverage, copyright, state, license_id, subject, published, soft_deleted, db.created_at, db.updated_at, firstname || ' ' || lastname as owner_name, (SELECT count(*) FROM site WHERE database_id = db.id) as number_of_sites FROM \"database\" db LEFT JOIN \"user\" u ON db.owner = u.id WHERE db.id = d.id", false, "infos", true)
+	q[0] = db.AsJSON("SELECT db.id, name, scale_resolution, geographical_extent, type, declared_creation_date, owner, data_set, identifier, source, source_url, publisher, contributor, default_language, relation, coverage, copyright, state, license_id, subject, published, soft_deleted, db.created_at, db.updated_at, firstname || ' ' || lastname as owner_name, (SELECT count(*) FROM site WHERE database_id = db.id) as number_of_sites FROM \"database\" db LEFT JOIN \"user\" u ON db.owner = u.id WHERE db.id = d.id", false, "infos", true)
 
 	q[1] = db.AsJSON("SELECT u.id, u.firstname, u.lastname FROM \"user\" u LEFT JOIN database__authors da ON u.id = da.user_id WHERE da.database_id = d.id", true, "authors", true)
 
@@ -267,6 +271,30 @@ func (d *Database) DeleteContinents(tx *sqlx.Tx) error {
 	return err
 }
 
+// GetHandles lists all continents linked to a database
+func (d *Database) GetHandles(tx *sqlx.Tx) (handles []Database_handle, err error) {
+	handles = []Database_handle{}
+	err = tx.Select(handles, "SELECT import_id, identifier, url, declared_creation_date, created_at FROM database_handle WHERE database_id = $1", d.Id)
+	return handles, err
+}
+
+// AddHandles links continents to a database
+func (d *Database) AddHandle(tx *sqlx.Tx, handle Database_handle) (id int, err error) {
+	stmt, err := tx.PrepareNamed("INSERT INTO \"database_handle\" (" + Database_handle_InsertStr + ") VALUES (" + Database_handle_InsertValuesStr + ") RETURNING id")
+	if err != nil {
+		return
+	}
+	defer stmt.Close()
+	err = stmt.Get(&id, handle)
+	return
+}
+
+// DeleteHandles unlinks countries to a database
+func (d *Database) DeleteHandle(tx *sqlx.Tx, id int) error {
+	_, err := tx.NamedExec("DELETE FROM \"database_handle\" WHERE identifier = $1", id)
+	return err
+}
+
 // GetAuthorsList lists all user designed as author of a database
 func (d *Database) GetAuthorsList(tx *sqlx.Tx) (authors []DatabaseAuthor, err error) {
 	err = tx.Select(&authors, "SELECT u.id, u.firstname, u.lastname FROM \"user\" u LEFT JOIN database__authors da ON u.id = da.user_id WHERE da.database_id = $1", d.Id)
@@ -284,22 +312,64 @@ func (d *Database) SetAuthors(tx *sqlx.Tx, authors []int) error {
 	return nil
 }
 
-// GetOwnerInfos get all informations about the owner of the database
-func (d *Database) GetOwnerInfos(tx *sqlx.Tx) (owner DatabaseAuthor, err error) {
-	err = tx.Get(owner, "SELECT * FROM \"user\" u LEFT JOIN \"database\" d ON u.id = d.owner WHERE d.id = $1", d.Id)
-	return
-}
-
 // DeleteAuthors deletes the author linked to a database
 func (d *Database) DeleteAuthors(tx *sqlx.Tx) error {
 	_, err := tx.NamedExec("DELETE FROM \"database__authors\" WHERE database_id=:id", d)
 	return err
 }
 
-// GetHandlesList lists all handles linked to a database
-func (d *Database) GetHandlesList(tx *sqlx.Tx) (handles []Database_handle, err error) {
-	handles = []Database_handle{}
-	err = tx.Select(&handles, "SELECT import_id, name, url, created_at FROM database_handle WHERE database_id = $1", d.Id)
+// GetContextsList lists all user designed as context of a database
+func (d *Database) GetContextsList(tx *sqlx.Tx) (contexts []Database_context, err error) {
+	err = tx.Select(&contexts, "SELECT id, context FROM database_context WHERE database_id = $1", d.Id)
+	return
+}
+
+// SetContexts links users as contexts to a database
+func (d *Database) SetContexts(tx *sqlx.Tx, contexts []string) error {
+	for _, cname := range contexts {
+		_, err := tx.Exec("INSERT INTO \"database_context\" (database_id, context) VALUES ($1, $2)", d.Id, cname)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// DeleteContexts deletes the context linked to a database
+func (d *Database) DeleteContexts(tx *sqlx.Tx) error {
+	_, err := tx.NamedExec("DELETE FROM \"database_context\" WHERE database_id=:id", d)
+	return err
+}
+
+func (d *Database) SetTranslations(tx *sqlx.Tx, field string, translations []struct {
+	Lang_ID int
+	Text    string
+}) (err error) {
+
+	// Check if translation entry exists for this database and this lang
+
+	var transID int
+
+	for _, tr := range translations {
+		err = tx.QueryRow("SELECT count(database_id) FROM database_tr WHERE database_id = $1 AND lang_id = $2", d.Id, tr.Lang_ID).Scan(&transID)
+		if transID == 0 {
+			// fmt.Println("CREATE TRANSLATION FOR FIELD", field, "WITH VALUE", tr.Text, "FOR DATABASE", d.Id, "AND LANG", tr.Lang_ID)
+			_, err = tx.Exec("INSERT INTO database_tr (database_id, lang_id, description, geographical_limit, bibliography, context_description) VALUES ($1, $2, '', '', '', '')", d.Id, tr.Lang_ID)
+			if err != nil {
+				return
+			}
+		}
+		if tr.Text != "" {
+			_, err = tx.Exec("UPDATE database_tr SET "+field+" = $1 WHERE database_id = $2 and lang_id = $3", tr.Text, d.Id, tr.Lang_ID)
+		}
+	}
+
+	return
+}
+
+// GetOwnerInfos get all informations about the owner of the database
+func (d *Database) GetOwnerInfos(tx *sqlx.Tx) (owner DatabaseAuthor, err error) {
+	err = tx.Get(owner, "SELECT * FROM \"user\" u LEFT JOIN \"database\" d ON u.id = d.owner WHERE d.id = $1", d.Id)
 	return
 }
 
@@ -328,4 +398,21 @@ func (d *Database) GetTranslations(tx *sqlx.Tx) (translations []Database_tr, err
 func (d *Database) GetNumberOfSites(tx *sqlx.Tx) (nb int, err error) {
 	err = tx.Get(&nb, "SELECT count(*) FROM site WHERE database_id = $1", d.Id)
 	return
+}
+
+// UpdateFields updates "database" fields (crazy isn't it ?)
+func (d *Database) UpdateFields(tx *sqlx.Tx, params interface{}, fields ...string) (err error) {
+	var upd string
+	for i, f := range fields {
+		upd += "\"" + f + "\" = :" + f
+		if i+1 < len(fields) {
+			upd += ", "
+		}
+	}
+	query := "UPDATE \"database\" SET " + upd + " WHERE id = :id"
+
+	_, err = tx.NamedExec(query, params)
+
+	return
+
 }
