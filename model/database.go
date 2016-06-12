@@ -103,10 +103,10 @@ func (d *Database) AnotherExistsWithSameName(tx *sqlx.Tx) (exists bool, err erro
 // Get retrieves informations about a database stored in the main table
 func (d *Database) Get(tx *sqlx.Tx) (err error) {
 	stmt, err := tx.PrepareNamed("SELECT * from \"database\" WHERE id=:id")
+	defer stmt.Close()
 	if err != nil {
 		return err
 	}
-	defer stmt.Close()
 	return stmt.Get(d, d)
 }
 
@@ -201,10 +201,10 @@ func (d *Database) GetFullInfosAsJSON(tx *sqlx.Tx, langID int) (jsonString strin
 // Create insert the database into arkeogis db
 func (d *Database) Create(tx *sqlx.Tx) error {
 	stmt, err := tx.PrepareNamed("INSERT INTO \"database\" (" + Database_InsertStr + ") VALUES (" + Database_InsertValuesStr + ") RETURNING id")
+	defer stmt.Close()
 	if err != nil {
 		return err
 	}
-	defer stmt.Close()
 	return stmt.Get(&d.Id, d)
 }
 
@@ -272,9 +272,9 @@ func (d *Database) DeleteContinents(tx *sqlx.Tx) error {
 }
 
 // GetHandles get last handle linked to a database
-func (d *Database) GetLastHandle(tx *sqlx.Tx) (handle Database_handle, err error) {
-	handle = Database_handle{}
-	err = tx.Get(handle, "SELECT import_id, identifier, url, declared_creation_date, created_at FROM database_handle WHERE database_id = $1 ORDER BY id DESC LIMIT 0,1", d.Id)
+func (d *Database) GetLastHandle(tx *sqlx.Tx) (handle *Database_handle, err error) {
+	handle = &Database_handle{}
+	err = tx.Get(handle, "SELECT * FROM database_handle WHERE database_id = $1 ORDER BY id DESC LIMIT 1", d.Id)
 	return handle, err
 }
 
@@ -288,17 +288,17 @@ func (d *Database) GetHandles(tx *sqlx.Tx) (handles []Database_handle, err error
 // AddHandle links a handle  to a database
 func (d *Database) AddHandle(tx *sqlx.Tx, handle *Database_handle) (id int, err error) {
 	stmt, err := tx.PrepareNamed("INSERT INTO \"database_handle\" (" + Database_handle_InsertStr + ") VALUES (" + Database_handle_InsertValuesStr + ") RETURNING id")
+	defer stmt.Close()
 	if err != nil {
 		return
 	}
-	defer stmt.Close()
 	err = stmt.Get(&id, handle)
 	return
 }
 
 // UpdateHandle links continents to a database
 func (d *Database) UpdateHandle(tx *sqlx.Tx, handle *Database_handle) (err error) {
-	_, err = tx.Exec("UPDATE database_handle "+Database_handle_UpdateStr+" WHERE identifier = $1", handle.Identifier)
+	_, err = tx.NamedExec("UPDATE database_handle SET "+Database_handle_UpdateStr+" WHERE id = :id", handle)
 	return
 }
 

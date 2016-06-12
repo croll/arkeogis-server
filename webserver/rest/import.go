@@ -23,6 +23,7 @@ package rest
 
 import (
 	//	"github.com/croll/arkeogis-server/csvimport"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -422,23 +423,27 @@ func ImportStep4(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	currentHandle, err := d.GetLastHandle(tx)
 
-	if err != nil {
+	if err != nil && err != sql.ErrNoRows {
 		log.Println("Error getting last handle: ", err)
 		userSqlError(w, err)
 		return
 	}
 
 	handle := &model.Database_handle{
-		Import_id:  params.Import_ID,
-		Identifier: params.Source_identifier,
-		Url:        params.Source_url,
+		Database_id: params.Id,
+		Import_id:   params.Import_ID,
+		Identifier:  params.Source_identifier,
+		Url:         params.Source_url,
 		Declared_creation_date: params.Source_declared_creation_date,
 		Created_at:             time.Now(),
 	}
 
 	if currentHandle.Identifier == params.Source_identifier {
+		fmt.Println("UPDATE HANDLE")
+		handle.Id = currentHandle.Id
 		err = d.UpdateHandle(tx, handle)
 	} else {
+		fmt.Println("CREATE HANDLE")
 		_, err = d.AddHandle(tx, handle)
 	}
 

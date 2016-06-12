@@ -358,7 +358,6 @@ func (di *DatabaseImport) ProcessEssentialDatabaseInfos(name string, geographica
 	}
 
 	if len(selectedCountries) > 0 {
-		fmt.Println(selectedCountries)
 		di.Database.Countries = selectedCountries
 		err = di.Database.AddCountries(di.Tx, selectedCountries)
 		if err != nil {
