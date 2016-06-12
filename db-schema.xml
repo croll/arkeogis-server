@@ -303,9 +303,6 @@
 <row name="published" null="0" autoincrement="0">
 <datatype>BOOLEAN</datatype>
 <default>'false'</default></row>
-<row name="source_description" null="0" autoincrement="0">
-<datatype>TEXT</datatype>
-</row>
 <row name="soft_deleted" null="0" autoincrement="0">
 <datatype>BOOLEAN</datatype>
 <default>'false'</default></row>
@@ -393,6 +390,9 @@
 </row>
 <row name="context_description" null="0" autoincrement="0">
 <datatype>TEXT</datatype>
+</row>
+<row name="source_description" null="0" autoincrement="0">
+<datatype>VARCHAR</datatype>
 </row>
 <key type="PRIMARY" name="">
 <part>database_id</part>
