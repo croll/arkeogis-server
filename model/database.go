@@ -127,7 +127,7 @@ func (d *Database) GetFullInfosRepresentation(tx *sqlx.Tx, langID int) (db Datab
 		return
 	}
 
-	err = tx.Get(&db, "SELECT name, scale_resolution, geographical_extent, type, declared_creation_date, owner, data_set, identifier, source_description, source_url, publisher, contributor, default_language, relation, coverage, copyright, state, license_id, subject, published, soft_deleted, d.created_at, d.updated_at, firstname || ' ' || lastname as owner_name FROM \"database\" d LEFT JOIN \"user\" u ON d.owner = u.id WHERE d.id = $1", d.Id)
+	err = tx.Get(&db, "SELECT name, scale_resolution, geographical_extent, type, declared_creation_date, owner, publisher, contributor, default_language, state, license_id, published, soft_deleted, d.created_at, d.updated_at, firstname || ' ' || lastname as owner_name FROM \"database\" d LEFT JOIN \"user\" u ON d.owner = u.id WHERE d.id = $1", d.Id)
 	db.Authors, err = d.GetAuthorsList(tx)
 	if err != nil {
 		return
@@ -167,7 +167,7 @@ func (d *Database) GetFullInfosAsJSON(tx *sqlx.Tx, langID int) (jsonString strin
 
 	var q = make([]string, 7)
 
-	q[0] = db.AsJSON("SELECT db.id, name, scale_resolution, geographical_extent, type, declared_creation_date, owner, data_set, identifier, source, source_url, publisher, contributor, default_language, relation, coverage, copyright, state, license_id, subject, published, soft_deleted, db.created_at, db.updated_at, firstname || ' ' || lastname as owner_name, (SELECT count(*) FROM site WHERE database_id = db.id) as number_of_sites FROM \"database\" db LEFT JOIN \"user\" u ON db.owner = u.id WHERE db.id = d.id", false, "infos", true)
+	q[0] = db.AsJSON("SELECT db.id, name, scale_resolution, geographical_extent, type, declared_creation_date, owner, publisher, contributor, default_language, state, license_id, published, soft_deleted, db.created_at, db.updated_at, firstname || ' ' || lastname as owner_name, (SELECT count(*) FROM site WHERE database_id = db.id) as number_of_sites FROM \"database\" db LEFT JOIN \"user\" u ON db.owner = u.id WHERE db.id = d.id", false, "infos", true)
 
 	q[1] = db.AsJSON("SELECT u.id, u.firstname, u.lastname FROM \"user\" u LEFT JOIN database__authors da ON u.id = da.user_id WHERE da.database_id = d.id", true, "authors", true)
 
@@ -302,20 +302,20 @@ func (d *Database) GetAuthorsList(tx *sqlx.Tx) (authors []DatabaseAuthor, err er
 }
 
 // SetAuthors links users as authors to a database
-func (d *Database) SetAuthors(tx *sqlx.Tx, authors []int) error {
+func (d *Database) SetAuthors(tx *sqlx.Tx, authors []int) (err error) {
 	for _, uid := range authors {
-		_, err := tx.Exec("INSERT INTO \"database__authors\" (database_id, user_id) VALUES ($1, $2)", d.Id, uid)
+		_, err = tx.Exec("INSERT INTO \"database__authors\" (database_id, user_id) VALUES ($1, $2)", d.Id, uid)
 		if err != nil {
-			return err
+			return
 		}
 	}
-	return nil
+	return
 }
 
 // DeleteAuthors deletes the author linked to a database
-func (d *Database) DeleteAuthors(tx *sqlx.Tx) error {
-	_, err := tx.NamedExec("DELETE FROM \"database__authors\" WHERE database_id=:id", d)
-	return err
+func (d *Database) DeleteAuthors(tx *sqlx.Tx) (err error) {
+	_, err = tx.NamedExec("DELETE FROM \"database__authors\" WHERE database_id=:id", d)
+	return
 }
 
 // GetContextsList lists all user designed as context of a database
@@ -354,7 +354,7 @@ func (d *Database) SetTranslations(tx *sqlx.Tx, field string, translations []str
 		err = tx.QueryRow("SELECT count(database_id) FROM database_tr WHERE database_id = $1 AND lang_id = $2", d.Id, tr.Lang_ID).Scan(&transID)
 		if transID == 0 {
 			// fmt.Println("CREATE TRANSLATION FOR FIELD", field, "WITH VALUE", tr.Text, "FOR DATABASE", d.Id, "AND LANG", tr.Lang_ID)
-			_, err = tx.Exec("INSERT INTO database_tr (database_id, lang_id, description, geographical_limit, bibliography, context_description) VALUES ($1, $2, '', '', '', '')", d.Id, tr.Lang_ID)
+			_, err = tx.Exec("INSERT INTO database_tr (database_id, lang_id, description, geographical_limit, bibliography, context_description, source_description) VALUES ($1, $2, '', '', '', '', '')", d.Id, tr.Lang_ID)
 			if err != nil {
 				return
 			}

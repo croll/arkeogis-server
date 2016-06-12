@@ -68,6 +68,7 @@ func init() {
 			Description: "Four step of ArkeoGIS import procedure",
 			Func:        ImportStep4,
 			Method:      "POST",
+			Json:        reflect.TypeOf(ImportStep4T{}),
 			Permissions: []string{
 				"import",
 			},
@@ -290,7 +291,7 @@ func ImportStep3(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	d := &model.Database{Id: params.Id}
 
-	err = d.UpdateFields(tx, params, "type", "declared_creation_date", "license_id", "scale_resolution", "subject", "state")
+	err = d.UpdateFields(tx, params, "type", "declared_creation_date", "license_id", "scale_resolution", "state")
 	if err != nil {
 		log.Println("Error updating database fields: ", err)
 		userSqlError(w, err)
@@ -315,12 +316,26 @@ func ImportStep3(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		return
 	}
 	err = d.SetContexts(tx, params.Contexts)
-	fmt.Println(params)
 	if err != nil {
 		log.Println("Error setting database contexts: ", err)
 		userSqlError(w, err)
 		return
 	}
+
+	// For now subject is not translatable but store it in database_tr anyway
+	var subject = []struct {
+		Lang_ID int
+		Text    string
+	}{
+		{proute.Lang1.Id, params.Subject},
+	}
+	err = d.SetTranslations(tx, "subject", subject)
+	if err != nil {
+		log.Println("Error setting subject: ", err)
+		userSqlError(w, err)
+		return
+	}
+
 	err = d.SetTranslations(tx, "description", params.Description)
 	if err != nil {
 		log.Println("Error setting database description: ", err)
@@ -348,7 +363,7 @@ type ImportStep4T struct {
 	Source_description            string
 	Source_url                    string
 	Source_declared_creation_date time.Time
-	Relation                      string
+	Source_relation               string
 	Geographical_Limit            []struct {
 		Lang_ID int
 		Text    string
@@ -373,7 +388,7 @@ func ImportStep4(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	d := &model.Database{Id: params.Id}
 
-	err = d.UpdateFields(tx, params, "structure", "source_creation_date", "license_id", "scale_resolution", "subject", "state")
+	err = d.UpdateFields(tx, params, "structure", "contributor", "relation")
 	if err != nil {
 		log.Println("Error updating database fields: ", err)
 		userSqlError(w, err)
@@ -384,6 +399,34 @@ func ImportStep4(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		log.Println("Error saving step4 informations: " + err.Error())
 		tx.Rollback()
 		http.Error(w, "Error saving step4 informations: "+err.Error(), http.StatusBadRequest)
+	}
+
+	// For now source description is not translatable but store it in database_tr anyway
+	var source_desc = []struct {
+		Lang_ID int
+		Text    string
+	}{
+		{proute.Lang1.Id, params.Source_description},
+	}
+	err = d.SetTranslations(tx, "source_description", source_desc)
+	if err != nil {
+		log.Println("Error setting source description: ", err)
+		userSqlError(w, err)
+		return
+	}
+
+	// For now context description is not translatable but store it in database_tr anyway
+	var context_desc = []struct {
+		Lang_ID int
+		Text    string
+	}{
+		{proute.Lang1.Id, params.Source_relation},
+	}
+	err = d.SetTranslations(tx, "context_description", context_desc)
+	if err != nil {
+		log.Println("Error setting context description: ", err)
+		userSqlError(w, err)
+		return
 	}
 
 	tx.Commit()
