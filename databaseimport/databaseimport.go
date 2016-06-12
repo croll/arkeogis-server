@@ -192,19 +192,16 @@ func (di *DatabaseImport) setDefaultValues() {
 	di.Database.Scale_resolution = "undefined"
 	di.Database.Geographical_extent = "undefined"
 	di.Database.Type = "undefined"
-	di.Database.Source_creation_date = time.Now()
-	di.Database.Data_set = ""
-	di.Database.Source = ""
-	di.Database.Source_url = ""
+	di.Database.Source_description = ""
 	di.Database.Publisher = ""
 	di.Database.Contributor = ""
 	di.Database.Relation = ""
-	di.Database.Coverage = ""
 	di.Database.Copyright = ""
 	di.Database.Subject = ""
 	di.Database.State = "undefined"
 	di.Database.Published = false
 	di.Database.License_id = 0
+	di.Database.Declared_creation_date = time.Now()
 	di.Database.Created_at = time.Now()
 	di.Database.Updated_at = time.Now()
 }
