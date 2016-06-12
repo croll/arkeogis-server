@@ -111,11 +111,8 @@ type Database struct {
 	Publisher	string	`db:"publisher" json:"publisher"`
 	Contributor	string	`db:"contributor" json:"contributor"`
 	Default_language	int	`db:"default_language" json:"default_language"`	// Lang.Id
-	Relation	string	`db:"relation" json:"relation"`
-	Copyright	string	`db:"copyright" json:"copyright"`
 	State	string	`db:"state" json:"state" enum:"undefined,in-progress,finished" error:"DATABASE.FIELD_STATE.T_CHECK_INCORRECT"`
 	License_id	int	`db:"license_id" json:"license_id"`	// License.Id
-	Subject	string	`db:"subject" json:"subject" min:"1" error:"DATABASE.FIELD_SUBJECT.T_CHECK_MANDATORY" max:"255" error:"DATABASE.FIELD_SUBJECT.T_CHECK_INCORRECT"`
 	Published	bool	`db:"published" json:"published"`
 	Soft_deleted	bool	`db:"soft_deleted" json:"soft_deleted"`
 	Declared_creation_date	time.Time	`db:"declared_creation_date" json:"declared_creation_date"`
@@ -168,6 +165,9 @@ type Database_tr struct {
 	Bibliography	string	`db:"bibliography" json:"bibliography"`
 	Context_description	string	`db:"context_description" json:"context_description"`
 	Source_description	string	`db:"source_description" json:"source_description"`
+	Source_relation	string	`db:"source_relation" json:"source_relation"`
+	Copyright	string	`db:"copyright" json:"copyright"`
+	Subject	string	`db:"subject" json:"subject"`
 }
 
 
@@ -213,6 +213,7 @@ type Import struct {
 	User_id	int	`db:"user_id" json:"user_id"`	// User.Id
 	Filename	string	`db:"filename" json:"filename"`
 	Created_at	time.Time	`db:"created_at" json:"created_at"`
+	Number_of_lines	int	`db:"number_of_lines" json:"number_of_lines"`
 }
 
 
@@ -514,15 +515,15 @@ const Chronology_tr_UpdateStr = "\"name\" = :name, \"description\" = :descriptio
 const Project__chronology_InsertStr = "\"id_group\""
 const Project__chronology_InsertValuesStr = ":id_group"
 const Project__chronology_UpdateStr = "\"id_group\" = :id_group"
-const Database_InsertStr = "\"name\", \"scale_resolution\", \"geographical_extent\", \"type\", \"owner\", \"publisher\", \"contributor\", \"default_language\", \"relation\", \"copyright\", \"state\", \"license_id\", \"subject\", \"published\", \"soft_deleted\", \"declared_creation_date\", \"created_at\", \"updated_at\""
-const Database_InsertValuesStr = ":name, :scale_resolution, :geographical_extent, :type, :owner, :publisher, :contributor, :default_language, :relation, :copyright, :state, :license_id, :subject, :published, :soft_deleted, :declared_creation_date, now(), now()"
-const Database_UpdateStr = "\"name\" = :name, \"scale_resolution\" = :scale_resolution, \"geographical_extent\" = :geographical_extent, \"type\" = :type, \"owner\" = :owner, \"publisher\" = :publisher, \"contributor\" = :contributor, \"default_language\" = :default_language, \"relation\" = :relation, \"copyright\" = :copyright, \"state\" = :state, \"license_id\" = :license_id, \"subject\" = :subject, \"published\" = :published, \"soft_deleted\" = :soft_deleted, \"declared_creation_date\" = :declared_creation_date, \"updated_at\" = now()"
+const Database_InsertStr = "\"name\", \"scale_resolution\", \"geographical_extent\", \"type\", \"owner\", \"publisher\", \"contributor\", \"default_language\", \"state\", \"license_id\", \"published\", \"soft_deleted\", \"declared_creation_date\", \"created_at\", \"updated_at\""
+const Database_InsertValuesStr = ":name, :scale_resolution, :geographical_extent, :type, :owner, :publisher, :contributor, :default_language, :state, :license_id, :published, :soft_deleted, :declared_creation_date, now(), now()"
+const Database_UpdateStr = "\"name\" = :name, \"scale_resolution\" = :scale_resolution, \"geographical_extent\" = :geographical_extent, \"type\" = :type, \"owner\" = :owner, \"publisher\" = :publisher, \"contributor\" = :contributor, \"default_language\" = :default_language, \"state\" = :state, \"license_id\" = :license_id, \"published\" = :published, \"soft_deleted\" = :soft_deleted, \"declared_creation_date\" = :declared_creation_date, \"updated_at\" = now()"
 const Site_InsertStr = "\"code\", \"name\", \"city_name\", \"city_geonameid\", \"geom\", \"geom_3d\", \"centroid\", \"occupation\", \"database_id\", \"created_at\", \"updated_at\""
 const Site_InsertValuesStr = ":code, :name, :city_name, :city_geonameid, :geom, :geom_3d, :centroid, :occupation, :database_id, now(), now()"
 const Site_UpdateStr = "\"code\" = :code, \"name\" = :name, \"city_name\" = :city_name, \"city_geonameid\" = :city_geonameid, \"geom\" = :geom, \"geom_3d\" = :geom_3d, \"centroid\" = :centroid, \"occupation\" = :occupation, \"database_id\" = :database_id, \"updated_at\" = now()"
-const Database_tr_InsertStr = "\"description\", \"geographical_limit\", \"bibliography\", \"context_description\", \"source_description\""
-const Database_tr_InsertValuesStr = ":description, :geographical_limit, :bibliography, :context_description, :source_description"
-const Database_tr_UpdateStr = "\"description\" = :description, \"geographical_limit\" = :geographical_limit, \"bibliography\" = :bibliography, \"context_description\" = :context_description, \"source_description\" = :source_description"
+const Database_tr_InsertStr = "\"description\", \"geographical_limit\", \"bibliography\", \"context_description\", \"source_description\", \"source_relation\", \"copyright\", \"subject\""
+const Database_tr_InsertValuesStr = ":description, :geographical_limit, :bibliography, :context_description, :source_description, :source_relation, :copyright, :subject"
+const Database_tr_UpdateStr = "\"description\" = :description, \"geographical_limit\" = :geographical_limit, \"bibliography\" = :bibliography, \"context_description\" = :context_description, \"source_description\" = :source_description, \"source_relation\" = :source_relation, \"copyright\" = :copyright, \"subject\" = :subject"
 const City_InsertStr = "\"country_geonameid\", \"geom\", \"geom_centroid\", \"created_at\", \"updated_at\""
 const City_InsertValuesStr = ":country_geonameid, :geom, :geom_centroid, now(), now()"
 const City_UpdateStr = "\"country_geonameid\" = :country_geonameid, \"geom\" = :geom, \"geom_centroid\" = :geom_centroid, \"updated_at\" = now()"
@@ -616,9 +617,9 @@ const Country_tr_UpdateStr = "\"name\" = :name, \"name_ascii\" = :name_ascii"
 const Database__authors_InsertStr = ""
 const Database__authors_InsertValuesStr = ""
 const Database__authors_UpdateStr = ""
-const Import_InsertStr = "\"database_id\", \"user_id\", \"filename\", \"created_at\""
-const Import_InsertValuesStr = ":database_id, :user_id, :filename, now()"
-const Import_UpdateStr = "\"database_id\" = :database_id, \"user_id\" = :user_id, \"filename\" = :filename"
+const Import_InsertStr = "\"database_id\", \"user_id\", \"filename\", \"created_at\", \"number_of_lines\""
+const Import_InsertValuesStr = ":database_id, :user_id, :filename, now(), :number_of_lines"
+const Import_UpdateStr = "\"database_id\" = :database_id, \"user_id\" = :user_id, \"filename\" = :filename, \"number_of_lines\" = :number_of_lines"
 const License_InsertStr = "\"name\", \"url\""
 const License_InsertValuesStr = ":name, :url"
 const License_UpdateStr = "\"name\" = :name, \"url\" = :url"

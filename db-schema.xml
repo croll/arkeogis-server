@@ -282,12 +282,6 @@
 <datatype>INTEGER</datatype>
 <relation table="lang" row="id" />
 </row>
-<row name="relation" null="0" autoincrement="0">
-<datatype>VARCHAR(255)</datatype>
-</row>
-<row name="copyright" null="0" autoincrement="0">
-<datatype>VARCHAR(255)</datatype>
-</row>
 <row name="state" null="0" autoincrement="0">
 <datatype>BIT('undefined','in-progress', 'finished')</datatype>
 <comment>enum:"undefined,in-progress,finished" error:"DATABASE.FIELD_STATE.T_CHECK_INCORRECT"</comment>
@@ -295,10 +289,6 @@
 <row name="license_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="license" row="id" />
-</row>
-<row name="subject" null="0" autoincrement="0">
-<datatype>TEXT</datatype>
-<comment>min:"1" error:"DATABASE.FIELD_SUBJECT.T_CHECK_MANDATORY" max:"255" error:"DATABASE.FIELD_SUBJECT.T_CHECK_INCORRECT"</comment>
 </row>
 <row name="published" null="0" autoincrement="0">
 <datatype>BOOLEAN</datatype>
@@ -369,7 +359,7 @@
 <part>geom_3d</part>
 </key>
 </table>
-<table x="254" y="519" name="database_tr">
+<table x="266" y="455" name="database_tr">
 <row name="database_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="database" row="id" />
@@ -393,6 +383,15 @@
 </row>
 <row name="source_description" null="0" autoincrement="0">
 <datatype>VARCHAR</datatype>
+</row>
+<row name="source_relation" null="0" autoincrement="0">
+<datatype>TEXT</datatype>
+</row>
+<row name="copyright" null="0" autoincrement="0">
+<datatype>TEXT</datatype>
+</row>
+<row name="subject" null="0" autoincrement="0">
+<datatype>TEXT</datatype>
 </row>
 <key type="PRIMARY" name="">
 <part>database_id</part>
@@ -1062,7 +1061,7 @@
 <part>user_id</part>
 </key>
 </table>
-<table x="301" y="181" name="import">
+<table x="289" y="162" name="import">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
@@ -1080,11 +1079,14 @@
 <row name="created_at" null="0" autoincrement="0">
 <datatype>TIMESTAMP</datatype>
 </row>
+<row name="number_of_lines" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+</row>
 <key type="PRIMARY" name="">
 <part>id</part>
 </key>
 </table>
-<table x="322" y="385" name="license">
+<table x="301" y="344" name="license">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
