@@ -127,7 +127,7 @@ func (d *Database) GetFullInfosRepresentation(tx *sqlx.Tx, langID int) (db Datab
 		return
 	}
 
-	err = tx.Get(&db, "SELECT name, scale_resolution, geographical_extent, type, declared_creation_date, owner, publisher, contributor, default_language, state, license_id, published, soft_deleted, d.created_at, d.updated_at, firstname || ' ' || lastname as owner_name FROM \"database\" d LEFT JOIN \"user\" u ON d.owner = u.id WHERE d.id = $1", d.Id)
+	err = tx.Get(&db, "SELECT name, scale_resolution, geographical_extent, type, declared_creation_date, owner, editor, contributor, default_language, state, license_id, published, soft_deleted, d.created_at, d.updated_at, firstname || ' ' || lastname as owner_name FROM \"database\" d LEFT JOIN \"user\" u ON d.owner = u.id WHERE d.id = $1", d.Id)
 	db.Authors, err = d.GetAuthorsList(tx)
 	if err != nil {
 		return
@@ -167,7 +167,7 @@ func (d *Database) GetFullInfosAsJSON(tx *sqlx.Tx, langID int) (jsonString strin
 
 	var q = make([]string, 7)
 
-	q[0] = db.AsJSON("SELECT db.id, name, scale_resolution, geographical_extent, type, declared_creation_date, owner, publisher, contributor, default_language, state, license_id, published, soft_deleted, db.created_at, db.updated_at, firstname || ' ' || lastname as owner_name, (SELECT count(*) FROM site WHERE database_id = db.id) as number_of_sites FROM \"database\" db LEFT JOIN \"user\" u ON db.owner = u.id WHERE db.id = d.id", false, "infos", true)
+	q[0] = db.AsJSON("SELECT db.id, name, scale_resolution, geographical_extent, type, declared_creation_date, owner, editor, contributor, default_language, state, license_id, published, soft_deleted, db.created_at, db.updated_at, firstname || ' ' || lastname as owner_name, (SELECT count(*) FROM site WHERE database_id = db.id) as number_of_sites FROM \"database\" db LEFT JOIN \"user\" u ON db.owner = u.id WHERE db.id = d.id", false, "infos", true)
 
 	q[1] = db.AsJSON("SELECT u.id, u.firstname, u.lastname FROM \"user\" u LEFT JOIN database__authors da ON u.id = da.user_id WHERE da.database_id = d.id", true, "authors", true)
 
@@ -271,21 +271,34 @@ func (d *Database) DeleteContinents(tx *sqlx.Tx) error {
 	return err
 }
 
-// GetHandles lists all continents linked to a database
+// GetHandles get last handle linked to a database
+func (d *Database) GetLastHandle(tx *sqlx.Tx) (handle Database_handle, err error) {
+	handle = Database_handle{}
+	err = tx.Get(handle, "SELECT import_id, identifier, url, declared_creation_date, created_at FROM database_handle WHERE database_id = $1 ORDER BY id DESC LIMIT 0,1", d.Id)
+	return handle, err
+}
+
+// GetHandles lists all handles linked to a database
 func (d *Database) GetHandles(tx *sqlx.Tx) (handles []Database_handle, err error) {
 	handles = []Database_handle{}
 	err = tx.Select(handles, "SELECT import_id, identifier, url, declared_creation_date, created_at FROM database_handle WHERE database_id = $1", d.Id)
 	return handles, err
 }
 
-// AddHandles links continents to a database
-func (d *Database) AddHandle(tx *sqlx.Tx, handle Database_handle) (id int, err error) {
+// AddHandle links a handle  to a database
+func (d *Database) AddHandle(tx *sqlx.Tx, handle *Database_handle) (id int, err error) {
 	stmt, err := tx.PrepareNamed("INSERT INTO \"database_handle\" (" + Database_handle_InsertStr + ") VALUES (" + Database_handle_InsertValuesStr + ") RETURNING id")
 	if err != nil {
 		return
 	}
 	defer stmt.Close()
 	err = stmt.Get(&id, handle)
+	return
+}
+
+// UpdateHandle links continents to a database
+func (d *Database) UpdateHandle(tx *sqlx.Tx, handle *Database_handle) (err error) {
+	_, err = tx.Exec("UPDATE database_handle "+Database_handle_UpdateStr+" WHERE identifier = $1", handle.Identifier)
 	return
 }
 
