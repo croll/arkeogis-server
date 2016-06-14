@@ -52,7 +52,7 @@ func GetActiveLangs() ([]Lang, error) {
 func GetLangs() ([]Lang, error) {
 
 	langs := []Lang{}
-	err := db.DB.Select(&langs, "SELECT isocode FROM lang WHERE AND isocode != 'D'")
+	err := db.DB.Select(&langs, "SELECT isocode FROM lang WHERE isocode != 'D'")
 	if err != nil {
 		return langs, err
 	}

@@ -102,7 +102,7 @@ func GetAllCharacPathIDsFromLangIsocode(langIsocode string) (caracs map[int]stri
 
 func GetAllCharacsRootFromLangIsocode(langIsocode string) (caracsRoot map[string]int, err error) {
 	caracsRoot = map[string]int{}
-	rows, err := db.DB.Query("SELECT isocode, name FROM charac ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id WHERE ca.parent_id = 0 AND cat.lang_isocode = $1", langIsocode)
+	rows, err := db.DB.Query("SELECT id, name FROM charac ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id WHERE ca.parent_id = 0 AND cat.lang_isocode = $1", langIsocode)
 	if err != nil {
 		return
 	}
@@ -123,7 +123,7 @@ func GetAllCharacsRootFromLangIsocode(langIsocode string) (caracsRoot map[string
 	return
 }
 
-//WITH RECURSIVE nodes_cte(id, path) AS (SELECT ca.id, cat.name::TEXT AS path FROM charac AS ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON cat.lang_isocode = lang.isocode WHERE lang.isocode = 47 AND ca.parent_id = 0 UNION ALL SELECT ca.id, (p.path || '->' || cat.name) FROM nodes_cte AS p, charac AS ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON cat.lang_isocode = lang.isocode WHERE lang.isocode = 47 AND ca.parent_id = p.id) SELECT * FROM nodes_cte AS n ORDER BY n.id ASC
+//WITH RECURSIVE nodes_cte(id, path) AS (SELECT ca.id, cat.name::TEXT AS path FROM charac AS ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON cat.lang_isocode = lang.isocode WHERE lang.isocode = 'fr' AND ca.parent_id = 0 UNION ALL SELECT ca.id, (p.path || '->' || cat.name) FROM nodes_cte AS p, charac AS ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON cat.lang_isocode = lang.isocode WHERE lang.isocode = 'fr' AND ca.parent_id = p.id) SELECT * FROM nodes_cte AS n ORDER BY n.id ASC
 
 //WITH RECURSIVE nodes_cte(id, path) AS (SELECT ca.id, cat.charac_id::TEXT AS path FROM charac AS ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON cat.lang_isocode = lang.isocode WHERE lang.isocode = 47 AND ca.parent_id = 0 UNION ALL SELECT ca.id, (p.path|| '->' || ca.id) FROM nodes_cte AS p, charac AS ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON cat.lang_isocode = lang.isocode WHERE lang.isocode = 47 AND ca.parent_id = p.id) SELECT * FROM nodes_cte AS n ORDER BY n.id ASC
 

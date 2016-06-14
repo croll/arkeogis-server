@@ -827,7 +827,7 @@ func (di *DatabaseImport) insertCharacInfos() error {
 	}
 
 	di.CurrentSiteRangeCharac.Lang_isocode = di.Database.Default_language
-	_, err = di.Tx.NamedExec("INSERT INTO \"site_range__charac_tr\" (\"site_range__charac_id\", \"lang_id\", \"bibliography\", \"comment\") VALUES (:site_range__charac_id, :lang_id, :bibliography, :comment)", di.CurrentSiteRangeCharac)
+	_, err = di.Tx.NamedExec("INSERT INTO \"site_range__charac_tr\" (\"site_range__charac_id\", \"lang_isocode\", \"bibliography\", \"comment\") VALUES (:site_range__charac_id, :lang_isocode, :bibliography, :comment)", di.CurrentSiteRangeCharac)
 	return err
 }
 

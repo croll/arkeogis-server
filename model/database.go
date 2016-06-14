@@ -111,7 +111,7 @@ func (d *Database) Get(tx *sqlx.Tx) (err error) {
 }
 
 // GetFullInfosRepresentation returns all informations about a database
-func (d *Database) GetFullInfosRepresentation(tx *sqlx.Tx, langID int) (db DatabaseFullInfos, err error) {
+func (d *Database) GetFullInfosRepresentation(tx *sqlx.Tx, langIsocode string) (db DatabaseFullInfos, err error) {
 	db = DatabaseFullInfos{}
 
 	if d.Id == 0 {
@@ -132,11 +132,11 @@ func (d *Database) GetFullInfosRepresentation(tx *sqlx.Tx, langID int) (db Datab
 	if err != nil {
 		return
 	}
-	db.Countries, err = d.GetCountriesList(tx, langID)
+	db.Countries, err = d.GetCountriesList(tx, langIsocode)
 	if err != nil {
 		return
 	}
-	db.Continents, err = d.GetContinentsList(tx, langID)
+	db.Continents, err = d.GetContinentsList(tx, langIsocode)
 	if err != nil {
 		return
 	}
@@ -168,15 +168,15 @@ func (d *Database) GetFullInfosAsJSON(tx *sqlx.Tx, langIsocode string) (jsonStri
 
 	q[1] = db.AsJSON("SELECT u.id, u.firstname, u.lastname FROM \"user\" u LEFT JOIN database__authors da ON u.id = da.user_id WHERE da.database_id = d.id", true, "authors", true)
 
-	q[2] = db.AsJSON("SELECT ct.name, c.geonameid, c.iso_code, c.geom FROM country c LEFT JOIN database__country dc ON c.geonameid = dc.country_geonameid LEFT JOIN country_tr ct ON c.geonameid = ct.country_geonameid WHERE dc.database_id = d.id and ct.lang_isocode = "+langIsocode, true, "countries", true)
+	q[2] = db.AsJSON("SELECT ct.name, c.geonameid, c.iso_code, c.geom FROM country c LEFT JOIN database__country dc ON c.geonameid = dc.country_geonameid LEFT JOIN country_tr ct ON c.geonameid = ct.country_geonameid WHERE dc.database_id = d.id and ct.lang_isocode = '"+langIsocode+"'", true, "countries", true)
 
-	q[3] = db.AsJSON("SELECT ct.name, c.geonameid, c.iso_code, c.geom FROM continent c LEFT JOIN database__continent dc ON c.geonameid = dc.continent_geonameid LEFT JOIN continent_tr ct ON c.geonameid = ct.continent_geonameid WHERE dc.database_id = d.id AND ct.lang_id = "+langIsocode, true, "continents", true)
+	q[3] = db.AsJSON("SELECT ct.name, c.geonameid, c.iso_code, c.geom FROM continent c LEFT JOIN database__continent dc ON c.geonameid = dc.continent_geonameid LEFT JOIN continent_tr ct ON c.geonameid = ct.continent_geonameid WHERE dc.database_id = d.id AND ct.lang_isocode = '"+langIsocode+"'", true, "continents", true)
 
 	q[4] = db.AsJSON("SELECT i.id, u.firstname, u.lastname, i.filename, i.created_at FROM import i LEFT JOIN \"user\" u ON i.user_id = u.id WHERE database_id = d.id", true, "imports", true)
 
 	q[5] = db.AsJSON("SELECT context FROM database_context WHERE database_id = d.id", true, "contexts", true)
 
-	q[6], _ = translate.GetQueryTranslationsAsJSONObject("database_tr", "database_id = d.id", "translations", true, "description", "bibliography", "geographical_limit", "context_description")
+	q[6], _ = translate.GetQueryTranslationsAsJSONObject("database_tr", "database_id = d.id", "translations", true, "description", "bibliography", "geographical_limit", "context_description", "source_description", "source_relation", "copyright")
 
 	// fmt.Println(q[0])
 	// fmt.Println(q[1])
@@ -184,6 +184,8 @@ func (d *Database) GetFullInfosAsJSON(tx *sqlx.Tx, langIsocode string) (jsonStri
 	// fmt.Println(q[3])
 	// fmt.Println(q[4])
 	// fmt.Println(q[5])
+
+	// fmt.Println(db.JSONQueryBuilder(q, "database d", "d.id = "+strconv.Itoa(d.Id)))
 
 	err = tx.Get(&jsonString, db.JSONQueryBuilder(q, "database d", "d.id = "+strconv.Itoa(d.Id)))
 
@@ -221,9 +223,9 @@ func (d *Database) DeleteSites(tx *sqlx.Tx) error {
 }
 
 // GetCountriesList lists all countries linked to a database
-func (d *Database) GetCountriesList(tx *sqlx.Tx, langID int) ([]CountryInfos, error) {
+func (d *Database) GetCountriesList(tx *sqlx.Tx, langIsocode string) ([]CountryInfos, error) {
 	countries := []CountryInfos{}
-	err := tx.Select(&countries, "SELECT ct.name, c.geonameid, c.iso_code, c.geom FROM country c LEFT JOIN database__country dc ON c.geonameid = dc.country_geonameid LEFT JOIN country_tr ct ON c.geonameid = ct.country_geonameid WHERE dc.database_id = $1 and ct.lang_id = $2", d.Id, langID)
+	err := tx.Select(&countries, "SELECT ct.name, c.geonameid, c.iso_code, c.geom FROM country c LEFT JOIN database__country dc ON c.geonameid = dc.country_geonameid LEFT JOIN country_tr ct ON c.geonameid = ct.country_geonameid WHERE dc.database_id = $1 and ct.lang_isocode = $2", d.Id, langIsocode)
 	return countries, err
 }
 
@@ -245,9 +247,9 @@ func (d *Database) DeleteCountries(tx *sqlx.Tx) error {
 }
 
 // GetContinentsList lists all continents linked to a database
-func (d *Database) GetContinentsList(tx *sqlx.Tx, langID int) ([]ContinentInfos, error) {
+func (d *Database) GetContinentsList(tx *sqlx.Tx, langIsocode string) ([]ContinentInfos, error) {
 	continents := []ContinentInfos{}
-	err := tx.Select(continents, "SELECT ct.name, c.geonameid, c.iso_code, c.geom FROM continent c LEFT JOIN database__continent dc ON c.geonameid = dc.continent_geonameid LEFT JOIN continent_tr ct ON c.geonameid = ct.continent_geonameid WHERE dc.database_id = $1 AND ct.lang_id = $2", d.Id, langID)
+	err := tx.Select(continents, "SELECT ct.name, c.geonameid, c.iso_code, c.geom FROM continent c LEFT JOIN database__continent dc ON c.geonameid = dc.continent_geonameid LEFT JOIN continent_tr ct ON c.geonameid = ct.continent_geonameid WHERE dc.database_id = $1 AND ct.lang_isocode = $2", d.Id, langIsocode)
 	return continents, err
 }
 
@@ -363,7 +365,7 @@ func (d *Database) SetTranslations(tx *sqlx.Tx, field string, translations []str
 	for _, tr := range translations {
 		err = tx.QueryRow("SELECT count(database_id) FROM database_tr WHERE database_id = $1 AND lang_isocode = $2", d.Id, tr.Lang_Isocode).Scan(&transID)
 		if transID == 0 {
-			_, err = tx.Exec("INSERT INTO database_tr (database_id, lang_id, description, geographical_limit, bibliography, context_description, source_description) VALUES ($1, $2, '', '', '', '', '')", d.Id, tr.Lang_Isocode)
+			_, err = tx.Exec("INSERT INTO database_tr (database_id, lang_isocode, description, geographical_limit, bibliography, context_description, source_description, source_relation, copyright, subject) VALUES ($1, $2, '', '', '', '', '', '', '', '')", d.Id, tr.Lang_Isocode)
 			if err != nil {
 				return
 			}

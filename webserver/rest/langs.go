@@ -60,7 +60,7 @@ func LangList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		Name    string `json:"name"`
 	}{}
 
-	fmt.Println(params)
+	fmt.Println("LANGUE: " + proute.Lang1.Isocode)
 
 	q := "SELECT isocode, name FROM lang LEFT JOIN lang_tr ON lang_tr.lang_isocode = lang.isocode WHERE isocode != 'D' AND lang_tr.lang_isocode_tr = $1"
 

@@ -177,7 +177,7 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	}
 	err = dbImport.ProcessEssentialDatabaseInfos(params.Name, params.Geographical_extent, continentsID, countriesID)
 	if err != nil {
-		parser.AddError(err.Error())
+		parser.AddError("Import: error processing essential infos " + err.Error())
 		sendError(w, parser.Errors)
 		return
 	}
@@ -193,13 +193,13 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	import_id, err := dbImport.Save(params.File.Name)
 	if err != nil {
-		parser.AddError(err.Error())
+		parser.AddError("Error saving import " + err.Error())
 		sendError(w, parser.Errors)
 		return
 	}
 	err = dbImport.Tx.Commit()
 	if err != nil {
-		parser.AddError(err.Error())
+		parser.AddError("Error when inserting import into database: " + err.Error())
 		sendError(w, parser.Errors)
 		return
 	}
@@ -292,6 +292,8 @@ func ImportStep3(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		return
 	}
 
+	fmt.Println("LANG ISO CODE: ", proute.Lang1.Isocode)
+
 	d := &model.Database{Id: params.Id}
 
 	err = d.UpdateFields(tx, params, "type", "declared_creation_date", "license_id", "scale_resolution", "state")
@@ -346,7 +348,12 @@ func ImportStep3(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		return
 	}
 
-	tx.Commit()
+	err = tx.Commit()
+	if err != nil {
+		log.Println("Error commiting step 3 infos: ", err)
+		userSqlError(w, err)
+		return
+	}
 
 }
 
@@ -373,9 +380,6 @@ type ImportStep4T struct {
 
 func ImportStep4(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	params := proute.Json.(*ImportStep4T)
-
-	fmt.Println("PARAMS STEP 4")
-	fmt.Println(params)
 
 	tx, err := db.DB.Beginx()
 	if err != nil {
@@ -480,7 +484,12 @@ func ImportStep4(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		return
 	}
 
-	tx.Commit()
+	err = tx.Commit()
+	if err != nil {
+		log.Println("Error commiting step 4 infos: ", err)
+		userSqlError(w, err)
+		return
+	}
 }
 
 func ImportStep5(w http.ResponseWriter, r *http.Request, proute routes.Proute) {

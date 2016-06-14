@@ -23,7 +23,6 @@ package rest
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"reflect"
@@ -112,7 +111,6 @@ func DatabaseEnumList(w http.ResponseWriter, r *http.Request, proute routes.Prou
 	db.DB.Select(&enums.Context, "SELECT unnest(enum_range(NULL::database_context))")
 	db.DB.Select(&enums.Context, "SELECT unnest(enum_range(NULL::database_context))")
 	db.DB.Select(&enums.Context, "SELECT unnest(enum_range(NULL::database_context))")
-	fmt.Println(enums)
 }
 
 // DatabaseInfos return detailed infos on an database
@@ -130,7 +128,7 @@ func DatabaseInfos(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 	dbInfos, err := d.GetFullInfosAsJSON(tx, proute.Lang1.Isocode)
 
 	if err != nil {
-		log.Println(err)
+		log.Println("Error getting database infos", err)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
