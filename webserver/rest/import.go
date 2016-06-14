@@ -277,8 +277,8 @@ type ImportStep3T struct {
 	Subject                string
 	State                  string
 	Description            []struct {
-		Lang_ID int
-		Text    string
+		Lang_Isocode string
+		Text         string
 	}
 }
 
@@ -327,10 +327,10 @@ func ImportStep3(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	// For now subject is not translatable but store it in database_tr anyway
 	var subject = []struct {
-		Lang_ID int
-		Text    string
+		Lang_Isocode string
+		Text         string
 	}{
-		{proute.Lang1.Id, params.Subject},
+		{proute.Lang1.Isocode, params.Subject},
 	}
 	err = d.SetTranslations(tx, "subject", subject)
 	if err != nil {
@@ -362,12 +362,12 @@ type ImportStep4T struct {
 	Source_relation               string
 	Source_identifier             string
 	Geographical_Limit            []struct {
-		Lang_ID int
-		Text    string
+		Lang_Isocode string
+		Text         string
 	}
 	Bibliography []struct {
-		Lang_ID int
-		Text    string
+		Lang_Isocode string
+		Text         string
 	}
 }
 
@@ -394,10 +394,10 @@ func ImportStep4(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	// For now source description is not translatable but store it in database_tr anyway
 	var source_desc = []struct {
-		Lang_ID int
-		Text    string
+		Lang_Isocode string
+		Text         string
 	}{
-		{proute.Lang1.Id, params.Source_description},
+		{proute.Lang1.Isocode, params.Source_description},
 	}
 	err = d.SetTranslations(tx, "source_description", source_desc)
 	if err != nil {
@@ -408,10 +408,10 @@ func ImportStep4(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	// For now source relation is not translatable but store it in database_tr anyway
 	var source_relation = []struct {
-		Lang_ID int
-		Text    string
+		Lang_Isocode string
+		Text         string
 	}{
-		{proute.Lang1.Id, params.Source_relation},
+		{proute.Lang1.Isocode, params.Source_relation},
 	}
 	err = d.SetTranslations(tx, "source_relation", source_relation)
 	if err != nil {
@@ -422,10 +422,10 @@ func ImportStep4(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	// For now context description is not translatable but store it in database_tr anyway
 	var context_desc = []struct {
-		Lang_ID int
-		Text    string
+		Lang_Isocode string
+		Text         string
 	}{
-		{proute.Lang1.Id, params.Context_description},
+		{proute.Lang1.Isocode: params.Context_description},
 	}
 	err = d.SetTranslations(tx, "context_description", context_desc)
 	if err != nil {

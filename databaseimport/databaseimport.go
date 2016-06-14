@@ -128,12 +128,12 @@ type DatabaseImport struct {
 }
 
 // New creates a new import process
-func (di *DatabaseImport) New(parser *Parser, uid int, databaseName string, langID int) error {
+func (di *DatabaseImport) New(parser *Parser, uid int, databaseName string, langIsocode string) error {
 	var err error
 	di.Database = &DatabaseInfos{}
 	di.Uid = uid
 	di.Database.Owner = di.Uid
-	di.Database.Default_language = langID
+	di.Database.Default_language = langIsocode
 	di.CurrentSite = &SiteInfos{}
 	di.Parser = parser
 	di.NumberOfSites = 0
@@ -223,7 +223,7 @@ func (di *DatabaseImport) ProcessRecord(f *Fields) {
 		di.CurrentSite.Code = f.SITE_SOURCE_ID
 		di.CurrentSite.Name = f.SITE_NAME
 		di.CurrentSite.Database_id = di.Database.Id
-		di.CurrentSite.Lang_id = di.Database.Default_language
+		di.CurrentSite.Lang_isocode = di.Database.Default_language
 		di.CurrentSite.Geom_3d = "POINT(0 0 0)"
 		di.NumberOfSites++
 		// Process site info
@@ -777,7 +777,7 @@ func (di *DatabaseImport) processCharacInfos(f *Fields) error {
 // cacheCharacs get all Characs from database and cache them
 func (di *DatabaseImport) cacheCharacs() (map[string]map[string]int, error) {
 	characs := map[string]map[string]int{}
-	characsRoot, err := model.GetAllCharacsRootFromLangId(di.Database.Default_language)
+	characsRoot, err := model.GetAllCharacsRootFromLangIsocode(di.Database.Default_language)
 	if err != nil {
 		return characs, err
 	}
@@ -794,7 +794,7 @@ func (di *DatabaseImport) cacheCharacs() (map[string]map[string]int, error) {
 // cacheCharacsIDs get all Characs Ids from database and cache them
 func (di *DatabaseImport) cacheCharacsIDs() (map[int][]int, error) {
 	characs := map[int][]int{}
-	c, err := model.GetAllCharacPathIDsFromLangID(di.Database.Default_language)
+	c, err := model.GetAllCharacPathIDsFromLangIsocode(di.Database.Default_language)
 	if err != nil {
 		return characs, err
 	}
@@ -826,7 +826,7 @@ func (di *DatabaseImport) insertCharacInfos() error {
 		return err
 	}
 
-	di.CurrentSiteRangeCharac.Lang_id = di.Database.Default_language
+	di.CurrentSiteRangeCharac.Lang_isocode = di.Database.Default_language
 	_, err = di.Tx.NamedExec("INSERT INTO \"site_range__charac_tr\" (\"site_range__charac_id\", \"lang_id\", \"bibliography\", \"comment\") VALUES (:site_range__charac_id, :lang_id, :bibliography, :comment)", di.CurrentSiteRangeCharac)
 	return err
 }

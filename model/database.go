@@ -43,7 +43,7 @@ type CountryInfos struct {
 	Country
 	Country_tr
 	Country_geonameid int            `json:"-"`
-	Lang_id           int            `json:"-"`
+	Lang_isocode      string         `json:"-"`
 	Created_at        time.Time      `json:"-"`
 	Updated_at        time.Time      `json:"-"`
 	Geom              sql.NullString `json:"-"`
@@ -54,7 +54,7 @@ type ContinentInfos struct {
 	Continent
 	Continent_tr
 	Continent_geonameid int            `json:"-"`
-	Lang_id             int            `json:"-"`
+	Lang_isocode        string         `json:"-"`
 	Created_at          time.Time      `json:"-"`
 	Updated_at          time.Time      `json:"-"`
 	Geom                sql.NullString `json:"-"`
@@ -160,10 +160,7 @@ func (d *Database) GetFullInfosRepresentation(tx *sqlx.Tx, langID int) (db Datab
 }
 
 // GetFullInfosAsJSON returns all infos about a database
-func (d *Database) GetFullInfosAsJSON(tx *sqlx.Tx, langID int) (jsonString string, err error) {
-
-	// dbid := strconv.Itoa(databaseID)
-	lid := strconv.Itoa(langID)
+func (d *Database) GetFullInfosAsJSON(tx *sqlx.Tx, langIsocode string) (jsonString string, err error) {
 
 	var q = make([]string, 7)
 
@@ -171,9 +168,9 @@ func (d *Database) GetFullInfosAsJSON(tx *sqlx.Tx, langID int) (jsonString strin
 
 	q[1] = db.AsJSON("SELECT u.id, u.firstname, u.lastname FROM \"user\" u LEFT JOIN database__authors da ON u.id = da.user_id WHERE da.database_id = d.id", true, "authors", true)
 
-	q[2] = db.AsJSON("SELECT ct.name, c.geonameid, c.iso_code, c.geom FROM country c LEFT JOIN database__country dc ON c.geonameid = dc.country_geonameid LEFT JOIN country_tr ct ON c.geonameid = ct.country_geonameid WHERE dc.database_id = d.id and ct.lang_id = "+lid, true, "countries", true)
+	q[2] = db.AsJSON("SELECT ct.name, c.geonameid, c.iso_code, c.geom FROM country c LEFT JOIN database__country dc ON c.geonameid = dc.country_geonameid LEFT JOIN country_tr ct ON c.geonameid = ct.country_geonameid WHERE dc.database_id = d.id and ct.lang_isocode = "+langIsocode, true, "countries", true)
 
-	q[3] = db.AsJSON("SELECT ct.name, c.geonameid, c.iso_code, c.geom FROM continent c LEFT JOIN database__continent dc ON c.geonameid = dc.continent_geonameid LEFT JOIN continent_tr ct ON c.geonameid = ct.continent_geonameid WHERE dc.database_id = d.id AND ct.lang_id = "+lid, true, "continents", true)
+	q[3] = db.AsJSON("SELECT ct.name, c.geonameid, c.iso_code, c.geom FROM continent c LEFT JOIN database__continent dc ON c.geonameid = dc.continent_geonameid LEFT JOIN continent_tr ct ON c.geonameid = ct.continent_geonameid WHERE dc.database_id = d.id AND ct.lang_id = "+langIsocode, true, "continents", true)
 
 	q[4] = db.AsJSON("SELECT i.id, u.firstname, u.lastname, i.filename, i.created_at FROM import i LEFT JOIN \"user\" u ON i.user_id = u.id WHERE database_id = d.id", true, "imports", true)
 
@@ -355,8 +352,8 @@ func (d *Database) DeleteContexts(tx *sqlx.Tx) error {
 }
 
 func (d *Database) SetTranslations(tx *sqlx.Tx, field string, translations []struct {
-	Lang_ID int
-	Text    string
+	Lang_Isocode string
+	Text         string
 }) (err error) {
 
 	// Check if translation entry exists for this database and this lang
@@ -364,16 +361,15 @@ func (d *Database) SetTranslations(tx *sqlx.Tx, field string, translations []str
 	var transID int
 
 	for _, tr := range translations {
-		err = tx.QueryRow("SELECT count(database_id) FROM database_tr WHERE database_id = $1 AND lang_id = $2", d.Id, tr.Lang_ID).Scan(&transID)
+		err = tx.QueryRow("SELECT count(database_id) FROM database_tr WHERE database_id = $1 AND lang_isocode = $2", d.Id, tr.Lang_Isocode).Scan(&transID)
 		if transID == 0 {
-			// fmt.Println("CREATE TRANSLATION FOR FIELD", field, "WITH VALUE", tr.Text, "FOR DATABASE", d.Id, "AND LANG", tr.Lang_ID)
-			_, err = tx.Exec("INSERT INTO database_tr (database_id, lang_id, description, geographical_limit, bibliography, context_description, source_description) VALUES ($1, $2, '', '', '', '', '')", d.Id, tr.Lang_ID)
+			_, err = tx.Exec("INSERT INTO database_tr (database_id, lang_id, description, geographical_limit, bibliography, context_description, source_description) VALUES ($1, $2, '', '', '', '', '')", d.Id, tr.Lang_Isocode)
 			if err != nil {
 				return
 			}
 		}
 		if tr.Text != "" {
-			_, err = tx.Exec("UPDATE database_tr SET "+field+" = $1 WHERE database_id = $2 and lang_id = $3", tr.Text, d.Id, tr.Lang_ID)
+			_, err = tx.Exec("UPDATE database_tr SET "+field+" = $1 WHERE database_id = $2 and lang_isocode = $3", tr.Text, d.Id, tr.Lang_Isocode)
 		}
 	}
 
