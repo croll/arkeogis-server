@@ -57,10 +57,10 @@ func ChronologiesAll(w http.ResponseWriter, r *http.Request, proute routes.Prout
 	chronologies := []row{}
 
 	//err := db.DB.Select(&chronologies, "select parent_id, id, to_json((select array_agg(chronology_tr.*) from chronology_tr where chronology_tr.chronology_id = chronology.id)) as tr FROM chronology order by parent_id, \"order\", id")
-	transquery, err := translate.GetQueryTranslationsAsJSONObject("chronology_tr", "tbl.chronology_id = chronology.id", "", false, "name")
+	transquery := translate.GetQueryTranslationsAsJSONObject("chronology_tr", "tbl.chronology_id = chronology.id", "", false, "name")
 	q := "select parent_id, id, (" + transquery + ") as tr FROM chronology order by parent_id, \"start_date\", id"
 	fmt.Println("q: ", q)
-	err = db.DB.Select(&chronologies, q)
+	err := db.DB.Select(&chronologies, q)
 	fmt.Println("chronologies: ", chronologies)
 	if err != nil {
 		fmt.Println("err: ", err)
