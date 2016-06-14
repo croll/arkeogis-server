@@ -202,9 +202,7 @@ func selectTranslated(tabletr string, coltr string, collang string, where string
 		" SELECT \"" + tabletr + "\" " +
 		//" SELECT name " +
 		" FROM \"" + tabletr + "\" " +
-		" WHERE \"" + collang + "\" IN (" + lang1 + "," + lang2 + ", 'D') " +
-		" AND " + where + " " +
-		" ORDER BY idx(array[" + lang1 + "," + lang2 + ", 'D'], \"" + collang + "\") " +
+		" WHERE " + where + " " +
 		" LIMIT 1" +
 		")"
 }
@@ -219,8 +217,8 @@ func selectCityAndCountry(city_geonameid string, langisocode string) string {
 		"LEFT JOIN country ON country.geonameid=city.country_geonameid " +
 		"LEFT JOIN country_tr ON country_tr.country_geonameid = country.geonameid " +
 		"WHERE city.geonameid=" + city_geonameid +
-		" AND (city_tr.lang_isocode = " + langisocode + " or city_tr.lang_isocode='D') " +
-		" AND (country_tr.lang_isocode = " + langisocode + " or country_tr.lang_isocode='D') " +
+		" AND (city_tr.lang_isocode = '" + langisocode + "' or city_tr.lang_isocode='D') " +
+		" AND (country_tr.lang_isocode = '" + langisocode + "' or country_tr.lang_isocode='D') " +
 		"ORDER by city_tr.lang_isocode desc, country_tr.lang_isocode desc " +
 		"LIMIT 1"
 }
@@ -309,6 +307,22 @@ func UserList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 			" ORDER BY "+order+" "+orderdir+
 			" OFFSET $2 "+
 			" LIMIT $3",
+		"%"+params.Filter+"%", offset, params.Limit)
+
+	fmt.Println("SELECT "+
+		" u.id, u.username, u.created_at, u.updated_at, u.firstname, u.lastname, u.active, u.email, u.photo_id, "+
+		" "+selectGroupAsJsonNotNull("user", proute.Lang1.Isocode)+" as groups_user, "+
+		" "+selectGroupAsJsonNotNull("chronology", proute.Lang1.Isocode)+" as groups_chronology, "+
+		" "+selectGroupAsJsonNotNull("charac", proute.Lang1.Isocode)+" as groups_charac, "+
+		" "+selectCityAndCountryAsJson("u.city_geonameid", proute.Lang1.Isocode)+" as countryandcity, "+
+		" "+selectCompanyAsJson("u.id")+" as companies "+
+		" FROM \"user\" u "+
+		" WHERE (u.username ILIKE $1 OR u.firstname ILIKE $1 OR u.lastname ILIKE $1 OR u.email ILIKE $1) "+
+		"  AND u.id > 0"+ // don't list anonymous
+		" GROUP BY u.id "+
+		" ORDER BY "+order+" "+orderdir+
+		" OFFSET $2 "+
+		" LIMIT $3",
 		"%"+params.Filter+"%", offset, params.Limit)
 	if err != nil {
 		userSqlError(w, err)
