@@ -67,69 +67,19 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	// Get langs
-
-	langs := map[int]int{}
-	langsByIso := map[string]int{}
-
-	var err error
-
-	rows, err := db.DB.Query("SELECT id, iso_code FROM lang WHERE iso_code IN ('fr', 'de', 'en', 'es')")
-	if err != nil {
-		log.Fatalln(err)
-	}
-	defer rows.Close()
-	var (
-		id       int
-		iso_code string
-		num      int
-	)
-	langFound := false
-	for rows.Next() {
-		if err = rows.Scan(&id, &iso_code); err != nil {
-			log.Fatalln(err)
-		}
-		switch iso_code {
-		case "fr":
-			num = 0
-			langFound = true
-			langsByIso["fr"] = id
-		case "de":
-			langFound = true
-			num = 1
-			langsByIso["de"] = id
-		case "en":
-			langFound = true
-			num = 2
-			langsByIso["en"] = id
-		case "es":
-			langFound = true
-			num = 3
-			langsByIso["es"] = id
-		}
-		langs[num] = id
-	}
-
-	if err = rows.Err(); err != nil {
-		log.Fatalln(err)
-	}
-
-	if !langFound {
-		log.Fatalln("No lang found in your database. Please run dist/tools/geoname_import")
-	}
-
 	for _, f := range []string{"../datas/csv/Furniture_fr-de-en-es.csv", "../datas/csv/Landscape_fr-de-en-es.csv", "../datas/csv/Production_fr-de-en-es.csv", "../datas/csv/Realestate_fr-de-en-es.csv"} {
-		err = processFile(f, langs, langsByIso)
+		err := processFile(f)
 		if err != nil {
 			log.Println(err)
 		}
 	}
 }
 
-func processFile(filename string, langs map[int]int, langsByIso map[string]int) error {
+func processFile(filename string) error {
 
 	log.Println("Importing file", filename)
 	// Store current level
+	langsByIso := [4]string{"fr", "de", "en", "es"}
 	currentLevel := 0
 	parentId := 0
 	rootID := 0
@@ -164,10 +114,8 @@ func processFile(filename string, langs map[int]int, langsByIso map[string]int) 
 	if err != nil {
 		return err
 	}
-	var langIsoCode string
-	var langID int
-	for langIsoCode, langID = range langsByIso {
-		_, err = tx.Exec("INSERT INTO charac_tr (lang_id, charac_id, name, description) VALUES ($1, $2, $3, '')", langID, rootID, caracsRootByLang[rootName][langIsoCode])
+	for _, langIsocode := range langsByIso {
+		_, err = tx.Exec("INSERT INTO charac_tr (lang_isocode, charac_id, name, description) VALUES ($1, $2, $3, '')", langIsocode, rootID, caracsRootByLang[rootName][langIsocode])
 		if err != nil {
 			return err
 		}
@@ -204,7 +152,7 @@ func processFile(filename string, langs map[int]int, langsByIso map[string]int) 
 						return err
 					}
 				}
-				_, err = tx.Exec("INSERT INTO charac_tr (lang_id, charac_id, name, description) VALUES ($1, $2, $3, '')", langs[i], lastInsertId, l)
+				_, err = tx.Exec("INSERT INTO charac_tr (lang_isocode, charac_id, name, description) VALUES ($1, $2, $3, '')", langsByIso[i], lastInsertId, l)
 				if err != nil {
 					return err
 				}

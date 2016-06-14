@@ -31,7 +31,7 @@ import (
 
 func main() {
 
-	parser, err := databaseimport.NewParser("essai-import_Bernard2003_revue_extrait-qqusaccent-demoins.csv", 48)
+	parser, err := databaseimport.NewParser("essai-import_Bernard2003_revue_extrait-qqusaccent-demoins.csv", "fr")
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -44,7 +44,7 @@ func main() {
 		log.Fatalln(err)
 	}
 	dbImport := new(databaseimport.DatabaseImport)
-	dbImport.New(parser, 0, "My test database", 48)
+	dbImport.New(parser, 0, "My test database", "fr")
 	parser.SetUserChoices("UseGeonames", true)
 	err = parser.Parse(dbImport.ProcessRecord)
 	if err != nil {
