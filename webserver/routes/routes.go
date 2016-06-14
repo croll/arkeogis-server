@@ -231,22 +231,22 @@ func handledRoute(myroute *Route, rw http.ResponseWriter, r *http.Request) {
 
 	// get langs
 	lang1 := model.Lang{
-		Iso_code: "en",
+		Isocode: "en",
 	}
 	lang2 := model.Lang{
-		Iso_code: "fr",
+		Isocode: "fr",
 	}
 
 	if _lang1, err := r.Cookie("arkeogis_lang_1"); err == nil {
-		lang1.Iso_code = _lang1.Value
+		lang1.Isocode = _lang1.Value
 	}
 	if _lang2, err := r.Cookie("arkeogis_lang_2"); err == nil {
-		lang2.Iso_code = _lang2.Value
+		lang2.Isocode = _lang2.Value
 	}
 
 	err = lang1.Get(tx)
 	if err != nil {
-		lang1.Iso_code = "en"
+		lang1.Isocode = "en"
 		err = lang1.Get(tx)
 		if err != nil {
 			log.Fatal("can't load lang1 !")
@@ -255,7 +255,7 @@ func handledRoute(myroute *Route, rw http.ResponseWriter, r *http.Request) {
 
 	err = lang2.Get(tx)
 	if err != nil {
-		lang2.Iso_code = "fr"
+		lang2.Isocode = "fr"
 		err = lang2.Get(tx)
 		if err != nil {
 			log.Fatal("can't load lang2 !")

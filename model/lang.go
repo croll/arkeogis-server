@@ -28,12 +28,7 @@ import (
 
 // Get the lang from the database
 func (l *Lang) Get(tx *sqlx.Tx) error {
-	var q = "SELECT * FROM \"lang\" WHERE "
-	if len(l.Iso_code) > 0 {
-		q += "iso_code=:iso_code"
-	} else {
-		q += "id=:id"
-	}
+	var q = "SELECT * FROM \"lang\" WHERE isocode=:isocode"
 	stmt, err := tx.PrepareNamed(q)
 	if err != nil {
 		return err
@@ -46,7 +41,7 @@ func (l *Lang) Get(tx *sqlx.Tx) error {
 func GetActiveLangs() ([]Lang, error) {
 
 	langs := []Lang{}
-	err := db.DB.Select(&langs, "SELECT id, iso_code AS isocode FROM lang WHERE active = true AND iso_code != 'D'")
+	err := db.DB.Select(&langs, "SELECT isocode FROM lang WHERE active = true AND isocode != 'D'")
 	if err != nil {
 		return langs, err
 	}
@@ -57,7 +52,7 @@ func GetActiveLangs() ([]Lang, error) {
 func GetLangs() ([]Lang, error) {
 
 	langs := []Lang{}
-	err := db.DB.Select(&langs, "SELECT id, iso_code AS isocode FROM lang WHERE AND iso_code != 'D'")
+	err := db.DB.Select(&langs, "SELECT isocode FROM lang WHERE AND isocode != 'D'")
 	if err != nil {
 		return langs, err
 	}

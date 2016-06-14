@@ -142,16 +142,16 @@ type CityAndCountry_wtr struct {
 	Country Country_wtr `json:"country"`
 }
 
-func (u *CityAndCountry_wtr) Get(tx *sqlx.Tx, cityId int, langId int) error {
+func (u *CityAndCountry_wtr) Get(tx *sqlx.Tx, cityId int, langIsocode string) error {
 	u.City.Geonameid = cityId
-	u.City.Lang_id = langId
+	u.City.Lang_isocode = langIsocode
 	err := u.City.Get(tx)
 	if err != nil {
 		return err
 	}
 	//log.Println("City : ", u.City)
 
-	u.Country.Lang_id = langId
+	u.Country.Lang_isocode = langIsocode
 	u.Country.Geonameid = u.City.Country_geonameid
 	err = u.Country.Get(tx)
 	if err != nil {
