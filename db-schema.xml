@@ -215,6 +215,7 @@
 </row>
 <key type="PRIMARY" name="">
 <part>chronology_id</part>
+<part>lang_isocode</part>
 </key>
 </table>
 <table x="1086" y="778" name="project__chronology">
@@ -378,6 +379,7 @@
 </row>
 <key type="PRIMARY" name="">
 <part>database_id</part>
+<part>lang_isocode</part>
 </key>
 </table>
 <table x="472" y="873" name="city">
@@ -419,6 +421,7 @@
 </row>
 <key type="PRIMARY" name="">
 <part>site_id</part>
+<part>lang_isocode</part>
 </key>
 </table>
 <table x="909" y="374" name="site_range">
@@ -470,6 +473,7 @@
 </row>
 <key type="PRIMARY" name="">
 <part>site_range__charac_id</part>
+<part>lang_isocode</part>
 </key>
 </table>
 <table x="447" y="1051" name="city_tr">
@@ -489,6 +493,7 @@
 </row>
 <key type="PRIMARY" name="">
 <part>city_geonameid</part>
+<part>lang_isocode</part>
 </key>
 <key type="INDEX" name="">
 <part>name_ascii</part>
@@ -514,6 +519,7 @@
 </row>
 <key type="PRIMARY" name="">
 <part>charac_id</part>
+<part>lang_isocode</part>
 </key>
 </table>
 <table x="1366" y="524" name="charac">
@@ -604,6 +610,7 @@
 </row>
 <key type="PRIMARY" name="">
 <part>wms_map_id</part>
+<part>lang_isocode</part>
 </key>
 </table>
 <table x="244" y="777" name="shapefile">
@@ -683,6 +690,7 @@
 </row>
 <key type="PRIMARY" name="">
 <part>shapefile_id</part>
+<part>lang_isocode</part>
 </key>
 </table>
 <table x="1075" y="905" name="project__databases">
@@ -816,6 +824,7 @@
 </row>
 <key type="PRIMARY" name="">
 <part>group_id</part>
+<part>lang_isocode</part>
 </key>
 </table>
 <table x="582" y="1506" name="permission_tr">
@@ -835,6 +844,7 @@
 </row>
 <key type="PRIMARY" name="">
 <part>permission_id</part>
+<part>lang_isocode</part>
 </key>
 </table>
 <table x="22" y="1392" name="user__group">
@@ -927,6 +937,7 @@
 </row>
 <key type="PRIMARY" name="">
 <part>country_geonameid</part>
+<part>lang_isocode</part>
 </key>
 <key type="INDEX" name="">
 <part>name_ascii</part>
@@ -1062,6 +1073,7 @@
 </row>
 <key type="PRIMARY" name="">
 <part>continent_geonameid</part>
+<part>lang_isocode</part>
 </key>
 <key type="INDEX" name="">
 <part>name</part>
