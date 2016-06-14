@@ -23,9 +23,12 @@ package rest
 
 import (
 	//	"github.com/croll/arkeogis-server/csvimport"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
+
+	"log"
 	"net/http"
 	"os"
 	"reflect"
@@ -76,7 +79,6 @@ func init() {
 			Description: "Last step of ArkeoGIS import procedure",
 			Func:        ImportStep5,
 			Method:      "GET",
-			Json:        reflect.TypeOf(ImportStep5T{}),
 			Permissions: []string{
 				"import",
 			},
@@ -87,17 +89,15 @@ func init() {
 
 // ImportStep1T struct holds information provided by user
 type ImportStep1T struct {
-	Infos struct {
-		Name                string
-		Geographical_extent string
-		Default_language    int
-	}
-	Continents     []model.Continent
-	Countries      []model.Country
-	UseGeonames    bool
-	Separator      string
-	EchapCharacter string
-	File           *routes.File
+	Name                string
+	Geographical_extent string
+	Default_language    int
+	Continents          []model.Continent
+	Countries           []model.Country
+	UseGeonames         bool
+	Separator           string
+	EchapCharacter      string
+	File                *routes.File
 }
 
 // ImportStep1 is called by rest
@@ -131,7 +131,7 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	}
 
 	// Parse the file
-	parser, err := databaseimport.NewParser(filepath, params.Infos.Default_language)
+	parser, err := databaseimport.NewParser(filepath, params.Default_language)
 	if err != nil {
 		parser.AddError("IMPORT.CSV_FILE.T_ERROR_PARSING_FAILED")
 	}
@@ -151,7 +151,7 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	// Init import
 	dbImport = new(databaseimport.DatabaseImport)
-	err = dbImport.New(parser, user.(model.User).Id, params.Infos.Name, params.Infos.Default_language)
+	err = dbImport.New(parser, user.(model.User).Id, params.Name, params.Default_language)
 	if err != nil {
 		parser.AddError(err.Error())
 		sendError(w, parser.Errors)
@@ -175,7 +175,7 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	for _, c := range params.Countries {
 		countriesID = append(countriesID, c.Geonameid)
 	}
-	err = dbImport.ProcessEssentialDatabaseInfos(params.Infos.Name, params.Infos.Geographical_extent, continentsID, countriesID)
+	err = dbImport.ProcessEssentialDatabaseInfos(params.Name, params.Geographical_extent, continentsID, countriesID)
 	if err != nil {
 		parser.AddError(err.Error())
 		sendError(w, parser.Errors)
@@ -191,7 +191,7 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		}
 	*/
 
-	err = dbImport.Save(params.File.Name)
+	import_id, err := dbImport.Save(params.File.Name)
 	if err != nil {
 		parser.AddError(err.Error())
 		sendError(w, parser.Errors)
@@ -214,12 +214,14 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	response := struct {
 		DatabaseId     int                           `json:"database_id"`
+		ImportId       int                           `json:"import_id"`
 		NumberOfSites  int                           `json:"nbSites"`
 		SitesWithError []string                      `json:"sitesWithError"`
 		Errors         []*databaseimport.ImportError `json:"errors"`
 		Lines          int                           `json:"nbLines"`
 	}{
 		DatabaseId:     dbImport.Database.Id,
+		ImportId:       import_id,
 		NumberOfSites:  dbImport.NumberOfSites,
 		SitesWithError: sitesWithError,
 		Errors:         dbImport.Errors,
@@ -265,16 +267,16 @@ func writeResponse(w http.ResponseWriter, numberOfSites int, sitesWithError []st
 */
 
 type ImportStep3T struct {
-	ID                   int
-	Authors              []int
-	Type                 string
-	Source_creation_date time.Time
-	Contexts             []string
-	License_ID           int
-	Scale_resolution     string
-	Subject              string
-	State                string
-	Description          []struct {
+	Id                     int
+	Authors                []int
+	Type                   string
+	Declared_creation_date time.Time
+	Contexts               []string
+	License_ID             int
+	Scale_resolution       string
+	Subject                string
+	State                  string
+	Description            []struct {
 		Lang_ID int
 		Text    string
 	}
@@ -284,7 +286,95 @@ func ImportStep3(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	params := proute.Json.(*ImportStep3T)
 
-	fmt.Println("PARAMS STEP 3:")
+	tx, err := db.DB.Beginx()
+	if err != nil {
+		http.Error(w, "Error saving step3 informations: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	d := &model.Database{Id: params.Id}
+
+	err = d.UpdateFields(tx, params, "type", "declared_creation_date", "license_id", "scale_resolution", "state")
+	if err != nil {
+		log.Println("Error updating database fields: ", err)
+		userSqlError(w, err)
+		return
+	}
+	err = d.DeleteAuthors(tx)
+	if err != nil {
+		log.Println("Error deleting database authors: ", err)
+		userSqlError(w, err)
+		return
+	}
+	err = d.SetAuthors(tx, params.Authors)
+	if err != nil {
+		log.Println("Error setting database authors: ", err)
+		userSqlError(w, err)
+		return
+	}
+	err = d.DeleteContexts(tx)
+	if err != nil {
+		log.Println("Error deleting database contexts: ", err)
+		userSqlError(w, err)
+		return
+	}
+	err = d.SetContexts(tx, params.Contexts)
+	if err != nil {
+		log.Println("Error setting database contexts: ", err)
+		userSqlError(w, err)
+		return
+	}
+
+	// For now subject is not translatable but store it in database_tr anyway
+	var subject = []struct {
+		Lang_ID int
+		Text    string
+	}{
+		{proute.Lang1.Id, params.Subject},
+	}
+	err = d.SetTranslations(tx, "subject", subject)
+	if err != nil {
+		log.Println("Error setting subject: ", err)
+		userSqlError(w, err)
+		return
+	}
+
+	err = d.SetTranslations(tx, "description", params.Description)
+	if err != nil {
+		log.Println("Error setting database description: ", err)
+		userSqlError(w, err)
+		return
+	}
+
+	tx.Commit()
+
+}
+
+type ImportStep4T struct {
+	Id                            int
+	Import_ID                     int
+	Editor                        string
+	Contributor                   string
+	Source_description            string
+	Context_description           string
+	Source_url                    string
+	Source_declared_creation_date time.Time
+	Source_relation               string
+	Source_identifier             string
+	Geographical_Limit            []struct {
+		Lang_ID int
+		Text    string
+	}
+	Bibliography []struct {
+		Lang_ID int
+		Text    string
+	}
+}
+
+func ImportStep4(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+	params := proute.Json.(*ImportStep4T)
+
+	fmt.Println("PARAMS STEP 4")
 	fmt.Println(params)
 
 	tx, err := db.DB.Beginx()
@@ -293,21 +383,104 @@ func ImportStep3(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		return
 	}
 
-	_, err = tx.NamedExec("UPDATE \"database\" SET \"type\" = :type, source_creation_date = :source_creation_date, license_id = :license_id, scale_resolution = :scale_resolution, subject = :=subject, state = :state WHERE id = :id", params)
+	d := &model.Database{Id: params.Id}
 
+	err = d.UpdateFields(tx, params, "editor", "contributor")
 	if err != nil {
-		http.Error(w, "Error saving step3 informations: "+err.Error(), http.StatusBadRequest)
+		log.Println("Error updating database fields: ", err)
+		userSqlError(w, err)
+		return
 	}
 
-}
+	// For now source description is not translatable but store it in database_tr anyway
+	var source_desc = []struct {
+		Lang_ID int
+		Text    string
+	}{
+		{proute.Lang1.Id, params.Source_description},
+	}
+	err = d.SetTranslations(tx, "source_description", source_desc)
+	if err != nil {
+		log.Println("Error setting source description: ", err)
+		userSqlError(w, err)
+		return
+	}
 
-type ImportStep4T struct {
-}
+	// For now source relation is not translatable but store it in database_tr anyway
+	var source_relation = []struct {
+		Lang_ID int
+		Text    string
+	}{
+		{proute.Lang1.Id, params.Source_relation},
+	}
+	err = d.SetTranslations(tx, "source_relation", source_relation)
+	if err != nil {
+		log.Println("Error setting source relation: ", err)
+		userSqlError(w, err)
+		return
+	}
 
-func ImportStep4(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
-}
+	// For now context description is not translatable but store it in database_tr anyway
+	var context_desc = []struct {
+		Lang_ID int
+		Text    string
+	}{
+		{proute.Lang1.Id, params.Context_description},
+	}
+	err = d.SetTranslations(tx, "context_description", context_desc)
+	if err != nil {
+		log.Println("Error setting context description: ", err)
+		userSqlError(w, err)
+		return
+	}
 
-type ImportStep5T struct {
+	err = d.SetTranslations(tx, "geographical_limit", params.Geographical_Limit)
+	if err != nil {
+		log.Println("Error setting geographical limit: ", err)
+		userSqlError(w, err)
+		return
+	}
+
+	err = d.SetTranslations(tx, "bibliography", params.Bibliography)
+	if err != nil {
+		log.Println("Error setting bibliography: ", err)
+		userSqlError(w, err)
+		return
+	}
+
+	// Database handle
+
+	currentHandle, err := d.GetLastHandle(tx)
+
+	if err != nil && err != sql.ErrNoRows {
+		log.Println("Error getting last handle: ", err)
+		userSqlError(w, err)
+		return
+	}
+
+	handle := &model.Database_handle{
+		Database_id: params.Id,
+		Import_id:   params.Import_ID,
+		Identifier:  params.Source_identifier,
+		Url:         params.Source_url,
+		Declared_creation_date: params.Source_declared_creation_date,
+		Created_at:             time.Now(),
+	}
+
+	if currentHandle.Identifier == params.Source_identifier {
+		handle.Id = currentHandle.Id
+		err = d.UpdateHandle(tx, handle)
+	} else {
+		_, err = d.AddHandle(tx, handle)
+	}
+
+	if err != nil {
+		log.Println("Error setting handle informations: ", err)
+		userSqlError(w, err)
+		return
+	}
+
+	tx.Commit()
 }
 
 func ImportStep5(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
