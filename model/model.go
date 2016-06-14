@@ -22,7 +22,7 @@ type Charac_root struct {
 
 
 type Charac_tr struct {
-	Lang_isocode	INTEGER(2)	`db:"lang_isocode" json:"lang_isocode"`	// Lang.Isocode
+	Lang_isocode	string	`db:"lang_isocode" json:"lang_isocode"`	// Lang.Isocode
 	Charac_id	int	`db:"charac_id" json:"charac_id"`	// Charac.Id
 	Name	string	`db:"name" json:"name"`
 	Description	string	`db:"description" json:"description"`
@@ -50,7 +50,7 @@ type Chronology_root struct {
 
 
 type Chronology_tr struct {
-	Lang_isocode	INTEGER(2)	`db:"lang_isocode" json:"lang_isocode"`	// Lang.Isocode
+	Lang_isocode	string	`db:"lang_isocode" json:"lang_isocode"`	// Lang.Isocode
 	Chronology_id	int	`db:"chronology_id" json:"chronology_id"`	// Chronology.Id
 	Name	string	`db:"name" json:"name"`
 	Description	string	`db:"description" json:"description"`
@@ -69,7 +69,7 @@ type City struct {
 
 type City_tr struct {
 	City_geonameid	int	`db:"city_geonameid" json:"city_geonameid"`	// City.Geonameid
-	Lang_isocode	INTEGER(2)	`db:"lang_isocode" json:"lang_isocode"`	// Lang.Isocode
+	Lang_isocode	string	`db:"lang_isocode" json:"lang_isocode"`	// Lang.Isocode
 	Name	string	`db:"name" json:"name"`
 	Name_ascii	string	`db:"name_ascii" json:"name_ascii"`
 }
@@ -93,7 +93,7 @@ type Continent struct {
 
 type Continent_tr struct {
 	Continent_geonameid	int	`db:"continent_geonameid" json:"continent_geonameid"`
-	Lang_isocode	INTEGER(2)	`db:"lang_isocode" json:"lang_isocode"`	// Lang.Isocode
+	Lang_isocode	sql.NullString	`db:"lang_isocode" json:"lang_isocode"`	// Lang.Isocode
 	Name	string	`db:"name" json:"name"`
 	Name_ascii	string	`db:"name_ascii" json:"name_ascii"`
 }
@@ -110,7 +110,7 @@ type Country struct {
 
 type Country_tr struct {
 	Country_geonameid	int	`db:"country_geonameid" json:"country_geonameid"`	// Country.Geonameid
-	Lang_isocode	INTEGER(2)	`db:"lang_isocode" json:"lang_isocode"`	// Lang.Isocode
+	Lang_isocode	string	`db:"lang_isocode" json:"lang_isocode"`	// Lang.Isocode
 	Name	string	`db:"name" json:"name"`
 	Name_ascii	string	`db:"name_ascii" json:"name_ascii"`
 }
@@ -174,7 +174,7 @@ type Database_handle struct {
 
 type Database_tr struct {
 	Database_id	int	`db:"database_id" json:"database_id" xmltopsql:"ondelete:cascade"`	// Database.Id
-	Lang_isocode	INTEGER(2)	`db:"lang_isocode" json:"lang_isocode"`	// Lang.Isocode
+	Lang_isocode	string	`db:"lang_isocode" json:"lang_isocode"`	// Lang.Isocode
 	Description	string	`db:"description" json:"description"`
 	Geographical_limit	string	`db:"geographical_limit" json:"geographical_limit"`
 	Bibliography	string	`db:"bibliography" json:"bibliography"`
@@ -204,7 +204,7 @@ type Group__permission struct {
 
 type Group_tr struct {
 	Group_id	int	`db:"group_id" json:"group_id"`	// Group.Id
-	Lang_isocode	INTEGER(2)	`db:"lang_isocode" json:"lang_isocode"`	// Lang.Isocode
+	Lang_isocode	string	`db:"lang_isocode" json:"lang_isocode"`	// Lang.Isocode
 	Name	string	`db:"name" json:"name"`
 	Description	string	`db:"description" json:"description"`
 }
@@ -227,8 +227,8 @@ type Lang struct {
 
 
 type Lang_tr struct {
-	Lang_isocode	INTEGER(2)	`db:"lang_isocode" json:"lang_isocode"`	// Lang.Isocode
-	Lang_isocode_tr	INTEGER(2)	`db:"lang_isocode_tr" json:"lang_isocode_tr"`	// Lang.Isocode
+	Lang_isocode	string	`db:"lang_isocode" json:"lang_isocode"`	// Lang.Isocode
+	Lang_isocode_tr	string	`db:"lang_isocode_tr" json:"lang_isocode_tr"`	// Lang.Isocode
 	Name	string	`db:"name" json:"name"`
 }
 
@@ -250,7 +250,7 @@ type Permission struct {
 
 type Permission_tr struct {
 	Permission_id	int	`db:"permission_id" json:"permission_id"`	// Permission.Id
-	Lang_isocode	INTEGER(2)	`db:"lang_isocode" json:"lang_isocode"`	// Lang.Isocode
+	Lang_isocode	string	`db:"lang_isocode" json:"lang_isocode"`	// Lang.Isocode
 	Name	string	`db:"name" json:"name"`
 	Description	string	`db:"description" json:"description"`
 }
@@ -337,7 +337,7 @@ type Shapefile_authors struct {
 
 type Shapefile_tr struct {
 	Shapefile_id	int	`db:"shapefile_id" json:"shapefile_id"`	// Shapefile.Id
-	Lang_isocode	INTEGER(2)	`db:"lang_isocode" json:"lang_isocode"`	// Lang.Isocode
+	Lang_isocode	string	`db:"lang_isocode" json:"lang_isocode"`	// Lang.Isocode
 	Name	string	`db:"name" json:"name" min:"1" error:"SHAPEFILE.FIELD_NAME.T_CHECK_MANDATORY" max:"255" error:"SHAPEFILE_TR.FIELD_NAME.T_CHECK_INCORRECT"`
 	Description	string	`db:"description" json:"description"`
 	Attribution	string	`db:"attribution" json:"attribution"`
@@ -384,7 +384,7 @@ type Site_range__charac struct {
 
 type Site_range__charac_tr struct {
 	Site_range__charac_id	int	`db:"site_range__charac_id" json:"site_range__charac_id" xmltopsql:"ondelete:cascade"`	// Site_range__charac.Id
-	Lang_isocode	INTEGER(2)	`db:"lang_isocode" json:"lang_isocode"`	// Lang.Isocode
+	Lang_isocode	string	`db:"lang_isocode" json:"lang_isocode"`	// Lang.Isocode
 	Comment	string	`db:"comment" json:"comment"`
 	Bibliography	string	`db:"bibliography" json:"bibliography"`
 }
@@ -392,7 +392,7 @@ type Site_range__charac_tr struct {
 
 type Site_tr struct {
 	Site_id	int	`db:"site_id" json:"site_id" xmltopsql:"ondelete:cascade"`	// Site.Id
-	Lang_isocode	INTEGER(2)	`db:"lang_isocode" json:"lang_isocode"`	// Lang.Isocode
+	Lang_isocode	string	`db:"lang_isocode" json:"lang_isocode"`	// Lang.Isocode
 	Description	string	`db:"description" json:"description"`
 }
 
@@ -406,8 +406,8 @@ type User struct {
 	Password	string	`db:"password" json:"password" min:"6" max:"32" error:"USER.FIELD_PASSWORD.T_CHECK_INCORRECT"`
 	Description	string	`db:"description" json:"description" min:"1" max:"2048" error:"USER.FIELD_DESCRIPTION.T_CHECK_MANDATORY"`
 	Active	bool	`db:"active" json:"active"`
-	First_lang_isocode	INTEGER(2)	`db:"first_lang_isocode" json:"first_lang_isocode"`	// Lang.Isocode
-	Second_lang_isocode	INTEGER(2)	`db:"second_lang_isocode" json:"second_lang_isocode"`	// Lang.Isocode
+	First_lang_isocode	string	`db:"first_lang_isocode" json:"first_lang_isocode"`	// Lang.Isocode
+	Second_lang_isocode	string	`db:"second_lang_isocode" json:"second_lang_isocode"`	// Lang.Isocode
 	City_geonameid	int	`db:"city_geonameid" json:"city_geonameid"`	// City.Geonameid
 	Photo_id	int	`db:"photo_id" json:"photo_id"`	// Photo.Id
 	Created_at	time.Time	`db:"created_at" json:"created_at"`
@@ -452,7 +452,7 @@ type Wms_map struct {
 
 type Wms_map_tr struct {
 	Wms_map_id	int	`db:"wms_map_id" json:"wms_map_id"`	// Wms_map.Id
-	Lang_isocode	INTEGER(2)	`db:"lang_isocode" json:"lang_isocode"`	// Lang.Isocode
+	Lang_isocode	string	`db:"lang_isocode" json:"lang_isocode"`	// Lang.Isocode
 	Name	string	`db:"name" json:"name" min:"1" error:"WMS_MAP.FIELD_NAME.T_CHECK_MANDATORY" max:"255" error:"WMS_MAP_TR.FIELD_NAME.T_CHECK_INCORRECT"`
 	Attribution	string	`db:"attribution" json:"attribution"`
 	Copyright	string	`db:"copyright" json:"copyright"`

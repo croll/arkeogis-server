@@ -72,11 +72,11 @@
 <datatype>BOOLEAN</datatype>
 <default>'false'</default></row>
 <row name="first_lang_isocode" null="0" autoincrement="0">
-<datatype>INTEGER(2)</datatype>
+<datatype>CHAR(2)</datatype>
 <relation table="lang" row="isocode" />
 </row>
 <row name="second_lang_isocode" null="0" autoincrement="0">
-<datatype>INTEGER(2)</datatype>
+<datatype>CHAR(2)</datatype>
 <relation table="lang" row="isocode" />
 </row>
 <row name="city_geonameid" null="0" autoincrement="0">
@@ -199,7 +199,7 @@
 </table>
 <table x="1504" y="887" name="chronology_tr">
 <row name="lang_isocode" null="0" autoincrement="0">
-<datatype>INTEGER(2)</datatype>
+<datatype>CHAR(2)</datatype>
 <relation table="lang" row="isocode" />
 </row>
 <row name="chronology_id" null="0" autoincrement="0">
@@ -348,7 +348,7 @@
 <comment>xmltopsql:"ondelete:cascade"</comment>
 </row>
 <row name="lang_isocode" null="0" autoincrement="0">
-<datatype>INTEGER(2)</datatype>
+<datatype>CHAR(2)</datatype>
 <relation table="lang" row="isocode" />
 </row>
 <row name="description" null="0" autoincrement="0">
@@ -410,7 +410,7 @@
 <comment>xmltopsql:"ondelete:cascade"</comment>
 </row>
 <row name="lang_isocode" null="0" autoincrement="0">
-<datatype>INTEGER(2)</datatype>
+<datatype>CHAR(2)</datatype>
 <relation table="lang" row="isocode" />
 </row>
 <row name="description" null="0" autoincrement="0">
@@ -458,7 +458,7 @@
 <comment>xmltopsql:"ondelete:cascade"</comment>
 </row>
 <row name="lang_isocode" null="0" autoincrement="0">
-<datatype>INTEGER(2)</datatype>
+<datatype>CHAR(2)</datatype>
 <relation table="lang" row="isocode" />
 </row>
 <row name="comment" null="0" autoincrement="0">
@@ -477,7 +477,7 @@
 <relation table="city" row="geonameid" />
 </row>
 <row name="lang_isocode" null="0" autoincrement="0">
-<datatype>INTEGER(2)</datatype>
+<datatype>CHAR(2)</datatype>
 <relation table="lang" row="isocode" />
 </row>
 <row name="name" null="0" autoincrement="0">
@@ -498,7 +498,7 @@
 </table>
 <table x="1502" y="565" name="charac_tr">
 <row name="lang_isocode" null="0" autoincrement="0">
-<datatype>INTEGER(2)</datatype>
+<datatype>CHAR(2)</datatype>
 <relation table="lang" row="isocode" />
 </row>
 <row name="charac_id" null="0" autoincrement="0">
@@ -588,7 +588,7 @@
 <relation table="wms_map" row="id" />
 </row>
 <row name="lang_isocode" null="0" autoincrement="0">
-<datatype>INTEGER(2)</datatype>
+<datatype>CHAR(2)</datatype>
 <relation table="lang" row="isocode" />
 </row>
 <row name="name" null="0" autoincrement="0">
@@ -664,7 +664,7 @@
 <relation table="shapefile" row="id" />
 </row>
 <row name="lang_isocode" null="0" autoincrement="0">
-<datatype>INTEGER(2)</datatype>
+<datatype>CHAR(2)</datatype>
 <relation table="lang" row="isocode" />
 </row>
 <row name="name" null="0" autoincrement="0">
@@ -804,7 +804,7 @@
 <relation table="group" row="id" />
 </row>
 <row name="lang_isocode" null="0" autoincrement="0">
-<datatype>INTEGER(2)</datatype>
+<datatype>CHAR(2)</datatype>
 <relation table="lang" row="isocode" />
 </row>
 <row name="name" null="0" autoincrement="0">
@@ -823,7 +823,7 @@
 <relation table="permission" row="id" />
 </row>
 <row name="lang_isocode" null="0" autoincrement="0">
-<datatype>INTEGER(2)</datatype>
+<datatype>CHAR(2)</datatype>
 <relation table="lang" row="isocode" />
 </row>
 <row name="name" null="0" autoincrement="0">
@@ -915,7 +915,7 @@
 <relation table="country" row="geonameid" />
 </row>
 <row name="lang_isocode" null="0" autoincrement="0">
-<datatype>INTEGER(2)</datatype>
+<datatype>CHAR(2)</datatype>
 <relation table="lang" row="isocode" />
 </row>
 <row name="name" null="0" autoincrement="0">
@@ -1050,7 +1050,7 @@
 <datatype>INTEGER</datatype>
 <default>NULL</default></row>
 <row name="lang_isocode" null="1" autoincrement="0">
-<datatype>INTEGER(2)</datatype>
+<datatype>CHAR(2)</datatype>
 <default>NULL</default><relation table="lang" row="isocode" />
 </row>
 <row name="name" null="0" autoincrement="0">
@@ -1107,11 +1107,11 @@
 </table>
 <table x="920" y="715" name="lang_tr">
 <row name="lang_isocode" null="0" autoincrement="0">
-<datatype>INTEGER(2)</datatype>
+<datatype>CHAR(2)</datatype>
 <relation table="lang" row="isocode" />
 </row>
 <row name="lang_isocode_tr" null="0" autoincrement="0">
-<datatype>INTEGER(2)</datatype>
+<datatype>CHAR(2)</datatype>
 <relation table="lang" row="isocode" />
 </row>
 <row name="name" null="0" autoincrement="0">
