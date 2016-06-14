@@ -176,7 +176,7 @@ func (d *Database) GetFullInfosAsJSON(tx *sqlx.Tx, langIsocode string) (jsonStri
 
 	q[5] = db.AsJSON("SELECT context FROM database_context WHERE database_id = d.id", true, "contexts", true)
 
-	q[6], _ = translate.GetQueryTranslationsAsJSONObject("database_tr", "database_id = d.id", "translations", true, "description", "bibliography", "geographical_limit", "context_description")
+	q[6] = translate.GetQueryTranslationsAsJSONObject("database_tr", "database_id = d.id", "translations", true, "description", "bibliography", "geographical_limit", "context_description")
 
 	// fmt.Println(q[0])
 	// fmt.Println(q[1])

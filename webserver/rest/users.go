@@ -203,7 +203,6 @@ func selectTranslated(tabletr string, coltr string, collang string, where string
 		//" SELECT name " +
 		" FROM \"" + tabletr + "\" " +
 		" WHERE " + where + " " +
-		" LIMIT 1" +
 		")"
 }
 
@@ -233,6 +232,7 @@ func selectGroupAsJson(group_type string, langIsocode string) string {
 		//" jsonb_agg(" + selectTranslated("group_tr", "name", "lang_isocode", "group_id = g.id", langisocode, 0) + ") " +
 		" to_jsonb(array_agg(" + selectTranslated("group_tr", "name", "lang_isocode", "group_id = g.id", langIsocode, "D") + ")) " +
 		//" json_agg((g.id," + selectTranslated("group_tr", "name", "lang_isocode", "group_id = g.id", langisocode, 0) + ")) " +
+		// translate.GetQueryTranslationsAsJSONObject("group_tr", "tbl.group_id = group.id", "", false, "name") +
 		" FROM user__group u_g " +
 		" LEFT JOIN \"group\" g ON u_g.group_id = g.id " +
 		" WHERE g.type='" + group_type + "' AND u_g.user_id = u.id "
