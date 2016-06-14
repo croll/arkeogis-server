@@ -71,13 +71,13 @@
 <row name="active" null="0" autoincrement="0">
 <datatype>BOOLEAN</datatype>
 <default>'false'</default></row>
-<row name="first_lang_id" null="0" autoincrement="0">
-<datatype>INTEGER</datatype>
-<relation table="lang" row="id" />
+<row name="first_lang_isocode" null="0" autoincrement="0">
+<datatype>INTEGER(2)</datatype>
+<relation table="lang" row="isocode" />
 </row>
-<row name="second_lang_id" null="0" autoincrement="0">
-<datatype>INTEGER</datatype>
-<relation table="lang" row="id" />
+<row name="second_lang_isocode" null="0" autoincrement="0">
+<datatype>INTEGER(2)</datatype>
+<relation table="lang" row="isocode" />
 </row>
 <row name="city_geonameid" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
@@ -101,17 +101,13 @@
 </key>
 </table>
 <table x="923" y="596" name="lang">
-<row name="id" null="0" autoincrement="1">
-<datatype>INTEGER</datatype>
-</row>
-<row name="iso_code" null="0" autoincrement="0">
-<datatype>VARCHAR(2)</datatype>
+<row name="isocode" null="0" autoincrement="0">
+<datatype>CHAR(2)</datatype>
 </row>
 <row name="active" null="0" autoincrement="0">
 <datatype>BOOLEAN</datatype>
 <default>'false'</default></row>
 <key type="PRIMARY" name="">
-<part>id</part>
 </key>
 </table>
 <table x="53" y="505" name="user__company">
@@ -202,9 +198,9 @@
 </key>
 </table>
 <table x="1504" y="887" name="chronology_tr">
-<row name="lang_id" null="0" autoincrement="0">
-<datatype>INTEGER</datatype>
-<relation table="lang" row="id" />
+<row name="lang_isocode" null="0" autoincrement="0">
+<datatype>INTEGER(2)</datatype>
+<relation table="lang" row="isocode" />
 </row>
 <row name="chronology_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
@@ -217,7 +213,6 @@
 <datatype>TEXT</datatype>
 </row>
 <key type="PRIMARY" name="">
-<part>lang_id</part>
 <part>chronology_id</part>
 </key>
 </table>
@@ -266,8 +261,8 @@
 <datatype>TEXT</datatype>
 </row>
 <row name="default_language" null="0" autoincrement="0">
-<datatype>INTEGER</datatype>
-<relation table="lang" row="id" />
+<datatype>CHAR(2)</datatype>
+<relation table="lang" row="isocode" />
 </row>
 <row name="state" null="0" autoincrement="0">
 <datatype>BIT('undefined','in-progress', 'finished')</datatype>
@@ -352,9 +347,9 @@
 <relation table="database" row="id" />
 <comment>xmltopsql:"ondelete:cascade"</comment>
 </row>
-<row name="lang_id" null="0" autoincrement="0">
-<datatype>INTEGER</datatype>
-<relation table="lang" row="id" />
+<row name="lang_isocode" null="0" autoincrement="0">
+<datatype>INTEGER(2)</datatype>
+<relation table="lang" row="isocode" />
 </row>
 <row name="description" null="0" autoincrement="0">
 <datatype>TEXT</datatype>
@@ -382,7 +377,6 @@
 </row>
 <key type="PRIMARY" name="">
 <part>database_id</part>
-<part>lang_id</part>
 </key>
 </table>
 <table x="472" y="873" name="city">
@@ -415,16 +409,15 @@
 <relation table="site" row="id" />
 <comment>xmltopsql:"ondelete:cascade"</comment>
 </row>
-<row name="lang_id" null="0" autoincrement="0">
-<datatype>INTEGER</datatype>
-<relation table="lang" row="id" />
+<row name="lang_isocode" null="0" autoincrement="0">
+<datatype>INTEGER(2)</datatype>
+<relation table="lang" row="isocode" />
 </row>
 <row name="description" null="0" autoincrement="0">
 <datatype>TEXT</datatype>
 </row>
 <key type="PRIMARY" name="">
 <part>site_id</part>
-<part>lang_id</part>
 </key>
 </table>
 <table x="909" y="374" name="site_range">
@@ -464,9 +457,9 @@
 <relation table="site_range__charac" row="id" />
 <comment>xmltopsql:"ondelete:cascade"</comment>
 </row>
-<row name="lang_id" null="0" autoincrement="0">
-<datatype>INTEGER</datatype>
-<relation table="lang" row="id" />
+<row name="lang_isocode" null="0" autoincrement="0">
+<datatype>INTEGER(2)</datatype>
+<relation table="lang" row="isocode" />
 </row>
 <row name="comment" null="0" autoincrement="0">
 <datatype>TEXT</datatype>
@@ -476,7 +469,6 @@
 </row>
 <key type="PRIMARY" name="">
 <part>site_range__charac_id</part>
-<part>lang_id</part>
 </key>
 </table>
 <table x="447" y="1051" name="city_tr">
@@ -484,9 +476,9 @@
 <datatype>INTEGER</datatype>
 <relation table="city" row="geonameid" />
 </row>
-<row name="lang_id" null="0" autoincrement="0">
-<datatype>INTEGER</datatype>
-<relation table="lang" row="id" />
+<row name="lang_isocode" null="0" autoincrement="0">
+<datatype>INTEGER(2)</datatype>
+<relation table="lang" row="isocode" />
 </row>
 <row name="name" null="0" autoincrement="0">
 <datatype>VARCHAR(255)</datatype>
@@ -496,7 +488,6 @@
 </row>
 <key type="PRIMARY" name="">
 <part>city_geonameid</part>
-<part>lang_id</part>
 </key>
 <key type="INDEX" name="">
 <part>name_ascii</part>
@@ -506,9 +497,9 @@
 </key>
 </table>
 <table x="1502" y="565" name="charac_tr">
-<row name="lang_id" null="0" autoincrement="0">
-<datatype>INTEGER</datatype>
-<relation table="lang" row="id" />
+<row name="lang_isocode" null="0" autoincrement="0">
+<datatype>INTEGER(2)</datatype>
+<relation table="lang" row="isocode" />
 </row>
 <row name="charac_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
@@ -521,7 +512,6 @@
 <datatype>TEXT</datatype>
 </row>
 <key type="PRIMARY" name="">
-<part>lang_id</part>
 <part>charac_id</part>
 </key>
 </table>
@@ -597,9 +587,9 @@
 <datatype>INTEGER</datatype>
 <relation table="wms_map" row="id" />
 </row>
-<row name="lang_id" null="0" autoincrement="0">
-<datatype>INTEGER</datatype>
-<relation table="lang" row="id" />
+<row name="lang_isocode" null="0" autoincrement="0">
+<datatype>INTEGER(2)</datatype>
+<relation table="lang" row="isocode" />
 </row>
 <row name="name" null="0" autoincrement="0">
 <datatype>VARCHAR(255)</datatype>
@@ -613,7 +603,6 @@
 </row>
 <key type="PRIMARY" name="">
 <part>wms_map_id</part>
-<part>lang_id</part>
 </key>
 </table>
 <table x="244" y="777" name="shapefile">
@@ -674,9 +663,9 @@
 <datatype>INTEGER</datatype>
 <relation table="shapefile" row="id" />
 </row>
-<row name="lang_id" null="0" autoincrement="0">
-<datatype>INTEGER</datatype>
-<relation table="lang" row="id" />
+<row name="lang_isocode" null="0" autoincrement="0">
+<datatype>INTEGER(2)</datatype>
+<relation table="lang" row="isocode" />
 </row>
 <row name="name" null="0" autoincrement="0">
 <datatype>VARCHAR(255)</datatype>
@@ -693,7 +682,6 @@
 </row>
 <key type="PRIMARY" name="">
 <part>shapefile_id</part>
-<part>lang_id</part>
 </key>
 </table>
 <table x="1075" y="905" name="project__databases">
@@ -815,9 +803,9 @@
 <datatype>INTEGER</datatype>
 <relation table="group" row="id" />
 </row>
-<row name="lang_id" null="0" autoincrement="0">
-<datatype>INTEGER</datatype>
-<relation table="lang" row="id" />
+<row name="lang_isocode" null="0" autoincrement="0">
+<datatype>INTEGER(2)</datatype>
+<relation table="lang" row="isocode" />
 </row>
 <row name="name" null="0" autoincrement="0">
 <datatype>VARCHAR(255)</datatype>
@@ -827,7 +815,6 @@
 </row>
 <key type="PRIMARY" name="">
 <part>group_id</part>
-<part>lang_id</part>
 </key>
 </table>
 <table x="582" y="1506" name="permission_tr">
@@ -835,9 +822,9 @@
 <datatype>INTEGER</datatype>
 <relation table="permission" row="id" />
 </row>
-<row name="lang_id" null="0" autoincrement="0">
-<datatype>INTEGER</datatype>
-<relation table="lang" row="id" />
+<row name="lang_isocode" null="0" autoincrement="0">
+<datatype>INTEGER(2)</datatype>
+<relation table="lang" row="isocode" />
 </row>
 <row name="name" null="0" autoincrement="0">
 <datatype>VARCHAR(255)</datatype>
@@ -847,7 +834,6 @@
 </row>
 <key type="PRIMARY" name="">
 <part>permission_id</part>
-<part>lang_id</part>
 </key>
 </table>
 <table x="22" y="1392" name="user__group">
@@ -928,9 +914,9 @@
 <datatype>INTEGER</datatype>
 <relation table="country" row="geonameid" />
 </row>
-<row name="lang_id" null="0" autoincrement="0">
-<datatype>INTEGER</datatype>
-<relation table="lang" row="id" />
+<row name="lang_isocode" null="0" autoincrement="0">
+<datatype>INTEGER(2)</datatype>
+<relation table="lang" row="isocode" />
 </row>
 <row name="name" null="0" autoincrement="0">
 <datatype>VARCHAR(128)</datatype>
@@ -939,7 +925,6 @@
 <datatype>VARCHAR(255)</datatype>
 </row>
 <key type="PRIMARY" name="">
-<part>lang_id</part>
 <part>country_geonameid</part>
 </key>
 <key type="INDEX" name="">
@@ -1064,9 +1049,9 @@
 <row name="continent_geonameid" null="1" autoincrement="1">
 <datatype>INTEGER</datatype>
 <default>NULL</default></row>
-<row name="lang_id" null="1" autoincrement="0">
-<datatype>INTEGER</datatype>
-<default>NULL</default><relation table="lang" row="id" />
+<row name="lang_isocode" null="1" autoincrement="0">
+<datatype>INTEGER(2)</datatype>
+<default>NULL</default><relation table="lang" row="isocode" />
 </row>
 <row name="name" null="0" autoincrement="0">
 <datatype>VARCHAR(255)</datatype>
@@ -1076,7 +1061,6 @@
 </row>
 <key type="PRIMARY" name="">
 <part>continent_geonameid</part>
-<part>lang_id</part>
 </key>
 <key type="INDEX" name="">
 <part>name</part>
@@ -1122,20 +1106,20 @@
 </key>
 </table>
 <table x="920" y="715" name="lang_tr">
-<row name="lang_id" null="0" autoincrement="0">
-<datatype>INTEGER</datatype>
-<relation table="lang" row="id" />
+<row name="lang_isocode" null="0" autoincrement="0">
+<datatype>INTEGER(2)</datatype>
+<relation table="lang" row="isocode" />
 </row>
-<row name="lang_id_tr" null="0" autoincrement="0">
-<datatype>INTEGER</datatype>
-<relation table="lang" row="id" />
+<row name="lang_isocode_tr" null="0" autoincrement="0">
+<datatype>INTEGER(2)</datatype>
+<relation table="lang" row="isocode" />
 </row>
 <row name="name" null="0" autoincrement="0">
 <datatype>VARCHAR(255)</datatype>
 </row>
 <key type="PRIMARY" name="">
-<part>lang_id</part>
-<part>lang_id_tr</part>
+<part>lang_isocode</part>
+<part>lang_isocode_tr</part>
 </key>
 </table>
 <table x="609" y="1368" name="session">
