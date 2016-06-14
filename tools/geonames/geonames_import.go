@@ -686,7 +686,7 @@ func importAlternateNames(rc io.Reader) error {
 			continue
 		}
 		// Check if isocode exists
-		if _, ok := IsoCodes[iso_code]; ok {
+		if _, ok := IsoCodes[iso_code]; !ok {
 			fmt.Println("iso code", iso_code, "does not exist in our lang table.")
 			continue
 		}
