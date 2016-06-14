@@ -29,7 +29,6 @@ import (
 	"os"
 	"reflect"
 
-	db "github.com/croll/arkeogis-server/db"
 	"github.com/croll/arkeogis-server/translate"
 	//"strconv"
 	"strings"
@@ -71,23 +70,19 @@ func (p *Parser) HasError() bool {
 }
 
 // NewParser open csv file and return a  *Parser
-func NewParser(filename string, lang int) (*Parser, error) {
+func NewParser(filename string, langIsocode string) (*Parser, error) {
 	f, err := os.Open(filename)
 	if err != nil {
 		return nil, err
 	}
-	// Get lang by id
-	var langIsoCode string
-	err = db.DB.QueryRow("SELECT iso_code FROM lang WHERE id = $1", lang).Scan(&langIsoCode)
 	if err != nil {
 		return nil, err
 	}
-
 	p := &Parser{
 		Line:        1,
 		Filename:    filename,
 		UserChoices: UserChoices{UseGeonames: false},
-		Lang:        langIsoCode,
+		Lang:        langIsocode,
 	}
 	p.Reader = csv.NewReader(f)
 	p.Reader.Comma = ';'

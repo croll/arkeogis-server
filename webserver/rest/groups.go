@@ -151,7 +151,7 @@ func GroupList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 			" ORDER BY "+order+" "+orderdir+
 			" OFFSET $4 "+
 			" LIMIT $5",
-		"%"+params.Filter+"%", params.Type, proute.Lang1.Id, offset, params.Limit)
+		"%"+params.Filter+"%", params.Type, proute.Lang1.Isocode, offset, params.Limit)
 	/*
 		// get groups
 		err := db.DB.Select(&answer.Data,

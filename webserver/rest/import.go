@@ -91,7 +91,7 @@ func init() {
 type ImportStep1T struct {
 	Name                string
 	Geographical_extent string
-	Default_language    int
+	Default_language    string
 	Continents          []model.Continent
 	Countries           []model.Country
 	UseGeonames         bool
@@ -425,7 +425,7 @@ func ImportStep4(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		Lang_Isocode string
 		Text         string
 	}{
-		{proute.Lang1.Isocode: params.Context_description},
+		{proute.Lang1.Isocode, params.Context_description},
 	}
 	err = d.SetTranslations(tx, "context_description", context_desc)
 	if err != nil {

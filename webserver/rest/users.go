@@ -196,52 +196,52 @@ func init() {
 	routes.RegisterMultiple(Routes)
 }
 
-func selectTranslated(tabletr string, coltr string, collang string, where string, lang1 int, lang2 int) string {
+func selectTranslated(tabletr string, coltr string, collang string, where string, lang1 string, lang2 string) string {
 	return "(" +
 		//		" SELECT \"" + coltr + "\" " +
 		" SELECT \"" + tabletr + "\" " +
 		//" SELECT name " +
 		" FROM \"" + tabletr + "\" " +
-		" WHERE \"" + collang + "\" IN (" + strconv.Itoa(lang1) + "," + strconv.Itoa(lang2) + ",0) " +
+		" WHERE \"" + collang + "\" IN (" + lang1 + "," + lang2 + ", 'D') " +
 		" AND " + where + " " +
-		" ORDER BY idx(array[" + strconv.Itoa(lang1) + "," + strconv.Itoa(lang2) + ",0], \"" + collang + "\") " +
+		" ORDER BY idx(array[" + lang1 + "," + lang2 + ", 'D'], \"" + collang + "\") " +
 		" LIMIT 1" +
 		")"
 }
 
-func selectCityAndCountry(city_geonameid string, langid int) string {
+func selectCityAndCountry(city_geonameid string, langisocode string) string {
 	return "" +
 		"SELECT " +
-		" city.geonameid as city_geonameid, city_tr.lang_id as city_lang_id, city_tr.name as city_name, " +
-		" country.geonameid as country_geonameid, country.iso_code as country_iso_code, country_tr.lang_id as country_lang_id, country_tr.name as country_name " +
+		" city.geonameid as city_geonameid, city_tr.lang_isocode as city_lang_isocode, city_tr.name as city_name, " +
+		" country.geonameid as country_geonameid, country.iso_code as country_iso_code, country_tr.lang_isocode as country_lang_isocode, country_tr.name as country_name " +
 		"from city " +
 		"LEFT JOIN city_tr ON city_tr.city_geonameid=city.geonameid " +
 		"LEFT JOIN country ON country.geonameid=city.country_geonameid " +
 		"LEFT JOIN country_tr ON country_tr.country_geonameid = country.geonameid " +
 		"WHERE city.geonameid=" + city_geonameid +
-		" AND (city_tr.lang_id = " + strconv.Itoa(langid) + " or city_tr.lang_id=0) " +
-		" AND (country_tr.lang_id = " + strconv.Itoa(langid) + " or country_tr.lang_id=0) " +
-		"ORDER by city_tr.lang_id desc, country_tr.lang_id desc " +
+		" AND (city_tr.lang_isocode = " + langisocode + " or city_tr.lang_isocode='D') " +
+		" AND (country_tr.lang_isocode = " + langisocode + " or country_tr.lang_isocode='D') " +
+		"ORDER by city_tr.lang_isocode desc, country_tr.lang_isocode desc " +
 		"LIMIT 1"
 }
 
-func selectCityAndCountryAsJson(city_geonameid string, langid int) string {
-	return "COALESCE((select row_to_json(t) from(" + selectCityAndCountry(city_geonameid, langid) + ") t), '[]'::json)"
+func selectCityAndCountryAsJson(city_geonameid string, langisocode string) string {
+	return "COALESCE((select row_to_json(t) from(" + selectCityAndCountry(city_geonameid, langisocode) + ") t), '[]'::json)"
 }
 
-func selectGroupAsJson(group_type string, langid int) string {
+func selectGroupAsJson(group_type string, langIsocode string) string {
 	return "" +
 		"SELECT " +
-		//" jsonb_agg(" + selectTranslated("group_tr", "name", "lang_id", "group_id = g.id", langid, 0) + ") " +
-		" to_jsonb(array_agg(" + selectTranslated("group_tr", "name", "lang_id", "group_id = g.id", langid, 0) + ")) " +
-		//" json_agg((g.id," + selectTranslated("group_tr", "name", "lang_id", "group_id = g.id", langid, 0) + ")) " +
+		//" jsonb_agg(" + selectTranslated("group_tr", "name", "lang_isocode", "group_id = g.id", langisocode, 0) + ") " +
+		" to_jsonb(array_agg(" + selectTranslated("group_tr", "name", "lang_isocode", "group_id = g.id", langIsocode, "D") + ")) " +
+		//" json_agg((g.id," + selectTranslated("group_tr", "name", "lang_isocode", "group_id = g.id", langisocode, 0) + ")) " +
 		" FROM user__group u_g " +
 		" LEFT JOIN \"group\" g ON u_g.group_id = g.id " +
 		" WHERE g.type='" + group_type + "' AND u_g.user_id = u.id "
 }
 
-func selectGroupAsJsonNotNull(group_type string, langid int) string {
-	return "COALESCE((" + selectGroupAsJson(group_type, langid) + "), '[]'::jsonb)"
+func selectGroupAsJsonNotNull(group_type string, langisocode string) string {
+	return "COALESCE((" + selectGroupAsJson(group_type, langisocode) + "), '[]'::jsonb)"
 }
 
 func selectCompany(user_id string) string {
@@ -297,10 +297,10 @@ func UserList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	err := db.DB.Select(&answer.Data,
 		"SELECT "+
 			" u.id, u.username, u.created_at, u.updated_at, u.firstname, u.lastname, u.active, u.email, u.photo_id, "+
-			" "+selectGroupAsJsonNotNull("user", proute.Lang1.Id)+" as groups_user, "+
-			" "+selectGroupAsJsonNotNull("chronology", proute.Lang1.Id)+" as groups_chronology, "+
-			" "+selectGroupAsJsonNotNull("charac", proute.Lang1.Id)+" as groups_charac, "+
-			" "+selectCityAndCountryAsJson("u.city_geonameid", proute.Lang1.Id)+" as countryandcity, "+
+			" "+selectGroupAsJsonNotNull("user", proute.Lang1.Isocode)+" as groups_user, "+
+			" "+selectGroupAsJsonNotNull("chronology", proute.Lang1.Isocode)+" as groups_chronology, "+
+			" "+selectGroupAsJsonNotNull("charac", proute.Lang1.Isocode)+" as groups_charac, "+
+			" "+selectCityAndCountryAsJson("u.city_geonameid", proute.Lang1.Isocode)+" as countryandcity, "+
 			" "+selectCompanyAsJson("u.id")+" as companies "+
 			" FROM \"user\" u "+
 			" WHERE (u.username ILIKE $1 OR u.firstname ILIKE $1 OR u.lastname ILIKE $1 OR u.email ILIKE $1) "+
@@ -339,10 +339,10 @@ func userSqlError(w http.ResponseWriter, err error) {
 		switch pgerr.Code.Name() {
 		case "foreign_key_violation":
 			switch pgerr.Constraint {
-			case "c_user.first_lang_id":
-				routes.FieldError(w, "json.first_lang_id", "first_lang_id", "USER.FIELD_LANG.T_CHECK_BADLANG")
-			case "c_user.second_lang_id":
-				routes.FieldError(w, "json.second_lang_id", "second_lang_id", "USER.FIELD_LANG.T_CHECK_BADLANG")
+			case "c_user.first_lang_isocode":
+				routes.FieldError(w, "json.first_lang_isocode", "first_lang_isocode", "USER.FIELD_LANG.T_CHECK_BADLANG")
+			case "c_user.second_lang_isocode":
+				routes.FieldError(w, "json.second_lang_isocode", "second_lang_isocode", "USER.FIELD_LANG.T_CHECK_BADLANG")
 			case "c_user.city_geonameid":
 				routes.FieldError(w, "json.searchTextCity", "searchTextCity", "USER.FIELD_CITY.T_CHECK_MANDATORY")
 			default:
@@ -576,7 +576,7 @@ func UserInfos(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		return
 	}
 
-	err = u.CityAndCountry.Get(tx, u.User.City_geonameid, proute.Lang1.Id)
+	err = u.CityAndCountry.Get(tx, u.User.City_geonameid, proute.Lang1.Isocode)
 	if err != nil {
 		log.Println("can't get user city and country", err)
 		//userSqlError(w, err)
@@ -595,7 +595,7 @@ func UserInfos(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		mcomp.Id = company.Id
 		mcomp.Name = company.Name
 
-		err = mcomp.CityAndCountry.Get(tx, company.City_geonameid, proute.Lang1.Id)
+		err = mcomp.CityAndCountry.Get(tx, company.City_geonameid, proute.Lang1.Isocode)
 		if err != nil {
 			log.Println("can't get company city and country err:", err)
 			//userSqlError(w, err)
@@ -633,15 +633,15 @@ type LoginAnswer struct {
 func loginAnswer(w http.ResponseWriter, tx *sqlx.Tx, user model.User, token string) (LoginAnswer, error) {
 	// get langs
 	lang1 := model.Lang{
-		Id: user.First_lang_id,
+		Isocode: user.First_lang_isocode,
 	}
 	lang2 := model.Lang{
-		Id: user.Second_lang_id,
+		Isocode: user.Second_lang_isocode,
 	}
 
 	err := lang1.Get(tx)
 	if err != nil {
-		lang1.Iso_code = "en"
+		lang1.Isocode = "en"
 		err = lang1.Get(tx)
 		if err != nil {
 			userSqlError(w, err)
@@ -651,7 +651,7 @@ func loginAnswer(w http.ResponseWriter, tx *sqlx.Tx, user model.User, token stri
 
 	err = lang2.Get(tx)
 	if err != nil {
-		lang2.Iso_code = "fr"
+		lang2.Isocode = "fr"
 		err = lang2.Get(tx)
 		if err != nil {
 			tx.Rollback()

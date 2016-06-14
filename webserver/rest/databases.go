@@ -127,7 +127,7 @@ func DatabaseInfos(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 	d := model.DatabaseFullInfos{}
 	d.Id = params.Id
 
-	dbInfos, err := d.GetFullInfosAsJSON(tx, proute.Lang1.Id)
+	dbInfos, err := d.GetFullInfosAsJSON(tx, proute.Lang1.Isocode)
 
 	if err != nil {
 		log.Println(err)

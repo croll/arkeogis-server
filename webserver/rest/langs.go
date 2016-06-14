@@ -69,7 +69,7 @@ func LangList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		q += " AND active = true"
 	}
 
-	err := db.DB.Select(&langs, q, proute.Lang1.Id)
+	err := db.DB.Select(&langs, q, proute.Lang1.Isocode)
 	if err != nil {
 		fmt.Println("err: ", err)
 		return

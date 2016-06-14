@@ -60,7 +60,7 @@ func ContinentsList(w http.ResponseWriter, r *http.Request, proute routes.Proute
 
 	continents := []row{}
 
-	err := db.DB.Select(&continents, "SELECT continent.*, continent_tr.* FROM \"continent\" JOIN continent_tr ON continent_tr.continent_geonameid = continent.geonameid LEFT JOIN lang ON continent_tr.lang_isocode = lang.isocode WHERE (lang.isocode = $1) AND (name_ascii ILIKE $2 OR name ILIKE $2)", proute.Lang1.Id, params.Search+"%")
+	err := db.DB.Select(&continents, "SELECT continent.*, continent_tr.* FROM \"continent\" JOIN continent_tr ON continent_tr.continent_geonameid = continent.geonameid LEFT JOIN lang ON continent_tr.lang_isocode = lang.isocode WHERE (lang.isocode = $1) AND (name_ascii ILIKE $2 OR name ILIKE $2)", proute.Lang1.Isocode, params.Search+"%")
 
 	if err != nil {
 		fmt.Println("err: ", err)
