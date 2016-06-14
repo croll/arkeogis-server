@@ -108,6 +108,7 @@
 <datatype>BOOLEAN</datatype>
 <default>'false'</default></row>
 <key type="PRIMARY" name="">
+<part>isocode</part>
 </key>
 </table>
 <table x="53" y="505" name="user__company">

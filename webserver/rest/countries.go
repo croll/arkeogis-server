@@ -26,10 +26,11 @@ import (
 	"fmt"
 	"reflect"
 
+	"net/http"
+
 	db "github.com/croll/arkeogis-server/db"
 	"github.com/croll/arkeogis-server/model"
 	routes "github.com/croll/arkeogis-server/webserver/routes"
-	"net/http"
 )
 
 type CountryListParams struct {
@@ -60,7 +61,7 @@ func CountryList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	countries := []row{}
 
-	err := db.DB.Select(&countries, "SELECT country.*, country_tr.* FROM \"country\" JOIN country_tr ON country_tr.country_geonameid = country.geonameid LEFT JOIN lang ON country_tr.lang_id = lang.id WHERE (lang.id = $1) AND (name_ascii ILIKE $2 OR name ILIKE $2)", proute.Lang1.Id, params.Search+"%")
+	err := db.DB.Select(&countries, "SELECT country.*, country_tr.* FROM \"country\" JOIN country_tr ON country_tr.country_geonameid = country.geonameid LEFT JOIN lang ON country_tr.lang_isocode = lang.isocode WHERE (lang.isocode = $1) AND (name_ascii ILIKE $2 OR name ILIKE $2)", proute.Lang1.Id, params.Search+"%")
 	if err != nil {
 		fmt.Println("err: ", err)
 		return
