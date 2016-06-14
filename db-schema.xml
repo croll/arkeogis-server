@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- SQL XML created by WWW SQL Designer, https://github.com/ondras/wwwsqldesigner/ -->
-<!-- Active URL: https://www.croll.fr/sqldesigner/ -->
+<!-- Active URL: https://croll.fr/sqldesigner/ -->
 <sql>
 <datatypes db="postgresql">
 	<group label="Numeric" color="rgb(238,238,170)">
@@ -143,7 +143,7 @@
 <part>id</part>
 </key>
 </table>
-<table x="1120" y="156" name="project">
+<table x="1114" y="174" name="project">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
@@ -155,26 +155,17 @@
 <datatype>INTEGER</datatype>
 <relation table="user" row="id" />
 </row>
-<row name="geographical_zone_id" null="0" autoincrement="0">
-<datatype>INTEGER</datatype>
-<relation table="geographical_zone" row="id" />
-</row>
 <row name="created_at" null="0" autoincrement="0">
 <datatype>TIMESTAMP</datatype>
 </row>
 <row name="updated_at" null="0" autoincrement="0">
 <datatype>TIMESTAMP</datatype>
 </row>
-<key type="PRIMARY" name="">
-<part>id</part>
-</key>
-</table>
-<table x="1087" y="343" name="geographical_zone">
-<row name="id" null="0" autoincrement="1">
+<row name="start_date" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
-</row>
-<row name="name" null="0" autoincrement="0">
-<datatype>VARCHAR(255)</datatype>
+<default>0</default></row>
+<row name="end_date" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
 </row>
 <row name="geom" null="0" autoincrement="0">
 <datatype>VARCHAR(POLYGON)</datatype>
@@ -183,7 +174,7 @@
 <part>id</part>
 </key>
 </table>
-<table x="1341" y="827" name="chronology">
+<table x="1343" y="887" name="chronology">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
@@ -210,7 +201,7 @@
 <part>id</part>
 </key>
 </table>
-<table x="1610" y="750" name="chronology_tr">
+<table x="1504" y="887" name="chronology_tr">
 <row name="lang_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="lang" row="id" />
@@ -230,25 +221,21 @@
 <part>chronology_id</part>
 </key>
 </table>
-<table x="1073" y="771" name="project__chronology">
+<table x="1086" y="778" name="project__chronology">
 <row name="project_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="project" row="id" />
 </row>
-<row name="chronology_root_id" null="0" autoincrement="0">
+<row name="root_chronology_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="chronology" row="id" />
 </row>
-<row name="id_group" null="0" autoincrement="0">
-<datatype>INTEGER</datatype>
-<relation table="group" row="id" />
-</row>
 <key type="PRIMARY" name="">
 <part>project_id</part>
-<part>chronology_root_id</part>
+<part>root_chronology_id</part>
 </key>
 </table>
-<table x="488" y="108" name="database">
+<table x="486" y="88" name="database">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
@@ -272,39 +259,15 @@
 <datatype>INTEGER</datatype>
 <relation table="user" row="id" />
 </row>
-<row name="source_creation_date" null="0" autoincrement="0">
-<datatype>TIMESTAMP</datatype>
-</row>
-<row name="data_set" null="0" autoincrement="0">
-<datatype>VARCHAR(255)</datatype>
-</row>
-<row name="identifier" null="0" autoincrement="0">
-<datatype>VARCHAR(255)</datatype>
-</row>
-<row name="source" null="0" autoincrement="0">
-<datatype>VARCHAR(255)</datatype>
-</row>
-<row name="source_url" null="0" autoincrement="0">
-<datatype>VARCHAR(255)</datatype>
-</row>
-<row name="publisher" null="0" autoincrement="0">
-<datatype>VARCHAR(255)</datatype>
+<row name="editor" null="0" autoincrement="0">
+<datatype>TEXT</datatype>
 </row>
 <row name="contributor" null="0" autoincrement="0">
-<datatype>VARCHAR</datatype>
+<datatype>TEXT</datatype>
 </row>
 <row name="default_language" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="lang" row="id" />
-</row>
-<row name="relation" null="0" autoincrement="0">
-<datatype>VARCHAR(255)</datatype>
-</row>
-<row name="coverage" null="0" autoincrement="0">
-<datatype>VARCHAR(255)</datatype>
-</row>
-<row name="copyright" null="0" autoincrement="0">
-<datatype>VARCHAR(255)</datatype>
 </row>
 <row name="state" null="0" autoincrement="0">
 <datatype>BIT('undefined','in-progress', 'finished')</datatype>
@@ -314,16 +277,15 @@
 <datatype>INTEGER</datatype>
 <relation table="license" row="id" />
 </row>
-<row name="subject" null="0" autoincrement="0">
-<datatype>TEXT</datatype>
-<comment>min:"1" error:"DATABASE.FIELD_SUBJECT.T_CHECK_MANDATORY" max:"255" error:"DATABASE.FIELD_SUBJECT.T_CHECK_INCORRECT"</comment>
-</row>
 <row name="published" null="0" autoincrement="0">
 <datatype>BOOLEAN</datatype>
 <default>'false'</default></row>
 <row name="soft_deleted" null="0" autoincrement="0">
 <datatype>BOOLEAN</datatype>
 <default>'false'</default></row>
+<row name="declared_creation_date" null="0" autoincrement="0">
+<datatype>TIMESTAMP</datatype>
+</row>
 <row name="created_at" null="0" autoincrement="0">
 <datatype>TIMESTAMP</datatype>
 </row>
@@ -384,7 +346,7 @@
 <part>geom_3d</part>
 </key>
 </table>
-<table x="254" y="519" name="database_tr">
+<table x="266" y="455" name="database_tr">
 <row name="database_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="database" row="id" />
@@ -404,6 +366,18 @@
 <datatype>TEXT</datatype>
 </row>
 <row name="context_description" null="0" autoincrement="0">
+<datatype>TEXT</datatype>
+</row>
+<row name="source_description" null="0" autoincrement="0">
+<datatype>VARCHAR</datatype>
+</row>
+<row name="source_relation" null="0" autoincrement="0">
+<datatype>TEXT</datatype>
+</row>
+<row name="copyright" null="0" autoincrement="0">
+<datatype>TEXT</datatype>
+</row>
+<row name="subject" null="0" autoincrement="0">
 <datatype>TEXT</datatype>
 </row>
 <key type="PRIMARY" name="">
@@ -435,7 +409,7 @@
 <part>geonameid</part>
 </key>
 </table>
-<table x="724" y="266" name="site_tr">
+<table x="697" y="370" name="site_tr">
 <row name="site_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="site" row="id" />
@@ -531,7 +505,7 @@
 <part>name</part>
 </key>
 </table>
-<table x="1530" y="461" name="charac_tr">
+<table x="1502" y="565" name="charac_tr">
 <row name="lang_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="lang" row="id" />
@@ -551,7 +525,7 @@
 <part>charac_id</part>
 </key>
 </table>
-<table x="1334" y="525" name="charac">
+<table x="1366" y="524" name="charac">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
@@ -575,7 +549,7 @@
 <part>id</part>
 </key>
 </table>
-<table x="31" y="799" name="wms_map">
+<table x="34" y="791" name="wms_map">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
@@ -596,18 +570,15 @@
 <row name="max_scale" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 </row>
-<row name="start_date1" null="0" autoincrement="0">
+<row name="start_date" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 </row>
-<row name="start_date2" null="1" autoincrement="0">
-<datatype>INTEGER</datatype>
-<default>NULL</default></row>
-<row name="end_date1" null="0" autoincrement="0">
+<row name="end_date" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 </row>
-<row name="end_date2" null="1" autoincrement="0">
-<datatype>INTEGER</datatype>
-<default>NULL</default></row>
+<row name="geographical_extent_geom" null="0" autoincrement="0">
+<datatype>VARCHAR(POLYGON)</datatype>
+</row>
 <row name="published" null="0" autoincrement="0">
 <datatype>BOOLEAN</datatype>
 <default>'false'</default></row>
@@ -645,7 +616,7 @@
 <part>lang_id</part>
 </key>
 </table>
-<table x="236" y="798" name="shapefile">
+<table x="244" y="777" name="shapefile">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
@@ -668,18 +639,15 @@
 <row name="max_scale" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 </row>
-<row name="start_date1" null="0" autoincrement="0">
+<row name="start_date" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 </row>
-<row name="start_date2" null="1" autoincrement="0">
-<datatype>INTEGER</datatype>
-<default>NULL</default></row>
-<row name="end_date1" null="0" autoincrement="0">
+<row name="end_date" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 </row>
-<row name="end_date2" null="1" autoincrement="0">
-<datatype>INTEGER</datatype>
-<default>NULL</default></row>
+<row name="geographical_extent_geom" null="0" autoincrement="0">
+<datatype>VARCHAR(POLYGON)</datatype>
+</row>
 <row name="published" null="0" autoincrement="0">
 <datatype>BOOLEAN</datatype>
 <default>'false'</default><comment>enum:"0,1" error:"SHAPEFILE.FIELD_PUBLISHED.T_CHECK_INCORRECT"</comment>
@@ -770,7 +738,7 @@
 <part>shapefile_id</part>
 </key>
 </table>
-<table x="1080" y="463" name="site_range__charac">
+<table x="1090" y="428" name="site_range__charac">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
@@ -794,97 +762,18 @@
 <part>id</part>
 </key>
 </table>
-<table x="1345" y="325" name="project__charac">
-<row name="project__characs_set_id" null="1" autoincrement="0">
+<table x="1330" y="265" name="project_hidden_characs">
+<row name="id_project" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
-<default>NULL</default><relation table="project__characs_set" row="id" />
+<relation table="project" row="id" />
 </row>
 <row name="charac_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="charac" row="id" />
 </row>
 <key type="PRIMARY" name="">
-<part>project__characs_set_id</part>
 <part>charac_id</part>
-</key>
-</table>
-<table x="1344" y="192" name="project__characs_set">
-<row name="id" null="0" autoincrement="1">
-<datatype>INTEGER</datatype>
-</row>
-<row name="project_id" null="0" autoincrement="0">
-<datatype>INTEGER</datatype>
-<relation table="project" row="id" />
-</row>
-<row name="copied_from_project__charac_set_id" null="1" autoincrement="0">
-<datatype>INTEGER</datatype>
-<default>NULL</default><relation table="project__characs_set" row="id" />
-</row>
-<key type="PRIMARY" name="">
-<part>id</part>
-</key>
-</table>
-<table x="1497" y="36" name="project__characs_set_tr">
-<row name="project__characs_set_id" null="0" autoincrement="0">
-<datatype>INTEGER</datatype>
-<relation table="project__characs_set" row="id" />
-</row>
-<row name="lang_id" null="0" autoincrement="0">
-<datatype>INTEGER</datatype>
-<relation table="lang" row="id" />
-</row>
-<row name="name" null="0" autoincrement="0">
-<datatype>VARCHAR(255)</datatype>
-</row>
-<row name="description" null="0" autoincrement="0">
-<datatype>TEXT</datatype>
-</row>
-<key type="PRIMARY" name="">
-<part>project__characs_set_id</part>
-<part>lang_id</part>
-</key>
-</table>
-<table x="1260" y="29" name="user_project">
-<row name="project_id" null="0" autoincrement="0">
-<datatype>INTEGER</datatype>
-<relation table="project" row="id" />
-</row>
-<row name="start_date" null="0" autoincrement="0">
-<datatype>INTEGER</datatype>
-</row>
-<row name="end_date" null="0" autoincrement="0">
-<datatype>INTEGER</datatype>
-</row>
-<key type="PRIMARY" name="">
-<part>project_id</part>
-</key>
-</table>
-<table x="1067" y="21" name="global_project">
-<row name="project_id" null="0" autoincrement="0">
-<datatype>INTEGER</datatype>
-<relation table="project" row="id" />
-</row>
-<key type="PRIMARY" name="">
-<part>project_id</part>
-</key>
-</table>
-<table x="1348" y="1104" name="project__chronology_tr">
-<row name="project__chronology_id" null="0" autoincrement="0">
-<datatype>INTEGER</datatype>
-</row>
-<row name="lang_id" null="0" autoincrement="0">
-<datatype>INTEGER</datatype>
-<relation table="lang" row="id" />
-</row>
-<row name="name" null="0" autoincrement="0">
-<datatype>VARCHAR(255)</datatype>
-</row>
-<row name="description" null="0" autoincrement="0">
-<datatype>TEXT</datatype>
-</row>
-<key type="PRIMARY" name="">
-<part>project__chronology_id</part>
-<part>lang_id</part>
+<part>id_project</part>
 </key>
 </table>
 <table x="208" y="1387" name="group">
@@ -1074,7 +963,7 @@
 <part>user_id</part>
 </key>
 </table>
-<table x="297" y="192" name="import">
+<table x="289" y="162" name="import">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
@@ -1089,6 +978,9 @@
 <row name="filename" null="0" autoincrement="0">
 <datatype>VARCHAR(255)</datatype>
 </row>
+<row name="number_of_lines" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+</row>
 <row name="created_at" null="0" autoincrement="0">
 <datatype>TIMESTAMP</datatype>
 </row>
@@ -1096,7 +988,7 @@
 <part>id</part>
 </key>
 </table>
-<table x="322" y="385" name="license">
+<table x="301" y="344" name="license">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
@@ -1125,7 +1017,7 @@
 <part>country_geonameid</part>
 </key>
 </table>
-<table x="682" y="65" name="database_handle">
+<table x="693" y="117" name="database_handle">
 <row name="id" null="1" autoincrement="1">
 <datatype>INTEGER</datatype>
 <default>NULL</default></row>
@@ -1138,11 +1030,14 @@
 <datatype>INTEGER</datatype>
 <relation table="import" row="id" />
 </row>
-<row name="name" null="0" autoincrement="0">
+<row name="identifier" null="0" autoincrement="0">
 <datatype>VARCHAR(255)</datatype>
 </row>
 <row name="url" null="0" autoincrement="0">
 <datatype>VARCHAR(255)</datatype>
+</row>
+<row name="declared_creation_date" null="0" autoincrement="0">
+<datatype>TIMESTAMP</datatype>
 </row>
 <row name="created_at" null="0" autoincrement="0">
 <datatype>TIMESTAMP</datatype>
@@ -1151,14 +1046,14 @@
 <part>id</part>
 </key>
 </table>
-<table x="236" y="705" name="shapefile_authors">
-<row name="shapefile_id" null="0" autoincrement="0">
-<datatype>INTEGER</datatype>
-<relation table="shapefile" row="id" />
-</row>
+<table x="447" y="651" name="shapefile_authors">
 <row name="user_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="user" row="id" />
+</row>
+<row name="shapefile_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="shapefile" row="id" />
 </row>
 <key type="PRIMARY" name="">
 <part>shapefile_id</part>
@@ -1265,7 +1160,7 @@
 <part>id</part>
 </key>
 </table>
-<table x="682" y="409" name="database_context">
+<table x="687" y="517" name="database_context">
 <row name="id" null="1" autoincrement="1">
 <datatype>INTEGER</datatype>
 <default>NULL</default></row>
@@ -1278,6 +1173,42 @@
 </row>
 <key type="PRIMARY" name="">
 <part>id</part>
+</key>
+</table>
+<table x="1352" y="416" name="charac_root">
+<row name="root_charac_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="charac" row="id" />
+</row>
+<row name="admin_group_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="group" row="id" />
+</row>
+<key type="PRIMARY" name="">
+<part>root_charac_id</part>
+</key>
+</table>
+<table x="1336" y="728" name="chronology_root">
+<row name="root_chronology_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="chronology" row="id" />
+</row>
+<row name="admin_group_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="group" row="id" />
+</row>
+<row name="author_user_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="user" row="id" />
+</row>
+<row name="credits" null="0" autoincrement="0">
+<datatype>VARCHAR</datatype>
+</row>
+<row name="active" null="0" autoincrement="0">
+<datatype>BOOLEAN</datatype>
+<default>'false'</default></row>
+<key type="PRIMARY" name="">
+<part>root_chronology_id</part>
 </key>
 </table>
 </sql>
