@@ -41,7 +41,8 @@ import (
 )
 
 var (
-	Langs                map[string]int
+	//Langs                map[string]int
+	IsoCodes             map[string]bool
 	ContinentsById       map[int]bool
 	CachedContinentsById map[int]bool
 	Countries            map[string]int
@@ -147,31 +148,31 @@ func importFile(fileName string) error {
 }
 
 // func cacheExistingLangs makes an index of existing langs in database
-func cacheExistingLangs() {
-	rows, err := db.DB.Query("SELECT id, iso_code FROM lang")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer rows.Close()
-	var id int
-	var iso_code string
-	for rows.Next() {
-		if err := rows.Scan(&id, &iso_code); err != nil {
-			log.Fatal(err)
-		}
-		Langs[strings.TrimSpace(iso_code)] = id
-	}
-	if err := rows.Err(); err != nil {
-		log.Fatal(err)
-	}
-}
+// func cacheExistingLangs() {
+// 	rows, err := db.DB.Query("SELECT id, iso_code FROM lang")
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	defer rows.Close()
+// 	var id int
+// 	var iso_code string
+// 	for rows.Next() {
+// 		if err := rows.Scan(&id, &iso_code); err != nil {
+// 			log.Fatal(err)
+// 		}
+// 		Langs[strings.TrimSpace(iso_code)] = id
+// 	}
+// 	if err := rows.Err(); err != nil {
+// 		log.Fatal(err)
+// 	}
+// }
 
 // importLanguageCodes processes the iso-languages.txt file from geonames and imports it in database
 
 func importLanguageCodes(rc io.Reader) error {
 	// Check if database allready contains lang
 	scan := bufio.NewScanner(rc)
-	cacheExistingLangs()
+	//cacheExistingLangs()
 	var nbLang int
 	err := db.DB.QueryRow("SELECT count(*) FROM lang").Scan(&nbLang)
 	if err != nil {
@@ -182,18 +183,24 @@ func importLanguageCodes(rc io.Reader) error {
 		return errors.New("/!\\ Database already contains langs. As everything is linked to langs in arkeogis, feel free to destroys the db yourself.")
 	} else {
 		if err := insertDefaultValues(); err != nil {
-			log.Fatal(err)
+			log.Fatal("Error inserting default values", err)
 		}
 	}
 	// Langs map stores the langs and associates them to their id for further use.
 	tx := db.DB.MustBegin()
 	tx.MustExec("SET CONSTRAINTS ALL DEFERRED")
 	// Store langs in database
-	stmt, err := tx.Prepare("INSERT INTO lang (iso_code, active) VALUES ($1, false) RETURNING id")
+	//stmt, err := tx.Prepare("INSERT INTO lang (isocode, active) VALUES ($1, false)")
 	lineNum := 0
 	if err != nil {
+		fmt.Println("Error inserting lang.", err)
 		return err
 	}
+	// Insert Lang D
+	fmt.Println("Inserting lang D")
+	tx.Exec("INSERT INTO lang (isocode, active) VALUES ('D', false)")
+
+	// Process
 	for scan.Scan() {
 		line := scan.Text()
 		s := strings.Split(line, "\t")
@@ -206,45 +213,48 @@ func importLanguageCodes(rc io.Reader) error {
 		if strings.TrimSpace(s[2]) == "" {
 			continue
 		}
-		var id int
-		if _, ok := Langs[s[2]]; !ok {
-			if err = stmt.QueryRow(s[2]).Scan(&id); err != nil {
-				tx.Rollback()
-				return err
-			}
-			Langs[s[2]] = id
-		}
+		// var id int
+		//if _, ok := Langs[s[2]]; !ok {
+		tx.Exec("INSERT INTO lang (isocode, active) VALUES ($1, false)", s[2])
+		// if err = stmt.QueryRow(s[2]).Scan(&id); err != nil {
+		//  fmt.Println("Error inserting lang.", err)
+		//  tx.Rollback()
+		//  return err
+		// }
+		// Langs[s[2]] = id
+		//}
+		IsoCodes[s[2]] = true
 	}
 
 	// activate default langs
-	tx.MustExec("update lang set active='t' where iso_code in ('fr','en','es','de','eu')")
+	tx.MustExec("update lang set active='t' where isocode in ('fr','en','es','de','eu')")
 
 	// set default lang translations for theses langs
-	tx.MustExec("insert into lang_tr (lang_id, lang_id_tr, name) values ((select id from lang where iso_code='fr'), (select id from lang where iso_code='fr'), 'Français')")
-	tx.MustExec("insert into lang_tr (lang_id, lang_id_tr, name) values ((select id from lang where iso_code='fr'), (select id from lang where iso_code='en'), 'French')")
-	tx.MustExec("insert into lang_tr (lang_id, lang_id_tr, name) values ((select id from lang where iso_code='fr'), (select id from lang where iso_code='de'), 'Französisch')")
-	tx.MustExec("insert into lang_tr (lang_id, lang_id_tr, name) values ((select id from lang where iso_code='fr'), (select id from lang where iso_code='es'), 'Francés')")
-	tx.MustExec("insert into lang_tr (lang_id, lang_id_tr, name) values ((select id from lang where iso_code='fr'), (select id from lang where iso_code='eu'), 'Frantsesa')")
-	tx.MustExec("insert into lang_tr (lang_id, lang_id_tr, name) values ((select id from lang where iso_code='en'), (select id from lang where iso_code='fr'), 'Anglais')")
-	tx.MustExec("insert into lang_tr (lang_id, lang_id_tr, name) values ((select id from lang where iso_code='en'), (select id from lang where iso_code='en'), 'English')")
-	tx.MustExec("insert into lang_tr (lang_id, lang_id_tr, name) values ((select id from lang where iso_code='en'), (select id from lang where iso_code='de'), 'Englisch')")
-	tx.MustExec("insert into lang_tr (lang_id, lang_id_tr, name) values ((select id from lang where iso_code='en'), (select id from lang where iso_code='es'), 'Inglés')")
-	tx.MustExec("insert into lang_tr (lang_id, lang_id_tr, name) values ((select id from lang where iso_code='en'), (select id from lang where iso_code='eu'), 'Ingelesa')")
-	tx.MustExec("insert into lang_tr (lang_id, lang_id_tr, name) values ((select id from lang where iso_code='de'), (select id from lang where iso_code='fr'), 'Allemand')")
-	tx.MustExec("insert into lang_tr (lang_id, lang_id_tr, name) values ((select id from lang where iso_code='de'), (select id from lang where iso_code='en'), 'German')")
-	tx.MustExec("insert into lang_tr (lang_id, lang_id_tr, name) values ((select id from lang where iso_code='de'), (select id from lang where iso_code='de'), 'Deutsch')")
-	tx.MustExec("insert into lang_tr (lang_id, lang_id_tr, name) values ((select id from lang where iso_code='de'), (select id from lang where iso_code='es'), 'Alemán')")
-	tx.MustExec("insert into lang_tr (lang_id, lang_id_tr, name) values ((select id from lang where iso_code='de'), (select id from lang where iso_code='eu'), 'Alemana')")
-	tx.MustExec("insert into lang_tr (lang_id, lang_id_tr, name) values ((select id from lang where iso_code='es'), (select id from lang where iso_code='fr'), 'Espagnol')")
-	tx.MustExec("insert into lang_tr (lang_id, lang_id_tr, name) values ((select id from lang where iso_code='es'), (select id from lang where iso_code='en'), 'Spanish')")
-	tx.MustExec("insert into lang_tr (lang_id, lang_id_tr, name) values ((select id from lang where iso_code='es'), (select id from lang where iso_code='de'), 'Spanisch')")
-	tx.MustExec("insert into lang_tr (lang_id, lang_id_tr, name) values ((select id from lang where iso_code='es'), (select id from lang where iso_code='es'), 'Español')")
-	tx.MustExec("insert into lang_tr (lang_id, lang_id_tr, name) values ((select id from lang where iso_code='es'), (select id from lang where iso_code='eu'), 'Española')")
-	tx.MustExec("insert into lang_tr (lang_id, lang_id_tr, name) values ((select id from lang where iso_code='eu'), (select id from lang where iso_code='fr'), 'Basque')")
-	tx.MustExec("insert into lang_tr (lang_id, lang_id_tr, name) values ((select id from lang where iso_code='eu'), (select id from lang where iso_code='en'), 'Basque')")
-	tx.MustExec("insert into lang_tr (lang_id, lang_id_tr, name) values ((select id from lang where iso_code='eu'), (select id from lang where iso_code='de'), 'Baskisch')")
-	tx.MustExec("insert into lang_tr (lang_id, lang_id_tr, name) values ((select id from lang where iso_code='eu'), (select id from lang where iso_code='es'), 'Vasco')")
-	tx.MustExec("insert into lang_tr (lang_id, lang_id_tr, name) values ((select id from lang where iso_code='eu'), (select id from lang where iso_code='eu'), 'Euskera')")
+	tx.MustExec("insert into lang_tr (lang_isocode, lang_isocode_tr, name) values ('fr', 'fr', 'Français')")
+	tx.MustExec("insert into lang_tr (lang_isocode, lang_isocode_tr, name) values ('fr', 'en', 'French')")
+	tx.MustExec("insert into lang_tr (lang_isocode, lang_isocode_tr, name) values ('fr', 'de', 'Französisch')")
+	tx.MustExec("insert into lang_tr (lang_isocode, lang_isocode_tr, name) values ('fr', 'es', 'Francés')")
+	tx.MustExec("insert into lang_tr (lang_isocode, lang_isocode_tr, name) values ('fr', 'eu', 'Frantsesa')")
+	tx.MustExec("insert into lang_tr (lang_isocode, lang_isocode_tr, name) values ('en', 'fr', 'Anglais')")
+	tx.MustExec("insert into lang_tr (lang_isocode, lang_isocode_tr, name) values ('en', 'en', 'Enflish')")
+	tx.MustExec("insert into lang_tr (lang_isocode, lang_isocode_tr, name) values ('en', 'de', 'Englisch')")
+	tx.MustExec("insert into lang_tr (lang_isocode, lang_isocode_tr, name) values ('en', 'es', 'Inglés')")
+	tx.MustExec("insert into lang_tr (lang_isocode, lang_isocode_tr, name) values ('en', 'eu', 'Ingelesa')")
+	tx.MustExec("insert into lang_tr (lang_isocode, lang_isocode_tr, name) values ('de', 'fr', 'Allemand')")
+	tx.MustExec("insert into lang_tr (lang_isocode, lang_isocode_tr, name) values ('de', 'en', 'German')")
+	tx.MustExec("insert into lang_tr (lang_isocode, lang_isocode_tr, name) values ('de', 'de', 'Deutsch')")
+	tx.MustExec("insert into lang_tr (lang_isocode, lang_isocode_tr, name) values ('de', 'es', 'Alemán')")
+	tx.MustExec("insert into lang_tr (lang_isocode, lang_isocode_tr, name) values ('de', 'eu', 'Alemana')")
+	tx.MustExec("insert into lang_tr (lang_isocode, lang_isocode_tr, name) values ('es', 'fr', 'Espagnol')")
+	tx.MustExec("insert into lang_tr (lang_isocode, lang_isocode_tr, name) values ('es', 'en', 'Spanish')")
+	tx.MustExec("insert into lang_tr (lang_isocode, lang_isocode_tr, name) values ('es', 'de', 'Spanisch')")
+	tx.MustExec("insert into lang_tr (lang_isocode, lang_isocode_tr, name) values ('es', 'es', 'Español')")
+	tx.MustExec("insert into lang_tr (lang_isocode, lang_isocode_tr, name) values ('es', 'eu', 'Española')")
+	tx.MustExec("insert into lang_tr (lang_isocode, lang_isocode_tr, name) values ('eu', 'fr', 'Basque')")
+	tx.MustExec("insert into lang_tr (lang_isocode, lang_isocode_tr, name) values ('eu', 'en', 'Basque')")
+	tx.MustExec("insert into lang_tr (lang_isocode, lang_isocode_tr, name) values ('eu', 'de', 'Baskisch')")
+	tx.MustExec("insert into lang_tr (lang_isocode, lang_isocode_tr, name) values ('eu', 'es', 'Vasco')")
+	tx.MustExec("insert into lang_tr (lang_isocode, lang_isocode_tr, name) values ('eu', 'eu', 'Euskera')")
 
 	if err := tx.Commit(); err != nil {
 		return err
@@ -260,7 +270,7 @@ func importLanguageCodes(rc io.Reader) error {
 func cacheExistingCountries() {
 	rows, err := db.DB.Query("SELECT geonameid, iso_code FROM country")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Error caching existing countries", err)
 	}
 	defer rows.Close()
 
@@ -273,7 +283,7 @@ func cacheExistingCountries() {
 		CachedCountries[iso_code] = geonameid
 	}
 	if err := rows.Err(); err != nil {
-		log.Fatal(err)
+		log.Fatal("Error caching existing countries #2", err)
 	}
 }
 
@@ -293,11 +303,11 @@ func importCountries(rc io.Reader) error {
 	if len(CachedCountries) > 1 {
 		fmt.Println("- Updating existing countries")
 		stmtUpdate1, errStmt1 = tx.Prepare("UPDATE country SET iso_code = $2 WHERE geonameid = $1")
-		stmtUpdate2, errStmt2 = tx.Prepare("UPDATE country_tr SET lang_id = $2, name = $3, name_ascii = $4 WHERE country_geonameid = $1")
+		stmtUpdate2, errStmt2 = tx.Prepare("UPDATE country_tr SET lang_isocode = $2, name = $3, name_ascii = $4 WHERE country_geonameid = $1")
 	} else {
 		fmt.Println("- Inserting countries")
 		stmtInsert1, errStmt1 = tx.Prepare("INSERT INTO country (geonameid, iso_code, created_at, updated_at) VALUES ($1, $2, $3, $4)")
-		stmtInsert2, errStmt2 = tx.Prepare("INSERT INTO country_tr (country_geonameid, lang_id, name, name_ascii) VALUES ($1, $2, $3, $4)")
+		stmtInsert2, errStmt2 = tx.Prepare("INSERT INTO country_tr (country_geonameid, lang_isocode, name, name_ascii) VALUES ($1, $2, $3, $4)")
 	}
 	if errStmt1 != nil {
 		return errStmt1
@@ -328,26 +338,26 @@ func importCountries(rc io.Reader) error {
 			continue
 		}
 		if strings.TrimSpace(s[2]) == "" {
-			fmt.Println("ASCII name not found:", s[1])
+			fmt.Println("Country ASCII name not found:", s[1])
 			continue
 		}
 		name_ascii := strings.ToLower(s[2])
+
 		if _, ok := CachedCountries[s[0]]; ok {
 			if _, err := stmtUpdate1.Exec(GeonameID, s[8]); err != nil {
 				tx.Rollback()
 				return err
 			}
-			if _, err := stmtUpdate2.Exec(GeonameID, Langs["D"], s[1], name_ascii); err != nil {
+			if _, err := stmtUpdate2.Exec(GeonameID, "D", s[1], name_ascii); err != nil {
 				tx.Rollback()
 				return err
 			}
 		} else {
-			fmt.Println("S8", s[8])
 			if _, err := stmtInsert1.Exec(GeonameID, s[8], time.Now(), time.Now()); err != nil {
 				tx.Rollback()
 				return err
 			}
-			if _, err := stmtInsert2.Exec(GeonameID, Langs["D"], s[1], name_ascii); err != nil {
+			if _, err := stmtInsert2.Exec(GeonameID, "D", s[1], name_ascii); err != nil {
 				tx.Rollback()
 				return err
 			}
@@ -396,11 +406,11 @@ func importCities(rc io.Reader) error {
 	if len(CachedCitiesById) > 1 {
 		fmt.Println("- Updating existing cities")
 		stmtUpdate1, errStmt1 = tx.Prepare("UPDATE city SET country_geonameid = $2, geom_centroid = ST_GeomFromText($3, 4326), updated_at=now() WHERE geonameid = $1")
-		stmtUpdate2, errStmt2 = tx.Prepare("UPDATE city_tr SET lang_id = $2, name = $3, name_ascii = $4 WHERE city_geonameid = $1")
+		stmtUpdate2, errStmt2 = tx.Prepare("UPDATE city_tr SET lang_isocode = $2, name = $3, name_ascii = $4 WHERE city_geonameid = $1")
 	} else {
 		fmt.Println("- Inserting cities")
 		stmtInsert1, errStmt1 = tx.Prepare("INSERT INTO city (geonameid, country_geonameid, geom_centroid, created_at, updated_at) VALUES ($1, $2, ST_GeomFromText($3, 4326), now(), now())")
-		stmtInsert2, errStmt2 = tx.Prepare("INSERT INTO city_tr (city_geonameid, lang_id, name, name_ascii) VALUES ($1, $2, $3, $4)")
+		stmtInsert2, errStmt2 = tx.Prepare("INSERT INTO city_tr (city_geonameid, lang_isocode, name, name_ascii) VALUES ($1, $2, $3, $4)")
 	}
 	if errStmt1 != nil {
 		return errStmt1
@@ -431,7 +441,7 @@ func importCities(rc io.Reader) error {
 			continue
 		}
 		if strings.TrimSpace(s[2]) == "" {
-			fmt.Println("ASCII name not found")
+			fmt.Println("City ASCII name not found")
 			continue
 		}
 		if strings.TrimSpace(s[4]) == "" {
@@ -454,7 +464,7 @@ func importCities(rc io.Reader) error {
 
 		name_ascii := strings.ToLower(s[2])
 		if _, ok := Countries[s[8]]; !ok {
-			fmt.Println("Country not found:", s[8])
+			fmt.Println("City", s[1], "not inserted his country iso code \""+s[8]+"\" is not found.")
 			continue
 		}
 		if _, ok := CachedCitiesById[GeonameID]; ok {
@@ -462,7 +472,7 @@ func importCities(rc io.Reader) error {
 				tx.Rollback()
 				return err
 			}
-			if _, err := stmtUpdate2.Exec(GeonameID, Langs["D"], s[1], name_ascii); err != nil {
+			if _, err := stmtUpdate2.Exec(GeonameID, "D", s[1], name_ascii); err != nil {
 				tx.Rollback()
 				return err
 			}
@@ -471,7 +481,7 @@ func importCities(rc io.Reader) error {
 				tx.Rollback()
 				return err
 			}
-			if _, err := stmtInsert2.Exec(GeonameID, Langs["D"], s[1], name_ascii); err != nil {
+			if _, err := stmtInsert2.Exec(GeonameID, "D", s[1], name_ascii); err != nil {
 				tx.Rollback()
 				return err
 			}
@@ -546,11 +556,11 @@ func importContinents() error {
 	if len(CachedContinentsById) > 1 {
 		fmt.Println("- Updating existing continents")
 		stmtUpdate1, errStmt1 = tx.Prepare("UPDATE continent SET iso_code = $2, updated_at = $3 WHERE geonameid = $1")
-		stmtUpdate2, errStmt2 = tx.Prepare("UPDATE continent_tr SET lang_id = $2, name = $3, name_ascii = $4 WHERE continent_geonameid = $1")
+		stmtUpdate2, errStmt2 = tx.Prepare("UPDATE continent_tr SET lang_isocode = $2, name = $3, name_ascii = $4 WHERE continent_geonameid = $1")
 	} else {
 		fmt.Println("- Inserting continents")
 		stmtInsert1, errStmt1 = tx.Prepare("INSERT INTO continent (geonameid, iso_code, created_at, updated_at) VALUES ($1, $2, $3, $4)")
-		stmtInsert2, errStmt2 = tx.Prepare("INSERT INTO continent_tr (continent_geonameid, lang_id, name, name_ascii) VALUES ($1, $2, $3, $4)")
+		stmtInsert2, errStmt2 = tx.Prepare("INSERT INTO continent_tr (continent_geonameid, lang_isocode, name, name_ascii) VALUES ($1, $2, $3, $4)")
 	}
 	if errStmt1 != nil {
 		return errStmt1
@@ -564,7 +574,7 @@ func importContinents() error {
 				tx.Rollback()
 				return err
 			}
-			if _, err := stmtUpdate2.Exec(GeonameID, Langs["D"], infos["Name"], strings.ToLower(infos["Name"])); err != nil {
+			if _, err := stmtUpdate2.Exec(GeonameID, "D", infos["Name"], strings.ToLower(infos["Name"])); err != nil {
 				tx.Rollback()
 				return err
 			}
@@ -573,7 +583,7 @@ func importContinents() error {
 				tx.Rollback()
 				return err
 			}
-			if _, err := stmtInsert2.Exec(GeonameID, Langs["D"], infos["Name"], strings.ToLower(infos["Name"])); err != nil {
+			if _, err := stmtInsert2.Exec(GeonameID, "D", infos["Name"], strings.ToLower(infos["Name"])); err != nil {
 				tx.Rollback()
 				return err
 			}
@@ -636,28 +646,28 @@ func importContinents() error {
 }
 
 // func importAlternateNames parses the geoname file "alternateNames.zip" and populates in the database
-// As nothing rely directly to alternates names, we first try do destroy all datas with lang = D (our lang_id for "D" language) to trash older datas
+// As nothing rely directly to alternates names, we first try do destroy all datas with lang = D (our lang_isocode for "D" language) to trash older datas
 
 func importAlternateNames(rc io.Reader) error {
 	scan := bufio.NewScanner(rc)
 	alreadyProcessed := map[string]bool{}
 	// Delete old entries wich are not tagged with "Undefined lang"
 	for _, tablename := range []string{"continent_tr", "country_tr", "city_tr"} {
-		if _, err := db.DB.Exec("DELETE FROM "+tablename+" WHERE lang_id != (SELECT id FROM lang WHERE iso_code = $1)", "D"); err != nil {
+		if _, err := db.DB.Exec("DELETE FROM " + tablename + " WHERE lang_isocode != 'D'"); err != nil {
 			return err
 		}
 	}
 	tx := db.DB.MustBegin()
 	tx.MustExec("SET CONSTRAINTS ALL DEFERRED")
-	stmtContinent, err := tx.Prepare("INSERT INTO continent_tr (continent_geonameid, lang_id, name, name_ascii) VALUES ($1, $2, $3, $4)")
+	stmtContinent, err := tx.Prepare("INSERT INTO continent_tr (continent_geonameid, lang_isocode, name, name_ascii) VALUES ($1, $2, $3, $4)")
 	if err != nil {
 		return err
 	}
-	stmtCountry, err := tx.Prepare("INSERT INTO country_tr (country_geonameid, lang_id, name, name_ascii) VALUES ($1, $2, $3, $4)")
+	stmtCountry, err := tx.Prepare("INSERT INTO country_tr (country_geonameid, lang_isocode, name, name_ascii) VALUES ($1, $2, $3, $4)")
 	if err != nil {
 		return err
 	}
-	stmtCity, err := tx.Prepare("INSERT INTO city_tr (city_geonameid, lang_id, name, name_ascii) VALUES ($1, $2, $3, $4)")
+	stmtCity, err := tx.Prepare("INSERT INTO city_tr (city_geonameid, lang_isocode, name, name_ascii) VALUES ($1, $2, $3, $4)")
 	if err != nil {
 		return err
 	}
@@ -675,6 +685,11 @@ func importAlternateNames(rc io.Reader) error {
 		if iso_code == "" || len(iso_code) != 2 {
 			continue
 		}
+		// Check if isocode exists
+		if _, ok := IsoCodes[iso_code]; ok {
+			fmt.Println("iso code", iso_code, "does not exist in our lang table.")
+			continue
+		}
 		// Skip line with no name
 		if strings.TrimSpace(s[3]) == "" {
 			continue
@@ -683,52 +698,50 @@ func importAlternateNames(rc io.Reader) error {
 		// Uniq code
 		uniqCode := s[1] + "_" + iso_code
 
-		if _, ok := Langs[iso_code]; ok {
-			if _, ok := CitiesById[GeonameID]; ok {
-				if _, ok := alreadyProcessed[uniqCode]; ok {
-					if preferred == 1 {
-						_, err = tx.Exec("DELETE FROM city_tr WHERE city_geonameid = $1 AND lang_id = $2", GeonameID, Langs[iso_code])
-						if err != nil {
-							return err
-						}
-					} else {
-						continue
+		if _, ok := CitiesById[GeonameID]; ok {
+			if _, ok := alreadyProcessed[uniqCode]; ok {
+				if preferred == 1 {
+					_, err = tx.Exec("DELETE FROM city_tr WHERE city_geonameid = $1 AND lang_isocode = $2", GeonameID, iso_code)
+					if err != nil {
+						return err
 					}
+				} else {
+					continue
 				}
-				if _, err = stmtCity.Exec(GeonameID, Langs[iso_code], s[3], ""); err != nil {
-					tx.Rollback()
-					return err
-				}
-			} else if _, ok := CountriesById[GeonameID]; ok {
-				if _, ok := alreadyProcessed[uniqCode]; ok {
-					if preferred == 1 {
-						_, err = tx.Exec("DELETE FROM country_tr WHERE country_geonameid = $1 AND lang_id = $2", GeonameID, Langs[iso_code])
-						if err != nil {
-							return err
-						}
-					} else {
-						continue
+			}
+			if _, err = stmtCity.Exec(GeonameID, iso_code, s[3], ""); err != nil {
+				tx.Rollback()
+				return err
+			}
+		} else if _, ok := CountriesById[GeonameID]; ok {
+			if _, ok := alreadyProcessed[uniqCode]; ok {
+				if preferred == 1 {
+					_, err = tx.Exec("DELETE FROM country_tr WHERE country_geonameid = $1 AND lang_isocode = $2", GeonameID, iso_code)
+					if err != nil {
+						return err
 					}
+				} else {
+					continue
 				}
-				if _, err = stmtCountry.Exec(GeonameID, Langs[iso_code], s[3], ""); err != nil {
-					tx.Rollback()
-					return err
-				}
-			} else if _, ok := ContinentsById[GeonameID]; ok {
-				if _, ok := alreadyProcessed[uniqCode]; ok {
-					if preferred == 1 {
-						_, err = tx.Exec("DELETE FROM continent_tr WHERE continent_geonameid = $1 AND lang_id = $2", GeonameID, Langs[iso_code])
-						if err != nil {
-							return err
-						}
-					} else {
-						continue
+			}
+			if _, err = stmtCountry.Exec(GeonameID, iso_code, s[3], ""); err != nil {
+				tx.Rollback()
+				return err
+			}
+		} else if _, ok := ContinentsById[GeonameID]; ok {
+			if _, ok := alreadyProcessed[uniqCode]; ok {
+				if preferred == 1 {
+					_, err = tx.Exec("DELETE FROM continent_tr WHERE continent_geonameid = $1 AND lang_isocode = $2", GeonameID, iso_code)
+					if err != nil {
+						return err
 					}
+				} else {
+					continue
 				}
-				if _, err = stmtContinent.Exec(GeonameID, Langs[iso_code], s[3], ""); err != nil {
-					tx.Rollback()
-					return err
-				}
+			}
+			if _, err = stmtContinent.Exec(GeonameID, iso_code, s[3], ""); err != nil {
+				tx.Rollback()
+				return err
 			}
 		}
 		alreadyProcessed[uniqCode] = true
@@ -743,13 +756,11 @@ func importAlternateNames(rc io.Reader) error {
 // Function insertDefaultValues() inserts datas considered as "default value" helping avoiding null values
 func insertDefaultValues() error {
 	// Insert "undefined" lang and populate cache index
-	var undefinedLangId int
-	err := db.DB.QueryRow("INSERT INTO lang (id, iso_code, active) VALUES (0, 'D', false) RETURNING id").Scan(&undefinedLangId)
+	var err error
 	if err != nil {
 		fmt.Println("can't insert default lang D : ", err)
 		return err
 	}
-	Langs["D"] = undefinedLangId
 	// Insert "undefined" continent and populate cache index
 	var undefinedContinentId int
 	err = db.DB.QueryRow("INSERT INTO continent (geonameid, iso_code, created_at, updated_at) VALUES (0, 'U', $1, $2) RETURNING geonameid", time.Now(), time.Now()).Scan(&undefinedContinentId)
@@ -780,7 +791,8 @@ func insertDefaultValues() error {
 func main() {
 	files := []string{"iso-languagecodes.txt", "allCountries.zip", "allCountries.zip", "alternateNames.zip"}
 	//	files := []string{"alternateNames.zip"}
-	Langs = map[string]int{}
+	//Langs = map[string]int{}
+	IsoCodes = map[string]bool{}
 	ContinentsById = map[int]bool{}
 	CachedContinentsById = map[int]bool{}
 	Countries = map[string]int{}
