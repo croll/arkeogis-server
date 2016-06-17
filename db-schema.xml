@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- SQL XML created by WWW SQL Designer, https://github.com/ondras/wwwsqldesigner/ -->
-<!-- Active URL: https://croll.fr/sqldesigner/ -->
+<!-- Active URL: https://www.croll.fr/sqldesigner/ -->
 <sql>
 <datatypes db="postgresql">
 	<group label="Numeric" color="rgb(238,238,170)">
@@ -546,7 +546,7 @@
 <part>id</part>
 </key>
 </table>
-<table x="34" y="791" name="wms_map">
+<table x="35" y="755" name="wms_layer">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
@@ -558,8 +558,8 @@
 <datatype>VARCHAR(255)</datatype>
 <default>NULL</default><comment>min:"1" error:"WMS_MAP.FIELD_URL.T_CHECK_MANDATORY" max:"255" error:"WMS_MAP.FIELD_URL.T_CHECK_INCORRECT"</comment>
 </row>
-<row name="source_creation_date" null="0" autoincrement="0">
-<datatype>TIMESTAMP</datatype>
+<row name="identifier" null="0" autoincrement="0">
+<datatype>VARCHAR(255)</datatype>
 </row>
 <row name="min_scale" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
@@ -573,12 +573,25 @@
 <row name="end_date" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 </row>
+<row name="image_format" null="0" autoincrement="0">
+<datatype>VARCHAR(25)</datatype>
+</row>
 <row name="geographical_extent_geom" null="0" autoincrement="0">
 <datatype>VARCHAR(POLYGON)</datatype>
 </row>
 <row name="published" null="0" autoincrement="0">
 <datatype>BOOLEAN</datatype>
 <default>'false'</default></row>
+<row name="license" null="0" autoincrement="0">
+<datatype>VARCHAR(255)</datatype>
+</row>
+<row name="license_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="license" row="id" />
+</row>
+<row name="max_usage_date" null="0" autoincrement="0">
+<datatype>TIMESTAMP</datatype>
+</row>
 <row name="created_at" null="0" autoincrement="0">
 <datatype>TIMESTAMP</datatype>
 </row>
@@ -589,10 +602,10 @@
 <part>id</part>
 </key>
 </table>
-<table x="17" y="1193" name="wms_map_tr">
+<table x="40" y="1183" name="wms_layer_tr">
 <row name="wms_map_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
-<relation table="wms_map" row="id" />
+<relation table="wms_layer" row="id" />
 </row>
 <row name="lang_isocode" null="0" autoincrement="0">
 <datatype>CHAR(2)</datatype>
@@ -608,6 +621,9 @@
 <row name="copyright" null="0" autoincrement="0">
 <datatype>VARCHAR(255)</datatype>
 </row>
+<row name="description" null="0" autoincrement="0">
+<datatype>TEXT</datatype>
+</row>
 <key type="PRIMARY" name="">
 <part>wms_map_id</part>
 <part>lang_isocode</part>
@@ -620,9 +636,6 @@
 <row name="creator_user_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="user" row="id" />
-</row>
-<row name="source_creation_date" null="0" autoincrement="0">
-<datatype>TIMESTAMP</datatype>
 </row>
 <row name="filename" null="1" autoincrement="0">
 <datatype>VARCHAR(255)</datatype>
@@ -649,12 +662,15 @@
 <datatype>BOOLEAN</datatype>
 <default>'false'</default><comment>enum:"0,1" error:"SHAPEFILE.FIELD_PUBLISHED.T_CHECK_INCORRECT"</comment>
 </row>
-<row name="license_name" null="0" autoincrement="0">
-<datatype>VARCHAR(50)</datatype>
+<row name="license" null="0" autoincrement="0">
+<datatype>VARCHAR(255)</datatype>
 </row>
-<row name="odbl_license" null="0" autoincrement="0">
-<datatype>BOOLEAN</datatype>
-<default>'false'</default><comment>enum:"0,1" error:"SHAPEFILE.FIELD_ODBL_LICENSE.T_CHECK_INCORRECT"</comment>
+<row name="license_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="license" row="id" />
+</row>
+<row name="declared_creation_date" null="0" autoincrement="0">
+<datatype>TIMESTAMP</datatype>
 </row>
 <row name="created_at" null="0" autoincrement="0">
 <datatype>TIMESTAMP</datatype>
@@ -666,7 +682,7 @@
 <part>id</part>
 </key>
 </table>
-<table x="276" y="1210" name="shapefile_tr">
+<table x="264" y="1189" name="shapefile_tr">
 <row name="shapefile_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="shapefile" row="id" />
@@ -679,14 +695,14 @@
 <datatype>VARCHAR(255)</datatype>
 <comment>min:"1" error:"SHAPEFILE.FIELD_NAME.T_CHECK_MANDATORY" max:"255" error:"SHAPEFILE_TR.FIELD_NAME.T_CHECK_INCORRECT"</comment>
 </row>
-<row name="description" null="0" autoincrement="0">
-<datatype>TEXT</datatype>
-</row>
 <row name="attribution" null="0" autoincrement="0">
 <datatype>VARCHAR(255)</datatype>
 </row>
-<row name="bibiography" null="0" autoincrement="0">
-<datatype>VARCHAR</datatype>
+<row name="copyright" null="0" autoincrement="0">
+<datatype>TEXT</datatype>
+</row>
+<row name="description" null="0" autoincrement="0">
+<datatype>TEXT</datatype>
 </row>
 <key type="PRIMARY" name="">
 <part>shapefile_id</part>
@@ -714,7 +730,7 @@
 </row>
 <row name="wms_map_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
-<relation table="wms_map" row="id" />
+<relation table="wms_layer" row="id" />
 </row>
 <key type="PRIMARY" name="">
 <part>project_id</part>
