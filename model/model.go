@@ -294,7 +294,7 @@ type Project__shapefile struct {
 
 type Project__wms_map struct {
 	Project_id	int	`db:"project_id" json:"project_id"`	// Project.Id
-	Wms_map_id	int	`db:"wms_map_id" json:"wms_map_id"`	// Wms_map.Id
+	Wms_map_id	int	`db:"wms_map_id" json:"wms_map_id"`	// Wms_layer.Id
 }
 
 
@@ -313,7 +313,6 @@ type Session struct {
 type Shapefile struct {
 	Id	int	`db:"id" json:"id"`
 	Creator_user_id	int	`db:"creator_user_id" json:"creator_user_id"`	// User.Id
-	Source_creation_date	time.Time	`db:"source_creation_date" json:"source_creation_date"`
 	Filename	sql.NullString	`db:"filename" json:"filename"`
 	Geom	string	`db:"geom" json:"geom"`
 	Min_scale	int	`db:"min_scale" json:"min_scale"`
@@ -322,8 +321,9 @@ type Shapefile struct {
 	End_date	int	`db:"end_date" json:"end_date"`
 	Geographical_extent_geom	string	`db:"geographical_extent_geom" json:"geographical_extent_geom"`
 	Published	bool	`db:"published" json:"published" enum:"0,1" error:"SHAPEFILE.FIELD_PUBLISHED.T_CHECK_INCORRECT"`
-	License_name	string	`db:"license_name" json:"license_name"`
-	Odbl_license	bool	`db:"odbl_license" json:"odbl_license" enum:"0,1" error:"SHAPEFILE.FIELD_ODBL_LICENSE.T_CHECK_INCORRECT"`
+	License	string	`db:"license" json:"license"`
+	License_id	int	`db:"license_id" json:"license_id"`	// License.Id
+	Declared_creation_date	time.Time	`db:"declared_creation_date" json:"declared_creation_date"`
 	Created_at	time.Time	`db:"created_at" json:"created_at"`
 	Updated_at	time.Time	`db:"updated_at" json:"updated_at"`
 }
@@ -339,9 +339,9 @@ type Shapefile_tr struct {
 	Shapefile_id	int	`db:"shapefile_id" json:"shapefile_id"`	// Shapefile.Id
 	Lang_isocode	string	`db:"lang_isocode" json:"lang_isocode"`	// Lang.Isocode
 	Name	string	`db:"name" json:"name" min:"1" error:"SHAPEFILE.FIELD_NAME.T_CHECK_MANDATORY" max:"255" error:"SHAPEFILE_TR.FIELD_NAME.T_CHECK_INCORRECT"`
-	Description	string	`db:"description" json:"description"`
 	Attribution	string	`db:"attribution" json:"attribution"`
-	Bibiography	string	`db:"bibiography" json:"bibiography"`
+	Copyright	string	`db:"copyright" json:"copyright"`
+	Description	string	`db:"description" json:"description"`
 }
 
 
@@ -434,28 +434,33 @@ type User_preferences struct {
 }
 
 
-type Wms_map struct {
+type Wms_layer struct {
 	Id	int	`db:"id" json:"id"`
 	Creator_user_id	int	`db:"creator_user_id" json:"creator_user_id"`	// User.Id
 	Url	sql.NullString	`db:"url" json:"url" min:"1" error:"WMS_MAP.FIELD_URL.T_CHECK_MANDATORY" max:"255" error:"WMS_MAP.FIELD_URL.T_CHECK_INCORRECT"`
-	Source_creation_date	time.Time	`db:"source_creation_date" json:"source_creation_date"`
+	Identifier	string	`db:"identifier" json:"identifier"`
 	Min_scale	int	`db:"min_scale" json:"min_scale"`
 	Max_scale	int	`db:"max_scale" json:"max_scale"`
 	Start_date	int	`db:"start_date" json:"start_date"`
 	End_date	int	`db:"end_date" json:"end_date"`
+	Image_format	string	`db:"image_format" json:"image_format"`
 	Geographical_extent_geom	string	`db:"geographical_extent_geom" json:"geographical_extent_geom"`
 	Published	bool	`db:"published" json:"published"`
+	License	string	`db:"license" json:"license"`
+	License_id	int	`db:"license_id" json:"license_id"`	// License.Id
+	Max_usage_date	time.Time	`db:"max_usage_date" json:"max_usage_date"`
 	Created_at	time.Time	`db:"created_at" json:"created_at"`
 	Updated_at	time.Time	`db:"updated_at" json:"updated_at"`
 }
 
 
-type Wms_map_tr struct {
-	Wms_map_id	int	`db:"wms_map_id" json:"wms_map_id"`	// Wms_map.Id
+type Wms_layer_tr struct {
+	Wms_map_id	int	`db:"wms_map_id" json:"wms_map_id"`	// Wms_layer.Id
 	Lang_isocode	string	`db:"lang_isocode" json:"lang_isocode"`	// Lang.Isocode
 	Name	string	`db:"name" json:"name" min:"1" error:"WMS_MAP.FIELD_NAME.T_CHECK_MANDATORY" max:"255" error:"WMS_MAP_TR.FIELD_NAME.T_CHECK_INCORRECT"`
 	Attribution	string	`db:"attribution" json:"attribution"`
 	Copyright	string	`db:"copyright" json:"copyright"`
+	Description	string	`db:"description" json:"description"`
 }
 
 
@@ -513,18 +518,18 @@ const Charac_tr_UpdateStr = "\"name\" = :name, \"description\" = :description"
 const Charac_InsertStr = "\"parent_id\", \"order\", \"author_user_id\", \"created_at\", \"updated_at\""
 const Charac_InsertValuesStr = ":parent_id, :order, :author_user_id, now(), now()"
 const Charac_UpdateStr = "\"parent_id\" = :parent_id, \"order\" = :order, \"author_user_id\" = :author_user_id, \"updated_at\" = now()"
-const Wms_map_InsertStr = "\"creator_user_id\", \"url\", \"source_creation_date\", \"min_scale\", \"max_scale\", \"start_date\", \"end_date\", \"geographical_extent_geom\", \"published\", \"created_at\", \"updated_at\""
-const Wms_map_InsertValuesStr = ":creator_user_id, :url, :source_creation_date, :min_scale, :max_scale, :start_date, :end_date, :geographical_extent_geom, :published, now(), now()"
-const Wms_map_UpdateStr = "\"creator_user_id\" = :creator_user_id, \"url\" = :url, \"source_creation_date\" = :source_creation_date, \"min_scale\" = :min_scale, \"max_scale\" = :max_scale, \"start_date\" = :start_date, \"end_date\" = :end_date, \"geographical_extent_geom\" = :geographical_extent_geom, \"published\" = :published, \"updated_at\" = now()"
-const Wms_map_tr_InsertStr = "\"name\", \"attribution\", \"copyright\""
-const Wms_map_tr_InsertValuesStr = ":name, :attribution, :copyright"
-const Wms_map_tr_UpdateStr = "\"name\" = :name, \"attribution\" = :attribution, \"copyright\" = :copyright"
-const Shapefile_InsertStr = "\"creator_user_id\", \"source_creation_date\", \"filename\", \"geom\", \"min_scale\", \"max_scale\", \"start_date\", \"end_date\", \"geographical_extent_geom\", \"published\", \"license_name\", \"odbl_license\", \"created_at\", \"updated_at\""
-const Shapefile_InsertValuesStr = ":creator_user_id, :source_creation_date, :filename, :geom, :min_scale, :max_scale, :start_date, :end_date, :geographical_extent_geom, :published, :license_name, :odbl_license, now(), now()"
-const Shapefile_UpdateStr = "\"creator_user_id\" = :creator_user_id, \"source_creation_date\" = :source_creation_date, \"filename\" = :filename, \"geom\" = :geom, \"min_scale\" = :min_scale, \"max_scale\" = :max_scale, \"start_date\" = :start_date, \"end_date\" = :end_date, \"geographical_extent_geom\" = :geographical_extent_geom, \"published\" = :published, \"license_name\" = :license_name, \"odbl_license\" = :odbl_license, \"updated_at\" = now()"
-const Shapefile_tr_InsertStr = "\"name\", \"description\", \"attribution\", \"bibiography\""
-const Shapefile_tr_InsertValuesStr = ":name, :description, :attribution, :bibiography"
-const Shapefile_tr_UpdateStr = "\"name\" = :name, \"description\" = :description, \"attribution\" = :attribution, \"bibiography\" = :bibiography"
+const Wms_layer_InsertStr = "\"creator_user_id\", \"url\", \"identifier\", \"min_scale\", \"max_scale\", \"start_date\", \"end_date\", \"image_format\", \"geographical_extent_geom\", \"published\", \"license\", \"license_id\", \"max_usage_date\", \"created_at\", \"updated_at\""
+const Wms_layer_InsertValuesStr = ":creator_user_id, :url, :identifier, :min_scale, :max_scale, :start_date, :end_date, :image_format, :geographical_extent_geom, :published, :license, :license_id, :max_usage_date, now(), now()"
+const Wms_layer_UpdateStr = "\"creator_user_id\" = :creator_user_id, \"url\" = :url, \"identifier\" = :identifier, \"min_scale\" = :min_scale, \"max_scale\" = :max_scale, \"start_date\" = :start_date, \"end_date\" = :end_date, \"image_format\" = :image_format, \"geographical_extent_geom\" = :geographical_extent_geom, \"published\" = :published, \"license\" = :license, \"license_id\" = :license_id, \"max_usage_date\" = :max_usage_date, \"updated_at\" = now()"
+const Wms_layer_tr_InsertStr = "\"name\", \"attribution\", \"copyright\", \"description\""
+const Wms_layer_tr_InsertValuesStr = ":name, :attribution, :copyright, :description"
+const Wms_layer_tr_UpdateStr = "\"name\" = :name, \"attribution\" = :attribution, \"copyright\" = :copyright, \"description\" = :description"
+const Shapefile_InsertStr = "\"creator_user_id\", \"filename\", \"geom\", \"min_scale\", \"max_scale\", \"start_date\", \"end_date\", \"geographical_extent_geom\", \"published\", \"license\", \"license_id\", \"declared_creation_date\", \"created_at\", \"updated_at\""
+const Shapefile_InsertValuesStr = ":creator_user_id, :filename, :geom, :min_scale, :max_scale, :start_date, :end_date, :geographical_extent_geom, :published, :license, :license_id, :declared_creation_date, now(), now()"
+const Shapefile_UpdateStr = "\"creator_user_id\" = :creator_user_id, \"filename\" = :filename, \"geom\" = :geom, \"min_scale\" = :min_scale, \"max_scale\" = :max_scale, \"start_date\" = :start_date, \"end_date\" = :end_date, \"geographical_extent_geom\" = :geographical_extent_geom, \"published\" = :published, \"license\" = :license, \"license_id\" = :license_id, \"declared_creation_date\" = :declared_creation_date, \"updated_at\" = now()"
+const Shapefile_tr_InsertStr = "\"name\", \"attribution\", \"copyright\", \"description\""
+const Shapefile_tr_InsertValuesStr = ":name, :attribution, :copyright, :description"
+const Shapefile_tr_UpdateStr = "\"name\" = :name, \"attribution\" = :attribution, \"copyright\" = :copyright, \"description\" = :description"
 const Project__databases_InsertStr = ""
 const Project__databases_InsertValuesStr = ""
 const Project__databases_UpdateStr = ""
