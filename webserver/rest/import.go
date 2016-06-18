@@ -105,6 +105,8 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	params := proute.Json.(*ImportStep1T)
 
+	fmt.Println("LANG ISO CODE: ", proute.Lang1.Isocode)
+
 	var user interface{}
 
 	var ok bool
@@ -115,7 +117,7 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	var dbImport *databaseimport.DatabaseImport
 
-	filepath := "./uploaded/" + params.File.Name
+	filepath := "./uploaded/databases" + params.File.Name
 
 	outfile, err := os.Create(filepath)
 	if err != nil {
