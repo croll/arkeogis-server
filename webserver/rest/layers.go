@@ -24,6 +24,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"reflect"
@@ -31,6 +32,7 @@ import (
 
 	db "github.com/croll/arkeogis-server/db"
 	routes "github.com/croll/arkeogis-server/webserver/routes"
+	"github.com/jonas-p/go-shp"
 )
 
 func init() {
@@ -46,17 +48,17 @@ func init() {
 		&routes.Route{
 			Path:        "/api/shapefile/togeojson",
 			Description: "Get a shapefile and convert it to geojson",
-			Func:        ShapefileToGeoJSON,
+			Func:        ShpToGeoJSON,
 			Permissions: []string{},
-			Params:      reflect.TypeOf(ShapefileToGeoJSONParams{}),
+			Json:        reflect.TypeOf(ShpToGeoJSONParams{}),
 			Method:      "POST",
 		},
 		&routes.Route{
 			Path:        "/api/shapefile",
 			Description: "Save shapefile layer",
-			Func:        SaveShapefile,
+			Func:        SaveShpLayer,
 			Permissions: []string{},
-			Params:      reflect.TypeOf(SaveShapefileParams{}),
+			Params:      reflect.TypeOf(SaveShpParams{}),
 			Method:      "POST",
 		},
 	}
@@ -95,12 +97,10 @@ type SaveLayerParams struct {
 	}
 }
 
-type SaveShapefileParams struct {
+type SaveShpParams struct {
 	Filename                 string
-	Geom                     string
+	Geojson                  string
 	Identifier               string
-	Min_scale                int
-	Max_scale                int
 	Start_date               time.Time
 	End_date                 time.Time
 	Geographical_extent_geom string
@@ -126,7 +126,7 @@ type SaveShapefileParams struct {
 	}
 }
 
-type ShapefileToGeoJSONParams struct {
+type ShpToGeoJSONParams struct {
 	Filename string
 	File     *routes.File
 }
@@ -149,14 +149,12 @@ func SaveLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	w.Write(l)
 }
 
-// ShapefileToGeoJSON get shapefile and convert it to geojson
-func ShapefileToGeoJSON(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+// ShpToGeoJSON get shapefile and convert it to geojson
+func ShpToGeoJSON(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
-	params := proute.Json.(*ShapefileToGeoJSONParams)
+	params := proute.Json.(*ShpToGeoJSONParams)
 
-	filepath := "./uploaded/shp" + params.File.Name
-
-	fmt.Println(params.File.Content)
+	filepath := "./uploaded/shp/" + params.File.Name
 
 	outfile, err := os.Create(filepath)
 	if err != nil {
@@ -171,10 +169,25 @@ func ShapefileToGeoJSON(w http.ResponseWriter, r *http.Request, proute routes.Pr
 		return
 	}
 
+	// process shp
+	shape, err := shp.Open(filepath)
+	if err != nil {
+		log.Println("Error processing shp file: " + params.File.Name)
+	}
+	defer shape.Close()
+
+	// loop through all features in the shapefile
+	for shape.Next() {
+		_, p := shape.Shape()
+
+		// print feature
+		fmt.Println(reflect.TypeOf(p).Elem(), p.BBox())
+
+	}
 }
 
-// SaveShapefileParams save shapefile layer informations into database
-func SaveShapefile(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
-	params := proute.Json.(*SaveShapefileParams)
+// SaveShpLayer save shapefile layer informations into database
+func SaveShpLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+	params := proute.Json.(*SaveShpParams)
 	fmt.Println(params)
 }
