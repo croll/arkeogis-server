@@ -33,7 +33,6 @@ import (
 	"strings"
 
 	config "github.com/croll/arkeogis-server/config"
-	db "github.com/croll/arkeogis-server/db"
 )
 
 var translations map[string]map[string]string // [lang][key]
@@ -265,49 +264,4 @@ func WriteJSON(trans map[string]interface{}, lang string, side string) (err erro
 	err = ioutil.WriteFile(filename, ([]byte)(j), 0777)
 
 	return
-}
-
-// GetQueryTranslationsAsJSON load translations from database
-func GetQueryTranslationsAsJSON(tableName, where, wrapTo string, fields ...string) string {
-	var f = "*"
-	if len(fields) > 0 {
-		f = strings.Join(fields, ", tbl.")
-	}
-	return db.AsJSON("SELECT tbl."+f+", la.isocode FROM "+tableName+" tbl LEFT JOIN lang la ON tbl.lang_isocode = la.isocode WHERE "+where, true, wrapTo, true)
-}
-
-// GetQueryTranslationsAsJSONObject load translations from database
-func GetQueryTranslationsAsJSONObject(tableName, where string, wrapTo string, noBrace bool, fields ...string) string {
-
-	jsonQuery := "SELECT '"
-
-	if noBrace == false {
-		jsonQuery += "{"
-	}
-	if wrapTo != "" {
-		jsonQuery += "\"" + wrapTo + "\": {' || "
-	} else {
-		jsonQuery += "' || "
-
-	}
-	numFields := len(fields)
-	if numFields == 0 {
-		fmt.Println("ERROR : GetQueryTranslationsAsJSONObject: You have to provide at least one field")
-		return ""
-	}
-	for k, f := range fields {
-		jsonQuery += "'\"" + f + "\": ' || json_object_agg(la.isocode, tbl." + f + ")"
-		if k < numFields-1 {
-			jsonQuery += " || ',' || "
-		}
-	}
-	if wrapTo != "" {
-		jsonQuery += " || '}'"
-	}
-	if noBrace == false {
-		jsonQuery += " || '}'"
-	}
-	jsonQuery += " FROM " + tableName + " tbl LEFT JOIN lang la ON tbl.lang_isocode = la.isocode WHERE " + where
-	fmt.Println(jsonQuery)
-	return jsonQuery
 }

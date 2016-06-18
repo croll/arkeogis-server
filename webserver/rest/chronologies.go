@@ -28,7 +28,7 @@ import (
 	"net/http"
 
 	db "github.com/croll/arkeogis-server/db"
-	"github.com/croll/arkeogis-server/translate"
+	"github.com/croll/arkeogis-server/model"
 
 	routes "github.com/croll/arkeogis-server/webserver/routes"
 	sqlx_types "github.com/jmoiron/sqlx/types"
@@ -57,7 +57,7 @@ func ChronologiesAll(w http.ResponseWriter, r *http.Request, proute routes.Prout
 	chronologies := []row{}
 
 	//err := db.DB.Select(&chronologies, "select parent_id, id, to_json((select array_agg(chronology_tr.*) from chronology_tr where chronology_tr.chronology_id = chronology.id)) as tr FROM chronology order by parent_id, \"order\", id")
-	transquery := translate.GetQueryTranslationsAsJSONObject("chronology_tr", "tbl.chronology_id = chronology.id", "", false, "name")
+	transquery := model.GetQueryTranslationsAsJSONObject("chronology_tr", "tbl.chronology_id = chronology.id", "", false, "name")
 	q := "select parent_id, id, (" + transquery + ") as tr FROM chronology order by parent_id, \"start_date\", id"
 	fmt.Println("q: ", q)
 	err := db.DB.Select(&chronologies, q)

@@ -29,7 +29,7 @@ import "github.com/jmoiron/sqlx"
 
 // Get the city from the database
 func (u *City) Get(tx *sqlx.Tx) error {
-	var q = "SELECT * FROM \"city\" WHERE id=:id"
+	var q = "SELECT * FROM \"city\" WHERE geonameid=:geonameid"
 	stmt, err := tx.PrepareNamed(q)
 	if err != nil {
 		return err
@@ -40,7 +40,7 @@ func (u *City) Get(tx *sqlx.Tx) error {
 
 // Create the city by inserting it in the database
 func (u *City) Create(tx *sqlx.Tx) error {
-	stmt, err := tx.PrepareNamed("INSERT INTO \"city\" (" + City_InsertStr + ") VALUES (" + City_InsertValuesStr + ") RETURNING id")
+	stmt, err := tx.PrepareNamed("INSERT INTO \"city\" (" + City_InsertStr + ") VALUES (" + City_InsertValuesStr + ") RETURNING geonameid")
 	if err != nil {
 		return err
 	}
@@ -50,13 +50,13 @@ func (u *City) Create(tx *sqlx.Tx) error {
 
 // Update the city in the database
 func (u *City) Update(tx *sqlx.Tx) error {
-	_, err := tx.NamedExec("UPDATE \"city\" SET "+City_UpdateStr+" WHERE id=:id", u)
+	_, err := tx.NamedExec("UPDATE \"city\" SET "+City_UpdateStr+" WHERE geonameid=:geonameid", u)
 	return err
 }
 
 // Delete the city from the database
 func (u *City) Delete(tx *sqlx.Tx) error {
-	_, err := tx.NamedExec("DELETE FROM \"city\" WHERE id=:id", u)
+	_, err := tx.NamedExec("DELETE FROM \"city\" WHERE geonameid=:geonameid", u)
 	return err
 }
 
@@ -66,18 +66,30 @@ func (u *City) Delete(tx *sqlx.Tx) error {
 
 type City_wtr struct {
 	City
-	City_tr
+	Tr map[string]string `json:"tr"`
 }
 
 // Get the city from the database
 func (u *City_wtr) Get(tx *sqlx.Tx) error {
-	var q = "SELECT city.*, city_tr.* FROM \"city\" LEFT JOIN \"city_tr\" ON city_geonameid = geonameid WHERE geonameid=:geonameid AND (lang_id=:lang_id OR lang_id=0) GROUP BY city.geonameid, city_tr.city_geonameid, city_tr.lang_id ORDER BY city_tr.lang_id DESC LIMIT 1"
+	err := u.City.Get(tx)
+	if err != nil {
+		return err
+	}
+
+	q := "SELECT city_tr.* FROM \"city_tr\" WHERE city_geonameid=:geonameid"
 	stmt, err := tx.PrepareNamed(q)
 	if err != nil {
 		return err
 	}
-	defer stmt.Close()
-	return stmt.Get(u, u)
+
+	var tr []City_tr
+	err = stmt.Select(&tr, u)
+	stmt.Close()
+	if err != nil {
+		return err
+	}
+	u.Tr = MapSqlTranslations(tr, "Lang_isocode", "Name")
+	return nil
 }
 
 /*
@@ -86,18 +98,18 @@ func (u *City_wtr) Get(tx *sqlx.Tx) error {
 
 // Get the country from the database
 func (u *Country) Get(tx *sqlx.Tx) error {
-	var q = "SELECT * FROM \"country\" WHERE id=:id"
+	var q = "SELECT * FROM \"country\" WHERE geonameid=:geonameid"
 	stmt, err := tx.PrepareNamed(q)
+	defer stmt.Close()
 	if err != nil {
 		return err
 	}
-	defer stmt.Close()
 	return stmt.Get(u, u)
 }
 
 // Create the country by inserting it in the database
 func (u *Country) Create(tx *sqlx.Tx) error {
-	stmt, err := tx.PrepareNamed("INSERT INTO \"country\" (" + Country_InsertStr + ") VALUES (" + Country_InsertValuesStr + ") RETURNING id")
+	stmt, err := tx.PrepareNamed("INSERT INTO \"country\" (" + Country_InsertStr + ") VALUES (" + Country_InsertValuesStr + ") RETURNING geonameid")
 	if err != nil {
 		return err
 	}
@@ -107,13 +119,13 @@ func (u *Country) Create(tx *sqlx.Tx) error {
 
 // Update the country in the database
 func (u *Country) Update(tx *sqlx.Tx) error {
-	_, err := tx.NamedExec("UPDATE \"country\" SET "+Country_UpdateStr+" WHERE id=:id", u)
+	_, err := tx.NamedExec("UPDATE \"country\" SET "+Country_UpdateStr+" WHERE geonameid=:geonameid", u)
 	return err
 }
 
 // Delete the country from the database
 func (u *Country) Delete(tx *sqlx.Tx) error {
-	_, err := tx.NamedExec("DELETE FROM \"country\" WHERE id=:id", u)
+	_, err := tx.NamedExec("DELETE FROM \"country\" WHERE geonameid=:geonameid", u)
 	return err
 }
 
@@ -123,18 +135,28 @@ func (u *Country) Delete(tx *sqlx.Tx) error {
 
 type Country_wtr struct {
 	Country
-	Country_tr
+	Tr map[string]string `json:"tr"`
 }
 
 // Get the country from the database
 func (u *Country_wtr) Get(tx *sqlx.Tx) error {
-	var q = "SELECT country.*, country_tr.* FROM \"country\" LEFT JOIN \"country_tr\" ON country_geonameid = geonameid WHERE geonameid=:geonameid AND (lang_id=:lang_id OR lang_id=0) GROUP BY country.geonameid, country_tr.country_geonameid, country_tr.lang_id ORDER BY country_tr.lang_id DESC LIMIT 1"
+	err := u.Country.Get(tx)
+	if err != nil {
+		return err
+	}
+	var q = "SELECT * FROM \"country_tr\" WHERE country_geonameid=:geonameid"
 	stmt, err := tx.PrepareNamed(q)
 	if err != nil {
 		return err
 	}
-	defer stmt.Close()
-	return stmt.Get(u, u)
+	var tr []Country_tr
+	err = stmt.Select(&tr, u)
+	stmt.Close()
+	if err != nil {
+		return err
+	}
+	u.Tr = MapSqlTranslations(tr, "Lang_isocode", "Name")
+	return nil
 }
 
 type CityAndCountry_wtr struct {
@@ -142,16 +164,14 @@ type CityAndCountry_wtr struct {
 	Country Country_wtr `json:"country"`
 }
 
-func (u *CityAndCountry_wtr) Get(tx *sqlx.Tx, cityId int, langIsocode string) error {
+func (u *CityAndCountry_wtr) Get(tx *sqlx.Tx, cityId int) error {
 	u.City.Geonameid = cityId
-	u.City.Lang_isocode = langIsocode
 	err := u.City.Get(tx)
 	if err != nil {
 		return err
 	}
 	//log.Println("City : ", u.City)
 
-	u.Country.Lang_isocode = langIsocode
 	u.Country.Geonameid = u.City.Country_geonameid
 	err = u.Country.Get(tx)
 	if err != nil {
