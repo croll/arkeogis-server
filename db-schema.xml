@@ -546,7 +546,7 @@
 <part>id</part>
 </key>
 </table>
-<table x="35" y="755" name="wms_layer">
+<table x="34" y="755" name="map_layer">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
@@ -554,6 +554,9 @@
 <datatype>INTEGER</datatype>
 <relation table="user" row="id" />
 </row>
+<row name="type" null="0" autoincrement="0">
+<datatype>BIT</datatype>
+<default>''wms', 'wmts''</default></row>
 <row name="url" null="1" autoincrement="0">
 <datatype>VARCHAR(255)</datatype>
 <default>NULL</default><comment>min:"1" error:"WMS_MAP.FIELD_URL.T_CHECK_MANDATORY" max:"255" error:"WMS_MAP.FIELD_URL.T_CHECK_INCORRECT"</comment>
@@ -605,7 +608,7 @@
 <table x="40" y="1183" name="wms_layer_tr">
 <row name="wms_map_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
-<relation table="wms_layer" row="id" />
+<relation table="map_layer" row="id" />
 </row>
 <row name="lang_isocode" null="0" autoincrement="0">
 <datatype>CHAR(2)</datatype>
@@ -629,7 +632,7 @@
 <part>lang_isocode</part>
 </key>
 </table>
-<table x="244" y="777" name="shapefile">
+<table x="245" y="778" name="shapefile">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
@@ -640,14 +643,14 @@
 <row name="filename" null="1" autoincrement="0">
 <datatype>VARCHAR(255)</datatype>
 <default>NULL</default></row>
+<row name="md5sum" null="0" autoincrement="0">
+<datatype>VARCHAR(32)</datatype>
+</row>
 <row name="geom" null="0" autoincrement="0">
 <datatype>VARCHAR(MULTIPOLYGON)</datatype>
 </row>
-<row name="min_scale" null="0" autoincrement="0">
-<datatype>INTEGER</datatype>
-</row>
-<row name="max_scale" null="0" autoincrement="0">
-<datatype>INTEGER</datatype>
+<row name="geojson" null="0" autoincrement="0">
+<datatype>TEXT</datatype>
 </row>
 <row name="start_date" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
@@ -730,7 +733,7 @@
 </row>
 <row name="wms_map_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
-<relation table="wms_layer" row="id" />
+<relation table="map_layer" row="id" />
 </row>
 <key type="PRIMARY" name="">
 <part>project_id</part>
@@ -962,7 +965,7 @@
 <part>name</part>
 </key>
 </table>
-<table x="226" y="67" name="database__authors">
+<table x="245" y="53" name="database__authors">
 <row name="database_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="database" row="id" />
@@ -976,7 +979,7 @@
 <part>user_id</part>
 </key>
 </table>
-<table x="289" y="162" name="import">
+<table x="288" y="148" name="import">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
@@ -987,6 +990,9 @@
 <row name="user_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="user" row="id" />
+</row>
+<row name="md5sum" null="0" autoincrement="0">
+<datatype>VARCHAR(32)</datatype>
 </row>
 <row name="filename" null="0" autoincrement="0">
 <datatype>VARCHAR(255)</datatype>
