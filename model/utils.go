@@ -24,6 +24,7 @@ package model
 import (
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 
 	db "github.com/croll/arkeogis-server/db"
@@ -93,4 +94,21 @@ func GetQueryTranslationsAsJSONObject(tableName, where string, wrapTo string, no
 	jsonQuery += " FROM " + tableName + " tbl LEFT JOIN lang la ON tbl.lang_isocode = la.isocode WHERE " + where
 	fmt.Println(jsonQuery)
 	return jsonQuery
+}
+
+// IntJoin Return a joined string of an int array (usefull for IN sql operator)
+// Exemple: [ 1, 3, 12 ]  become:  "1,3,12"
+// if hackemtpy is set to true, "-1" will be returned for an empty array
+func IntJoin(a []int, hackempty bool) string {
+	res := ""
+	if hackempty && len(a) == 0 {
+		return "-1"
+	}
+	for i, e := range a {
+		if i > 0 {
+			res += ","
+		}
+		res += strconv.Itoa(e)
+	}
+	return res
 }

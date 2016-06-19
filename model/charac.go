@@ -27,7 +27,45 @@ import (
 	"strings"
 
 	db "github.com/croll/arkeogis-server/db"
+	"github.com/jmoiron/sqlx"
 )
+
+/*
+ * Charac Object
+ */
+
+// Get the charac from the database
+func (u *Charac) Get(tx *sqlx.Tx) error {
+	var q = "SELECT * FROM \"charac\" WHERE id=:id"
+	stmt, err := tx.PrepareNamed(q)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	return stmt.Get(u, u)
+}
+
+// Create the charac by inserting it in the database
+func (u *Charac) Create(tx *sqlx.Tx) error {
+	stmt, err := tx.PrepareNamed("INSERT INTO \"charac\" (" + Charac_InsertStr + ") VALUES (" + Charac_InsertValuesStr + ") RETURNING id")
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	return stmt.Get(&u.Id, u)
+}
+
+// Update the charac in the database
+func (u *Charac) Update(tx *sqlx.Tx) error {
+	_, err := tx.NamedExec("UPDATE \"charac\" SET "+Charac_UpdateStr+" WHERE id=:id", u)
+	return err
+}
+
+// Delete the charac from the database
+func (u *Charac) Delete(tx *sqlx.Tx) error {
+	_, err := tx.NamedExec("DELETE FROM \"charac\" WHERE id=:id", u)
+	return err
+}
 
 func GetCharacPathsFromLang(name string, lang string) (caracs map[string]int, err error) {
 	caracs = map[string]int{}
