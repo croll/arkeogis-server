@@ -24,6 +24,7 @@ package model
 import (
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 
 	db "github.com/croll/arkeogis-server/db"
@@ -135,7 +136,7 @@ func (u *User) HaveGroups(tx *sqlx.Tx, groups ...Group) (ok bool, err error) {
 	}
 
 	count := 0
-	err = tx.Get(&count, "SELECT count(*) FROM user__group ug WHERE ug.user_id = ? AND ug.group_id in (?)", u.Id, IntJoin(idsGroups, true))
+	err = tx.Get(&count, "SELECT count(*) FROM user__group ug WHERE ug.user_id = "+strconv.Itoa(u.Id)+" AND ug.group_id in ("+IntJoin(idsGroups, true)+")")
 	if err != nil {
 		return false, err
 	}
