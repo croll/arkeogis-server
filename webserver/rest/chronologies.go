@@ -138,7 +138,7 @@ type ChronologyTreeStruct struct {
 type ChronologiesUpdateStruct struct {
 	model.Chronology_root
 	ChronologyTreeStruct
-	UsersInGroup []model.User `json:"users_in_group"` // read-only, used to display users of the group
+	UsersInGroup []model.User `json:"users_in_group" ignore:"true"` // read-only, used to display users of the group
 }
 
 // update chrono recursively
