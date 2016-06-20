@@ -127,6 +127,24 @@ func (u *User) GetGroups(tx *sqlx.Tx) (groups []Group, err error) {
 	return groups, err
 }
 
+// HaveGroups return true if the user have all the wanted groups
+func (u *User) HaveGroups(tx *sqlx.Tx, groups ...Group) (ok bool, err error) {
+	var idsGroups = make([]int, len(groups))
+	for i, group := range groups {
+		idsGroups[i] = group.Id
+	}
+
+	count := 0
+	err = tx.Get(&count, "SELECT count(*) FROM user__group ug WHERE ug.user_id = ? AND ug.group_id in (?)", u.Id, IntJoin(idsGroups, true))
+	if err != nil {
+		return false, err
+	}
+	if count == len(groups) {
+		return true, err
+	}
+	return false, err
+}
+
 func searchString(a []string, search string) int {
 	for i, v := range a {
 		if v == search {
