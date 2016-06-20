@@ -61,3 +61,29 @@ func (u *Map_layer) SetPublicationState(tx *sqlx.Tx) error {
 	_, err := tx.NamedExec("UPDATE \"map_layer\" SET published = :published WHERE id=:id", u)
 	return err
 }
+
+// SetTranslation set translations !
+func (u *Map_layer) SetTranslations(tx *sqlx.Tx, field string, translations []struct {
+	Lang_Isocode string
+	Text         string
+}) (err error) {
+
+	// Check if translation entry exists for this map_layer and this lang
+
+	var transID int
+
+	for _, tr := range translations {
+		err = tx.QueryRow("SELECT count(map_layer_id) FROM map_layer_tr WHERE map_layer_id = $1 AND lang_isocode = $2", u.Id, tr.Lang_Isocode).Scan(&transID)
+		if transID == 0 {
+			_, err = tx.Exec("INSERT INTO map_layer_tr (map_layer_id, lang_isocode, name, attribution, copyright, description) VALUES ($1, $2, '', '', '', '')", u.Id, tr.Lang_Isocode)
+			if err != nil {
+				return
+			}
+		}
+		if tr.Text != "" {
+			_, err = tx.Exec("UPDATE map_layer_tr SET "+field+" = $1 WHERE map_layer_id = $2 and lang_isocode = $3", tr.Text, u.Id, tr.Lang_Isocode)
+		}
+	}
+
+	return
+}

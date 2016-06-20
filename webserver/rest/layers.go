@@ -24,6 +24,7 @@ import (
 	"crypto/md5"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"reflect"
@@ -57,46 +58,12 @@ func init() {
 	routes.RegisterMultiple(Routes)
 }
 
-type SaveWmLayerParams struct {
-	Id                       int
-	Type                     string
-	Url                      string
-	Identifier               string
-	Min_scale                int
-	Max_scale                int
-	Start_date               time.Time
-	End_date                 time.Time
-	Image_format             string
-	Geographical_extent_geom string
-	Published                bool
-	License                  string
-	License_id               int
-	Max_usage_date           time.Time
-	Translations             []struct {
-		Name []struct {
-			Lang_Isocode string
-			Text         string
-		}
-		Attribution []struct {
-			Lang_Isocode string
-			Text         string
-		}
-		Copyright []struct {
-			Lang_Isocode string
-			Text         string
-		}
-		Description []struct {
-			Lang_Isocode string
-			Text         string
-		}
-	}
-}
-
 type SaveShpParams struct {
 	Id                       int
 	Authors                  []int
 	Filename                 string
 	Geojson                  string
+	Geojson_with_data        string
 	Identifier               string
 	Start_date               int
 	End_date                 int
@@ -106,15 +73,9 @@ type SaveShpParams struct {
 	License                  string
 	License_id               int
 	Declared_creation_date   time.Time
+	Attribution              string
+	Copyright                string
 	Name                     []struct {
-		Lang_Isocode string
-		Text         string
-	}
-	Attribution []struct {
-		Lang_Isocode string
-		Text         string
-	}
-	Copyright []struct {
 		Lang_Isocode string
 		Text         string
 	}
@@ -157,6 +118,7 @@ func SaveShpLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 		Filename:                 params.Filename,
 		Md5sum:                   filehash,
 		Geojson:                  params.Geojson,
+		Geojson_with_data:        params.Geojson_with_data,
 		Start_date:               params.Start_date,
 		End_date:                 params.End_date,
 		Geographical_extent_geom: params.Geographical_extent_geom,
@@ -166,13 +128,69 @@ func SaveShpLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 		Declared_creation_date:   params.Declared_creation_date,
 	}
 
-	fmt.Println(layer)
-
 	if params.Id > 0 {
 		layer.Id = params.Id
 		err = layer.Update(tx)
+		if err != nil {
+			userSqlError(w, err)
+			return
+		}
+		err = layer.DeleteAuthors(tx)
+		if err != nil {
+			userSqlError(w, err)
+			return
+		}
 	} else {
 		err = layer.Create(tx)
+	}
+
+	err = layer.SetAuthors(tx, params.Authors)
+	if err != nil {
+		log.Println("Error setting database authors: ", err)
+		userSqlError(w, err)
+		return
+	}
+
+	// For now attribution is not translatable but store it in database_tr anyway
+	var attribution = []struct {
+		Lang_Isocode string
+		Text         string
+	}{
+		{proute.Lang1.Isocode, params.Attribution},
+	}
+	err = layer.SetTranslations(tx, "attribution", attribution)
+	if err != nil {
+		log.Println("Error setting attribution: ", err)
+		userSqlError(w, err)
+		return
+	}
+
+	// For now attribution is not translatable but store it in database_tr anyway
+	var copyright = []struct {
+		Lang_Isocode string
+		Text         string
+	}{
+		{proute.Lang1.Isocode, params.Copyright},
+	}
+	err = layer.SetTranslations(tx, "copyright", copyright)
+	if err != nil {
+		log.Println("Error setting copyright: ", err)
+		userSqlError(w, err)
+		return
+	}
+
+	err = layer.SetTranslations(tx, "name", params.Name)
+	if err != nil {
+		log.Println("Error setting name: ", err)
+		userSqlError(w, err)
+		return
+	}
+
+	err = layer.SetTranslations(tx, "description", params.Description)
+	if err != nil {
+		log.Println("Error setting description: ", err)
+		userSqlError(w, err)
+		return
 	}
 
 	if err != nil {
@@ -180,10 +198,122 @@ func SaveShpLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 		return
 	}
 
+	tx.Commit()
+
 }
 
-// SaveWmLayer save shapefile layer informations into database
+type SaveWmLayerParams struct {
+	Id                       int
+	AuthorId                 int
+	Type                     string
+	Url                      string
+	Identifier               string
+	Min_scale                int
+	Max_scale                int
+	Start_date               int
+	End_date                 int
+	Image_format             string
+	Geographical_extent_geom string
+	Published                bool
+	License                  string
+	License_id               int
+	Attribution              string
+	Copyright                string
+	Max_usage_date           time.Time
+	Name                     []struct {
+		Lang_Isocode string
+		Text         string
+	}
+	Description []struct {
+		Lang_Isocode string
+		Text         string
+	}
+}
+
+// SaveWmLayer save wm(t)s layer informations into database
 func SaveWmLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+
 	params := proute.Json.(*SaveWmLayerParams)
 	fmt.Println(params)
+
+	tx, err := db.DB.Beginx()
+	if err != nil {
+		http.Error(w, "Error saving wm(t)s informations: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	var layer = &model.Map_layer{
+		Creator_user_id:          params.AuthorId,
+		Type:                     params.Type,
+		Min_scale:                params.Min_scale,
+		Max_scale:                params.Max_scale,
+		Start_date:               params.Start_date,
+		End_date:                 params.End_date,
+		Image_format:             params.Image_format,
+		Geographical_extent_geom: params.Geographical_extent_geom,
+		Published:                params.Published,
+		License:                  params.License,
+		License_id:               params.License_id,
+		Max_usage_date:           params.Max_usage_date,
+	}
+
+	if params.Id > 0 {
+		layer.Id = params.Id
+		err = layer.Update(tx)
+		if err != nil {
+			userSqlError(w, err)
+			return
+		}
+	} else {
+		err = layer.Create(tx)
+	}
+
+	// For now attribution is not translatable but store it in database_tr anyway
+	var attribution = []struct {
+		Lang_Isocode string
+		Text         string
+	}{
+		{proute.Lang1.Isocode, params.Attribution},
+	}
+	err = layer.SetTranslations(tx, "attribution", attribution)
+	if err != nil {
+		log.Println("Error setting attribution: ", err)
+		userSqlError(w, err)
+		return
+	}
+
+	// For now attribution is not translatable but store it in database_tr anyway
+	var copyright = []struct {
+		Lang_Isocode string
+		Text         string
+	}{
+		{proute.Lang1.Isocode, params.Copyright},
+	}
+	err = layer.SetTranslations(tx, "copyright", copyright)
+	if err != nil {
+		log.Println("Error setting copyright: ", err)
+		userSqlError(w, err)
+		return
+	}
+
+	err = layer.SetTranslations(tx, "name", params.Name)
+	if err != nil {
+		log.Println("Error setting name: ", err)
+		userSqlError(w, err)
+		return
+	}
+
+	err = layer.SetTranslations(tx, "description", params.Description)
+	if err != nil {
+		log.Println("Error setting description: ", err)
+		userSqlError(w, err)
+		return
+	}
+
+	if err != nil {
+		userSqlError(w, err)
+		return
+	}
+
+	tx.Commit()
 }

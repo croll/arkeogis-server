@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- SQL XML created by WWW SQL Designer, https://github.com/ondras/wwwsqldesigner/ -->
-<!-- Active URL: https://croll.fr/sqldesigner/ -->
+<!-- Active URL: https://www.croll.fr/sqldesigner/ -->
 <sql>
 <datatypes db="postgresql">
 	<group label="Numeric" color="rgb(238,238,170)">
@@ -646,10 +646,10 @@
 <row name="md5sum" null="0" autoincrement="0">
 <datatype>VARCHAR(32)</datatype>
 </row>
-<row name="geom" null="0" autoincrement="0">
-<datatype>VARCHAR(MULTIPOLYGON)</datatype>
-</row>
 <row name="geojson" null="0" autoincrement="0">
+<datatype>TEXT</datatype>
+</row>
+<row name="geojson_with_data" null="0" autoincrement="0">
 <datatype>TEXT</datatype>
 </row>
 <row name="start_date" null="0" autoincrement="0">
