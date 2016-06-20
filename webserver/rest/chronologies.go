@@ -38,6 +38,10 @@ import (
 	sqlx_types "github.com/jmoiron/sqlx/types"
 )
 
+type ChronologyGetParams struct {
+	Id int `min:"1" error:"Chronology Id is mandatory"`
+}
+
 func init() {
 	Routes := []*routes.Route{
 		&routes.Route{
@@ -61,6 +65,13 @@ func init() {
 			Permissions: []string{
 				"adminusers",
 			},
+		},
+		&routes.Route{
+			Path:        "/api/chronologies/{id:[0-9]+}",
+			Func:        ChronologiesGetTree,
+			Description: "Get a chronology in all languages",
+			Method:      "GET",
+			Params:      reflect.TypeOf(ChronologyGetParams{}),
 		},
 	}
 	routes.RegisterMultiple(Routes)
@@ -129,7 +140,7 @@ type ChronologiesUpdateStruct struct {
 	ChronologyTreeStruct
 }
 
-// now update recursively
+// update chrono recursively
 func setChronoRecursive(tx *sqlx.Tx, chrono *ChronologyTreeStruct, parent *ChronologyTreeStruct) error {
 	var err error = nil
 
@@ -153,7 +164,7 @@ func setChronoRecursive(tx *sqlx.Tx, chrono *ChronologyTreeStruct, parent *Chron
 		}
 	}
 
-	log.Println("c: ", chrono)
+	//log.Println("c: ", chrono)
 
 	// delete any translations
 	_, err = tx.Exec("DELETE FROM chronology_tr WHERE chronology_id = $1", chrono.Id)
@@ -225,7 +236,10 @@ func setChronoRecursive(tx *sqlx.Tx, chrono *ChronologyTreeStruct, parent *Chron
 	return err
 }
 
+// ChronologiesUpdate Create/Update a chronology
 func ChronologiesUpdate(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+
+	// get the post
 	c := proute.Json.(*ChronologiesUpdateStruct)
 
 	// transaction begin...
@@ -235,13 +249,35 @@ func ChronologiesUpdate(w http.ResponseWriter, r *http.Request, proute routes.Pr
 		return
 	}
 
+	// get the user
+	_user, ok := proute.Session.Get("user")
+	if !ok {
+		log.Println("ChronologiesUpdate: can't get user in session...", _user)
+		_ = tx.Rollback()
+		return
+	}
+	user, ok := _user.(model.User)
+	if !ok {
+		log.Println("ChronologiesUpdate: can't cast user...", _user)
+		_ = tx.Rollback()
+		return
+	}
+	err = user.Get(tx)
+	user.Password = "" // immediatly erase password field, we don't need it
+	if err != nil {
+		log.Println("ChronologiesUpdate: can't load user...", _user)
+		userSqlError(w, err)
+		_ = tx.Rollback()
+		return
+	}
+
 	// boolean create, true if we are creating a totaly new chronology
 	var create bool
 	if c.Chronology.Id > 0 {
-		create = true
+		create = false
 		// @TODO: check that you are in group of this chrono when updating one
 	} else {
-		create = false
+		create = true
 	}
 
 	// save recursively this chronology
@@ -252,30 +288,234 @@ func ChronologiesUpdate(w http.ResponseWriter, r *http.Request, proute routes.Pr
 		return
 	}
 
-	// save the chronology_root row
+	log.Println("geom: ", c.Chronology_root.Geom)
+
+	// save the chronology_root row, but search/create it's group first
 	c.Chronology_root.Root_chronology_id = c.Chronology.Id
 	if create {
+		// when creating, we also must create it's working group
+		group := model.Group{
+			Type: "chronology",
+		}
+		err = group.Create(tx)
+		if err != nil {
+			userSqlError(w, err)
+			_ = tx.Rollback()
+			return
+		}
+
+		// create the chronology root
+		c.Chronology_root.Admin_group_id = group.Id
 		err = c.Chronology_root.Create(tx)
 		if err != nil {
 			userSqlError(w, err)
 			_ = tx.Rollback()
 			return
 		}
+
 	} else {
-		err = c.Chronology_root.Update(tx)
+		// search the chronoroot to verify permissions
+		chronoroot := model.Chronology_root{
+			Root_chronology_id: c.Chronology.Id,
+		}
+		err = chronoroot.Get(tx)
 		if err != nil {
+			userSqlError(w, err)
+			_ = tx.Rollback()
+			return
+		}
+
+		// take the group
+		group := model.Group{
+			Id: chronoroot.Admin_group_id,
+		}
+		err = group.Get(tx)
+		if err != nil {
+			userSqlError(w, err)
+			_ = tx.Rollback()
+			return
+		}
+
+		// check that the user is in the group
+		var ok bool
+		ok, err = user.HaveGroups(tx, group)
+		if err != nil {
+			userSqlError(w, err)
+			_ = tx.Rollback()
+			return
+		}
+
+		if !ok {
+			/*
+				routes.ServerError(w, 403, "unauthorized")
+				_ = tx.Rollback()
+				return
+			*/
+		}
+
+		// only theses fields can be modified
+		chronoroot.Credits = c.Chronology_root.Credits
+		chronoroot.Active = c.Chronology_root.Active
+		chronoroot.Geom = c.Chronology_root.Geom
+		//chronoroot.Author_user_id = c.Chronology_root.Author_user_id
+		//chronoroot.Admin_group_id = c.Chronology_root.Admin_group_id
+
+		err = chronoroot.Update(tx)
+		if err != nil {
+			log.Println("chronoroot update failed")
 			userSqlError(w, err)
 			_ = tx.Rollback()
 			return
 		}
 	}
 
+	answer, err := chronologiesGetTree(w, tx, c.Id, user)
+
 	// commit...
 	err = tx.Commit()
 	if err != nil {
+		log.Println("commit failed")
 		userSqlError(w, err)
 		_ = tx.Rollback()
 		return
 	}
+
+	j, err := json.Marshal(answer)
+	if err != nil {
+		log.Println("marshal failed: ", err)
+	}
+	//log.Println("result: ", string(j))
+	w.Write(j)
+}
+
+/*
+type ChronologyTreeStruct struct {
+	model.Chronology
+	Name        map[string]string      `json:"name"`
+	Description map[string]string      `json:"description"`
+	Content     []ChronologyTreeStruct `json:"content"`
+}
+
+// ChronologiesUpdateStruct structure (json)
+type ChronologiesUpdateStruct struct {
+	model.Chronology_root
+	ChronologyTreeStruct
+}
+*/
+
+func getChronoRecursive(tx *sqlx.Tx, chrono *ChronologyTreeStruct) error {
+	var err error = nil
+
+	// load translations
+	tr := []model.Chronology_tr{}
+	err = tx.Select(&tr, "SELECT * FROM chronology_tr WHERE chronology_id = "+strconv.Itoa(chrono.Id))
+	if err != nil {
+		return err
+	}
+	chrono.Name = model.MapSqlTranslations(tr, "Lang_isocode", "Name")
+	chrono.Description = model.MapSqlTranslations(tr, "Lang_isocode", "Description")
+
+	// get the childs of this chronology from the db
+	childs, err := chrono.Chronology.Childs(tx)
+	if err != nil {
+		return err
+	}
+
+	// recurse
+	chrono.Content = make([]ChronologyTreeStruct, len(childs))
+	for i, child := range childs {
+		chrono.Content[i].Chronology = child
+		err = getChronoRecursive(tx, &chrono.Content[i])
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func chronologiesGetTree(w http.ResponseWriter, tx *sqlx.Tx, id int, user model.User) (answer *ChronologiesUpdateStruct, err error) {
+
+	// answer structure that will be printed when everything is done
+	answer = &ChronologiesUpdateStruct{}
+
+	// get the chronology_root row
+	answer.Chronology_root.Root_chronology_id = id
+	err = answer.Chronology_root.Get(tx)
+	if err != nil {
+		userSqlError(w, err)
+		_ = tx.Rollback()
+		return nil, err
+	}
+
+	// get the chronology (root)
+	answer.Chronology.Id = id
+	err = answer.Chronology.Get(tx)
+	if err != nil {
+		userSqlError(w, err)
+		_ = tx.Rollback()
+		return nil, err
+	}
+
+	// now get the chronology translations and all childrens
+	err = getChronoRecursive(tx, &answer.ChronologyTreeStruct)
+	if err != nil {
+		userSqlError(w, err)
+		_ = tx.Rollback()
+		return nil, err
+	}
+
+	return answer, nil
+}
+
+func ChronologiesGetTree(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+	params := proute.Params.(*ChronologyGetParams)
+
+	// transaction begin...
+	tx, err := db.DB.Beginx()
+	if err != nil {
+		userSqlError(w, err)
+		return
+	}
+
+	// get the user
+	_user, ok := proute.Session.Get("user")
+	if !ok {
+		log.Println("ChronologiesUpdate: can't get user in session...", _user)
+		_ = tx.Rollback()
+		return
+	}
+	user, ok := _user.(model.User)
+	if !ok {
+		log.Println("ChronologiesUpdate: can't cast user...", _user)
+		_ = tx.Rollback()
+		return
+	}
+	err = user.Get(tx)
+	user.Password = "" // immediatly erase password field, we don't need it
+	if err != nil {
+		log.Println("ChronologiesUpdate: can't load user...", _user)
+		userSqlError(w, err)
+		_ = tx.Rollback()
+		return
+	}
+
+	answer, err := chronologiesGetTree(w, tx, params.Id, user)
+
+	// commit...
+	err = tx.Commit()
+	if err != nil {
+		log.Println("commit failed")
+		userSqlError(w, err)
+		_ = tx.Rollback()
+		return
+	}
+
+	j, err := json.Marshal(answer)
+	if err != nil {
+		log.Println("marshal failed: ", err)
+	}
+	//log.Println("result: ", string(j))
+	w.Write(j)
 
 }
