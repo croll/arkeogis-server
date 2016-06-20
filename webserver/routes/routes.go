@@ -295,7 +295,7 @@ func handledRoute(myroute *Route, rw http.ResponseWriter, r *http.Request) {
 	// Print a log
 	log.Printf("[%s] %s %s ; authorized: %t\n", user.Username, myroute.Method, myroute.Path, permok)
 	if !permok {
-		ServerError(rw, 403, "Can't commit transaction")
+		ServerError(rw, 403, "unauthorized")
 		return
 	}
 
