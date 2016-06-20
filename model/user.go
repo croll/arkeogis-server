@@ -390,3 +390,41 @@ func (u *Photo) Delete(tx *sqlx.Tx) error {
 	_, err := tx.NamedExec("DELETE FROM \"photo\" WHERE id=:id", u)
 	return err
 }
+
+/*
+ * Group_tr Object
+ */
+
+// Get the group_tr from the database
+func (u *Group_tr) Get(tx *sqlx.Tx) error {
+	var q = "SELECT * FROM \"group_tr\" WHERE group_id=:group_id"
+	stmt, err := tx.PrepareNamed(q)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	return stmt.Get(u, u)
+}
+
+// Create the group_tr by inserting it in the database
+func (u *Group_tr) Create(tx *sqlx.Tx) error {
+	log.Println("saving : ", u)
+	stmt, err := tx.PrepareNamed("INSERT INTO \"group_tr\" (" + Group_tr_InsertStr + ", group_id, lang_isocode) VALUES (" + Group_tr_InsertValuesStr + ", :group_id, :lang_isocode) RETURNING group_id")
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	return stmt.Get(&u.Group_id, u)
+}
+
+// Update the group_tr in the database
+func (u *Group_tr) Update(tx *sqlx.Tx) error {
+	_, err := tx.NamedExec("UPDATE \"group_tr\" SET "+Group_tr_UpdateStr+" WHERE group_id=:group_id AND lang_isocode=:lang_isocode", u)
+	return err
+}
+
+// Delete the group_tr from the database
+func (u *Group_tr) Delete(tx *sqlx.Tx) error {
+	_, err := tx.NamedExec("DELETE FROM \"group_tr\" WHERE group_id=:group_id", u)
+	return err
+}
