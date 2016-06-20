@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- SQL XML created by WWW SQL Designer, https://github.com/ondras/wwwsqldesigner/ -->
-<!-- Active URL: https://www.croll.fr/sqldesigner/ -->
+<!-- Active URL: https://croll.fr/sqldesigner/ -->
 <sql>
 <datatypes db="postgresql">
 	<group label="Numeric" color="rgb(238,238,170)">
@@ -640,9 +640,9 @@
 <datatype>INTEGER</datatype>
 <relation table="user" row="id" />
 </row>
-<row name="filename" null="1" autoincrement="0">
+<row name="filename" null="0" autoincrement="0">
 <datatype>VARCHAR(255)</datatype>
-<default>NULL</default></row>
+</row>
 <row name="md5sum" null="0" autoincrement="0">
 <datatype>VARCHAR(32)</datatype>
 </row>
@@ -1065,7 +1065,7 @@
 <part>id</part>
 </key>
 </table>
-<table x="447" y="651" name="shapefile_authors">
+<table x="467" y="680" name="shapefile_authors">
 <row name="user_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="user" row="id" />
@@ -1207,7 +1207,7 @@
 <part>root_charac_id</part>
 </key>
 </table>
-<table x="1336" y="728" name="chronology_root">
+<table x="1345" y="704" name="chronology_root">
 <row name="root_chronology_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="chronology" row="id" />
@@ -1226,6 +1226,9 @@
 <row name="active" null="0" autoincrement="0">
 <datatype>BOOLEAN</datatype>
 <default>'false'</default></row>
+<row name="geom" null="0" autoincrement="0">
+<datatype>VARCHAR(POLYGON)</datatype>
+</row>
 <key type="PRIMARY" name="">
 <part>root_chronology_id</part>
 </key>

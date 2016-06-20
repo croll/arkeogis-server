@@ -46,6 +46,7 @@ type Chronology_root struct {
 	Author_user_id	int	`db:"author_user_id" json:"author_user_id"`	// User.Id
 	Credits	string	`db:"credits" json:"credits"`
 	Active	bool	`db:"active" json:"active"`
+	Geom	string	`db:"geom" json:"geom"`
 }
 
 
@@ -335,7 +336,7 @@ type Session struct {
 type Shapefile struct {
 	Id	int	`db:"id" json:"id"`
 	Creator_user_id	int	`db:"creator_user_id" json:"creator_user_id"`	// User.Id
-	Filename	sql.NullString	`db:"filename" json:"filename"`
+	Filename	string	`db:"filename" json:"filename"`
 	Md5sum	string	`db:"md5sum" json:"md5sum"`
 	Geom	string	`db:"geom" json:"geom"`
 	Geojson	string	`db:"geojson" json:"geojson"`
@@ -616,6 +617,6 @@ const Database_context_UpdateStr = "\"database_id\" = :database_id, \"context\" 
 const Charac_root_InsertStr = "\"admin_group_id\""
 const Charac_root_InsertValuesStr = ":admin_group_id"
 const Charac_root_UpdateStr = "\"admin_group_id\" = :admin_group_id"
-const Chronology_root_InsertStr = "\"admin_group_id\", \"author_user_id\", \"credits\", \"active\""
-const Chronology_root_InsertValuesStr = ":admin_group_id, :author_user_id, :credits, :active"
-const Chronology_root_UpdateStr = "\"admin_group_id\" = :admin_group_id, \"author_user_id\" = :author_user_id, \"credits\" = :credits, \"active\" = :active"
+const Chronology_root_InsertStr = "\"admin_group_id\", \"author_user_id\", \"credits\", \"active\", \"geom\""
+const Chronology_root_InsertValuesStr = ":admin_group_id, :author_user_id, :credits, :active, :geom"
+const Chronology_root_UpdateStr = "\"admin_group_id\" = :admin_group_id, \"author_user_id\" = :author_user_id, \"credits\" = :credits, \"active\" = :active, \"geom\" = :geom"
