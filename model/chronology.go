@@ -60,13 +60,26 @@ func (u *Chronology) Delete(tx *sqlx.Tx) error {
 	return err
 }
 
+// Childs return Chronology childs
+func (u *Chronology) Childs(tx *sqlx.Tx) ([]Chronology, error) {
+	answer := []Chronology{}
+	var q = "SELECT * FROM \"chronology\" WHERE parent_id=:id"
+	stmt, err := tx.PrepareNamed(q)
+	if err != nil {
+		return answer, err
+	}
+	err = stmt.Select(&answer, u)
+	stmt.Close()
+	return answer, err
+}
+
 /*
  * Chronology_root Object
  */
 
 // Get the chronology_root from the database
 func (u *Chronology_root) Get(tx *sqlx.Tx) error {
-	var q = "SELECT * FROM \"chronology_root\" WHERE root_chronology_id=:root_chronology_id"
+	var q = "SELECT root_chronology_id, admin_group_id, author_user_id, \"credits\", \"active\", ST_AsGeojson(geom) as geom FROM \"chronology_root\" WHERE root_chronology_id=:root_chronology_id"
 	stmt, err := tx.PrepareNamed(q)
 	if err != nil {
 		return err
@@ -77,7 +90,8 @@ func (u *Chronology_root) Get(tx *sqlx.Tx) error {
 
 // Create the chronology_root by inserting it in the database
 func (u *Chronology_root) Create(tx *sqlx.Tx) error {
-	stmt, err := tx.PrepareNamed("INSERT INTO \"chronology_root\" (" + Chronology_root_InsertStr + ", root_chronology_id) VALUES (" + Chronology_root_InsertValuesStr + ", :root_chronology_id) RETURNING root_chronology_id")
+	//stmt, err := tx.PrepareNamed("INSERT INTO \"chronology_root\" (" + Chronology_root_InsertStr + ", root_chronology_id) VALUES (" + Chronology_root_InsertValuesStr + ", :root_chronology_id) RETURNING root_chronology_id")
+	stmt, err := tx.PrepareNamed("INSERT INTO \"chronology_root\" (\"admin_group_id\", \"author_user_id\", \"credits\", \"active\", geom, root_chronology_id) VALUES (:admin_group_id, :author_user_id, :credits, :active, ST_GeomFromGeoJSON(:geom), :root_chronology_id) RETURNING root_chronology_id")
 	if err != nil {
 		return err
 	}
@@ -87,7 +101,7 @@ func (u *Chronology_root) Create(tx *sqlx.Tx) error {
 
 // Update the chronology_root in the database
 func (u *Chronology_root) Update(tx *sqlx.Tx) error {
-	_, err := tx.NamedExec("UPDATE \"chronology_root\" SET "+Chronology_root_UpdateStr+" WHERE root_chronology_id=:root_chronology_id", u)
+	_, err := tx.NamedExec("UPDATE \"chronology_root\" SET \"admin_group_id\" = :admin_group_id, \"author_user_id\" = :author_user_id, \"credits\" = :credits, \"active\" = :active, \"geom\" = ST_GeomFromGeoJSON(:geom) WHERE root_chronology_id=:root_chronology_id", u)
 	return err
 }
 
