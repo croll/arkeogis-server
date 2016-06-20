@@ -138,6 +138,7 @@ type ChronologyTreeStruct struct {
 type ChronologiesUpdateStruct struct {
 	model.Chronology_root
 	ChronologyTreeStruct
+	UsersInGroup []model.User `json:"users_in_group"` // read-only, used to display users of the group
 }
 
 // update chrono recursively
@@ -173,9 +174,9 @@ func setChronoRecursive(tx *sqlx.Tx, chrono *ChronologyTreeStruct, parent *Chron
 	}
 
 	// create a map of translations for name...
-	tr := map[string]model.Chronology_tr{}
+	tr := map[string]*model.Chronology_tr{}
 	for isocode, name := range chrono.Name {
-		tr[isocode] = model.Chronology_tr{
+		tr[isocode] = &model.Chronology_tr{
 			Chronology_id: chrono.Id,
 			Lang_isocode:  isocode,
 			Name:          name,
@@ -188,7 +189,7 @@ func setChronoRecursive(tx *sqlx.Tx, chrono *ChronologyTreeStruct, parent *Chron
 		if ok {
 			m.Description = description
 		} else {
-			tr[isocode] = model.Chronology_tr{
+			tr[isocode] = &model.Chronology_tr{
 				Chronology_id: chrono.Id,
 				Lang_isocode:  isocode,
 				Description:   description,
@@ -304,6 +305,16 @@ func ChronologiesUpdate(w http.ResponseWriter, r *http.Request, proute routes.Pr
 			return
 		}
 
+		// also save group name in langs...
+		for isocode, name := range c.ChronologyTreeStruct.Name {
+			group_tr := model.Group_tr{
+				Group_id:     group.Id,
+				Lang_isocode: isocode,
+				Name:         name,
+			}
+			err = group_tr.Create(tx)
+		}
+
 		// create the chronology root
 		c.Chronology_root.Admin_group_id = group.Id
 		err = c.Chronology_root.Create(tx)
@@ -334,6 +345,22 @@ func ChronologiesUpdate(w http.ResponseWriter, r *http.Request, proute routes.Pr
 			userSqlError(w, err)
 			_ = tx.Rollback()
 			return
+		}
+
+		// update translations of the group
+		_, err = tx.Exec("DELETE FROM group_tr WHERE group_id = " + strconv.Itoa(group.Id))
+		if err != nil {
+			userSqlError(w, err)
+			_ = tx.Rollback()
+			return
+		}
+		for isocode, name := range c.ChronologyTreeStruct.Name {
+			group_tr := model.Group_tr{
+				Group_id:     group.Id,
+				Lang_isocode: isocode,
+				Name:         name,
+			}
+			err = group_tr.Create(tx)
 		}
 
 		// check that the user is in the group
@@ -400,6 +427,7 @@ type ChronologyTreeStruct struct {
 type ChronologiesUpdateStruct struct {
 	model.Chronology_root
 	ChronologyTreeStruct
+	UsersInGroup []model.User `json:"users_in_group"` // read-only, used to display users of the group
 }
 */
 
@@ -463,6 +491,27 @@ func chronologiesGetTree(w http.ResponseWriter, tx *sqlx.Tx, id int, user model.
 		userSqlError(w, err)
 		_ = tx.Rollback()
 		return nil, err
+	}
+
+	// get users of the chrono group
+	group := model.Group{
+		Id: answer.Chronology_root.Admin_group_id,
+	}
+	err = group.Get(tx)
+	if err != nil {
+		userSqlError(w, err)
+		_ = tx.Rollback()
+		return nil, err
+	}
+	answer.UsersInGroup, err = group.GetUsers(tx)
+	if err != nil {
+		userSqlError(w, err)
+		_ = tx.Rollback()
+		return nil, err
+	}
+
+	for i := range answer.UsersInGroup {
+		answer.UsersInGroup[i].Password = ""
 	}
 
 	return answer, nil
