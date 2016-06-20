@@ -21,6 +21,7 @@
 package rest
 
 import (
+	"crypto/md5"
 	"fmt"
 	"io"
 	"net/http"
@@ -28,6 +29,9 @@ import (
 	"reflect"
 	"time"
 
+	db "github.com/croll/arkeogis-server/db"
+
+	"github.com/croll/arkeogis-server/model"
 	routes "github.com/croll/arkeogis-server/webserver/routes"
 )
 
@@ -38,7 +42,7 @@ func init() {
 			Description: "Save wm(t)s layer",
 			Func:        SaveWmLayer,
 			Permissions: []string{},
-			Params:      reflect.TypeOf(SaveWmLayerParams{}),
+			Json:        reflect.TypeOf(SaveWmLayerParams{}),
 			Method:      "POST",
 		},
 		&routes.Route{
@@ -46,7 +50,7 @@ func init() {
 			Description: "Save shapefile layer",
 			Func:        SaveShpLayer,
 			Permissions: []string{},
-			Params:      reflect.TypeOf(SaveShpParams{}),
+			Json:        reflect.TypeOf(SaveShpParams{}),
 			Method:      "POST",
 		},
 	}
@@ -54,6 +58,7 @@ func init() {
 }
 
 type SaveWmLayerParams struct {
+	Id                       int
 	Type                     string
 	Url                      string
 	Identifier               string
@@ -88,11 +93,13 @@ type SaveWmLayerParams struct {
 }
 
 type SaveShpParams struct {
+	Id                       int
+	Authors                  []int
 	Filename                 string
 	Geojson                  string
 	Identifier               string
-	Start_date               time.Time
-	End_date                 time.Time
+	Start_date               int
+	End_date                 int
 	Geographical_extent_geom string
 	Published                bool
 	File                     *routes.File
@@ -122,7 +129,15 @@ func SaveShpLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 
 	params := proute.Json.(*SaveShpParams)
 
-	filepath := "./uploaded/shp/" + params.File.Name
+	tx, err := db.DB.Beginx()
+	if err != nil {
+		http.Error(w, "Error saving shapefile informations: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	filehash := fmt.Sprintf("%x", md5.Sum([]byte(params.File.Name)))
+	filename := params.File.Name
+	filepath := "./uploaded/shp/" + filehash + "_" + filename
 
 	outfile, err := os.Create(filepath)
 	if err != nil {
@@ -136,6 +151,35 @@ func SaveShpLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 		http.Error(w, "Error saving file: "+err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	var layer = &model.Shapefile{
+		Creator_user_id:          params.Authors[0],
+		Filename:                 params.Filename,
+		Md5sum:                   filehash,
+		Geojson:                  params.Geojson,
+		Start_date:               params.Start_date,
+		End_date:                 params.End_date,
+		Geographical_extent_geom: params.Geographical_extent_geom,
+		Published:                params.Published,
+		License:                  params.License,
+		License_id:               params.License_id,
+		Declared_creation_date:   params.Declared_creation_date,
+	}
+
+	fmt.Println(layer)
+
+	if params.Id > 0 {
+		layer.Id = params.Id
+		err = layer.Update(tx)
+	} else {
+		err = layer.Create(tx)
+	}
+
+	if err != nil {
+		userSqlError(w, err)
+		return
+	}
+
 }
 
 // SaveWmLayer save shapefile layer informations into database
