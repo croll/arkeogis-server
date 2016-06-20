@@ -21,7 +21,11 @@
 
 package model
 
-import "github.com/jmoiron/sqlx"
+import (
+	"log"
+
+	"github.com/jmoiron/sqlx"
+)
 
 /*
  * Chronology Object
@@ -117,7 +121,7 @@ func (u *Chronology_root) Delete(tx *sqlx.Tx) error {
 
 // Get the chronology_tr from the database
 func (u *Chronology_tr) Get(tx *sqlx.Tx) error {
-	var q = "SELECT * FROM \"chronology_tr\" WHERE root_chronology_id=:root_chronology_id"
+	var q = "SELECT * FROM \"chronology_tr\" WHERE chronology_id=:chronology_id"
 	stmt, err := tx.PrepareNamed(q)
 	if err != nil {
 		return err
@@ -128,6 +132,7 @@ func (u *Chronology_tr) Get(tx *sqlx.Tx) error {
 
 // Create the chronology_tr by inserting it in the database
 func (u *Chronology_tr) Create(tx *sqlx.Tx) error {
+	log.Println("saving : ", u)
 	stmt, err := tx.PrepareNamed("INSERT INTO \"chronology_tr\" (" + Chronology_tr_InsertStr + ", chronology_id, lang_isocode) VALUES (" + Chronology_tr_InsertValuesStr + ", :chronology_id, :lang_isocode) RETURNING chronology_id")
 	if err != nil {
 		return err
@@ -144,6 +149,6 @@ func (u *Chronology_tr) Update(tx *sqlx.Tx) error {
 
 // Delete the chronology_tr from the database
 func (u *Chronology_tr) Delete(tx *sqlx.Tx) error {
-	_, err := tx.NamedExec("DELETE FROM \"chronology_tr\" WHERE root_chronology_id=:root_chronology_id", u)
+	_, err := tx.NamedExec("DELETE FROM \"chronology_tr\" WHERE chronology_id=:chronology_id", u)
 	return err
 }
