@@ -78,7 +78,7 @@ func AsJSON(query string, asArray bool, wrapTo string, noBrace bool) (q string) 
 
 var rgxp = regexp.MustCompile(`^SELECT \('"(\w+)":`)
 
-func JSONQueryBuilder(subQueries []string, databaseName, where string) string {
+func JSONQueryBuilder(subQueries []string, tableName, where string) string {
 	outp := "SELECT('{' || (SELECT "
 	emptyJSON := ""
 	for k, sq := range subQueries {
@@ -91,7 +91,7 @@ func JSONQueryBuilder(subQueries []string, databaseName, where string) string {
 			outp += " || ',' || "
 		}
 	}
-	outp += " FROM " + databaseName + " WHERE " + where
+	outp += " FROM " + tableName + " WHERE " + where
 	outp += ") || '}')"
 	return outp
 }

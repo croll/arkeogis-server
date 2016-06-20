@@ -90,7 +90,7 @@ func CityList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	cities := []row{}
 
-	err := db.DB.Select(&cities, "SELECT geonameid, country_geonameid, geom, geom_centroid, lang_isocode, name, name_ascii FROM city JOIN city_tr ON city_tr.city_geonameid = city.geonameid LEFT JOIN lang ON city_tr.lang_isocode = lang.isocode WHERE (name_ascii LIKE lower(f_unaccent($1)) OR lower(f_unaccent(name)) LIKE lower(f_unaccent($1))) AND country_geonameid = $2 AND (lang.iso_code = $3 OR lang.iso_code = 'D')", params.Search+"%", params.Id_country, proute.Lang1.Isocode)
+	err := db.DB.Select(&cities, "SELECT geonameid, country_geonameid, geom, geom_centroid, lang_isocode, name, name_ascii FROM city JOIN city_tr ON city_tr.city_geonameid = city.geonameid WHERE (name_ascii LIKE lower(f_unaccent($1)) OR lower(f_unaccent(name)) LIKE lower(f_unaccent($1))) AND country_geonameid = $2 AND (lang_isocode = $3 OR lang_isocode = 'D ')", params.Search+"%", params.Id_country, proute.Lang1.Isocode)
 	if err != nil {
 		fmt.Println("err: ", err)
 		return
@@ -113,7 +113,7 @@ func CityGet(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		return
 	}
 
-	err = res.Get(tx, params.Id_city, proute.Lang1.Isocode)
+	err = res.Get(tx, params.Id_city)
 	if err != nil {
 		log.Println("err while getting city and country: ", err)
 		routes.ServerError(w, 500, "INTERNAL ERROR")

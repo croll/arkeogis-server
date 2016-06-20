@@ -197,13 +197,11 @@ func init() {
 }
 
 func selectTranslated(tabletr string, coltr string, collang string, where string, lang1 string, lang2 string) string {
-	return "(" +
-		//		" SELECT \"" + coltr + "\" " +
-		" SELECT \"" + tabletr + "\" " +
-		//" SELECT name " +
-		" FROM \"" + tabletr + "\" " +
-		" WHERE " + where + " " +
-		")"
+	return `(` +
+		` SELECT json_agg("` + tabletr + `") ` +
+		` FROM "` + tabletr + `" ` +
+		` WHERE ` + where + ` ` +
+		` )`
 }
 
 func selectCityAndCountry(city_geonameid string, langisocode string) string {
@@ -227,19 +225,21 @@ func selectCityAndCountryAsJson(city_geonameid string, langisocode string) strin
 }
 
 func selectGroupAsJson(group_type string, langIsocode string) string {
+	//transquery := translate.GetQueryTranslationsAsJSONObject("group_tr", `tbl.group_id = "g".id`, "", false, "name")
 	return "" +
 		"SELECT " +
 		//" jsonb_agg(" + selectTranslated("group_tr", "name", "lang_isocode", "group_id = g.id", langisocode, 0) + ") " +
-		" to_jsonb(array_agg(" + selectTranslated("group_tr", "name", "lang_isocode", "group_id = g.id", langIsocode, "D") + ")) " +
+		" to_json(array_agg(" + selectTranslated("group_tr", "name", "lang_isocode", "group_id = g.id", langIsocode, "D") + ")) " +
 		//" json_agg((g.id," + selectTranslated("group_tr", "name", "lang_isocode", "group_id = g.id", langisocode, 0) + ")) " +
 		// translate.GetQueryTranslationsAsJSONObject("group_tr", "tbl.group_id = group.id", "", false, "name") +
+		//` (` + transquery + `) as tr` +
 		" FROM user__group u_g " +
 		" LEFT JOIN \"group\" g ON u_g.group_id = g.id " +
 		" WHERE g.type='" + group_type + "' AND u_g.user_id = u.id "
 }
 
 func selectGroupAsJsonNotNull(group_type string, langisocode string) string {
-	return "COALESCE((" + selectGroupAsJson(group_type, langisocode) + "), '[]'::jsonb)"
+	return "COALESCE((" + selectGroupAsJson(group_type, langisocode) + "), '[]'::json)"
 }
 
 func selectCompany(user_id string) string {
@@ -292,6 +292,8 @@ func UserList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	offset := (params.Page - 1) * params.Limit
 
+	log.Println("yo")
+
 	err := db.DB.Select(&answer.Data,
 		"SELECT "+
 			" u.id, u.username, u.created_at, u.updated_at, u.firstname, u.lastname, u.active, u.email, u.photo_id, "+
@@ -309,7 +311,7 @@ func UserList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 			" LIMIT $3",
 		"%"+params.Filter+"%", offset, params.Limit)
 
-	fmt.Println("SELECT "+
+	log.Println("SELECT "+
 		" u.id, u.username, u.created_at, u.updated_at, u.firstname, u.lastname, u.active, u.email, u.photo_id, "+
 		" "+selectGroupAsJsonNotNull("user", proute.Lang1.Isocode)+" as groups_user, "+
 		" "+selectGroupAsJsonNotNull("chronology", proute.Lang1.Isocode)+" as groups_chronology, "+
@@ -590,7 +592,7 @@ func UserInfos(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		return
 	}
 
-	err = u.CityAndCountry.Get(tx, u.User.City_geonameid, proute.Lang1.Isocode)
+	err = u.CityAndCountry.Get(tx, u.User.City_geonameid)
 	if err != nil {
 		log.Println("can't get user city and country", err)
 		//userSqlError(w, err)
@@ -609,7 +611,7 @@ func UserInfos(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		mcomp.Id = company.Id
 		mcomp.Name = company.Name
 
-		err = mcomp.CityAndCountry.Get(tx, company.City_geonameid, proute.Lang1.Isocode)
+		err = mcomp.CityAndCountry.Get(tx, company.City_geonameid)
 		if err != nil {
 			log.Println("can't get company city and country err:", err)
 			//userSqlError(w, err)

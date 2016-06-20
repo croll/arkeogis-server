@@ -249,7 +249,7 @@ func handledRoute(myroute *Route, rw http.ResponseWriter, r *http.Request) {
 		lang1.Isocode = "en"
 		err = lang1.Get(tx)
 		if err != nil {
-			log.Fatal("can't load lang1 !")
+			fmt.Println("can't load lang1 !")
 		}
 	}
 
@@ -258,11 +258,11 @@ func handledRoute(myroute *Route, rw http.ResponseWriter, r *http.Request) {
 		lang2.Isocode = "fr"
 		err = lang2.Get(tx)
 		if err != nil {
-			log.Fatal("can't load lang2 !")
+			fmt.Println("can't load lang2 !")
 		}
 	}
 
-	log.Println("langs: ", lang1, lang2)
+	fmt.Println("langs: ", lang1, lang2)
 
 	// Retrieve the user from db
 	user.Get(tx)
@@ -273,10 +273,10 @@ func handledRoute(myroute *Route, rw http.ResponseWriter, r *http.Request) {
 	permok := true
 	ok, err := user.HavePermissions(tx, myroute.Permissions...)
 	if err != nil {
-		log.Printf("user.HavePermissions failed : ", err)
+		log.Println("user.HavePermissions failed : ", err)
 		permok = false
 	} else if ok == false {
-		log.Printf("user has no permissions : ", myroute.Permissions)
+		log.Println("user has no permissions : ", myroute.Permissions)
 		permok = false
 	}
 
