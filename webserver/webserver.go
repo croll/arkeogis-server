@@ -52,7 +52,7 @@ func StartServer() {
 	// Configure Negroni and start server
 	Negroni := negroni.New(
 		negroni.NewRecovery(),
-		negroni.HandlerFunc(authMiddleware),
+		//negroni.HandlerFunc(authMiddleware),
 		negroni.HandlerFunc(crossDomainMiddleware),
 		negroni.NewLogger(),
 		negroni.NewStatic(http.Dir(config.WebPath)),
@@ -64,6 +64,7 @@ func StartServer() {
 func crossDomainMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Credentials", "true")
+	w.Header().Set("Access-Control-Allow-Methods", "POST,GET,OPTIONS,PUT,DELETE,TRACE")
 	next(w, r)
 }
 

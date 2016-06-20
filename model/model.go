@@ -338,8 +338,8 @@ type Shapefile struct {
 	Creator_user_id	int	`db:"creator_user_id" json:"creator_user_id"`	// User.Id
 	Filename	string	`db:"filename" json:"filename"`
 	Md5sum	string	`db:"md5sum" json:"md5sum"`
-	Geom	string	`db:"geom" json:"geom"`
 	Geojson	string	`db:"geojson" json:"geojson"`
+	Geojson_with_data	string	`db:"geojson_with_data" json:"geojson_with_data"`
 	Start_date	int	`db:"start_date" json:"start_date"`
 	End_date	int	`db:"end_date" json:"end_date"`
 	Geographical_extent_geom	string	`db:"geographical_extent_geom" json:"geographical_extent_geom"`
@@ -527,9 +527,9 @@ const Map_layer_UpdateStr = "\"creator_user_id\" = :creator_user_id, \"type\" = 
 const Wms_layer_tr_InsertStr = "\"name\", \"attribution\", \"copyright\", \"description\""
 const Wms_layer_tr_InsertValuesStr = ":name, :attribution, :copyright, :description"
 const Wms_layer_tr_UpdateStr = "\"name\" = :name, \"attribution\" = :attribution, \"copyright\" = :copyright, \"description\" = :description"
-const Shapefile_InsertStr = "\"creator_user_id\", \"filename\", \"md5sum\", \"geom\", \"geojson\", \"start_date\", \"end_date\", \"geographical_extent_geom\", \"published\", \"license\", \"license_id\", \"declared_creation_date\", \"created_at\", \"updated_at\""
-const Shapefile_InsertValuesStr = ":creator_user_id, :filename, :md5sum, :geom, :geojson, :start_date, :end_date, :geographical_extent_geom, :published, :license, :license_id, :declared_creation_date, now(), now()"
-const Shapefile_UpdateStr = "\"creator_user_id\" = :creator_user_id, \"filename\" = :filename, \"md5sum\" = :md5sum, \"geom\" = :geom, \"geojson\" = :geojson, \"start_date\" = :start_date, \"end_date\" = :end_date, \"geographical_extent_geom\" = :geographical_extent_geom, \"published\" = :published, \"license\" = :license, \"license_id\" = :license_id, \"declared_creation_date\" = :declared_creation_date, \"updated_at\" = now()"
+const Shapefile_InsertStr = "\"creator_user_id\", \"filename\", \"md5sum\", \"geojson\", \"geojson_with_data\", \"start_date\", \"end_date\", \"geographical_extent_geom\", \"published\", \"license\", \"license_id\", \"declared_creation_date\", \"created_at\", \"updated_at\""
+const Shapefile_InsertValuesStr = ":creator_user_id, :filename, :md5sum, :geojson, :geojson_with_data, :start_date, :end_date, :geographical_extent_geom, :published, :license, :license_id, :declared_creation_date, now(), now()"
+const Shapefile_UpdateStr = "\"creator_user_id\" = :creator_user_id, \"filename\" = :filename, \"md5sum\" = :md5sum, \"geojson\" = :geojson, \"geojson_with_data\" = :geojson_with_data, \"start_date\" = :start_date, \"end_date\" = :end_date, \"geographical_extent_geom\" = :geographical_extent_geom, \"published\" = :published, \"license\" = :license, \"license_id\" = :license_id, \"declared_creation_date\" = :declared_creation_date, \"updated_at\" = now()"
 const Shapefile_tr_InsertStr = "\"name\", \"attribution\", \"copyright\", \"description\""
 const Shapefile_tr_InsertValuesStr = ":name, :attribution, :copyright, :description"
 const Shapefile_tr_UpdateStr = "\"name\" = :name, \"attribution\" = :attribution, \"copyright\" = :copyright, \"description\" = :description"
