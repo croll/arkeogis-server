@@ -92,7 +92,6 @@ func GetQueryTranslationsAsJSONObject(tableName, where string, wrapTo string, no
 		jsonQuery += " || '}'"
 	}
 	jsonQuery += " FROM " + tableName + " tbl LEFT JOIN lang la ON tbl.lang_isocode = la.isocode WHERE " + where
-	fmt.Println(jsonQuery)
 	return jsonQuery
 }
 

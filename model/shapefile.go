@@ -52,7 +52,7 @@ func (u *Shapefile) Update(tx *sqlx.Tx) error {
 	return err
 }
 
-// Delete the shapefile from the shapefile
+// Delete the shapefile from the database
 func (u *Shapefile) Delete(tx *sqlx.Tx) error {
 	_, err := tx.NamedExec("DELETE FROM \"shapefile\" WHERE id=:id", u)
 	return err
@@ -67,7 +67,7 @@ func (u *Shapefile) SetPublicationState(tx *sqlx.Tx) error {
 // SetAuthors links users as authors to a shapefile
 func (u *Shapefile) SetAuthors(tx *sqlx.Tx, authors []int) (err error) {
 	for _, uid := range authors {
-		_, err = tx.Exec("INSERT INTO \"shapefile_authors\" (shapefile_id, user_id) VALUES ($1, $2)", u.Id, uid)
+		_, err = tx.Exec("INSERT INTO \"shapefile__authors\" (shapefile_id, user_id) VALUES ($1, $2)", u.Id, uid)
 		if err != nil {
 			return
 		}
@@ -77,7 +77,7 @@ func (u *Shapefile) SetAuthors(tx *sqlx.Tx, authors []int) (err error) {
 
 // DeleteAuthors deletes the author linked to a shapefile
 func (u *Shapefile) DeleteAuthors(tx *sqlx.Tx) (err error) {
-	_, err = tx.NamedExec("DELETE FROM \"shapefile_authors\" WHERE shapefile_id=:id", u)
+	_, err = tx.NamedExec("DELETE FROM \"shapefile__authors\" WHERE shapefile_id=:id", u)
 	return
 }
 

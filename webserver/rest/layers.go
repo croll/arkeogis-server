@@ -29,6 +29,7 @@ import (
 	"net/http"
 	"os"
 	"reflect"
+	"strconv"
 	"time"
 
 	db "github.com/croll/arkeogis-server/db"
@@ -63,12 +64,21 @@ func init() {
 			Params:      reflect.TypeOf(GetLayersParams{}),
 			Method:      "GET",
 		},
+		&routes.Route{
+			Path:        "/api/layer",
+			Description: "Get layer informations",
+			Func:        GetLayer,
+			Permissions: []string{},
+			Params:      reflect.TypeOf(GetLayerParams{}),
+			Method:      "GET",
+		},
 	}
 	routes.RegisterMultiple(Routes)
 }
 
 type SaveShpParams struct {
 	Id                       int
+	Author_Id                int
 	Authors                  []int
 	Filename                 string
 	Geojson                  string
@@ -159,6 +169,7 @@ func SaveShpLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 		}
 		err = layer.DeleteAuthors(tx)
 		if err != nil {
+			log.Println(err)
 			userSqlError(w, err)
 			return
 		}
@@ -224,13 +235,18 @@ func SaveShpLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 		return
 	}
 
-	tx.Commit()
+	err = tx.Commit()
+
+	if err != nil {
+		userSqlError(w, err)
+		return
+	}
 
 }
 
 type SaveWmLayerParams struct {
 	Id                       int
-	Author_Id                int
+	Authors                  []int
 	Type                     string
 	Url                      string
 	Identifier               string
@@ -280,7 +296,7 @@ func SaveWmLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	}
 
 	var layer = &model.Map_layer{
-		Creator_user_id:          params.Author_Id,
+		Creator_user_id:          params.Authors[0],
 		Type:                     params.Type,
 		Identifier:               params.Identifier,
 		Min_scale:                params.Min_scale,
@@ -298,11 +314,29 @@ func SaveWmLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	if params.Id > 0 {
 		layer.Id = params.Id
 		err = layer.Update(tx)
+		if err != nil {
+			log.Println(err)
+			userSqlError(w, err)
+			return
+		}
+		err = layer.DeleteAuthors(tx)
+		if err != nil {
+			log.Println(err)
+			userSqlError(w, err)
+			return
+		}
 	} else {
 		err = layer.Create(tx)
+		if err != nil {
+			log.Println(err)
+			userSqlError(w, err)
+			return
+		}
 	}
 
+	err = layer.SetAuthors(tx, params.Authors)
 	if err != nil {
+		log.Println("Error setting wm(t)s layer authors: ", err)
 		userSqlError(w, err)
 		return
 	}
@@ -349,12 +383,15 @@ func SaveWmLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		return
 	}
 
+	fmt.Println("---------------------------")
+	fmt.Println(params)
+
+	err = tx.Commit()
+
 	if err != nil {
 		userSqlError(w, err)
 		return
 	}
-
-	tx.Commit()
 }
 
 type GetLayersParams struct {
@@ -433,7 +470,6 @@ func GetLayers(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 }
 
 func getShpLayers(params *GetLayersParams) (result *[]LayerInfos, err error) {
-	fmt.Println(params)
 	q := "SELECT m.id, m.start_date, m.end_date, ST_AsGeoJSON(m.geographical_extent_geom) as geographical_extent_geom, m.published, m.created_at, m.creator_user_id, u.firstname || ' ' || u.lastname as author, 'shp' AS type, t.description, (SELECT description FROM shapefile_tr WHERE shapefile_id = m.id AND lang_isocode = :iso_code) AS description_en FROM shapefile m LEFT JOIN \"user\" u ON m.creator_user_id = u.id LEFT JOIN shapefile_tr t ON m.id = t.shapefile_id WHERE t.lang_isocode = :iso_code"
 
 	result = &[]LayerInfos{}
@@ -474,8 +510,49 @@ func getWmLayers(params *GetLayersParams) (result *[]LayerInfos, err error) {
 
 	nstmt, err := db.DB.PrepareNamed(q)
 	if err != nil {
+		log.Println(err)
 		return
 	}
 	err = nstmt.Select(result, params)
 	return
+}
+
+type GetLayerParams struct {
+	Id   int
+	Type string
+}
+
+// GetLayer returns all infos about a layer
+func GetLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+
+	params := proute.Params.(*GetLayerParams)
+
+	var q []string
+	var query string
+	var jsonString string
+
+	if params.Type == "shp" {
+		q = make([]string, 3)
+		q[0] = db.AsJSON("SELECT s.id, s.creator_user_id, s.filename, s.md5sum,  s.geojson, s.start_date, s.end_date, ST_AsGeoJSON(s.geographical_extent_geom) as geographical_extent_geom, s.published, s.license_id, s.license, s.declared_creation_date, s.created_at, s.updated_at, u.firstname || ' ' || u.lastname as author FROM shapefile s LEFT JOIN \"user\" u ON s.creator_user_id = u.id WHERE s.id = sl.id", false, "infos", true)
+		q[1] = db.AsJSON("SELECT u.id, u.firstname, u.lastname FROM \"user\" u LEFT JOIN shapefile__authors sa ON u.id = sa.user_id WHERE sa.shapefile_id = sl.id", true, "authors", true)
+		q[2] = model.GetQueryTranslationsAsJSONObject("shapefile_tr", "shapefile_id = sl.id", "translations", true, "name", "attribution", "copyright", "description")
+		query = db.JSONQueryBuilder(q, "shapefile sl", "sl.id = "+strconv.Itoa(params.Id))
+	} else {
+		q = make([]string, 3)
+		q[0] = db.AsJSON("SELECT m.id, m.creator_user_id, m.type, m.url, m.identifier, m.min_scale, m.max_scale, m.start_date, m.end_date, m.image_format, ST_AsGeoJSON(m.geographical_extent_geom) as geographical_extent_geom, m.published, m.license_id, m.license, m.max_usage_date, m.created_at, m.updated_at, u.firstname || ' ' || u.lastname as author FROM map_layer m LEFT JOIN \"user\" u ON m.creator_user_id = u.id WHERE m.id = ml.id", false, "infos", true)
+		q[1] = db.AsJSON("SELECT u.id, u.firstname, u.lastname FROM \"user\" u LEFT JOIN map_layer__authors ma ON u.id = ma.user_id WHERE ma.map_layer_id = ml.id", true, "authors", true)
+		q[2] = model.GetQueryTranslationsAsJSONObject("map_layer_tr", "map_layer_id = ml.id", "translations", true, "name", "attribution", "copyright", "description")
+		query = db.JSONQueryBuilder(q, "map_layer ml", "ml.id = "+strconv.Itoa(params.Id))
+	}
+
+	err := db.DB.Get(&jsonString, query)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(jsonString))
+	return
+
 }

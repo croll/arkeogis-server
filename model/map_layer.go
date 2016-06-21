@@ -58,6 +58,23 @@ func (u *Map_layer) Delete(tx *sqlx.Tx) error {
 	return err
 }
 
+// SetAuthors links users as authors to a wms layer
+func (u *Map_layer) SetAuthors(tx *sqlx.Tx, authors []int) (err error) {
+	for _, uid := range authors {
+		_, err = tx.Exec("INSERT INTO \"map_layer__authors\" (map_layer_id, user_id) VALUES ($1, $2)", u.Id, uid)
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+
+// DeleteAuthors deletes the author linked to a wms layer
+func (u *Map_layer) DeleteAuthors(tx *sqlx.Tx) (err error) {
+	_, err = tx.NamedExec("DELETE FROM \"map_layer__authors\" WHERE map_layer_id=:id", u)
+	return
+}
+
 // Set publication state of the map layer
 func (u *Map_layer) SetPublicationState(tx *sqlx.Tx) error {
 	_, err := tx.NamedExec("UPDATE \"map_layer\" SET published = :published WHERE id=:id", u)
