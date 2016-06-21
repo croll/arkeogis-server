@@ -558,9 +558,9 @@
 <row name="type" null="0" autoincrement="0">
 <datatype>BIT('wms', 'wmts')</datatype>
 </row>
-<row name="url" null="1" autoincrement="0">
+<row name="url" null="0" autoincrement="0">
 <datatype>VARCHAR(255)</datatype>
-<default>NULL</default><comment>min:"1" error:"WMS_MAP.FIELD_URL.T_CHECK_MANDATORY" max:"255" error:"WMS_MAP.FIELD_URL.T_CHECK_INCORRECT"</comment>
+<comment>min:"1" error:"WMS_MAP.FIELD_URL.T_CHECK_MANDATORY" max:"255" error:"WMS_MAP.FIELD_URL.T_CHECK_INCORRECT"</comment>
 </row>
 <row name="identifier" null="0" autoincrement="0">
 <datatype>VARCHAR(255)</datatype>

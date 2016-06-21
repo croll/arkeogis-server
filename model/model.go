@@ -246,7 +246,7 @@ type Map_layer struct {
 	Id	int	`db:"id" json:"id"`	// Map_layer__authors.Map_layer_id
 	Creator_user_id	int	`db:"creator_user_id" json:"creator_user_id"`	// User.Id
 	Type	string	`db:"type" json:"type"`
-	Url	sql.NullString	`db:"url" json:"url" min:"1" error:"WMS_MAP.FIELD_URL.T_CHECK_MANDATORY" max:"255" error:"WMS_MAP.FIELD_URL.T_CHECK_INCORRECT"`
+	Url	string	`db:"url" json:"url" min:"1" error:"WMS_MAP.FIELD_URL.T_CHECK_MANDATORY" max:"255" error:"WMS_MAP.FIELD_URL.T_CHECK_INCORRECT"`
 	Identifier	string	`db:"identifier" json:"identifier"`
 	Min_scale	int	`db:"min_scale" json:"min_scale"`
 	Max_scale	int	`db:"max_scale" json:"max_scale"`
