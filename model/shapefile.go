@@ -21,7 +21,11 @@
 
 package model
 
-import "github.com/jmoiron/sqlx"
+import (
+	"fmt"
+
+	"github.com/jmoiron/sqlx"
+)
 
 // Get the shapefile from the shapefile
 func (u *Shapefile) Get(tx *sqlx.Tx) error {
@@ -48,6 +52,8 @@ func (u *Shapefile) Create(tx *sqlx.Tx) error {
 
 // Update the shapefile in the shapefile
 func (u *Shapefile) Update(tx *sqlx.Tx) error {
+	fmt.Println("UPDATE \"shapefile\" SET " + Shapefile_UpdateStr + " WHERE id=:id")
+	return nil
 	_, err := tx.NamedExec("UPDATE \"shapefile\" SET "+Shapefile_UpdateStr+" WHERE id=:id", u)
 	return err
 }

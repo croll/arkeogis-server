@@ -128,27 +128,32 @@ func SaveShpLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 		return
 	}
 
-	filehash := fmt.Sprintf("%x", md5.Sum([]byte(params.File.Name)))
-	filename := params.File.Name
-	filepath := "./uploaded/shp/" + filehash + "_" + filename
+	var filehash string
 
-	outfile, err := os.Create(filepath)
-	if err != nil {
-		http.Error(w, "Error saving file: "+err.Error(), http.StatusBadRequest)
-		return
-	}
+	if params.File != nil {
 
-	// Save the file on filesystem
-	_, err = io.WriteString(outfile, string(params.File.Content))
-	if err != nil {
-		http.Error(w, "Error saving file: "+err.Error(), http.StatusBadRequest)
-		return
+		filehash = fmt.Sprintf("%x", md5.Sum([]byte(params.File.Name)))
+		filename := params.File.Name
+		filepath := "./uploaded/shp/" + filehash + "_" + filename
+
+		outfile, err := os.Create(filepath)
+		if err != nil {
+			http.Error(w, "Error saving file: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		// Save the file on filesystem
+		_, err = io.WriteString(outfile, string(params.File.Content))
+		if err != nil {
+			http.Error(w, "Error saving file: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+
 	}
 
 	var layer = &model.Shapefile{
 		Creator_user_id:          params.Authors[0],
 		Filename:                 params.Filename,
-		Md5sum:                   filehash,
 		Geojson:                  params.Geojson,
 		Geojson_with_data:        params.Geojson_with_data,
 		Start_date:               params.Start_date,
@@ -158,6 +163,10 @@ func SaveShpLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 		License:                  params.License,
 		License_id:               params.License_id,
 		Declared_creation_date:   params.Declared_creation_date,
+	}
+
+	if params.File != nil {
+		layer.Md5sum = filehash
 	}
 
 	if params.Id > 0 {

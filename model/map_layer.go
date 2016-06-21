@@ -48,7 +48,8 @@ func (u *Map_layer) Create(tx *sqlx.Tx) error {
 
 // Update the map layer in the database
 func (u *Map_layer) Update(tx *sqlx.Tx) error {
-	_, err := tx.NamedExec("UPDATE \"map_layer\" SET "+Map_layer_UpdateStr+" WHERE id=:id", u)
+	q := "UPDATE \"map_layer\" SET \"creator_user_id\" = :creator_user_id, \"type\" = :type, \"url\" = :url, \"identifier\" = :identifier, \"min_scale\" = :min_scale, \"max_scale\" = :max_scale, \"start_date\" = :start_date, \"end_date\" = :end_date, \"image_format\" = :image_format, \"geographical_extent_geom\" = ST_GeomFromGeoJSON(:geographical_extent_geom), \"published\" = :published, \"license\" = :license, \"license_id\" = :license_id, \"max_usage_date\" = :max_usage_date, \"updated_at\" = now() WHERE id=:id"
+	_, err := tx.NamedExec(q, u)
 	return err
 }
 
