@@ -555,8 +555,8 @@
 <relation table="user" row="id" />
 </row>
 <row name="type" null="0" autoincrement="0">
-<datatype>BIT</datatype>
-<default>''wms', 'wmts''</default></row>
+<datatype>BIT('wms', 'wmts')</datatype>
+</row>
 <row name="url" null="1" autoincrement="0">
 <datatype>VARCHAR(255)</datatype>
 <default>NULL</default><comment>min:"1" error:"WMS_MAP.FIELD_URL.T_CHECK_MANDATORY" max:"255" error:"WMS_MAP.FIELD_URL.T_CHECK_INCORRECT"</comment>
