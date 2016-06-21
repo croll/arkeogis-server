@@ -605,7 +605,7 @@
 <part>id</part>
 </key>
 </table>
-<table x="40" y="1183" name="wms_layer_tr">
+<table x="40" y="1183" name="map_layer_tr">
 <row name="map_layer_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="map_layer" row="id" />
@@ -726,18 +726,18 @@
 <part>database_id</part>
 </key>
 </table>
-<table x="1076" y="1007" name="project__wms_map">
+<table x="1076" y="1007" name="project__map_layer">
 <row name="project_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="project" row="id" />
 </row>
-<row name="wms_map_id" null="0" autoincrement="0">
+<row name="map_layer_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="map_layer" row="id" />
 </row>
 <key type="PRIMARY" name="">
 <part>project_id</part>
-<part>wms_map_id</part>
+<part>map_layer_id</part>
 </key>
 </table>
 <table x="1077" y="1098" name="project__shapefile">
