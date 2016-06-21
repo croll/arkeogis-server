@@ -118,19 +118,48 @@ func ChronologiesRoots(w http.ResponseWriter, r *http.Request, proute routes.Pro
 	type row struct {
 		model.Chronology_root
 		model.Chronology
-		Tr sqlx_types.JSONText `db:"tr" json:"tr"`
+		Name         map[string]string `json:"name"`
+		Description  map[string]string `json:"description"`
+		UsersInGroup []model.User      `json:"users_in_group" ignore:"true"` // read-only, used to display users of the group
 	}
 
-	chronologies := []row{}
+	chronologies := []*row{}
 
-	transquery := model.GetQueryTranslationsAsJSONObject("chronology_tr", "tbl.chronology_id = chronology.id", "", false, "name", "description")
-	q := "select chronology_root.*, chronology.*, (" + transquery + ") as tr FROM chronology_root LEFT JOIN chronology ON chronology_root.root_chronology_id = chronology.id order by id"
-	fmt.Println("q: ", q)
-	err := db.DB.Select(&chronologies, q)
-	fmt.Println("chronologies: ", chronologies)
+	// transaction begin...
+	tx, err := db.DB.Beginx()
 	if err != nil {
-		fmt.Println("err: ", err)
+		userSqlError(w, err)
 		return
+	}
+
+	// load all roots
+	err = db.DB.Select(&chronologies, "SELECT * FROM chronology_root")
+	if err != nil {
+		userSqlError(w, err)
+		_ = tx.Rollback()
+		return
+	}
+
+	// load all root chronologies
+	for i, chrono := range chronologies {
+		chrono.Chronology.Id = chrono.Chronology_root.Root_chronology_id
+		err = chrono.Chronology.Get(tx)
+		if err != nil {
+			userSqlError(w, err)
+			_ = tx.Rollback()
+			return
+		}
+
+		// load translations
+		tr := []model.Chronology_tr{}
+		err = tx.Select(&tr, "SELECT * FROM chronology_tr WHERE chronology_id = "+strconv.Itoa(chrono.Chronology.Id))
+		if err != nil {
+			userSqlError(w, err)
+			_ = tx.Rollback()
+			return
+		}
+		chronologies[i].Name = model.MapSqlTranslations(tr, "Lang_isocode", "Name")
+		chronologies[i].Description = model.MapSqlTranslations(tr, "Lang_isocode", "Description")
 	}
 
 	j, err := json.Marshal(chronologies)
