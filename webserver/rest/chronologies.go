@@ -118,9 +118,10 @@ func ChronologiesRoots(w http.ResponseWriter, r *http.Request, proute routes.Pro
 	type row struct {
 		model.Chronology_root
 		model.Chronology
-		Name         map[string]string `json:"name"`
-		Description  map[string]string `json:"description"`
-		UsersInGroup []model.User      `json:"users_in_group" ignore:"true"` // read-only, used to display users of the group
+		Name        map[string]string `json:"name"`
+		Description map[string]string `json:"description"`
+		//UsersInGroup []model.User      `json:"users_in_group" ignore:"true"` // read-only, used to display users of the group
+		Author model.User `json:"author" ignore:"true"` // read-only, used to display users of the group
 	}
 
 	chronologies := []*row{}
@@ -141,7 +142,7 @@ func ChronologiesRoots(w http.ResponseWriter, r *http.Request, proute routes.Pro
 	}
 
 	// load all root chronologies
-	for i, chrono := range chronologies {
+	for _, chrono := range chronologies {
 		chrono.Chronology.Id = chrono.Chronology_root.Root_chronology_id
 		err = chrono.Chronology.Get(tx)
 		if err != nil {
@@ -158,8 +159,18 @@ func ChronologiesRoots(w http.ResponseWriter, r *http.Request, proute routes.Pro
 			_ = tx.Rollback()
 			return
 		}
-		chronologies[i].Name = model.MapSqlTranslations(tr, "Lang_isocode", "Name")
-		chronologies[i].Description = model.MapSqlTranslations(tr, "Lang_isocode", "Description")
+		chrono.Name = model.MapSqlTranslations(tr, "Lang_isocode", "Name")
+		chrono.Description = model.MapSqlTranslations(tr, "Lang_isocode", "Description")
+
+		// get the author user
+		chrono.Author.Id = chrono.Chronology_root.Author_user_id
+		err = chrono.Author.Get(tx)
+		chrono.Author.Password = ""
+		if err != nil {
+			userSqlError(w, err)
+			_ = tx.Rollback()
+			return
+		}
 	}
 
 	j, err := json.Marshal(chronologies)
@@ -178,6 +189,7 @@ type ChronologiesUpdateStruct struct {
 	model.Chronology_root
 	ChronologyTreeStruct
 	UsersInGroup []model.User `json:"users_in_group" ignore:"true"` // read-only, used to display users of the group
+	Author       model.User   `json:"author" ignore:"true"`         // read-only, used to display users of the group
 }
 
 // update chrono recursively
@@ -423,7 +435,7 @@ func ChronologiesUpdate(w http.ResponseWriter, r *http.Request, proute routes.Pr
 		chronoroot.Credits = c.Chronology_root.Credits
 		chronoroot.Active = c.Chronology_root.Active
 		chronoroot.Geom = c.Chronology_root.Geom
-		//chronoroot.Author_user_id = c.Chronology_root.Author_user_id
+		chronoroot.Author_user_id = c.Chronology_root.Author_user_id
 		//chronoroot.Admin_group_id = c.Chronology_root.Admin_group_id
 
 		err = chronoroot.Update(tx)
@@ -551,6 +563,16 @@ func chronologiesGetTree(w http.ResponseWriter, tx *sqlx.Tx, id int, user model.
 
 	for i := range answer.UsersInGroup {
 		answer.UsersInGroup[i].Password = ""
+	}
+
+	// get the author user
+	answer.Author.Id = answer.Chronology_root.Author_user_id
+	err = answer.Author.Get(tx)
+	answer.Author.Password = ""
+	if err != nil {
+		userSqlError(w, err)
+		_ = tx.Rollback()
+		return nil, err
 	}
 
 	return answer, nil
