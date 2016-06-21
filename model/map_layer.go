@@ -36,7 +36,9 @@ func (u *Map_layer) Get(tx *sqlx.Tx) error {
 
 // Create a map layer by inserting it in the database
 func (u *Map_layer) Create(tx *sqlx.Tx) error {
-	stmt, err := tx.PrepareNamed("INSERT INTO \"map_layer\" (" + Map_layer_InsertStr + ") VALUES (" + Map_layer_InsertValuesStr + ") RETURNING id")
+	q := "INSERT INTO \"map_layer\" (\"creator_user_id\", \"type\", \"url\", \"identifier\", \"min_scale\", \"max_scale\", \"start_date\", \"end_date\", \"image_format\", \"geographical_extent_geom\", \"published\", \"license\", \"license_id\", \"max_usage_date\", \"created_at\", \"updated_at\") VALUES (:creator_user_id, :type, :url, :identifier, :min_scale, :max_scale, :start_date, :end_date, :image_format,  ST_GeomFromGeoJSON(:geographical_extent_geom), :published, :license, :license_id, :max_usage_date, now(), now()) RETURNING id"
+
+	stmt, err := tx.PrepareNamed(q)
 	if err != nil {
 		return err
 	}

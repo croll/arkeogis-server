@@ -64,7 +64,6 @@ type SaveShpParams struct {
 	Filename                 string
 	Geojson                  string
 	Geojson_with_data        string
-	Identifier               string
 	Start_date               int
 	End_date                 int
 	Geographical_extent_geom string
@@ -142,6 +141,10 @@ func SaveShpLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 		}
 	} else {
 		err = layer.Create(tx)
+		if err != nil {
+			userSqlError(w, err)
+			return
+		}
 	}
 
 	err = layer.SetAuthors(tx, params.Authors)
@@ -204,7 +207,7 @@ func SaveShpLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 
 type SaveWmLayerParams struct {
 	Id                       int
-	AuthorId                 int
+	Author_Id                int
 	Type                     string
 	Url                      string
 	Identifier               string
@@ -243,8 +246,9 @@ func SaveWmLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	}
 
 	var layer = &model.Map_layer{
-		Creator_user_id:          params.AuthorId,
+		Creator_user_id:          params.Author_Id,
 		Type:                     params.Type,
+		Identifier:               params.Identifier,
 		Min_scale:                params.Min_scale,
 		Max_scale:                params.Max_scale,
 		Start_date:               params.Start_date,
@@ -260,12 +264,13 @@ func SaveWmLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	if params.Id > 0 {
 		layer.Id = params.Id
 		err = layer.Update(tx)
-		if err != nil {
-			userSqlError(w, err)
-			return
-		}
 	} else {
 		err = layer.Create(tx)
+	}
+
+	if err != nil {
+		userSqlError(w, err)
+		return
 	}
 
 	// For now attribution is not translatable but store it in database_tr anyway
