@@ -263,6 +263,16 @@ type Map_layer struct {
 }
 
 
+type Map_layer_tr struct {
+	Map_layer_id	int	`db:"map_layer_id" json:"map_layer_id"`	// Map_layer.Id
+	Lang_isocode	string	`db:"lang_isocode" json:"lang_isocode"`	// Lang.Isocode
+	Name	string	`db:"name" json:"name" min:"1" error:"WMS_MAP.FIELD_NAME.T_CHECK_MANDATORY" max:"255" error:"WMS_MAP_TR.FIELD_NAME.T_CHECK_INCORRECT"`
+	Attribution	string	`db:"attribution" json:"attribution"`
+	Copyright	string	`db:"copyright" json:"copyright"`
+	Description	string	`db:"description" json:"description"`
+}
+
+
 type Permission struct {
 	Id	int	`db:"id" json:"id"`
 	Name	string	`db:"name" json:"name"`
@@ -309,15 +319,15 @@ type Project__databases struct {
 }
 
 
-type Project__shapefile struct {
+type Project__map_layer struct {
 	Project_id	int	`db:"project_id" json:"project_id"`	// Project.Id
-	Shapefile_id	int	`db:"shapefile_id" json:"shapefile_id"`	// Shapefile.Id
+	Map_layer_id	int	`db:"map_layer_id" json:"map_layer_id"`	// Map_layer.Id
 }
 
 
-type Project__wms_map struct {
+type Project__shapefile struct {
 	Project_id	int	`db:"project_id" json:"project_id"`	// Project.Id
-	Wms_map_id	int	`db:"wms_map_id" json:"wms_map_id"`	// Map_layer.Id
+	Shapefile_id	int	`db:"shapefile_id" json:"shapefile_id"`	// Shapefile.Id
 }
 
 
@@ -457,16 +467,6 @@ type User_preferences struct {
 }
 
 
-type Wms_layer_tr struct {
-	Wms_map_id	int	`db:"wms_map_id" json:"wms_map_id"`	// Map_layer.Id
-	Lang_isocode	string	`db:"lang_isocode" json:"lang_isocode"`	// Lang.Isocode
-	Name	string	`db:"name" json:"name" min:"1" error:"WMS_MAP.FIELD_NAME.T_CHECK_MANDATORY" max:"255" error:"WMS_MAP_TR.FIELD_NAME.T_CHECK_INCORRECT"`
-	Attribution	string	`db:"attribution" json:"attribution"`
-	Copyright	string	`db:"copyright" json:"copyright"`
-	Description	string	`db:"description" json:"description"`
-}
-
-
 const User_InsertStr = "\"username\", \"firstname\", \"lastname\", \"email\", \"password\", \"description\", \"active\", \"first_lang_isocode\", \"second_lang_isocode\", \"city_geonameid\", \"photo_id\", \"created_at\", \"updated_at\""
 const User_InsertValuesStr = ":username, :firstname, :lastname, :email, :password, :description, :active, :first_lang_isocode, :second_lang_isocode, :city_geonameid, :photo_id, now(), now()"
 const User_UpdateStr = "\"username\" = :username, \"firstname\" = :firstname, \"lastname\" = :lastname, \"email\" = :email, \"password\" = :password, \"description\" = :description, \"active\" = :active, \"first_lang_isocode\" = :first_lang_isocode, \"second_lang_isocode\" = :second_lang_isocode, \"city_geonameid\" = :city_geonameid, \"photo_id\" = :photo_id, \"updated_at\" = now()"
@@ -524,9 +524,9 @@ const Charac_UpdateStr = "\"parent_id\" = :parent_id, \"order\" = :order, \"auth
 const Map_layer_InsertStr = "\"creator_user_id\", \"type\", \"url\", \"identifier\", \"min_scale\", \"max_scale\", \"start_date\", \"end_date\", \"image_format\", \"geographical_extent_geom\", \"published\", \"license\", \"license_id\", \"max_usage_date\", \"created_at\", \"updated_at\""
 const Map_layer_InsertValuesStr = ":creator_user_id, :type, :url, :identifier, :min_scale, :max_scale, :start_date, :end_date, :image_format, :geographical_extent_geom, :published, :license, :license_id, :max_usage_date, now(), now()"
 const Map_layer_UpdateStr = "\"creator_user_id\" = :creator_user_id, \"type\" = :type, \"url\" = :url, \"identifier\" = :identifier, \"min_scale\" = :min_scale, \"max_scale\" = :max_scale, \"start_date\" = :start_date, \"end_date\" = :end_date, \"image_format\" = :image_format, \"geographical_extent_geom\" = :geographical_extent_geom, \"published\" = :published, \"license\" = :license, \"license_id\" = :license_id, \"max_usage_date\" = :max_usage_date, \"updated_at\" = now()"
-const Wms_layer_tr_InsertStr = "\"name\", \"attribution\", \"copyright\", \"description\""
-const Wms_layer_tr_InsertValuesStr = ":name, :attribution, :copyright, :description"
-const Wms_layer_tr_UpdateStr = "\"name\" = :name, \"attribution\" = :attribution, \"copyright\" = :copyright, \"description\" = :description"
+const Map_layer_tr_InsertStr = "\"name\", \"attribution\", \"copyright\", \"description\""
+const Map_layer_tr_InsertValuesStr = ":name, :attribution, :copyright, :description"
+const Map_layer_tr_UpdateStr = "\"name\" = :name, \"attribution\" = :attribution, \"copyright\" = :copyright, \"description\" = :description"
 const Shapefile_InsertStr = "\"creator_user_id\", \"filename\", \"md5sum\", \"geojson\", \"geojson_with_data\", \"start_date\", \"end_date\", \"geographical_extent_geom\", \"published\", \"license\", \"license_id\", \"declared_creation_date\", \"created_at\", \"updated_at\""
 const Shapefile_InsertValuesStr = ":creator_user_id, :filename, :md5sum, :geojson, :geojson_with_data, :start_date, :end_date, :geographical_extent_geom, :published, :license, :license_id, :declared_creation_date, now(), now()"
 const Shapefile_UpdateStr = "\"creator_user_id\" = :creator_user_id, \"filename\" = :filename, \"md5sum\" = :md5sum, \"geojson\" = :geojson, \"geojson_with_data\" = :geojson_with_data, \"start_date\" = :start_date, \"end_date\" = :end_date, \"geographical_extent_geom\" = :geographical_extent_geom, \"published\" = :published, \"license\" = :license, \"license_id\" = :license_id, \"declared_creation_date\" = :declared_creation_date, \"updated_at\" = now()"
@@ -536,9 +536,9 @@ const Shapefile_tr_UpdateStr = "\"name\" = :name, \"attribution\" = :attribution
 const Project__databases_InsertStr = ""
 const Project__databases_InsertValuesStr = ""
 const Project__databases_UpdateStr = ""
-const Project__wms_map_InsertStr = ""
-const Project__wms_map_InsertValuesStr = ""
-const Project__wms_map_UpdateStr = ""
+const Project__map_layer_InsertStr = ""
+const Project__map_layer_InsertValuesStr = ""
+const Project__map_layer_UpdateStr = ""
 const Project__shapefile_InsertStr = ""
 const Project__shapefile_InsertValuesStr = ""
 const Project__shapefile_UpdateStr = ""
