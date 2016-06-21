@@ -22,6 +22,7 @@ package rest
 
 import (
 	"crypto/md5"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -54,6 +55,14 @@ func init() {
 			Json:        reflect.TypeOf(SaveShpParams{}),
 			Method:      "POST",
 		},
+		&routes.Route{
+			Path:        "/api/layers",
+			Description: "Get wms, wmts and shapefiles",
+			Func:        GetLayers,
+			Permissions: []string{},
+			Params:      reflect.TypeOf(GetLayersParams{}),
+			Method:      "GET",
+		},
 	}
 	routes.RegisterMultiple(Routes)
 }
@@ -84,10 +93,24 @@ type SaveShpParams struct {
 	}
 }
 
-// ShpToGeoJSON get shapefile and convert it to geojson
+// SaveShpLayer saves shp file on filesystem and datas into database
 func SaveShpLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	params := proute.Json.(*SaveShpParams)
+
+	// get the user
+	_user, ok := proute.Session.Get("user")
+	if !ok {
+		log.Println("SaveShpLayer: can't get user in session.", _user)
+		return
+	}
+	user, ok := _user.(model.User)
+	if !ok {
+		log.Println("Save: can't cast user.", _user)
+		return
+	}
+
+	//user.First_lang_isocode
 
 	tx, err := db.DB.Beginx()
 	if err != nil {
@@ -159,7 +182,7 @@ func SaveShpLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 		Lang_Isocode string
 		Text         string
 	}{
-		{proute.Lang1.Isocode, params.Attribution},
+		{user.First_lang_isocode, params.Attribution},
 	}
 	err = layer.SetTranslations(tx, "attribution", attribution)
 	if err != nil {
@@ -173,7 +196,7 @@ func SaveShpLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 		Lang_Isocode string
 		Text         string
 	}{
-		{proute.Lang1.Isocode, params.Copyright},
+		{user.First_lang_isocode, params.Copyright},
 	}
 	err = layer.SetTranslations(tx, "copyright", copyright)
 	if err != nil {
@@ -237,7 +260,18 @@ type SaveWmLayerParams struct {
 func SaveWmLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	params := proute.Json.(*SaveWmLayerParams)
-	fmt.Println(params)
+
+	// get the user
+	_user, ok := proute.Session.Get("user")
+	if !ok {
+		log.Println("SaveShpLayer: can't get user in session.", _user)
+		return
+	}
+	user, ok := _user.(model.User)
+	if !ok {
+		log.Println("Save: can't cast user.", _user)
+		return
+	}
 
 	tx, err := db.DB.Beginx()
 	if err != nil {
@@ -278,7 +312,7 @@ func SaveWmLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		Lang_Isocode string
 		Text         string
 	}{
-		{proute.Lang1.Isocode, params.Attribution},
+		{user.First_lang_isocode, params.Attribution},
 	}
 	err = layer.SetTranslations(tx, "attribution", attribution)
 	if err != nil {
@@ -292,7 +326,7 @@ func SaveWmLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		Lang_Isocode string
 		Text         string
 	}{
-		{proute.Lang1.Isocode, params.Copyright},
+		{user.First_lang_isocode, params.Copyright},
 	}
 	err = layer.SetTranslations(tx, "copyright", copyright)
 	if err != nil {
@@ -321,4 +355,127 @@ func SaveWmLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	}
 
 	tx.Commit()
+}
+
+type GetLayersParams struct {
+	Type      string
+	Published bool
+	Author    int
+	Iso_code  string
+}
+
+type LayerInfos struct {
+	Id                       int       `json:"id"`
+	Geographical_extent_geom string    `json:"geographical_extent_geom"`
+	Creator_user_id          int       `json:"creator_user_id"`
+	Published                bool      `json:"published"`
+	Description              string    `json:"description"`
+	Description_en           string    `json:"description_en"`
+	Created_at               time.Time `json:"created_at"`
+	Author                   string    `json:"author"`
+	Type                     string    `json:"type"`
+	Start_date               int       `json:"start_date"`
+	End_date                 int       `json:"end_date"`
+	Min_scale                int       `json:"min_scale"`
+	Max_scale                int       `json:"max_scale"`
+}
+
+// GetLayers returns layers list
+func GetLayers(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+
+	params := proute.Params.(*GetLayersParams)
+
+	var err error
+
+	// get the user
+	_user, ok := proute.Session.Get("user")
+	if !ok {
+		log.Println("GetLayers: can't get user in session.", _user)
+		return
+	}
+	user, ok := _user.(model.User)
+	if !ok {
+		log.Println("GetLayers: can't cast user.", _user)
+		return
+	}
+
+	params.Iso_code = user.First_lang_isocode
+
+	// user.First_lang_isocode
+
+	var result = []LayerInfos{}
+
+	if params.Type == "" || params.Type == "shp" {
+		infos := &[]LayerInfos{}
+		infos, err = getShpLayers(params)
+		if err != nil {
+			http.Error(w, "Error getting shp layers list: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+		result = append(result, *infos...)
+	}
+
+	if params.Type == "" || params.Type != "shp" {
+		infos := &[]LayerInfos{}
+		infos, err = getWmLayers(params)
+		if err != nil {
+			http.Error(w, "Error getting shp layers list: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+		result = append(result, *infos...)
+	}
+
+	l, _ := json.Marshal(result)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(l)
+	return
+
+}
+
+func getShpLayers(params *GetLayersParams) (result *[]LayerInfos, err error) {
+	fmt.Println(params)
+	q := "SELECT m.id, m.start_date, m.end_date, ST_AsGeoJSON(m.geographical_extent_geom) as geographical_extent_geom, m.published, m.created_at, m.creator_user_id, u.firstname || ' ' || u.lastname as author, 'shp' AS type, t.description, (SELECT description FROM shapefile_tr WHERE shapefile_id = m.id AND lang_isocode = :iso_code) AS description_en FROM shapefile m LEFT JOIN \"user\" u ON m.creator_user_id = u.id LEFT JOIN shapefile_tr t ON m.id = t.shapefile_id WHERE t.lang_isocode = :iso_code"
+
+	result = &[]LayerInfos{}
+
+	if params.Author > 0 {
+		q += " AND u.id = :author"
+	}
+
+	if params.Published {
+		q += " AND u.published = :published"
+	}
+
+	nstmt, err := db.DB.PrepareNamed(q)
+	if err != nil {
+		return
+	}
+	err = nstmt.Select(result, params)
+	return
+}
+
+func getWmLayers(params *GetLayersParams) (result *[]LayerInfos, err error) {
+
+	result = &[]LayerInfos{}
+
+	q := "SELECT m.id, m.type, m.start_date, m.end_date, m.min_scale, m.max_scale, ST_AsGeoJSON(m.geographical_extent_geom) as geographical_extent_geom, m.published, m.created_at, m.creator_user_id, u.firstname || ' ' || u.lastname as author, (SELECT description FROM map_layer_tr WHERE map_layer_id = m.id AND lang_isocode = :iso_code) AS description_en  FROM map_layer m LEFT JOIN \"user\" u ON m.creator_user_id = u.id LEFT JOIN map_layer_tr t ON m.id = t.map_layer_id WHERE t.lang_isocode = :iso_code"
+
+	if params.Author > 0 {
+		q += " AND u.id = :author"
+	}
+
+	if params.Published {
+		q += " AND u.published = :published"
+	}
+
+	if params.Type != "" {
+		q += " AND u.type= :type"
+	}
+
+	nstmt, err := db.DB.PrepareNamed(q)
+	if err != nil {
+		return
+	}
+	err = nstmt.Select(result, params)
+	return
 }
