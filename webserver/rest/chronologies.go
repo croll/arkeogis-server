@@ -73,6 +73,16 @@ func init() {
 			Method:      "GET",
 			Params:      reflect.TypeOf(ChronologyGetParams{}),
 		},
+		&routes.Route{
+			Path:        "/api/chronologies/{id:[0-9]+}",
+			Description: "Delete a chronologie",
+			Func:        ChronologiesDelete,
+			Method:      "DELETE",
+			Permissions: []string{
+				"adminusers",
+			},
+			Params: reflect.TypeOf(ChronologyGetParams{}),
+		},
 	}
 	routes.RegisterMultiple(Routes)
 }
@@ -567,4 +577,115 @@ func ChronologiesGetTree(w http.ResponseWriter, r *http.Request, proute routes.P
 	//log.Println("result: ", string(j))
 	w.Write(j)
 
+}
+
+func chronologiesDeleteRecurse(chrono ChronologyTreeStruct, tx *sqlx.Tx) error {
+	var err error
+	for _, chrono := range chrono.Content {
+		err = chronologiesDeleteRecurse(chrono, tx)
+		if err != nil {
+			return err
+		}
+	}
+
+	_, err = tx.Exec("DELETE FROM chronology_tr WHERE chronology_id = " + strconv.Itoa(chrono.Id))
+	if err != nil {
+		return err
+	}
+	_, err = tx.Exec("DELETE FROM chronology WHERE id = " + strconv.Itoa(chrono.Id))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func ChronologiesDelete(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+	params := proute.Params.(*ChronologyGetParams)
+
+	// transaction begin...
+	tx, err := db.DB.Beginx()
+	if err != nil {
+		userSqlError(w, err)
+		return
+	}
+
+	// get the user
+	_user, ok := proute.Session.Get("user")
+	if !ok {
+		log.Println("ChronologiesUpdate: can't get user in session...", _user)
+		_ = tx.Rollback()
+		return
+	}
+	user, ok := _user.(model.User)
+	if !ok {
+		log.Println("ChronologiesUpdate: can't cast user...", _user)
+		_ = tx.Rollback()
+		return
+	}
+	err = user.Get(tx)
+	user.Password = "" // immediatly erase password field, we don't need it
+	if err != nil {
+		log.Println("ChronologiesUpdate: can't load user...", _user)
+		userSqlError(w, err)
+		_ = tx.Rollback()
+		return
+	}
+
+	// get the full chronologie tree
+	answer, err := chronologiesGetTree(w, tx, params.Id, user)
+
+	// delete chronology_root
+	err = answer.Chronology_root.Delete(tx)
+	if err != nil {
+		log.Println("delete Chronology root", err)
+		userSqlError(w, err)
+		_ = tx.Rollback()
+		return
+	}
+
+	// delete admin gruop in user__group...
+	_, err = tx.Exec("DELETE FROM user__group WHERE group_id = " + strconv.Itoa(answer.Admin_group_id))
+	if err != nil {
+		log.Println("delete admin users group failed", err)
+		userSqlError(w, err)
+		_ = tx.Rollback()
+		return
+	}
+
+	// delete admin gruop in group_tr...
+	_, err = tx.Exec("DELETE FROM \"group_tr\" WHERE group_id = " + strconv.Itoa(answer.Admin_group_id))
+	if err != nil {
+		log.Println("delete admin group_tr failed", err)
+		userSqlError(w, err)
+		_ = tx.Rollback()
+		return
+	}
+
+	// delete admin gruop in group...
+	_, err = tx.Exec("DELETE FROM \"group\" WHERE id = " + strconv.Itoa(answer.Admin_group_id))
+	if err != nil {
+		log.Println("delete admin group failed", err)
+		userSqlError(w, err)
+		_ = tx.Rollback()
+		return
+	}
+
+	// recursively delete chronology...
+	err = chronologiesDeleteRecurse(answer.ChronologyTreeStruct, tx)
+	if err != nil {
+		log.Println("chronologiesDeleteRecurse failed", err)
+		userSqlError(w, err)
+		_ = tx.Rollback()
+		return
+	}
+
+	// commit...
+	err = tx.Commit()
+	if err != nil {
+		log.Println("commit failed")
+		userSqlError(w, err)
+		_ = tx.Rollback()
+		return
+	}
 }
