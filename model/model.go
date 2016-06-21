@@ -243,7 +243,7 @@ type License struct {
 
 
 type Map_layer struct {
-	Id	int	`db:"id" json:"id"`
+	Id	int	`db:"id" json:"id"`	// Map_layer__authors.Map_layer_id
 	Creator_user_id	int	`db:"creator_user_id" json:"creator_user_id"`	// User.Id
 	Type	string	`db:"type" json:"type"`
 	Url	sql.NullString	`db:"url" json:"url" min:"1" error:"WMS_MAP.FIELD_URL.T_CHECK_MANDATORY" max:"255" error:"WMS_MAP.FIELD_URL.T_CHECK_INCORRECT"`
@@ -260,6 +260,12 @@ type Map_layer struct {
 	Max_usage_date	time.Time	`db:"max_usage_date" json:"max_usage_date"`
 	Created_at	time.Time	`db:"created_at" json:"created_at"`
 	Updated_at	time.Time	`db:"updated_at" json:"updated_at"`
+}
+
+
+type Map_layer__authors struct {
+	User_id	int	`db:"user_id" json:"user_id"`	// User.Id
+	Map_layer_id	int	`db:"map_layer_id" json:"map_layer_id"`
 }
 
 
@@ -362,7 +368,7 @@ type Shapefile struct {
 }
 
 
-type Shapefile_authors struct {
+type Shapefile__authors struct {
 	User_id	int	`db:"user_id" json:"user_id"`	// User.Id
 	Shapefile_id	int	`db:"shapefile_id" json:"shapefile_id"`	// Shapefile.Id
 }
@@ -590,9 +596,9 @@ const Database__country_UpdateStr = ""
 const Database_handle_InsertStr = "\"database_id\", \"import_id\", \"identifier\", \"url\", \"declared_creation_date\", \"created_at\""
 const Database_handle_InsertValuesStr = ":database_id, :import_id, :identifier, :url, :declared_creation_date, now()"
 const Database_handle_UpdateStr = "\"database_id\" = :database_id, \"import_id\" = :import_id, \"identifier\" = :identifier, \"url\" = :url, \"declared_creation_date\" = :declared_creation_date"
-const Shapefile_authors_InsertStr = ""
-const Shapefile_authors_InsertValuesStr = ""
-const Shapefile_authors_UpdateStr = ""
+const Shapefile__authors_InsertStr = ""
+const Shapefile__authors_InsertValuesStr = ""
+const Shapefile__authors_UpdateStr = ""
 const Continent_tr_InsertStr = "\"name\", \"name_ascii\""
 const Continent_tr_InsertValuesStr = ":name, :name_ascii"
 const Continent_tr_UpdateStr = "\"name\" = :name, \"name_ascii\" = :name_ascii"
@@ -620,3 +626,6 @@ const Charac_root_UpdateStr = "\"admin_group_id\" = :admin_group_id"
 const Chronology_root_InsertStr = "\"admin_group_id\", \"author_user_id\", \"credits\", \"active\", \"geom\""
 const Chronology_root_InsertValuesStr = ":admin_group_id, :author_user_id, :credits, :active, :geom"
 const Chronology_root_UpdateStr = "\"admin_group_id\" = :admin_group_id, \"author_user_id\" = :author_user_id, \"credits\" = :credits, \"active\" = :active, \"geom\" = :geom"
+const Map_layer__authors_InsertStr = ""
+const Map_layer__authors_InsertValuesStr = ""
+const Map_layer__authors_UpdateStr = ""

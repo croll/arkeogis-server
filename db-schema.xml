@@ -549,6 +549,7 @@
 <table x="34" y="755" name="map_layer">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
+<relation table="map_layer__authors" row="map_layer_id" />
 </row>
 <row name="creator_user_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
@@ -605,7 +606,7 @@
 <part>id</part>
 </key>
 </table>
-<table x="40" y="1183" name="map_layer_tr">
+<table x="36" y="1280" name="map_layer_tr">
 <row name="map_layer_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="map_layer" row="id" />
@@ -685,7 +686,7 @@
 <part>id</part>
 </key>
 </table>
-<table x="264" y="1189" name="shapefile_tr">
+<table x="233" y="1285" name="shapefile_tr">
 <row name="shapefile_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="shapefile" row="id" />
@@ -792,7 +793,7 @@
 <part>id_project</part>
 </key>
 </table>
-<table x="208" y="1387" name="group">
+<table x="208" y="1464" name="group">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
@@ -809,7 +810,7 @@
 <part>id</part>
 </key>
 </table>
-<table x="366" y="1539" name="permission">
+<table x="370" y="1630" name="permission">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
@@ -826,7 +827,7 @@
 <part>id</part>
 </key>
 </table>
-<table x="114" y="1544" name="group_tr">
+<table x="109" y="1598" name="group_tr">
 <row name="group_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="group" row="id" />
@@ -866,7 +867,7 @@
 <part>lang_isocode</part>
 </key>
 </table>
-<table x="22" y="1392" name="user__group">
+<table x="24" y="1459" name="user__group">
 <row name="group_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="group" row="id" />
@@ -880,7 +881,7 @@
 <part>user_id</part>
 </key>
 </table>
-<table x="355" y="1391" name="group__permission">
+<table x="364" y="1483" name="group__permission">
 <row name="group_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="group" row="id" />
@@ -1065,7 +1066,7 @@
 <part>id</part>
 </key>
 </table>
-<table x="467" y="680" name="shapefile_authors">
+<table x="266" y="1195" name="shapefile__authors">
 <row name="user_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="user" row="id" />
@@ -1231,6 +1232,19 @@
 </row>
 <key type="PRIMARY" name="">
 <part>root_chronology_id</part>
+</key>
+</table>
+<table x="43" y="1192" name="map_layer__authors">
+<row name="user_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="user" row="id" />
+</row>
+<row name="map_layer_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+</row>
+<key type="PRIMARY" name="">
+<part>user_id</part>
+<part>map_layer_id</part>
 </key>
 </table>
 </sql>
