@@ -458,7 +458,7 @@ type User_preferences struct {
 
 
 type Wms_layer_tr struct {
-	Wms_map_id	int	`db:"wms_map_id" json:"wms_map_id"`	// Map_layer.Id
+	Map_layer_id	int	`db:"map_layer_id" json:"map_layer_id"`	// Map_layer.Id
 	Lang_isocode	string	`db:"lang_isocode" json:"lang_isocode"`	// Lang.Isocode
 	Name	string	`db:"name" json:"name" min:"1" error:"WMS_MAP.FIELD_NAME.T_CHECK_MANDATORY" max:"255" error:"WMS_MAP_TR.FIELD_NAME.T_CHECK_INCORRECT"`
 	Attribution	string	`db:"attribution" json:"attribution"`

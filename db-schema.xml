@@ -606,7 +606,7 @@
 </key>
 </table>
 <table x="40" y="1183" name="wms_layer_tr">
-<row name="wms_map_id" null="0" autoincrement="0">
+<row name="map_layer_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="map_layer" row="id" />
 </row>
@@ -628,7 +628,7 @@
 <datatype>TEXT</datatype>
 </row>
 <key type="PRIMARY" name="">
-<part>wms_map_id</part>
+<part>map_layer_id</part>
 <part>lang_isocode</part>
 </key>
 </table>
