@@ -67,7 +67,7 @@ func (u *Chronology) Delete(tx *sqlx.Tx) error {
 // Childs return Chronology childs
 func (u *Chronology) Childs(tx *sqlx.Tx) ([]Chronology, error) {
 	answer := []Chronology{}
-	var q = "SELECT * FROM \"chronology\" WHERE parent_id=:id"
+	var q = "SELECT * FROM \"chronology\" WHERE parent_id=:id order by id"
 	stmt, err := tx.PrepareNamed(q)
 	if err != nil {
 		return answer, err
