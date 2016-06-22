@@ -237,10 +237,10 @@ func handledRoute(myroute *Route, rw http.ResponseWriter, r *http.Request) {
 		Isocode: "fr",
 	}
 
-	if _lang1, err := r.Cookie("arkeogis_lang_1"); err == nil {
+	if _lang1, err := r.Cookie("arkeogis_user_lang_1"); err == nil {
 		lang1.Isocode = _lang1.Value
 	}
-	if _lang2, err := r.Cookie("arkeogis_lang_2"); err == nil {
+	if _lang2, err := r.Cookie("arkeogis_user_lang_2"); err == nil {
 		lang2.Isocode = _lang2.Value
 	}
 
