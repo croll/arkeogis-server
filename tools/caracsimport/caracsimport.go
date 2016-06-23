@@ -66,6 +66,14 @@ func main() {
 	if _, err := db.DB.Exec("TRUNCATE TABLE charac CASCADE"); err != nil {
 		log.Fatalln(err)
 	}
+	// reset id
+	if _, err := db.DB.Exec("SELECT pg_catalog.setval('charac_id_seq', 1, false)"); err != nil {
+		log.Fatalln(err)
+	}
+	// insert default 0
+	if _, err := db.DB.Exec("insert into charac values (0, 0, 0, 0, now(), now())"); err != nil {
+		log.Fatalln(err)
+	}
 
 	for _, f := range []string{"../datas/csv/Furniture_fr-de-en-es.csv", "../datas/csv/Landscape_fr-de-en-es.csv", "../datas/csv/Production_fr-de-en-es.csv", "../datas/csv/Realestate_fr-de-en-es.csv"} {
 		err := processFile(f)
@@ -114,6 +122,11 @@ func processFile(filename string) error {
 	if err != nil {
 		return err
 	}
+	// Insert root in charac_root
+	_, err = tx.Exec("INSERT INTO charac_root values ($1, $2)", rootID, 0)
+	if err != nil {
+		return err
+	}
 	for _, langIsocode := range langsByIso {
 		_, err = tx.Exec("INSERT INTO charac_tr (lang_isocode, charac_id, name, description) VALUES ($1, $2, $3, '')", langIsocode, rootID, caracsRootByLang[rootName][langIsocode])
 		if err != nil {
@@ -122,6 +135,7 @@ func processFile(filename string) error {
 	}
 
 	// For each line
+	order := 0
 	for _, line := range lines {
 		// For each record
 		for lvl, record := range line {
@@ -142,12 +156,18 @@ func processFile(filename string) error {
 				parentId = parentsIDs[lvl]
 			}
 			currentLevel = lvl
+
+			// reset order if level change
+			if currentLevel != lvl {
+				order = 0
+			}
+
 			// Split each record to get label for each lang
 			for i, label := range strings.Split(record, "#") {
 				l := strings.TrimSpace(label)
 				// Insert charac once
 				if i == 0 {
-					err := tx.QueryRow("INSERT INTO charac (parent_id, \"order\", author_user_id, created_at, updated_at) VALUES ($1, $2, $3, now(), now()) RETURNING id", parentId, 0, 0).Scan(&lastInsertId)
+					err := tx.QueryRow("INSERT INTO charac (parent_id, \"order\", author_user_id, created_at, updated_at) VALUES ($1, $2, $3, now(), now()) RETURNING id", parentId, order, 0).Scan(&lastInsertId)
 					if err != nil {
 						return err
 					}
@@ -158,7 +178,7 @@ func processFile(filename string) error {
 				}
 			}
 		}
-
+		order++
 	}
 	if err := tx.Commit(); err != nil {
 		return err
