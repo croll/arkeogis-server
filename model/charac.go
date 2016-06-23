@@ -23,6 +23,7 @@ package model
 
 import (
 	"fmt"
+	"log"
 
 	"strings"
 
@@ -66,6 +67,99 @@ func (u *Charac) Delete(tx *sqlx.Tx) error {
 	_, err := tx.NamedExec("DELETE FROM \"charac\" WHERE id=:id", u)
 	return err
 }
+
+// Childs return Charac childs
+func (u *Charac) Childs(tx *sqlx.Tx) ([]Charac, error) {
+	answer := []Charac{}
+	var q = "SELECT * FROM \"charac\" WHERE parent_id=:id order by \"order\""
+	stmt, err := tx.PrepareNamed(q)
+	if err != nil {
+		return answer, err
+	}
+	err = stmt.Select(&answer, u)
+	stmt.Close()
+	return answer, err
+}
+
+/*
+ * Charac_root Object
+ */
+
+// Get the charac_root from the database
+func (u *Charac_root) Get(tx *sqlx.Tx) error {
+	var q = "SELECT root_charac_id, admin_group_id FROM \"charac_root\" WHERE root_charac_id=:root_charac_id"
+	stmt, err := tx.PrepareNamed(q)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	return stmt.Get(u, u)
+}
+
+// Create the charac_root by inserting it in the database
+func (u *Charac_root) Create(tx *sqlx.Tx) error {
+	//stmt, err := tx.PrepareNamed("INSERT INTO \"charac_root\" (" + Charac_root_InsertStr + ", root_charac_id) VALUES (" + Charac_root_InsertValuesStr + ", :root_charac_id) RETURNING root_charac_id")
+	stmt, err := tx.PrepareNamed("INSERT INTO \"charac_root\" (\"admin_group_id\", root_charac_id) VALUES (:admin_group_id, :root_charac_id) RETURNING root_charac_id")
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	return stmt.Get(&u.Root_charac_id, u)
+}
+
+// Update the charac_root in the database
+func (u *Charac_root) Update(tx *sqlx.Tx) error {
+	_, err := tx.NamedExec("UPDATE \"charac_root\" SET \"admin_group_id\" = :admin_group_id WHERE root_charac_id=:root_charac_id", u)
+	return err
+}
+
+// Delete the charac_root from the database
+func (u *Charac_root) Delete(tx *sqlx.Tx) error {
+	_, err := tx.NamedExec("DELETE FROM \"charac_root\" WHERE root_charac_id=:root_charac_id", u)
+	return err
+}
+
+/*
+ * Charac_tr Object
+ */
+
+// Get the charac_tr from the database
+func (u *Charac_tr) Get(tx *sqlx.Tx) error {
+	var q = "SELECT * FROM \"charac_tr\" WHERE charac_id=:charac_id"
+	stmt, err := tx.PrepareNamed(q)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	return stmt.Get(u, u)
+}
+
+// Create the charac_tr by inserting it in the database
+func (u *Charac_tr) Create(tx *sqlx.Tx) error {
+	log.Println("saving : ", u)
+	stmt, err := tx.PrepareNamed("INSERT INTO \"charac_tr\" (" + Charac_tr_InsertStr + ", charac_id, lang_isocode) VALUES (" + Charac_tr_InsertValuesStr + ", :charac_id, :lang_isocode) RETURNING charac_id")
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	return stmt.Get(&u.Charac_id, u)
+}
+
+// Update the charac_tr in the database
+func (u *Charac_tr) Update(tx *sqlx.Tx) error {
+	_, err := tx.NamedExec("UPDATE \"charac_tr\" SET "+Charac_tr_UpdateStr+" WHERE charac_id=:charac_id AND lang_isocode=:lang_isocode", u)
+	return err
+}
+
+// Delete the charac_tr from the database
+func (u *Charac_tr) Delete(tx *sqlx.Tx) error {
+	_, err := tx.NamedExec("DELETE FROM \"charac_tr\" WHERE charac_id=:charac_id", u)
+	return err
+}
+
+/*
+ * some utils on characs
+ */
 
 func GetCharacPathsFromLang(name string, lang string) (caracs map[string]int, err error) {
 	caracs = map[string]int{}

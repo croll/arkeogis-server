@@ -2,8 +2,8 @@
  * Copyright (C) 2015-2016 CROLL SAS
  *
  * Authors :
- *  Christophe Beveraggi <beve@croll.fr>
  *  Nicolas Dimitrijevic <nicolas@croll.fr>
+ *  Christophe Beveraggi <beve@croll.fr>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,6 +24,9 @@ package rest
 import (
 	"encoding/json"
 	"fmt"
+	"log"
+	"reflect"
+	"strconv"
 
 	"net/http"
 
@@ -31,16 +34,54 @@ import (
 	"github.com/croll/arkeogis-server/model"
 
 	routes "github.com/croll/arkeogis-server/webserver/routes"
+	"github.com/jmoiron/sqlx"
 	sqlx_types "github.com/jmoiron/sqlx/types"
 )
+
+type CharacGetParams struct {
+	Id int `min:"1" error:"Charac Id is mandatory"`
+}
 
 func init() {
 	Routes := []*routes.Route{
 		&routes.Route{
-			Path:        "/api/characs",
+			Path:        "/api/characs/flat",
 			Func:        CharacsAll,
 			Description: "Get all characs in all languages",
 			Method:      "GET",
+		},
+		&routes.Route{
+			Path:        "/api/characs",
+			Func:        CharacsRoots,
+			Description: "Get all root characs in all languages",
+			Method:      "GET",
+		},
+		&routes.Route{
+			Path:        "/api/characs",
+			Description: "Create/Update a characlogie",
+			Func:        CharacsUpdate,
+			Method:      "POST",
+			Json:        reflect.TypeOf(CharacsUpdateStruct{}),
+			Permissions: []string{
+				"adminusers",
+			},
+		},
+		&routes.Route{
+			Path:        "/api/characs/{id:[0-9]+}",
+			Func:        CharacsGetTree,
+			Description: "Get a charac in all languages",
+			Method:      "GET",
+			Params:      reflect.TypeOf(CharacGetParams{}),
+		},
+		&routes.Route{
+			Path:        "/api/characs/{id:[0-9]+}",
+			Description: "Delete a characlogie",
+			Func:        CharacsDelete,
+			Method:      "DELETE",
+			Permissions: []string{
+				"adminusers",
+			},
+			Params: reflect.TypeOf(CharacGetParams{}),
 		},
 	}
 	routes.RegisterMultiple(Routes)
@@ -69,4 +110,632 @@ func CharacsAll(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	j, err := json.Marshal(characs)
 	w.Write(j)
+}
+
+// CharacsRoots write all root characs in all languages
+func CharacsRoots(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+	type row struct {
+		model.Charac_root
+		model.Charac
+		Name        map[string]string `json:"name"`
+		Description map[string]string `json:"description"`
+		//UsersInGroup []model.User      `json:"users_in_group" ignore:"true"` // read-only, used to display users of the group
+		Author model.User `json:"author" ignore:"true"` // read-only, used to display users of the group
+	}
+
+	characs := []*row{}
+
+	// transaction begin...
+	tx, err := db.DB.Beginx()
+	if err != nil {
+		userSqlError(w, err)
+		return
+	}
+
+	// load all roots
+	err = db.DB.Select(&characs, "SELECT * FROM charac_root")
+	if err != nil {
+		userSqlError(w, err)
+		_ = tx.Rollback()
+		return
+	}
+
+	// load all root characs
+	for _, charac := range characs {
+		charac.Charac.Id = charac.Charac_root.Root_charac_id
+		err = charac.Charac.Get(tx)
+		if err != nil {
+			userSqlError(w, err)
+			_ = tx.Rollback()
+			return
+		}
+
+		// load translations
+		tr := []model.Charac_tr{}
+		err = tx.Select(&tr, "SELECT * FROM charac_tr WHERE charac_id = "+strconv.Itoa(charac.Charac.Id))
+		if err != nil {
+			userSqlError(w, err)
+			_ = tx.Rollback()
+			return
+		}
+		charac.Name = model.MapSqlTranslations(tr, "Lang_isocode", "Name")
+		charac.Description = model.MapSqlTranslations(tr, "Lang_isocode", "Description")
+
+		// get the author user
+		/*		charac.Author.Id = charac.Charac_root.Author_user_id
+				err = charac.Author.Get(tx)
+				charac.Author.Password = ""
+				if err != nil {
+					userSqlError(w, err)
+					_ = tx.Rollback()
+					return
+				}*/ // no author user in characs vs chrono
+	}
+
+	j, err := json.Marshal(characs)
+	w.Write(j)
+}
+
+type CharacTreeStruct struct {
+	model.Charac
+	Name        map[string]string  `json:"name"`
+	Description map[string]string  `json:"description"`
+	Content     []CharacTreeStruct `json:"content"`
+}
+
+// CharacsUpdateStruct structure (json)
+type CharacsUpdateStruct struct {
+	model.Charac_root
+	CharacTreeStruct
+	UsersInGroup []model.User `json:"users_in_group" ignore:"true"` // read-only, used to display users of the group
+	Author       model.User   `json:"author" ignore:"true"`         // read-only, used to display users of the group
+}
+
+// update charac recursively
+func setCharacRecursive(tx *sqlx.Tx, charac *CharacTreeStruct, parent *CharacTreeStruct) error {
+	var err error = nil
+
+	// if we are the root, we have no parent id
+	if parent != nil {
+		charac.Parent_id = parent.Id
+	} else {
+		charac.Parent_id = 0
+	}
+
+	// save charac...
+	if charac.Id > 0 {
+		err = charac.Update(tx)
+		if err != nil {
+			return err
+		}
+	} else {
+		err = charac.Create(tx)
+		if err != nil {
+			return err
+		}
+	}
+
+	//log.Println("c: ", charac)
+
+	// delete any translations
+	_, err = tx.Exec("DELETE FROM charac_tr WHERE charac_id = $1", charac.Id)
+	if err != nil {
+		return err
+	}
+
+	// create a map of translations for name...
+	tr := map[string]*model.Charac_tr{}
+	for isocode, name := range charac.Name {
+		tr[isocode] = &model.Charac_tr{
+			Charac_id:    charac.Id,
+			Lang_isocode: isocode,
+			Name:         name,
+		}
+	}
+
+	// continue to update this map with descriptions...
+	for isocode, description := range charac.Description {
+		m, ok := tr[isocode]
+		if ok {
+			m.Description = description
+		} else {
+			tr[isocode] = &model.Charac_tr{
+				Charac_id:    charac.Id,
+				Lang_isocode: isocode,
+				Description:  description,
+			}
+		}
+	}
+
+	// now insert translations rows in database...
+	for _, m := range tr {
+		err = m.Create(tx)
+		if err != nil {
+			return err
+		}
+	}
+
+	// recursively call to subcontents...
+	ids := []int{} // this array will be usefull to delete others charac of this sub level that does not exists anymore
+	for _, sub := range charac.Content {
+		err = setCharacRecursive(tx, &sub, charac)
+		if err != nil {
+			return err
+		}
+		ids = append(ids, sub.Charac.Id)
+	}
+
+	// search any charac that should be deleted
+	ids_to_delete := []int{} // the array of characs id to delete
+	err = tx.Select(&ids_to_delete, "SELECT id FROM charac WHERE id NOT IN ("+model.IntJoin(ids, true)+") AND parent_id = "+strconv.Itoa(charac.Charac.Id))
+	if err != nil {
+		return err
+	}
+
+	// delete translations of the characs that should be deleted
+	_, err = tx.Exec("DELETE FROM charac_tr WHERE charac_id IN (" + model.IntJoin(ids_to_delete, true) + ")")
+	if err != nil {
+		return err
+	}
+
+	// delete characs itselfs...
+	_, err = tx.Exec("DELETE FROM charac WHERE id IN (" + model.IntJoin(ids_to_delete, true) + ")")
+	if err != nil {
+		return err
+	}
+
+	return err
+}
+
+// CharacsUpdate Create/Update a charac
+func CharacsUpdate(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+
+	// get the post
+	c := proute.Json.(*CharacsUpdateStruct)
+
+	// transaction begin...
+	tx, err := db.DB.Beginx()
+	if err != nil {
+		userSqlError(w, err)
+		return
+	}
+
+	// get the user
+	_user, ok := proute.Session.Get("user")
+	if !ok {
+		log.Println("CharacsUpdate: can't get user in session...", _user)
+		_ = tx.Rollback()
+		return
+	}
+	user, ok := _user.(model.User)
+	if !ok {
+		log.Println("CharacsUpdate: can't cast user...", _user)
+		_ = tx.Rollback()
+		return
+	}
+	err = user.Get(tx)
+	user.Password = "" // immediatly erase password field, we don't need it
+	if err != nil {
+		log.Println("CharacsUpdate: can't load user...", _user)
+		userSqlError(w, err)
+		_ = tx.Rollback()
+		return
+	}
+
+	// boolean create, true if we are creating a totaly new charac
+	var create bool
+	if c.Charac.Id > 0 {
+		create = false
+		// @TODO: check that you are in group of this charac when updating one
+	} else {
+		create = true
+	}
+
+	// save recursively this charac
+	err = setCharacRecursive(tx, &c.CharacTreeStruct, nil)
+	if err != nil {
+		userSqlError(w, err)
+		_ = tx.Rollback()
+		return
+	}
+
+	//log.Println("geom: ", c.Charac_root.Geom)
+
+	// save the charac_root row, but search/create it's group first
+	c.Charac_root.Root_charac_id = c.Charac.Id
+	if create {
+		// when creating, we also must create it's working group
+		group := model.Group{
+			Type: "charac",
+		}
+		err = group.Create(tx)
+		if err != nil {
+			userSqlError(w, err)
+			_ = tx.Rollback()
+			return
+		}
+
+		// also save group name in langs...
+		for isocode, name := range c.CharacTreeStruct.Name {
+			group_tr := model.Group_tr{
+				Group_id:     group.Id,
+				Lang_isocode: isocode,
+				Name:         name,
+			}
+			err = group_tr.Create(tx)
+		}
+
+		// create the charac root
+		c.Charac_root.Admin_group_id = group.Id
+		err = c.Charac_root.Create(tx)
+		if err != nil {
+			userSqlError(w, err)
+			_ = tx.Rollback()
+			return
+		}
+
+	} else {
+		// search the characroot to verify permissions
+		characroot := model.Charac_root{
+			Root_charac_id: c.Charac.Id,
+		}
+		err = characroot.Get(tx)
+		if err != nil {
+			userSqlError(w, err)
+			_ = tx.Rollback()
+			return
+		}
+
+		// take the group
+		group := model.Group{
+			Id: characroot.Admin_group_id,
+		}
+		err = group.Get(tx)
+		if err != nil {
+			userSqlError(w, err)
+			_ = tx.Rollback()
+			return
+		}
+
+		// update translations of the group
+		_, err = tx.Exec("DELETE FROM group_tr WHERE group_id = " + strconv.Itoa(group.Id))
+		if err != nil {
+			userSqlError(w, err)
+			_ = tx.Rollback()
+			return
+		}
+		for isocode, name := range c.CharacTreeStruct.Name {
+			group_tr := model.Group_tr{
+				Group_id:     group.Id,
+				Lang_isocode: isocode,
+				Name:         name,
+			}
+			err = group_tr.Create(tx)
+		}
+
+		// check that the user is in the group
+		var ok bool
+		ok, err = user.HaveGroups(tx, group)
+		if err != nil {
+			userSqlError(w, err)
+			_ = tx.Rollback()
+			return
+		}
+
+		if !ok {
+			/*
+				routes.ServerError(w, 403, "unauthorized")
+				_ = tx.Rollback()
+				return
+			*/
+		}
+
+		// only theses fields can be modified
+		//characroot.Credits = c.Charac_root.Credits
+		//characroot.Active = c.Charac_root.Active
+		//characroot.Geom = c.Charac_root.Geom
+		//characroot.Author_user_id = c.Charac_root.Author_user_id
+		//characroot.Admin_group_id = c.Charac_root.Admin_group_id
+
+		err = characroot.Update(tx)
+		if err != nil {
+			log.Println("characroot update failed")
+			userSqlError(w, err)
+			_ = tx.Rollback()
+			return
+		}
+	}
+
+	answer, err := characsGetTree(w, tx, c.Id, user)
+
+	// commit...
+	err = tx.Commit()
+	if err != nil {
+		log.Println("commit failed")
+		userSqlError(w, err)
+		_ = tx.Rollback()
+		return
+	}
+
+	j, err := json.Marshal(answer)
+	if err != nil {
+		log.Println("marshal failed: ", err)
+	}
+	//log.Println("result: ", string(j))
+	w.Write(j)
+}
+
+/*
+type CharacTreeStruct struct {
+	model.Charac
+	Name        map[string]string      `json:"name"`
+	Description map[string]string      `json:"description"`
+	Content     []CharacTreeStruct `json:"content"`
+}
+
+// CharacsUpdateStruct structure (json)
+type CharacsUpdateStruct struct {
+	model.Charac_root
+	CharacTreeStruct
+	UsersInGroup []model.User `json:"users_in_group"` // read-only, used to display users of the group
+}
+*/
+
+func getCharacRecursive(tx *sqlx.Tx, charac *CharacTreeStruct) error {
+	var err error = nil
+
+	// load translations
+	tr := []model.Charac_tr{}
+	err = tx.Select(&tr, "SELECT * FROM charac_tr WHERE charac_id = "+strconv.Itoa(charac.Id))
+	if err != nil {
+		return err
+	}
+	charac.Name = model.MapSqlTranslations(tr, "Lang_isocode", "Name")
+	charac.Description = model.MapSqlTranslations(tr, "Lang_isocode", "Description")
+
+	// get the childs of this charac from the db
+	childs, err := charac.Charac.Childs(tx)
+	if err != nil {
+		return err
+	}
+
+	// recurse
+	charac.Content = make([]CharacTreeStruct, len(childs))
+	for i, child := range childs {
+		charac.Content[i].Charac = child
+		err = getCharacRecursive(tx, &charac.Content[i])
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func characsGetTree(w http.ResponseWriter, tx *sqlx.Tx, id int, user model.User) (answer *CharacsUpdateStruct, err error) {
+
+	// answer structure that will be printed when everything is done
+	answer = &CharacsUpdateStruct{}
+
+	// get the charac_root row
+	answer.Charac_root.Root_charac_id = id
+	err = answer.Charac_root.Get(tx)
+	if err != nil {
+		userSqlError(w, err)
+		_ = tx.Rollback()
+		return nil, err
+	}
+
+	// get the charac (root)
+	answer.Charac.Id = id
+	err = answer.Charac.Get(tx)
+	if err != nil {
+		userSqlError(w, err)
+		_ = tx.Rollback()
+		return nil, err
+	}
+
+	// now get the charac translations and all childrens
+	err = getCharacRecursive(tx, &answer.CharacTreeStruct)
+	if err != nil {
+		userSqlError(w, err)
+		_ = tx.Rollback()
+		return nil, err
+	}
+
+	// get users of the charac group
+	group := model.Group{
+		Id: answer.Charac_root.Admin_group_id,
+	}
+	err = group.Get(tx)
+	if err != nil {
+		userSqlError(w, err)
+		_ = tx.Rollback()
+		return nil, err
+	}
+	answer.UsersInGroup, err = group.GetUsers(tx)
+	if err != nil {
+		userSqlError(w, err)
+		_ = tx.Rollback()
+		return nil, err
+	}
+
+	for i := range answer.UsersInGroup {
+		answer.UsersInGroup[i].Password = ""
+	}
+
+	// get the author user
+	/*	answer.Author.Id = answer.Charac_root.Author_user_id
+		err = answer.Author.Get(tx)
+		answer.Author.Password = ""
+		if err != nil {
+			userSqlError(w, err)
+			_ = tx.Rollback()
+			return nil, err
+		}*/ // no author in characs vs chrono
+
+	return answer, nil
+}
+
+func CharacsGetTree(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+	params := proute.Params.(*CharacGetParams)
+
+	// transaction begin...
+	tx, err := db.DB.Beginx()
+	if err != nil {
+		userSqlError(w, err)
+		return
+	}
+
+	// get the user
+	_user, ok := proute.Session.Get("user")
+	if !ok {
+		log.Println("CharacsUpdate: can't get user in session...", _user)
+		_ = tx.Rollback()
+		return
+	}
+	user, ok := _user.(model.User)
+	if !ok {
+		log.Println("CharacsUpdate: can't cast user...", _user)
+		_ = tx.Rollback()
+		return
+	}
+	err = user.Get(tx)
+	user.Password = "" // immediatly erase password field, we don't need it
+	if err != nil {
+		log.Println("CharacsUpdate: can't load user...", _user)
+		userSqlError(w, err)
+		_ = tx.Rollback()
+		return
+	}
+
+	answer, err := characsGetTree(w, tx, params.Id, user)
+
+	// commit...
+	err = tx.Commit()
+	if err != nil {
+		log.Println("commit failed")
+		userSqlError(w, err)
+		_ = tx.Rollback()
+		return
+	}
+
+	j, err := json.Marshal(answer)
+	if err != nil {
+		log.Println("marshal failed: ", err)
+	}
+	//log.Println("result: ", string(j))
+	w.Write(j)
+
+}
+
+func characsDeleteRecurse(charac CharacTreeStruct, tx *sqlx.Tx) error {
+	var err error
+	for _, charac := range charac.Content {
+		err = characsDeleteRecurse(charac, tx)
+		if err != nil {
+			return err
+		}
+	}
+
+	_, err = tx.Exec("DELETE FROM charac_tr WHERE charac_id = " + strconv.Itoa(charac.Id))
+	if err != nil {
+		return err
+	}
+	_, err = tx.Exec("DELETE FROM charac WHERE id = " + strconv.Itoa(charac.Id))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func CharacsDelete(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+	params := proute.Params.(*CharacGetParams)
+
+	// transaction begin...
+	tx, err := db.DB.Beginx()
+	if err != nil {
+		userSqlError(w, err)
+		return
+	}
+
+	// get the user
+	_user, ok := proute.Session.Get("user")
+	if !ok {
+		log.Println("CharacsUpdate: can't get user in session...", _user)
+		_ = tx.Rollback()
+		return
+	}
+	user, ok := _user.(model.User)
+	if !ok {
+		log.Println("CharacsUpdate: can't cast user...", _user)
+		_ = tx.Rollback()
+		return
+	}
+	err = user.Get(tx)
+	user.Password = "" // immediatly erase password field, we don't need it
+	if err != nil {
+		log.Println("CharacsUpdate: can't load user...", _user)
+		userSqlError(w, err)
+		_ = tx.Rollback()
+		return
+	}
+
+	// get the full characlogie tree
+	answer, err := characsGetTree(w, tx, params.Id, user)
+
+	// delete charac_root
+	err = answer.Charac_root.Delete(tx)
+	if err != nil {
+		log.Println("delete Charac root", err)
+		userSqlError(w, err)
+		_ = tx.Rollback()
+		return
+	}
+
+	// delete admin gruop in user__group...
+	_, err = tx.Exec("DELETE FROM user__group WHERE group_id = " + strconv.Itoa(answer.Admin_group_id))
+	if err != nil {
+		log.Println("delete admin users group failed", err)
+		userSqlError(w, err)
+		_ = tx.Rollback()
+		return
+	}
+
+	// delete admin gruop in group_tr...
+	_, err = tx.Exec("DELETE FROM \"group_tr\" WHERE group_id = " + strconv.Itoa(answer.Admin_group_id))
+	if err != nil {
+		log.Println("delete admin group_tr failed", err)
+		userSqlError(w, err)
+		_ = tx.Rollback()
+		return
+	}
+
+	// delete admin gruop in group...
+	_, err = tx.Exec("DELETE FROM \"group\" WHERE id = " + strconv.Itoa(answer.Admin_group_id))
+	if err != nil {
+		log.Println("delete admin group failed", err)
+		userSqlError(w, err)
+		_ = tx.Rollback()
+		return
+	}
+
+	// recursively delete charac...
+	err = characsDeleteRecurse(answer.CharacTreeStruct, tx)
+	if err != nil {
+		log.Println("characsDeleteRecurse failed", err)
+		userSqlError(w, err)
+		_ = tx.Rollback()
+		return
+	}
+
+	// commit...
+	err = tx.Commit()
+	if err != nil {
+		log.Println("commit failed")
+		userSqlError(w, err)
+		_ = tx.Rollback()
+		return
+	}
 }
