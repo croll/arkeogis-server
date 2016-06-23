@@ -129,7 +129,7 @@ func processFile(filename string, filenum int) error {
 		return err
 	}
 	// Insert root in charac_root
-	_, err = tx.Exec("INSERT INTO charac_root values ($1, $2)", rootID, 0)
+	_, err = tx.Exec("INSERT INTO charac_root values ($1, $2)", rootID, groupID)
 	if err != nil {
 		return err
 	}
