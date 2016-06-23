@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- SQL XML created by WWW SQL Designer, https://github.com/ondras/wwwsqldesigner/ -->
-<!-- Active URL: https://www.croll.fr/sqldesigner/ -->
+<!-- Active URL: https://croll.fr/sqldesigner/ -->
 <sql>
 <datatypes db="postgresql">
 	<group label="Numeric" color="rgb(238,238,170)">
@@ -502,7 +502,7 @@
 <part>name</part>
 </key>
 </table>
-<table x="1502" y="565" name="charac_tr">
+<table x="1527" y="564" name="charac_tr">
 <row name="lang_isocode" null="0" autoincrement="0">
 <datatype>CHAR(2)</datatype>
 <relation table="lang" row="isocode" />
@@ -528,6 +528,7 @@
 </row>
 <row name="parent_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
+<relation table="charac" row="id" />
 </row>
 <row name="order" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>

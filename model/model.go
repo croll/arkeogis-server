@@ -7,7 +7,7 @@ import (
 
 type Charac struct {
 	Id	int	`db:"id" json:"id"`
-	Parent_id	int	`db:"parent_id" json:"parent_id"`
+	Parent_id	int	`db:"parent_id" json:"parent_id"`	// Charac.Id
 	Order	int	`db:"order" json:"order"`
 	Author_user_id	int	`db:"author_user_id" json:"author_user_id"`	// User.Id
 	Created_at	time.Time	`db:"created_at" json:"created_at"`
