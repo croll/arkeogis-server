@@ -75,15 +75,15 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	for _, f := range []string{"../datas/csv/Furniture_fr-de-en-es.csv", "../datas/csv/Landscape_fr-de-en-es.csv", "../datas/csv/Production_fr-de-en-es.csv", "../datas/csv/Realestate_fr-de-en-es.csv"} {
-		err := processFile(f)
+	for i, f := range []string{"../datas/csv/Furniture_fr-de-en-es.csv", "../datas/csv/Landscape_fr-de-en-es.csv", "../datas/csv/Production_fr-de-en-es.csv", "../datas/csv/Realestate_fr-de-en-es.csv"} {
+		err := processFile(f, i)
 		if err != nil {
 			log.Println(err)
 		}
 	}
 }
 
-func processFile(filename string) error {
+func processFile(filename string, filenum int) error {
 
 	log.Println("Importing file", filename)
 	// Store current level
@@ -118,7 +118,7 @@ func processFile(filename string) error {
 	tx := db.DB.MustBegin()
 
 	// Insert root of charac with name derived from file name like Furniture_fr_de_en.csv
-	err = tx.QueryRow("INSERT INTO charac (parent_id, \"order\", author_user_id, created_at, updated_at) VALUES ($1, $2, $3, now(), now()) RETURNING id", 0, 0, 0).Scan(&rootID)
+	err = tx.QueryRow("INSERT INTO charac (parent_id, \"order\", author_user_id, created_at, updated_at) VALUES ($1, $2, $3, now(), now()) RETURNING id", 0, filenum, 0).Scan(&rootID)
 	if err != nil {
 		return err
 	}
@@ -135,7 +135,7 @@ func processFile(filename string) error {
 	}
 
 	// For each line
-	order := 0
+	order := 1
 	for _, line := range lines {
 		// For each record
 		for lvl, record := range line {
@@ -156,11 +156,6 @@ func processFile(filename string) error {
 				parentId = parentsIDs[lvl]
 			}
 			currentLevel = lvl
-
-			// reset order if level change
-			if currentLevel != lvl {
-				order = 0
-			}
 
 			// Split each record to get label for each lang
 			for i, label := range strings.Split(record, "#") {
