@@ -54,7 +54,7 @@ func init() {
 			Params:      reflect.TypeOf(TranslateSaveParams{}),
 			Json:        reflect.TypeOf(make(map[string]interface{}, 0)),
 			Permissions: []string{
-				"langeditor",
+				"user can use langeditor",
 			},
 		},
 		&routes.Route{
@@ -64,7 +64,7 @@ func init() {
 			Method:      "GET",
 			Params:      reflect.TypeOf(TranslateListParams{}),
 			Permissions: []string{
-				"langeditor",
+				"user can use langeditor",
 			},
 		},
 	}
