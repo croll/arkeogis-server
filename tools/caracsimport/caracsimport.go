@@ -122,6 +122,12 @@ func processFile(filename string, filenum int) error {
 	if err != nil {
 		return err
 	}
+	// Insert group
+	groupID := 0
+	err = tx.QueryRow(`INSERT INTO "group" ("type", created_at, updated_at) values ('charac', now(), now()) RETURNING id`).Scan(&groupID)
+	if err != nil {
+		return err
+	}
 	// Insert root in charac_root
 	_, err = tx.Exec("INSERT INTO charac_root values ($1, $2)", rootID, 0)
 	if err != nil {
@@ -129,6 +135,10 @@ func processFile(filename string, filenum int) error {
 	}
 	for _, langIsocode := range langsByIso {
 		_, err = tx.Exec("INSERT INTO charac_tr (lang_isocode, charac_id, name, description) VALUES ($1, $2, $3, '')", langIsocode, rootID, caracsRootByLang[rootName][langIsocode])
+		if err != nil {
+			return err
+		}
+		_, err = tx.Exec("INSERT INTO group_tr values ($1, $2, $3, '')", groupID, langIsocode, caracsRootByLang[rootName][langIsocode])
 		if err != nil {
 			return err
 		}
