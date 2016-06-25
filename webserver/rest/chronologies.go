@@ -168,21 +168,19 @@ func ChronologiesRoots(w http.ResponseWriter, r *http.Request, proute routes.Pro
 	q := "SELECT * FROM chronology_root WHERE author_user_id > 1"
 
 	if params.Bounding_box != "" {
-		q += " AND ST_Contains(ST_GeomFromGeoJSON($1), geom::geometry)"
+		q += " AND ST_Contains(ST_GeomFromGeoJSON(:bounding_box), geom::::geometry)"
 	}
 
-	stmt, err := db.DB.Preparex(q)
+	stmt, err := db.DB.PrepareNamed(q)
+
 	if err != nil {
 		userSqlError(w, err)
 		_ = tx.Rollback()
 		return
 	}
 
-	if params.Bounding_box != "" {
-		err = stmt.Select(&chronologies, params.Bounding_box)
-	} else {
-		err = stmt.Select(&chronologies)
-	}
+	err = stmt.Select(&chronologies, params)
+
 	if err != nil {
 		userSqlError(w, err)
 		_ = tx.Rollback()
