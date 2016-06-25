@@ -120,6 +120,46 @@ func (u *Charac_root) Delete(tx *sqlx.Tx) error {
 }
 
 /*
+ * Project_hidden_characs Object
+ */
+
+// List return Project_hidden_characs of a Project
+func (u *Project_hidden_characs) List(tx *sqlx.Tx) ([]Project_hidden_characs, error) {
+	answer := []Project_hidden_characs{}
+	var q = "SELECT * FROM \"project_hidden_characs\" WHERE project_id=:project_id"
+	stmt, err := tx.PrepareNamed(q)
+	if err != nil {
+		return answer, err
+	}
+	err = stmt.Select(&answer, u)
+	stmt.Close()
+	return answer, err
+}
+
+// Get the project_hidden_characs from the database
+func (u *Project_hidden_characs) Get(tx *sqlx.Tx) error {
+	var q = "SELECT * FROM \"project_hidden_characs\" WHERE charac_id=:charac_id AND project_id=:project_id"
+	stmt, err := tx.PrepareNamed(q)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	return stmt.Get(u, u)
+}
+
+// Create the project_hidden_characs by inserting it in the database
+func (u *Project_hidden_characs) Create(tx *sqlx.Tx) error {
+	_, err := tx.NamedExec("INSERT INTO \"project_hidden_characs\" (\"project_id\", charac_id) VALUES (:project_id, :charac_id)", u)
+	return err
+}
+
+// Delete the project_hidden_characs from the database
+func (u *Project_hidden_characs) Delete(tx *sqlx.Tx) error {
+	_, err := tx.NamedExec("DELETE FROM \"project_hidden_characs\" WHERE charac_id=:charac_id AND project_id=:project_id", u)
+	return err
+}
+
+/*
  * Charac_tr Object
  */
 
