@@ -85,7 +85,7 @@ func DatabasesList(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 		return
 	}
 
-	q := "SELECT d.*, u.firstname || ' ' || u.lastname as author FROM \"database\" d LEFT JOIN \"user\" u ON d.owner = u.id WHERE d.id > 0"
+	q := "SELECT d.*, ST_AsGeoJSON(d.geographical_extent_geom) as geographical_extent_geom, u.firstname || ' ' || u.lastname as author FROM \"database\" d LEFT JOIN \"user\" u ON d.owner = u.id WHERE d.id > 0"
 
 	type dbInfos struct {
 		model.Database
