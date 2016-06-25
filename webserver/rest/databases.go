@@ -26,14 +26,15 @@ import (
 	"log"
 	"net/http"
 	"reflect"
+	"strconv"
 
 	db "github.com/croll/arkeogis-server/db"
 	"github.com/croll/arkeogis-server/model"
 	routes "github.com/croll/arkeogis-server/webserver/routes"
 )
 
-// DatabaseGetParams are params received by REST query
-type DatabaseGetParams struct {
+// DatabaseInfosParams are params received by REST query
+type DatabaseInfosParams struct {
 	Id int `min:"0" error:"Database Id is mandatory"`
 }
 
@@ -44,6 +45,8 @@ func init() {
 			Description: "Get list of all databases in arkeogis",
 			Func:        DatabasesList,
 			Method:      "GET",
+			Permissions: []string{},
+			Params:      reflect.TypeOf(DatabaseListParams{}),
 		},
 		&routes.Route{
 			Path:        "/api/database/{id:[0-9]+}",
@@ -51,7 +54,7 @@ func init() {
 			Func:        DatabaseInfos,
 			Method:      "GET",
 			Permissions: []string{},
-			Params:      reflect.TypeOf(DatabaseGetParams{}),
+			Params:      reflect.TypeOf(DatabaseInfosParams{}),
 		},
 		&routes.Route{
 			Path:        "/api/licences",
@@ -66,14 +69,71 @@ func init() {
 	routes.RegisterMultiple(Routes)
 }
 
+type DatabaseListParams struct {
+	Bounding_box string
+}
+
 // DatabasesList returns the list of databases
 func DatabasesList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
-	databases := []model.Database{}
-	err := db.DB.Select(&databases, "SELECT * FROM \"database\"")
+
+	params := proute.Params.(*DatabaseListParams)
+
+	tx, err := db.DB.Beginx()
+	if err != nil {
+		userSqlError(w, err)
+		return
+	}
+
+	q := "SELECT d.*, u.firstname || ' ' || u.lastname as author FROM \"database\" d LEFT JOIN \"user\" u ON d.owner = u.id WHERE d.id > 0"
+
+	type dbInfos struct {
+		model.Database
+		Description         map[string]string
+		Geographical_limit  map[string]string
+		Bibliography        map[string]string
+		Context_description map[string]string
+		Source_description  map[string]string
+		Source_relation     map[string]string
+		Copyright           map[string]string
+		Subject             map[string]string
+	}
+
+	if params.Bounding_box != "" {
+		q += " AND ST_Contains(ST_GeomFromGeoJSON(:bounding_box), geographical_extent_geom::::geometry)"
+	}
+
+	databases := []dbInfos{}
+
+	nstmt, err := db.DB.PrepareNamed(q)
+	if err != nil {
+		return
+	}
+	err = nstmt.Select(&databases, params)
+
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	for _, database := range databases {
+		tr := []model.Database_tr{}
+		err = tx.Select(&tr, "SELECT * FROM database_tr WHERE database_id = "+strconv.Itoa(database.Id))
+		if err != nil {
+			_ = tx.Rollback()
+			return
+		}
+		database.Description = model.MapSqlTranslations(tr, "Lang_isocode", "Description")
+		database.Geographical_limit = model.MapSqlTranslations(tr, "Lang_isocode", "Geographical_limit")
+		database.Bibliography = model.MapSqlTranslations(tr, "Lang_isocode", "Bibliography")
+		database.Context_description = model.MapSqlTranslations(tr, "Lang_isocode", "Context_description")
+		database.Source_description = model.MapSqlTranslations(tr, "Lang_isocode", "Source_description")
+		database.Source_relation = model.MapSqlTranslations(tr, "Lang_isocode", "Source_relation")
+		database.Copyright = model.MapSqlTranslations(tr, "Lang_isocode", "Copyright")
+		database.Subject = model.MapSqlTranslations(tr, "Lang_isocode", "Subject")
+	}
+
+	err = tx.Commit()
+
 	l, _ := json.Marshal(databases)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(l)
@@ -109,13 +169,11 @@ func DatabaseEnumList(w http.ResponseWriter, r *http.Request, proute routes.Prou
 	db.DB.Select(&enums.Type, "SELECT unnest(enum_range(NULL::database_type))")
 	db.DB.Select(&enums.State, "SELECT unnest(enum_range(NULL::database_state))")
 	db.DB.Select(&enums.Context, "SELECT unnest(enum_range(NULL::database_context))")
-	db.DB.Select(&enums.Context, "SELECT unnest(enum_range(NULL::database_context))")
-	db.DB.Select(&enums.Context, "SELECT unnest(enum_range(NULL::database_context))")
 }
 
 // DatabaseInfos return detailed infos on an database
 func DatabaseInfos(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
-	params := proute.Params.(*DatabaseGetParams)
+	params := proute.Params.(*DatabaseInfosParams)
 	tx, err := db.DB.Beginx()
 	if err != nil {
 		log.Println("can't start transaction")

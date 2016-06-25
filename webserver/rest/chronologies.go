@@ -165,7 +165,7 @@ func ChronologiesRoots(w http.ResponseWriter, r *http.Request, proute routes.Pro
 	}
 
 	// load all roots yes condition is always true
-	q := "SELECT * FROM chronology_root WHERE author_user_id > 1"
+	q := "SELECT *,ST_AsGeoJSON(geom) as geom FROM chronology_root WHERE author_user_id > 1"
 
 	if params.Bounding_box != "" {
 		q += " AND ST_Contains(ST_GeomFromGeoJSON(:bounding_box), geom::::geometry)"

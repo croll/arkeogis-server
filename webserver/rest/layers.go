@@ -499,7 +499,7 @@ func getShpLayers(params *GetLayersParams) (layers []LayerInfos, err error) {
 	}
 
 	if params.Bounding_box != "" {
-		q += " AND ST_Contains(ST_GeomFromGeoJSON($1), geom::::geometry)"
+		q += " AND ST_Contains(ST_GeomFromGeoJSON(:bounding_box), geographical_extent_geom::::geometry)"
 	}
 
 	nstmt, err := db.DB.PrepareNamed(q)
@@ -546,7 +546,7 @@ func getWmLayers(params *GetLayersParams) (layers []LayerInfos, err error) {
 	}
 
 	if params.Bounding_box != "" {
-		q += " AND ST_Contains(ST_GeomFromGeoJSON($1), geom::::geometry)"
+		q += " AND ST_Contains(ST_GeomFromGeoJSON(:bounding_box), geographical_extent_geom::::geometry)"
 	}
 
 	nstmt, err := tx.PrepareNamed(q)
