@@ -55,6 +55,7 @@ func init() {
 			Func:        ChronologiesRoots,
 			Description: "Get all root chronologies in all languages",
 			Method:      "GET",
+			Params:      reflect.TypeOf(ChronologiesRootsParams{}),
 		},
 		&routes.Route{
 			Path:        "/api/chronologies",
@@ -113,6 +114,11 @@ func ChronologiesAll(w http.ResponseWriter, r *http.Request, proute routes.Prout
 	w.Write(j)
 }
 
+// ChronologiesRootsStruct holds get params passed to ChronologiesRoots
+type ChronologiesRootsParams struct {
+	Bounding_box string
+}
+
 // ChronologiesRoots write all root chronologies in all languages
 func ChronologiesRoots(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	type row struct {
@@ -124,6 +130,9 @@ func ChronologiesRoots(w http.ResponseWriter, r *http.Request, proute routes.Pro
 		Author model.User `json:"author" ignore:"true"` // read-only, used to display users of the group
 	}
 
+	// get the params
+	params := proute.Params.(*ChronologiesRootsParams)
+
 	chronologies := []*row{}
 
 	// transaction begin...
@@ -133,8 +142,47 @@ func ChronologiesRoots(w http.ResponseWriter, r *http.Request, proute routes.Pro
 		return
 	}
 
-	// load all roots
-	err = db.DB.Select(&chronologies, "SELECT * FROM chronology_root")
+	// get the user
+	_user, ok := proute.Session.Get("user")
+	if !ok {
+		log.Println("ChronologiesRoots: can't get user in session...", _user)
+		_ = tx.Rollback()
+		return
+	}
+	user, ok := _user.(model.User)
+	if !ok {
+		log.Println("ChronologiesRoots: can't cast user...", _user)
+		_ = tx.Rollback()
+		return
+	}
+	err = user.Get(tx)
+	user.Password = "" // immediatly erase password field, we don't need it
+	if err != nil {
+		log.Println("ChronologiesRoots: can't load user...", _user)
+		_ = tx.Rollback()
+		userSqlError(w, err)
+		return
+	}
+
+	// load all roots yes condition is always true
+	q := "SELECT * FROM chronology_root WHERE author_user_id > 1"
+
+	if params.Bounding_box != "" {
+		q += " AND ST_Contains(ST_GeomFromGeoJSON($1), geom::geometry)"
+	}
+
+	stmt, err := db.DB.Preparex(q)
+	if err != nil {
+		userSqlError(w, err)
+		_ = tx.Rollback()
+		return
+	}
+
+	if params.Bounding_box != "" {
+		err = stmt.Select(&chronologies, params.Bounding_box)
+	} else {
+		err = stmt.Select(&chronologies)
+	}
 	if err != nil {
 		userSqlError(w, err)
 		_ = tx.Rollback()
