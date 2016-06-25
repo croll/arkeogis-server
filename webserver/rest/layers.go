@@ -405,26 +405,26 @@ func SaveWmLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 }
 
 type GetLayersParams struct {
-	Type      string
-	Published bool
-	Author    int
-	Iso_code  string
+	Type         string
+	Published    bool
+	Author       int
+	Iso_code     string
+	Bounding_box string
 }
 
 type LayerInfos struct {
-	Id                       int       `json:"id"`
-	Geographical_extent_geom string    `json:"geographical_extent_geom"`
-	Creator_user_id          int       `json:"creator_user_id"`
-	Published                bool      `json:"published"`
-	Description              string    `json:"description"`
-	Description_en           string    `json:"description_en"`
-	Created_at               time.Time `json:"created_at"`
-	Author                   string    `json:"author"`
-	Type                     string    `json:"type"`
-	Start_date               int       `json:"start_date"`
-	End_date                 int       `json:"end_date"`
-	Min_scale                int       `json:"min_scale"`
-	Max_scale                int       `json:"max_scale"`
+	Id                       int               `json:"id"`
+	Geographical_extent_geom string            `json:"geographical_extent_geom"`
+	Creator_user_id          int               `json:"creator_user_id"`
+	Published                bool              `json:"published"`
+	Created_at               time.Time         `json:"created_at"`
+	Author                   string            `json:"author"`
+	Type                     string            `json:"type"`
+	Start_date               int               `json:"start_date"`
+	End_date                 int               `json:"end_date"`
+	Min_scale                int               `json:"min_scale"`
+	Max_scale                int               `json:"max_scale"`
+	Description              map[string]string `json:"description"`
 }
 
 // GetLayers returns layers list
@@ -453,23 +453,23 @@ func GetLayers(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	var result = []LayerInfos{}
 
 	if params.Type == "" || params.Type == "shp" {
-		infos := &[]LayerInfos{}
+		infos := []LayerInfos{}
 		infos, err = getShpLayers(params)
 		if err != nil {
 			http.Error(w, "Error getting shp layers list: "+err.Error(), http.StatusBadRequest)
 			return
 		}
-		result = append(result, *infos...)
+		result = append(result, infos...)
 	}
 
 	if params.Type == "" || params.Type != "shp" {
-		infos := &[]LayerInfos{}
+		infos := []LayerInfos{}
 		infos, err = getWmLayers(params)
 		if err != nil {
 			http.Error(w, "Error getting shp layers list: "+err.Error(), http.StatusBadRequest)
 			return
 		}
-		result = append(result, *infos...)
+		result = append(result, infos...)
 	}
 
 	l, _ := json.Marshal(result)
@@ -479,10 +479,16 @@ func GetLayers(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 }
 
-func getShpLayers(params *GetLayersParams) (result *[]LayerInfos, err error) {
-	q := "SELECT m.id, m.start_date, m.end_date, ST_AsGeoJSON(m.geographical_extent_geom) as geographical_extent_geom, m.published, m.created_at, m.creator_user_id, u.firstname || ' ' || u.lastname as author, 'shp' AS type, t.description, (SELECT description FROM shapefile_tr WHERE shapefile_id = m.id AND lang_isocode = :iso_code) AS description_en FROM shapefile m LEFT JOIN \"user\" u ON m.creator_user_id = u.id LEFT JOIN shapefile_tr t ON m.id = t.shapefile_id WHERE t.lang_isocode = :iso_code"
+func getShpLayers(params *GetLayersParams) (layers []LayerInfos, err error) {
 
-	result = &[]LayerInfos{}
+	layers = []LayerInfos{}
+
+	tx, err := db.DB.Beginx()
+	if err != nil {
+		return
+	}
+
+	q := "SELECT m.id, m.start_date, m.end_date, ST_AsGeoJSON(m.geographical_extent_geom) as geographical_extent_geom, m.published, m.created_at, m.creator_user_id, u.firstname || ' ' || u.lastname as author, 'shp' AS type FROM shapefile m LEFT JOIN \"user\" u ON m.creator_user_id = u.id WHERE m.id > 0"
 
 	if params.Author > 0 {
 		q += " AND u.id = :author"
@@ -492,19 +498,40 @@ func getShpLayers(params *GetLayersParams) (result *[]LayerInfos, err error) {
 		q += " AND u.published = :published"
 	}
 
+	if params.Bounding_box != "" {
+		q += " AND ST_Contains(ST_GeomFromGeoJSON($1), geom::::geometry)"
+	}
+
 	nstmt, err := db.DB.PrepareNamed(q)
 	if err != nil {
 		return
 	}
-	err = nstmt.Select(result, params)
+	err = nstmt.Select(&layers, params)
+
+	for _, layer := range layers {
+		tr := []model.Shapefile_tr{}
+		err = tx.Select(&tr, "SELECT * FROM shapefile_tr WHERE shapefile_id = "+strconv.Itoa(layer.Id))
+		if err != nil {
+			_ = tx.Rollback()
+			return
+		}
+		layer.Description = model.MapSqlTranslations(tr, "Lang_isocode", "Description")
+	}
+
+	err = tx.Commit()
 	return
 }
 
-func getWmLayers(params *GetLayersParams) (result *[]LayerInfos, err error) {
+func getWmLayers(params *GetLayersParams) (layers []LayerInfos, err error) {
 
-	result = &[]LayerInfos{}
+	layers = []LayerInfos{}
 
-	q := "SELECT m.id, m.type, m.start_date, m.end_date, m.min_scale, m.max_scale, ST_AsGeoJSON(m.geographical_extent_geom) as geographical_extent_geom, m.published, m.created_at, m.creator_user_id, u.firstname || ' ' || u.lastname as author, (SELECT description FROM map_layer_tr WHERE map_layer_id = m.id AND lang_isocode = :iso_code) AS description_en  FROM map_layer m LEFT JOIN \"user\" u ON m.creator_user_id = u.id LEFT JOIN map_layer_tr t ON m.id = t.map_layer_id WHERE t.lang_isocode = :iso_code"
+	tx, err := db.DB.Beginx()
+	if err != nil {
+		return
+	}
+
+	q := "SELECT m.id, m.type, m.start_date, m.end_date, m.min_scale, m.max_scale, ST_AsGeoJSON(m.geographical_extent_geom) as geographical_extent_geom, m.published, m.created_at, m.creator_user_id, u.firstname || ' ' || u.lastname as author FROM map_layer m LEFT JOIN \"user\" u ON m.creator_user_id = u.id WHERE m.id > 0"
 
 	if params.Author > 0 {
 		q += " AND u.id = :author"
@@ -518,12 +545,31 @@ func getWmLayers(params *GetLayersParams) (result *[]LayerInfos, err error) {
 		q += " AND u.type= :type"
 	}
 
-	nstmt, err := db.DB.PrepareNamed(q)
+	if params.Bounding_box != "" {
+		q += " AND ST_Contains(ST_GeomFromGeoJSON($1), geom::::geometry)"
+	}
+
+	nstmt, err := tx.PrepareNamed(q)
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	err = nstmt.Select(result, params)
+	err = nstmt.Select(&layers, params)
+
+	for _, layer := range layers {
+
+		tr := []model.Map_layer_tr{}
+		err = tx.Select(&tr, "SELECT * FROM map_layer_tr WHERE map_layer_id = "+strconv.Itoa(layer.Id))
+		if err != nil {
+			_ = tx.Rollback()
+			return
+		}
+		layer.Description = model.MapSqlTranslations(tr, "Lang_isocode", "Description")
+		fmt.Println(layer)
+	}
+
+	err = tx.Commit()
+
 	return
 }
 
