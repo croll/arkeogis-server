@@ -405,6 +405,7 @@ func SaveWmLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 }
 
 type GetLayersParams struct {
+	Ids          []int `json:"ids"`
 	Type         string
 	Published    bool
 	Author       int
@@ -424,6 +425,10 @@ type LayerInfos struct {
 	End_date                 int               `json:"end_date"`
 	Min_scale                int               `json:"min_scale"`
 	Max_scale                int               `json:"max_scale"`
+	Uniq_code                string            `json:"uniq_code"`
+	Name                     map[string]string `json:"name"`
+	Attribution              map[string]string `json:"attribution"`
+	Copyright                map[string]string `json:"copyright"`
 	Description              map[string]string `json:"description"`
 }
 
@@ -450,10 +455,10 @@ func GetLayers(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	// user.First_lang_isocode
 
-	var result = []LayerInfos{}
+	var result = []*LayerInfos{}
 
 	if params.Type == "" || params.Type == "shp" {
-		infos := []LayerInfos{}
+		infos := []*LayerInfos{}
 		infos, err = getShpLayers(params)
 		if err != nil {
 			http.Error(w, "Error getting shp layers list: "+err.Error(), http.StatusBadRequest)
@@ -463,7 +468,7 @@ func GetLayers(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	}
 
 	if params.Type == "" || params.Type != "shp" {
-		infos := []LayerInfos{}
+		infos := []*LayerInfos{}
 		infos, err = getWmLayers(params)
 		if err != nil {
 			http.Error(w, "Error getting shp layers list: "+err.Error(), http.StatusBadRequest)
@@ -479,9 +484,9 @@ func GetLayers(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 }
 
-func getShpLayers(params *GetLayersParams) (layers []LayerInfos, err error) {
+func getShpLayers(params *GetLayersParams) (layers []*LayerInfos, err error) {
 
-	layers = []LayerInfos{}
+	layers = []*LayerInfos{}
 
 	tx, err := db.DB.Beginx()
 	if err != nil {
@@ -502,6 +507,12 @@ func getShpLayers(params *GetLayersParams) (layers []LayerInfos, err error) {
 		q += " AND ST_Contains(ST_GeomFromGeoJSON(:bounding_box), geographical_extent_geom::::geometry)"
 	}
 
+	in := model.IntJoin(params.Ids, false)
+
+	if in != "" {
+		q += " AND m.id IN (" + in + ")"
+	}
+
 	nstmt, err := db.DB.PrepareNamed(q)
 	if err != nil {
 		return
@@ -515,6 +526,10 @@ func getShpLayers(params *GetLayersParams) (layers []LayerInfos, err error) {
 			_ = tx.Rollback()
 			return
 		}
+		layer.Uniq_code = layer.Type + strconv.Itoa(layer.Id)
+		layer.Name = model.MapSqlTranslations(tr, "Lang_isocode", "Name")
+		layer.Attribution = model.MapSqlTranslations(tr, "Lang_isocode", "Attribution")
+		layer.Copyright = model.MapSqlTranslations(tr, "Lang_isocode", "Copyright")
 		layer.Description = model.MapSqlTranslations(tr, "Lang_isocode", "Description")
 	}
 
@@ -522,9 +537,9 @@ func getShpLayers(params *GetLayersParams) (layers []LayerInfos, err error) {
 	return
 }
 
-func getWmLayers(params *GetLayersParams) (layers []LayerInfos, err error) {
+func getWmLayers(params *GetLayersParams) (layers []*LayerInfos, err error) {
 
-	layers = []LayerInfos{}
+	layers = []*LayerInfos{}
 
 	tx, err := db.DB.Beginx()
 	if err != nil {
@@ -549,6 +564,12 @@ func getWmLayers(params *GetLayersParams) (layers []LayerInfos, err error) {
 		q += " AND ST_Contains(ST_GeomFromGeoJSON(:bounding_box), geographical_extent_geom::::geometry)"
 	}
 
+	in := model.IntJoin(params.Ids, false)
+
+	if in != "" {
+		q += " AND m.id IN (" + in + ")"
+	}
+
 	nstmt, err := tx.PrepareNamed(q)
 	if err != nil {
 		log.Println(err)
@@ -564,8 +585,11 @@ func getWmLayers(params *GetLayersParams) (layers []LayerInfos, err error) {
 			_ = tx.Rollback()
 			return
 		}
+		layer.Uniq_code = layer.Type + strconv.Itoa(layer.Id)
+		layer.Name = model.MapSqlTranslations(tr, "Lang_isocode", "Name")
+		layer.Attribution = model.MapSqlTranslations(tr, "Lang_isocode", "Attribution")
+		layer.Copyright = model.MapSqlTranslations(tr, "Lang_isocode", "Copyright")
 		layer.Description = model.MapSqlTranslations(tr, "Lang_isocode", "Description")
-		fmt.Println(layer)
 	}
 
 	err = tx.Commit()

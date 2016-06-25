@@ -23,6 +23,7 @@ package rest
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"reflect"
@@ -96,6 +97,7 @@ func DatabasesList(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 		Source_relation     map[string]string
 		Copyright           map[string]string
 		Subject             map[string]string
+		Author              string
 	}
 
 	if params.Bounding_box != "" {
@@ -106,12 +108,15 @@ func DatabasesList(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 
 	nstmt, err := db.DB.PrepareNamed(q)
 	if err != nil {
+		fmt.Println(err)
+		userSqlError(w, err)
 		return
 	}
 	err = nstmt.Select(&databases, params)
 
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		fmt.Println(err)
+		userSqlError(w, err)
 		return
 	}
 
@@ -119,6 +124,8 @@ func DatabasesList(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 		tr := []model.Database_tr{}
 		err = tx.Select(&tr, "SELECT * FROM database_tr WHERE database_id = "+strconv.Itoa(database.Id))
 		if err != nil {
+			fmt.Println(err)
+			userSqlError(w, err)
 			_ = tx.Rollback()
 			return
 		}
@@ -133,6 +140,11 @@ func DatabasesList(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 	}
 
 	err = tx.Commit()
+	if err != nil {
+		fmt.Println(err)
+		userSqlError(w, err)
+		return
+	}
 
 	l, _ := json.Marshal(databases)
 	w.Header().Set("Content-Type", "application/json")
