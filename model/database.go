@@ -426,3 +426,12 @@ func (d *Database) UpdateFields(tx *sqlx.Tx, params interface{}, fields ...strin
 	return
 
 }
+
+// CacheGeom get database sites extend and cache enveloppe
+func (d *Database) CacheGeom(tx *sqlx.Tx) (err error) {
+	// Extent
+	//_, err = tx.NamedExec("SELECT ST_Envelope(sites.geom::::geometry) FROM (SELECT geom FROM site WHERE database_id = :id) as sites", d)
+	// Envelope
+	_, err = tx.NamedExec("UPDATE database SET geographical_extent_geom = (SELECT (ST_Envelope((SELECT ST_Multi(ST_Collect(f.geom)) as singlegeom FROM (SELECT (ST_Dump(geom::::geometry)).geom As geom FROM site WHERE database_id = :id) As f)))) WHERE id = :id", d)
+	return
+}

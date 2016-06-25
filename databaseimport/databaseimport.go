@@ -134,6 +134,7 @@ func (di *DatabaseImport) New(parser *Parser, uid int, databaseName string, lang
 	di.Uid = uid
 	di.Database.Owner = di.Uid
 	di.Database.Default_language = langIsocode
+	di.Database.Geographical_extent_geom = "0103000020E610000001000000050000000C21E7FDFF7F66C01842CEFBFF7F56C00C21E7FDFF7F66C01842CEFBFF7F56400C21E7FDFF7F66401842CEFBFF7F56400C21E7FDFF7F66401842CEFBFF7F56C00C21E7FDFF7F66C01842CEFBFF7F56C0"
 	di.CurrentSite = &SiteInfos{}
 	di.Parser = parser
 	di.NumberOfSites = 0
