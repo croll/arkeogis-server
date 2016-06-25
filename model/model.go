@@ -338,7 +338,7 @@ type Project__shapefile struct {
 
 
 type Project_hidden_characs struct {
-	Id_project	int	`db:"id_project" json:"id_project"`	// Project.Id
+	Project_id	int	`db:"project_id" json:"project_id"`	// Project.Id
 	Charac_id	int	`db:"charac_id" json:"charac_id"`	// Charac.Id
 }
 

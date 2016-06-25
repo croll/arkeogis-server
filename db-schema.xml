@@ -781,7 +781,7 @@
 </key>
 </table>
 <table x="1330" y="265" name="project_hidden_characs">
-<row name="id_project" null="0" autoincrement="0">
+<row name="project_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="project" row="id" />
 </row>
@@ -791,7 +791,7 @@
 </row>
 <key type="PRIMARY" name="">
 <part>charac_id</part>
-<part>id_project</part>
+<part>project_id</part>
 </key>
 </table>
 <table x="208" y="1464" name="group">
