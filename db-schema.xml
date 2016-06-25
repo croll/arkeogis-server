@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- SQL XML created by WWW SQL Designer, https://github.com/ondras/wwwsqldesigner/ -->
-<!-- Active URL: https://croll.fr/sqldesigner/ -->
+<!-- Active URL: https://www.croll.fr/sqldesigner/ -->
 <sql>
 <datatypes db="postgresql">
 	<group label="Numeric" color="rgb(238,238,170)">
@@ -232,7 +232,7 @@
 <part>root_chronology_id</part>
 </key>
 </table>
-<table x="486" y="88" name="database">
+<table x="476" y="77" name="database">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
@@ -280,6 +280,9 @@
 <row name="soft_deleted" null="0" autoincrement="0">
 <datatype>BOOLEAN</datatype>
 <default>'false'</default></row>
+<row name="geographical_extent_geom" null="0" autoincrement="0">
+<datatype>VARCHAR(POLYGON)</datatype>
+</row>
 <row name="declared_creation_date" null="0" autoincrement="0">
 <datatype>TIMESTAMP</datatype>
 </row>
