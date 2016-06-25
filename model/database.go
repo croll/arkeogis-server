@@ -435,3 +435,9 @@ func (d *Database) CacheGeom(tx *sqlx.Tx) (err error) {
 	_, err = tx.NamedExec("UPDATE database SET geographical_extent_geom = (SELECT (ST_Envelope((SELECT ST_Multi(ST_Collect(f.geom)) as singlegeom FROM (SELECT (ST_Dump(geom::::geometry)).geom As geom FROM site WHERE database_id = :id) As f)))) WHERE id = :id", d)
 	return
 }
+
+// CacheDates get database sites extend and cache enveloppe
+func (d *Database) CacheDates(tx *sqlx.Tx) (err error) {
+	_, err = tx.NamedExec("UPDATE database SET start_date = (SELECT min(start_date1) FROM site_range WHERE site_id IN (SELECT id FROM site where database_id = :id) AND start_date1 != -2147483648), end_date = (SELECT max(end_date2) FROM site_range WHERE site_id IN (SELECT id FROM site where database_id = :id) AND end_date2 != 2147483647) WHERE id = :id", d)
+	return
+}

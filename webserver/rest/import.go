@@ -200,9 +200,18 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		return
 	}
 
+	// Cache geom
 	err = dbImport.Database.CacheGeom(dbImport.Tx)
 	if err != nil {
 		parser.AddError("Error caching geom " + err.Error())
+		sendError(w, parser.Errors)
+		return
+	}
+
+	// Cache dates
+	err = dbImport.Database.CacheDates(dbImport.Tx)
+	if err != nil {
+		parser.AddError("Error caching dates" + err.Error())
 		sendError(w, parser.Errors)
 		return
 	}
