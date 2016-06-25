@@ -283,6 +283,12 @@
 <row name="geographical_extent_geom" null="0" autoincrement="0">
 <datatype>VARCHAR(POLYGON)</datatype>
 </row>
+<row name="start_date" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+</row>
+<row name="end_date" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+</row>
 <row name="declared_creation_date" null="0" autoincrement="0">
 <datatype>TIMESTAMP</datatype>
 </row>
