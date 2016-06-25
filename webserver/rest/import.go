@@ -199,12 +199,22 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		sendError(w, parser.Errors)
 		return
 	}
+
+	err = dbImport.Database.CacheGeom(dbImport.Tx)
+	if err != nil {
+		parser.AddError("Error caching geom " + err.Error())
+		sendError(w, parser.Errors)
+		return
+	}
+
 	err = dbImport.Tx.Commit()
 	if err != nil {
 		parser.AddError("Error when inserting import into database: " + err.Error())
 		sendError(w, parser.Errors)
 		return
 	}
+
+	// Cache database enveloppe
 
 	// Prepare response
 
