@@ -946,11 +946,11 @@ func (di *DatabaseImport) parseDates(period string) ([2]int, error) {
 		}
 
 		// Arkeogis hack on negative dates
-		if dates[0] < 1 && date[0] != math.MinInt32 {
+		if dates[0] < 1 && dates[0] != math.MinInt32 {
 			dates[0] += 1
 		}
 
-		if dates[1] < 1 && date[1] != math.MinInt32 {
+		if dates[1] < 1 && dates[1] != math.MinInt32 {
 			dates[1] += 1
 		}
 
