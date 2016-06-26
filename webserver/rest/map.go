@@ -206,7 +206,7 @@ func MapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	}
 
 	// add occupation filter
-	for occupation, yesno := range params.Knowledge {
+	for occupation, yesno := range params.Occupation {
 		var compare string
 		if yesno {
 			compare = "="
