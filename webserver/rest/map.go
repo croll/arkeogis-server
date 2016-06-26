@@ -183,9 +183,9 @@ func MapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		}
 
 		if inclorexcl == "centroid-include" {
-			filters.AddFilter("centroid", `"site".centroid `+compare+` 't'`)
+			filters.AddFilter("centroid", `"site".centroid `+compare+` true`)
 		} else if inclorexcl == "centroid-exclude" {
-			filters.AddFilter("centroid", `"site".centroid `+compare+` 'f'`)
+			filters.AddFilter("centroid", `"site".centroid `+compare+` false`)
 		}
 	}
 
@@ -218,6 +218,35 @@ func MapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		case "not_documented", "single", "continuous", "multiple":
 			filters.AddFilter("occupation", `"site".occupation `+compare+` '`+occupation+`'`)
 		}
+	}
+
+	// characs filters
+	for characidstr, subfilters := range params.Charac {
+		characid, _ := strconv.Atoi(characidstr)
+		q := "( 1=1 "
+		if yesno, ok := subfilters["inclorexcl"]; ok {
+			var compare string
+			if yesno {
+				compare = "="
+			} else {
+				compare = "!="
+			}
+			q += ` AND "site_range__charac".charac_id ` + compare + ` ` + strconv.Itoa(characid)
+		}
+		if yesno, ok := subfilters["exceptional"]; ok {
+			var compare string
+			if yesno {
+				compare = "="
+			} else {
+				compare = "!="
+			}
+			q += ` AND "site_range__charac".exceptional ` + compare + ` true`
+		}
+
+		q += ")"
+
+		filters.AddTable("site_range__charac")
+		filters.AddFilter("charac", q)
 	}
 
 	q := filters.BuildQuery()
