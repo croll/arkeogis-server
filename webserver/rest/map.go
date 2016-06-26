@@ -273,9 +273,5 @@ func mapGetSitesAsJson(sites []int, tx *sqlx.Tx) string {
 
 	jsonString := `{"type": "FeatureCollection", "features": [` + strings.Join(jsonResult, ",") + `]}`
 
-	if jsonString == "" {
-		jsonString = "null"
-	}
-
 	return jsonString
 }
