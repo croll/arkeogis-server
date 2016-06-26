@@ -172,6 +172,15 @@ func CharacsRoots(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 				}*/ // no author user in characs vs chrono
 	}
 
+	// commit...
+	err = tx.Commit()
+	if err != nil {
+		log.Println("commit failed")
+		userSqlError(w, err)
+		_ = tx.Rollback()
+		return
+	}
+
 	j, err := json.Marshal(characs)
 	w.Write(j)
 }
