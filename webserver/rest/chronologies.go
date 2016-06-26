@@ -342,26 +342,8 @@ func ChronologiesUpdate(w http.ResponseWriter, r *http.Request, proute routes.Pr
 	}
 
 	// get the user
-	_user, ok := proute.Session.Get("user")
-	if !ok {
-		log.Println("ChronologiesUpdate: can't get user in session...", _user)
-		_ = tx.Rollback()
-		return
-	}
-	user, ok := _user.(model.User)
-	if !ok {
-		log.Println("ChronologiesUpdate: can't cast user...", _user)
-		_ = tx.Rollback()
-		return
-	}
-	err = user.Get(tx)
-	user.Password = "" // immediatly erase password field, we don't need it
-	if err != nil {
-		log.Println("ChronologiesUpdate: can't load user...", _user)
-		userSqlError(w, err)
-		_ = tx.Rollback()
-		return
-	}
+	_user, _ := proute.Session.Get("user")
+	user := _user.(model.User)
 
 	// boolean create, true if we are creating a totaly new chronology
 	var create bool
@@ -631,26 +613,8 @@ func ChronologiesGetTree(w http.ResponseWriter, r *http.Request, proute routes.P
 	}
 
 	// get the user
-	_user, ok := proute.Session.Get("user")
-	if !ok {
-		log.Println("ChronologiesUpdate: can't get user in session...", _user)
-		_ = tx.Rollback()
-		return
-	}
-	user, ok := _user.(model.User)
-	if !ok {
-		log.Println("ChronologiesUpdate: can't cast user...", _user)
-		_ = tx.Rollback()
-		return
-	}
-	err = user.Get(tx)
-	user.Password = "" // immediatly erase password field, we don't need it
-	if err != nil {
-		log.Println("ChronologiesUpdate: can't load user...", _user)
-		userSqlError(w, err)
-		_ = tx.Rollback()
-		return
-	}
+	_user, _ := proute.Session.Get("user")
+	user := _user.(model.User)
 
 	answer, err := chronologiesGetTree(w, tx, params.Id, user)
 
