@@ -147,28 +147,6 @@ func ChronologiesRoots(w http.ResponseWriter, r *http.Request, proute routes.Pro
 		return
 	}
 
-	// get the user
-	_user, ok := proute.Session.Get("user")
-	if !ok {
-		log.Println("ChronologiesRoots: can't get user in session...", _user)
-		_ = tx.Rollback()
-		return
-	}
-	user, ok := _user.(model.User)
-	if !ok {
-		log.Println("ChronologiesRoots: can't cast user...", _user)
-		_ = tx.Rollback()
-		return
-	}
-	err = user.Get(tx)
-	user.Password = "" // immediatly erase password field, we don't need it
-	if err != nil {
-		log.Println("ChronologiesRoots: can't load user...", _user)
-		_ = tx.Rollback()
-		userSqlError(w, err)
-		return
-	}
-
 	// load all roots yes condition is always true
 	q := "SELECT *,ST_AsGeoJSON(geom) as geom FROM chronology_root WHERE 1 = 1"
 
