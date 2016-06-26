@@ -198,6 +198,9 @@ func decodeParams(myroute *Route, rw http.ResponseWriter, r *http.Request) inter
 		case reflect.Float32, reflect.Float64:
 			def, _ := strconv.ParseFloat(paramval, 64)
 			value.SetFloat(def)
+		case reflect.Bool:
+			def, _ := strconv.ParseBool(paramval)
+			value.SetBool(def)
 		case reflect.String:
 			value.SetString(paramval)
 		default:
