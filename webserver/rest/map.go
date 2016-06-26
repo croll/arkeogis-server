@@ -59,9 +59,7 @@ func (sql *MapSqlQuery) Init() {
 }
 
 func (sql *MapSqlQuery) AddTable(name string) {
-	fmt.Println("adding table...")
 	sql.Tables[name] = true
-	fmt.Println("adding table... done")
 }
 
 func (sql *MapSqlQuery) AddFilter(filtergroup string, where string) {
@@ -76,6 +74,11 @@ func (sql *MapSqlQuery) AddFilter(filtergroup string, where string) {
 
 func (sql *MapSqlQuery) BuildQuery() string {
 	q := "SELECT site.id FROM site"
+
+	// dependences
+	if join, ok := sql.Tables["site_range__charac"]; ok && join {
+		sql.AddTable("site_range")
+	}
 
 	if join, ok := sql.Tables["database"]; ok && join {
 		q += ` LEFT JOIN "database" ON "site".database_id = "database".id`
@@ -195,14 +198,25 @@ func MapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 			compare = "!="
 		}
 
-		if knowledge == "literature" ||
-			knowledge == "surveyed" ||
-			knowledge == "dig" ||
-			knowledge == "not_documented" ||
-			knowledge == "prospected_aerial" ||
-			knowledge == "prospected_pedestrian" {
-			filters.AddTable(`"site_range__charac"`)
+		switch knowledge {
+		case "literature", "surveyed", "dig", "not_documented", "prospected_aerial", "prospected_pedestrian":
+			filters.AddTable(`site_range__charac`)
 			filters.AddFilter("knowledge", `"site_range__charac".knowledge_type `+compare+` '`+knowledge+`'`)
+		}
+	}
+
+	// add occupation filter
+	for occupation, yesno := range params.Knowledge {
+		var compare string
+		if yesno {
+			compare = "="
+		} else {
+			compare = "!="
+		}
+
+		switch occupation {
+		case "not_documented", "single", "continuous", "multiple":
+			filters.AddFilter("occupation", `"site".occupation `+compare+` '`+occupation+`'`)
 		}
 	}
 
