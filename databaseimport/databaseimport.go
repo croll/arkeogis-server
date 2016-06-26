@@ -945,6 +945,15 @@ func (di *DatabaseImport) parseDates(period string) ([2]int, error) {
 			}
 		}
 
+		// Arkeogis hack on negative dates
+		if dates[0] < 1 {
+			dates[0] += 1
+		}
+
+		if dates[1] < 1 {
+			dates[1] += 1
+		}
+
 	}
 
 	// fmt.Println("Date1 and Date2", dates, "---")
