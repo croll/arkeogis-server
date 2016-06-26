@@ -246,11 +246,6 @@ func SaveShpLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 
 	err = tx.Commit()
 
-	if err != nil {
-		userSqlError(w, err)
-		return
-	}
-
 }
 
 type SaveWmLayerParams struct {
@@ -393,12 +388,9 @@ func SaveWmLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		return
 	}
 
-	fmt.Println("---------------------------")
-	fmt.Println(params)
-
 	err = tx.Commit()
-
 	if err != nil {
+		log.Println(err)
 		userSqlError(w, err)
 		return
 	}
@@ -411,6 +403,9 @@ type GetLayersParams struct {
 	Author       int
 	Iso_code     string
 	Bounding_box string
+	Start_date   int  `json:"start_date"`
+	End_date     int  `json:"end_date"`
+	Check_dates  bool `json:"check_dates"`
 }
 
 type LayerInfos struct {
@@ -461,7 +456,8 @@ func GetLayers(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		infos := []*LayerInfos{}
 		infos, err = getShpLayers(params)
 		if err != nil {
-			http.Error(w, "Error getting shp layers list: "+err.Error(), http.StatusBadRequest)
+			log.Println(err)
+			userSqlError(w, err)
 			return
 		}
 		result = append(result, infos...)
@@ -471,7 +467,8 @@ func GetLayers(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		infos := []*LayerInfos{}
 		infos, err = getWmLayers(params)
 		if err != nil {
-			http.Error(w, "Error getting shp layers list: "+err.Error(), http.StatusBadRequest)
+			log.Println(err)
+			userSqlError(w, err)
 			return
 		}
 		result = append(result, infos...)
@@ -490,6 +487,7 @@ func getShpLayers(params *GetLayersParams) (layers []*LayerInfos, err error) {
 
 	tx, err := db.DB.Beginx()
 	if err != nil {
+		log.Println(err)
 		return
 	}
 
@@ -504,7 +502,11 @@ func getShpLayers(params *GetLayersParams) (layers []*LayerInfos, err error) {
 	}
 
 	if params.Bounding_box != "" {
-		q += " AND ST_Contains(ST_GeomFromGeoJSON(:bounding_box), geographical_extent_geom::::geometry)"
+		q += " AND ST_Contains(ST_GeomFromGeoJSON(:bounding_box), m.geographical_extent_geom::::geometry)"
+	}
+
+	if params.Check_dates {
+		q += " AND m.start_date > :start_date AND m.end_date < :end_date"
 	}
 
 	in := model.IntJoin(params.Ids, false)
@@ -515,9 +517,14 @@ func getShpLayers(params *GetLayersParams) (layers []*LayerInfos, err error) {
 
 	nstmt, err := db.DB.PrepareNamed(q)
 	if err != nil {
+		log.Println(err)
 		return
 	}
 	err = nstmt.Select(&layers, params)
+	if err != nil {
+		log.Println(err)
+		return
+	}
 
 	for _, layer := range layers {
 		tr := []model.Shapefile_tr{}
@@ -561,7 +568,11 @@ func getWmLayers(params *GetLayersParams) (layers []*LayerInfos, err error) {
 	}
 
 	if params.Bounding_box != "" {
-		q += " AND ST_Contains(ST_GeomFromGeoJSON(:bounding_box), geographical_extent_geom::::geometry)"
+		q += " AND ST_Contains(ST_GeomFromGeoJSON(:bounding_box), m.geographical_extent_geom::::geometry)"
+	}
+
+	if params.Check_dates {
+		q += " AND m.start_date > :start_date AND m.end_date < :end_date"
 	}
 
 	in := model.IntJoin(params.Ids, false)
