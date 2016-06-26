@@ -72,6 +72,9 @@ func init() {
 
 type DatabaseListParams struct {
 	Bounding_box string
+	Start_date   int  `json:"start_date"`
+	End_date     int  `json:"end_date"`
+	Check_dates  bool `json:"check_dates"`
 }
 
 // DatabasesList returns the list of databases
@@ -102,6 +105,10 @@ func DatabasesList(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 
 	if params.Bounding_box != "" {
 		q += " AND ST_Contains(ST_GeomFromGeoJSON(:bounding_box), geographical_extent_geom::::geometry)"
+	}
+
+	if params.Check_dates {
+		q += " AND d.start_date > :start_date AND d.end_date < :end_date"
 	}
 
 	databases := []dbInfos{}
