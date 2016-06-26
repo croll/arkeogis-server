@@ -112,10 +112,10 @@ func DatabasesList(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 
 	databases := []dbInfos{}
 
-	nstmt, err := db.DB.PrepareNamed(q)
+	nstmt, err := tx.PrepareNamed(q)
 	if err != nil {
-		log.Println(err)
 		userSqlError(w, err)
+		_ = tx.Rollback()
 		return
 	}
 	err = nstmt.Select(&databases, params)
@@ -123,6 +123,7 @@ func DatabasesList(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 	if err != nil {
 		log.Println(err)
 		userSqlError(w, err)
+		_ = tx.Rollback()
 		return
 	}
 
@@ -149,6 +150,7 @@ func DatabasesList(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 	if err != nil {
 		log.Println(err)
 		userSqlError(w, err)
+		_ = tx.Rollback()
 		return
 	}
 

@@ -173,18 +173,23 @@ func SaveShpLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 		layer.Id = params.Id
 		err = layer.Update(tx)
 		if err != nil {
+			_ = tx.Rollback()
+			log.Println(err)
 			userSqlError(w, err)
 			return
 		}
 		err = layer.DeleteAuthors(tx)
 		if err != nil {
 			log.Println(err)
+			_ = tx.Rollback()
 			userSqlError(w, err)
 			return
 		}
 	} else {
 		err = layer.Create(tx)
 		if err != nil {
+			log.Println(err)
+			_ = tx.Rollback()
 			userSqlError(w, err)
 			return
 		}
@@ -193,6 +198,7 @@ func SaveShpLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 	err = layer.SetAuthors(tx, params.Authors)
 	if err != nil {
 		log.Println("Error setting database authors: ", err)
+		_ = tx.Rollback()
 		userSqlError(w, err)
 		return
 	}
@@ -207,6 +213,7 @@ func SaveShpLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 	err = layer.SetTranslations(tx, "attribution", attribution)
 	if err != nil {
 		log.Println("Error setting attribution: ", err)
+		_ = tx.Rollback()
 		userSqlError(w, err)
 		return
 	}
@@ -221,6 +228,7 @@ func SaveShpLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 	err = layer.SetTranslations(tx, "copyright", copyright)
 	if err != nil {
 		log.Println("Error setting copyright: ", err)
+		_ = tx.Rollback()
 		userSqlError(w, err)
 		return
 	}
@@ -228,6 +236,7 @@ func SaveShpLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 	err = layer.SetTranslations(tx, "name", params.Name)
 	if err != nil {
 		log.Println("Error setting name: ", err)
+		_ = tx.Rollback()
 		userSqlError(w, err)
 		return
 	}
@@ -235,16 +244,24 @@ func SaveShpLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 	err = layer.SetTranslations(tx, "description", params.Description)
 	if err != nil {
 		log.Println("Error setting description: ", err)
+		_ = tx.Rollback()
 		userSqlError(w, err)
 		return
 	}
 
 	if err != nil {
 		userSqlError(w, err)
+		_ = tx.Rollback()
 		return
 	}
 
 	err = tx.Commit()
+	if err != nil {
+		log.Println("Error commiting changes: ", err)
+		_ = tx.Rollback()
+		userSqlError(w, err)
+		return
+	}
 
 }
 
@@ -515,7 +532,7 @@ func getShpLayers(params *GetLayersParams) (layers []*LayerInfos, err error) {
 		q += " AND m.id IN (" + in + ")"
 	}
 
-	nstmt, err := db.DB.PrepareNamed(q)
+	nstmt, err := tx.PrepareNamed(q)
 	if err != nil {
 		log.Println(err)
 		return
@@ -541,6 +558,10 @@ func getShpLayers(params *GetLayersParams) (layers []*LayerInfos, err error) {
 	}
 
 	err = tx.Commit()
+	if err != nil {
+		log.Println(err)
+		_ = tx.Rollback()
+	}
 	return
 }
 
@@ -550,6 +571,7 @@ func getWmLayers(params *GetLayersParams) (layers []*LayerInfos, err error) {
 
 	tx, err := db.DB.Beginx()
 	if err != nil {
+		log.Println("Error setting transaction", err)
 		return
 	}
 
@@ -584,6 +606,7 @@ func getWmLayers(params *GetLayersParams) (layers []*LayerInfos, err error) {
 	nstmt, err := tx.PrepareNamed(q)
 	if err != nil {
 		log.Println(err)
+		_ = tx.Rollback()
 		return
 	}
 	err = nstmt.Select(&layers, params)
@@ -593,6 +616,7 @@ func getWmLayers(params *GetLayersParams) (layers []*LayerInfos, err error) {
 		tr := []model.Map_layer_tr{}
 		err = tx.Select(&tr, "SELECT * FROM map_layer_tr WHERE map_layer_id = "+strconv.Itoa(layer.Id))
 		if err != nil {
+			log.Println(err)
 			_ = tx.Rollback()
 			return
 		}
@@ -604,6 +628,10 @@ func getWmLayers(params *GetLayersParams) (layers []*LayerInfos, err error) {
 	}
 
 	err = tx.Commit()
+	if err != nil {
+		log.Println(err)
+		_ = tx.Rollback()
+	}
 
 	return
 }
