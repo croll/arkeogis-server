@@ -119,6 +119,9 @@ func ChronologiesAll(w http.ResponseWriter, r *http.Request, proute routes.Prout
 type ChronologiesRootsParams struct {
 	Bounding_box string
 	Active       bool `json:"active"`
+	Start_date   int  `json:"start_date"`
+	End_date     int  `json:"end_date"`
+	Check_dates  bool `json:"check_dates"`
 }
 
 // ChronologiesRoots write all root chronologies in all languages
@@ -194,13 +197,20 @@ func ChronologiesRoots(w http.ResponseWriter, r *http.Request, proute routes.Pro
 	}
 
 	// load all root chronologies
-	for _, chrono := range chronologies {
+	for i, chrono := range chronologies {
 		chrono.Chronology.Id = chrono.Chronology_root.Root_chronology_id
 		err = chrono.Chronology.Get(tx)
 		if err != nil {
 			userSqlError(w, err)
 			_ = tx.Rollback()
 			return
+		}
+
+		// check if chronology is in requested date bounds
+		if params.Check_dates {
+			if chrono.Start_date < params.Start_date || chrono.End_date > params.End_date {
+				chronologies = append(chronologies[:i], chronologies[i+1:]...)
+			}
 		}
 
 		// load translations

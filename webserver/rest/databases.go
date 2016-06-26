@@ -23,7 +23,6 @@ package rest
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"reflect"
@@ -72,6 +71,9 @@ func init() {
 
 type DatabaseListParams struct {
 	Bounding_box string
+	Start_date   int  `json:"start_date"`
+	End_date     int  `json:"end_date"`
+	Check_dates  bool `json:"check_dates"`
 }
 
 // DatabasesList returns the list of databases
@@ -104,19 +106,24 @@ func DatabasesList(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 		q += " AND ST_Contains(ST_GeomFromGeoJSON(:bounding_box), geographical_extent_geom::::geometry)"
 	}
 
+	if params.Check_dates {
+		q += " AND d.start_date > :start_date AND d.end_date < :end_date"
+	}
+
 	databases := []dbInfos{}
 
-	nstmt, err := db.DB.PrepareNamed(q)
+	nstmt, err := tx.PrepareNamed(q)
 	if err != nil {
-		fmt.Println(err)
 		userSqlError(w, err)
+		_ = tx.Rollback()
 		return
 	}
 	err = nstmt.Select(&databases, params)
 
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		userSqlError(w, err)
+		_ = tx.Rollback()
 		return
 	}
 
@@ -124,7 +131,7 @@ func DatabasesList(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 		tr := []model.Database_tr{}
 		err = tx.Select(&tr, "SELECT * FROM database_tr WHERE database_id = "+strconv.Itoa(database.Id))
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			userSqlError(w, err)
 			_ = tx.Rollback()
 			return
@@ -141,8 +148,9 @@ func DatabasesList(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 
 	err = tx.Commit()
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		userSqlError(w, err)
+		_ = tx.Rollback()
 		return
 	}
 

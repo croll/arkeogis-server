@@ -173,18 +173,23 @@ func SaveShpLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 		layer.Id = params.Id
 		err = layer.Update(tx)
 		if err != nil {
+			_ = tx.Rollback()
+			log.Println(err)
 			userSqlError(w, err)
 			return
 		}
 		err = layer.DeleteAuthors(tx)
 		if err != nil {
 			log.Println(err)
+			_ = tx.Rollback()
 			userSqlError(w, err)
 			return
 		}
 	} else {
 		err = layer.Create(tx)
 		if err != nil {
+			log.Println(err)
+			_ = tx.Rollback()
 			userSqlError(w, err)
 			return
 		}
@@ -193,6 +198,7 @@ func SaveShpLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 	err = layer.SetAuthors(tx, params.Authors)
 	if err != nil {
 		log.Println("Error setting database authors: ", err)
+		_ = tx.Rollback()
 		userSqlError(w, err)
 		return
 	}
@@ -207,6 +213,7 @@ func SaveShpLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 	err = layer.SetTranslations(tx, "attribution", attribution)
 	if err != nil {
 		log.Println("Error setting attribution: ", err)
+		_ = tx.Rollback()
 		userSqlError(w, err)
 		return
 	}
@@ -221,6 +228,7 @@ func SaveShpLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 	err = layer.SetTranslations(tx, "copyright", copyright)
 	if err != nil {
 		log.Println("Error setting copyright: ", err)
+		_ = tx.Rollback()
 		userSqlError(w, err)
 		return
 	}
@@ -228,6 +236,7 @@ func SaveShpLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 	err = layer.SetTranslations(tx, "name", params.Name)
 	if err != nil {
 		log.Println("Error setting name: ", err)
+		_ = tx.Rollback()
 		userSqlError(w, err)
 		return
 	}
@@ -235,18 +244,21 @@ func SaveShpLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 	err = layer.SetTranslations(tx, "description", params.Description)
 	if err != nil {
 		log.Println("Error setting description: ", err)
+		_ = tx.Rollback()
 		userSqlError(w, err)
 		return
 	}
 
 	if err != nil {
 		userSqlError(w, err)
+		_ = tx.Rollback()
 		return
 	}
 
 	err = tx.Commit()
-
 	if err != nil {
+		log.Println("Error commiting changes: ", err)
+		_ = tx.Rollback()
 		userSqlError(w, err)
 		return
 	}
@@ -393,12 +405,9 @@ func SaveWmLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		return
 	}
 
-	fmt.Println("---------------------------")
-	fmt.Println(params)
-
 	err = tx.Commit()
-
 	if err != nil {
+		log.Println(err)
 		userSqlError(w, err)
 		return
 	}
@@ -411,6 +420,9 @@ type GetLayersParams struct {
 	Author       int
 	Iso_code     string
 	Bounding_box string
+	Start_date   int  `json:"start_date"`
+	End_date     int  `json:"end_date"`
+	Check_dates  bool `json:"check_dates"`
 }
 
 type LayerInfos struct {
@@ -461,7 +473,8 @@ func GetLayers(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		infos := []*LayerInfos{}
 		infos, err = getShpLayers(params)
 		if err != nil {
-			http.Error(w, "Error getting shp layers list: "+err.Error(), http.StatusBadRequest)
+			log.Println(err)
+			userSqlError(w, err)
 			return
 		}
 		result = append(result, infos...)
@@ -471,7 +484,8 @@ func GetLayers(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		infos := []*LayerInfos{}
 		infos, err = getWmLayers(params)
 		if err != nil {
-			http.Error(w, "Error getting shp layers list: "+err.Error(), http.StatusBadRequest)
+			log.Println(err)
+			userSqlError(w, err)
 			return
 		}
 		result = append(result, infos...)
@@ -490,6 +504,7 @@ func getShpLayers(params *GetLayersParams) (layers []*LayerInfos, err error) {
 
 	tx, err := db.DB.Beginx()
 	if err != nil {
+		log.Println(err)
 		return
 	}
 
@@ -504,7 +519,11 @@ func getShpLayers(params *GetLayersParams) (layers []*LayerInfos, err error) {
 	}
 
 	if params.Bounding_box != "" {
-		q += " AND ST_Contains(ST_GeomFromGeoJSON(:bounding_box), geographical_extent_geom::::geometry)"
+		q += " AND ST_Contains(ST_GeomFromGeoJSON(:bounding_box), m.geographical_extent_geom::::geometry)"
+	}
+
+	if params.Check_dates {
+		q += " AND m.start_date > :start_date AND m.end_date < :end_date"
 	}
 
 	in := model.IntJoin(params.Ids, false)
@@ -513,11 +532,16 @@ func getShpLayers(params *GetLayersParams) (layers []*LayerInfos, err error) {
 		q += " AND m.id IN (" + in + ")"
 	}
 
-	nstmt, err := db.DB.PrepareNamed(q)
+	nstmt, err := tx.PrepareNamed(q)
 	if err != nil {
+		log.Println(err)
 		return
 	}
 	err = nstmt.Select(&layers, params)
+	if err != nil {
+		log.Println(err)
+		return
+	}
 
 	for _, layer := range layers {
 		tr := []model.Shapefile_tr{}
@@ -534,6 +558,10 @@ func getShpLayers(params *GetLayersParams) (layers []*LayerInfos, err error) {
 	}
 
 	err = tx.Commit()
+	if err != nil {
+		log.Println(err)
+		_ = tx.Rollback()
+	}
 	return
 }
 
@@ -543,6 +571,7 @@ func getWmLayers(params *GetLayersParams) (layers []*LayerInfos, err error) {
 
 	tx, err := db.DB.Beginx()
 	if err != nil {
+		log.Println("Error setting transaction", err)
 		return
 	}
 
@@ -561,7 +590,11 @@ func getWmLayers(params *GetLayersParams) (layers []*LayerInfos, err error) {
 	}
 
 	if params.Bounding_box != "" {
-		q += " AND ST_Contains(ST_GeomFromGeoJSON(:bounding_box), geographical_extent_geom::::geometry)"
+		q += " AND ST_Contains(ST_GeomFromGeoJSON(:bounding_box), m.geographical_extent_geom::::geometry)"
+	}
+
+	if params.Check_dates {
+		q += " AND m.start_date > :start_date AND m.end_date < :end_date"
 	}
 
 	in := model.IntJoin(params.Ids, false)
@@ -573,6 +606,7 @@ func getWmLayers(params *GetLayersParams) (layers []*LayerInfos, err error) {
 	nstmt, err := tx.PrepareNamed(q)
 	if err != nil {
 		log.Println(err)
+		_ = tx.Rollback()
 		return
 	}
 	err = nstmt.Select(&layers, params)
@@ -582,6 +616,7 @@ func getWmLayers(params *GetLayersParams) (layers []*LayerInfos, err error) {
 		tr := []model.Map_layer_tr{}
 		err = tx.Select(&tr, "SELECT * FROM map_layer_tr WHERE map_layer_id = "+strconv.Itoa(layer.Id))
 		if err != nil {
+			log.Println(err)
 			_ = tx.Rollback()
 			return
 		}
@@ -593,6 +628,10 @@ func getWmLayers(params *GetLayersParams) (layers []*LayerInfos, err error) {
 	}
 
 	err = tx.Commit()
+	if err != nil {
+		log.Println(err)
+		_ = tx.Rollback()
+	}
 
 	return
 }
