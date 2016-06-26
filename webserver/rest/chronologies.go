@@ -39,7 +39,8 @@ import (
 )
 
 type ChronologyGetParams struct {
-	Id int `min:"1" error:"Chronology Id is mandatory"`
+	Id     int `min:"1" error:"Chronology Id is mandatory"`
+	Active bool
 }
 
 func init() {
@@ -117,6 +118,7 @@ func ChronologiesAll(w http.ResponseWriter, r *http.Request, proute routes.Prout
 // ChronologiesRootsStruct holds get params passed to ChronologiesRoots
 type ChronologiesRootsParams struct {
 	Bounding_box string
+	Active       bool `json:"active"`
 }
 
 // ChronologiesRoots write all root chronologies in all languages
@@ -165,10 +167,14 @@ func ChronologiesRoots(w http.ResponseWriter, r *http.Request, proute routes.Pro
 	}
 
 	// load all roots yes condition is always true
-	q := "SELECT *,ST_AsGeoJSON(geom) as geom FROM chronology_root WHERE author_user_id > 1"
+	q := "SELECT *,ST_AsGeoJSON(geom) as geom FROM chronology_root WHERE 1 = 1"
 
 	if params.Bounding_box != "" {
 		q += " AND ST_Contains(ST_GeomFromGeoJSON(:bounding_box), geom::::geometry)"
+	}
+
+	if params.Active {
+		q += " AND active = 't'"
 	}
 
 	stmt, err := db.DB.PrepareNamed(q)
@@ -627,6 +633,8 @@ func chronologiesGetTree(w http.ResponseWriter, tx *sqlx.Tx, id int, user model.
 func ChronologiesGetTree(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	params := proute.Params.(*ChronologyGetParams)
 
+	fmt.Println("params : ", params)
+
 	// transaction begin...
 	tx, err := db.DB.Beginx()
 	if err != nil {
@@ -667,9 +675,15 @@ func ChronologiesGetTree(w http.ResponseWriter, r *http.Request, proute routes.P
 		return
 	}
 
+	if params.Active && !answer.Active {
+		routes.FieldError(w, "Active", "Active", "CHRONO.SERVER_ERROR.T_NOT_ACTIVE")
+		return
+	}
+
 	j, err := json.Marshal(answer)
 	if err != nil {
 		log.Println("marshal failed: ", err)
+		return
 	}
 	//log.Println("result: ", string(j))
 	w.Write(j)
