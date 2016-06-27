@@ -161,7 +161,7 @@ func MapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 			}
 		} else {
 			id, err := strconv.Atoi(iddb)
-			if err != nil {
+			if err == nil {
 				for subfilter, yesno := range subfilters {
 					if subfilter == "inclorexcl" {
 						var compare string
@@ -170,7 +170,7 @@ func MapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 						} else {
 							compare = "!="
 						}
-						filters.AddFilter("database", `"site".id `+compare+` `+strconv.Itoa(id))
+						filters.AddFilter("database", `"site".database_id `+compare+` `+strconv.Itoa(id))
 					}
 				}
 			}
@@ -275,7 +275,7 @@ func MapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	}
 
 	q := filters.BuildQuery()
-	//fmt.Println("q: ", q)
+	fmt.Println("q: ", q)
 
 	site_ids := []int{}
 	err = tx.Select(&site_ids, q)
