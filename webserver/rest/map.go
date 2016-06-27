@@ -28,6 +28,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 
 	db "github.com/croll/arkeogis-server/db"
 	"github.com/croll/arkeogis-server/model"
@@ -117,9 +118,12 @@ type MapSearchParams struct {
 // MapSearch search for sites using many filters
 func MapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
+	// for measuring execution time
+	start := time.Now()
+
 	params := proute.Json.(*MapSearchParams)
 
-	fmt.Println("params: ", params)
+	//fmt.Println("params: ", params)
 
 	tx, err := db.DB.Beginx()
 	if err != nil {
@@ -271,11 +275,14 @@ func MapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	}
 
 	q := filters.BuildQuery()
-	fmt.Println("q: ", q)
+	//fmt.Println("q: ", q)
 
 	site_ids := []int{}
 	err = tx.Select(&site_ids, q)
-	fmt.Println("site_ids : ", site_ids)
+	//fmt.Println("site_ids : ", site_ids)
+
+	elapsed := time.Since(start)
+	fmt.Printf("Search took %s", elapsed)
 
 	jsonString := mapGetSitesAsJson(site_ids, tx)
 
@@ -292,6 +299,10 @@ func MapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 }
 
 func mapGetSitesAsJson(sites []int, tx *sqlx.Tx) string {
+
+	// for measuring execution time
+	start := time.Now()
+
 	var jsonResult []string
 
 	q := `SELECT '{"type": "Feature", ' ||`
@@ -316,6 +327,9 @@ func mapGetSitesAsJson(sites []int, tx *sqlx.Tx) string {
 	q += ` FROM site s WHERE s.id IN (` + model.IntJoin(sites, true) + `)`
 
 	err := tx.Select(&jsonResult, q)
+
+	elapsed := time.Since(start)
+	fmt.Printf("mapGetSitesAsJson took %s", elapsed)
 
 	if err != nil {
 		fmt.Println(err.Error())
