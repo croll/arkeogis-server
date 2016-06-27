@@ -469,7 +469,12 @@ func ChronologiesUpdate(w http.ResponseWriter, r *http.Request, proute routes.Pr
 		}
 	}
 
-	answer, err := chronologiesGetTree(w, tx, c.Id, user)
+	answer, err := chronologiesGetTree(tx, c.Id, user)
+	if err != nil {
+		_ = tx.Rollback()
+		userSqlError(w, err)
+		return
+	}
 
 	// commit...
 	err = tx.Commit()
@@ -535,7 +540,7 @@ func getChronoRecursive(tx *sqlx.Tx, chrono *ChronologyTreeStruct) error {
 	return nil
 }
 
-func chronologiesGetTree(w http.ResponseWriter, tx *sqlx.Tx, id int, user model.User) (answer *ChronologiesUpdateStruct, err error) {
+func chronologiesGetTree(tx *sqlx.Tx, id int, user model.User) (answer *ChronologiesUpdateStruct, err error) {
 
 	// answer structure that will be printed when everything is done
 	answer = &ChronologiesUpdateStruct{}
@@ -544,8 +549,6 @@ func chronologiesGetTree(w http.ResponseWriter, tx *sqlx.Tx, id int, user model.
 	answer.Chronology_root.Root_chronology_id = id
 	err = answer.Chronology_root.Get(tx)
 	if err != nil {
-		userSqlError(w, err)
-		_ = tx.Rollback()
 		return nil, err
 	}
 
@@ -553,16 +556,12 @@ func chronologiesGetTree(w http.ResponseWriter, tx *sqlx.Tx, id int, user model.
 	answer.Chronology.Id = id
 	err = answer.Chronology.Get(tx)
 	if err != nil {
-		userSqlError(w, err)
-		_ = tx.Rollback()
 		return nil, err
 	}
 
 	// now get the chronology translations and all childrens
 	err = getChronoRecursive(tx, &answer.ChronologyTreeStruct)
 	if err != nil {
-		userSqlError(w, err)
-		_ = tx.Rollback()
 		return nil, err
 	}
 
@@ -572,14 +571,10 @@ func chronologiesGetTree(w http.ResponseWriter, tx *sqlx.Tx, id int, user model.
 	}
 	err = group.Get(tx)
 	if err != nil {
-		userSqlError(w, err)
-		_ = tx.Rollback()
 		return nil, err
 	}
 	answer.UsersInGroup, err = group.GetUsers(tx)
 	if err != nil {
-		userSqlError(w, err)
-		_ = tx.Rollback()
 		return nil, err
 	}
 
@@ -592,8 +587,6 @@ func chronologiesGetTree(w http.ResponseWriter, tx *sqlx.Tx, id int, user model.
 	err = answer.Author.Get(tx)
 	answer.Author.Password = ""
 	if err != nil {
-		userSqlError(w, err)
-		_ = tx.Rollback()
 		return nil, err
 	}
 
@@ -616,7 +609,12 @@ func ChronologiesGetTree(w http.ResponseWriter, r *http.Request, proute routes.P
 	_user, _ := proute.Session.Get("user")
 	user := _user.(model.User)
 
-	answer, err := chronologiesGetTree(w, tx, params.Id, user)
+	answer, err := chronologiesGetTree(tx, params.Id, user)
+	if err != nil {
+		_ = tx.Rollback()
+		userSqlError(w, err)
+		return
+	}
 
 	// commit...
 	err = tx.Commit()
@@ -696,7 +694,12 @@ func ChronologiesDelete(w http.ResponseWriter, r *http.Request, proute routes.Pr
 	}
 
 	// get the full chronologie tree
-	answer, err := chronologiesGetTree(w, tx, params.Id, user)
+	answer, err := chronologiesGetTree(tx, params.Id, user)
+	if err != nil {
+		_ = tx.Rollback()
+		userSqlError(w, err)
+		return
+	}
 
 	// delete chronology_root
 	err = answer.Chronology_root.Delete(tx)
