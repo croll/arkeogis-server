@@ -61,23 +61,19 @@ type GetProjectParams struct {
 	Id      int `json:"id"`
 }
 
-type layerInfos struct {
-	Id   int    `json:"id"`
-	Type string `json:"type"`
-}
-
 func GetProject(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	params := proute.Json.(*GetProjectParams)
 
-	type projectStruct struct {
-		model.Project
-		Chronologies []int `json:"chronologies"`
-		Layers       []layerInfos
-		Databases    []int `json:"databases"`
+	_user, _ := proute.Session.Get("user")
+	user := _user.(model.User)
+
+	if params.Id == 0 && params.User_id == 0 {
+		http.Error(w, "Unable to get project project. No project id and no user id provided", 500)
+		return
 	}
 
-	project := &projectStruct{}
+	project := &model.ProjectFullInfos{}
 
 	tx, err := db.DB.Beginx()
 	if err != nil {
@@ -85,42 +81,24 @@ func GetProject(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		return
 	}
 
-	// Project infos
+	projectID, err := user.GetProjectId(tx)
 
-	// Chronologies
-	err = tx.Select(project.Chronologies, "SELECT root_chronology_id from project__chronology WHERE project_id = :id", params.Id)
 	if err != nil {
-		log.Println(err)
-		_ = tx.Rollback()
+		tx.Rollback()
+		log.Fatal("can't get project!")
 		userSqlError(w, err)
-		return
 	}
 
-	// Databases
-	err = tx.Select(project.Databases, "SELECT database_id from project__databases WHERE project_id = :id", params.Id)
-	if err != nil {
-		log.Println(err)
-		_ = tx.Rollback()
-		userSqlError(w, err)
-		return
-	}
-
-	// Layers WMS
-	err = tx.Select(project.Layers, "SELECT pm.id, pm.typefrom project__map_layer pml LEFT JOIN map_layer ml ON pml.map_layer_id = pm.id WHERE pml.project_id = :id", params.Id)
-	if err != nil {
-		log.Println(err)
-		_ = tx.Rollback()
-		userSqlError(w, err)
-		return
-	}
-
-	// Layers Shapefile
-	err = tx.Select(project.Layers, "SELECT s.id, s.type from project__shapefile ps LEFT JOIN shapefile s ON ps.shapefile_id = s.id WHERE ps.project_id = :id", params.Id)
-	if err != nil {
-		log.Println(err)
-		_ = tx.Rollback()
-		userSqlError(w, err)
-		return
+	if projectID > 0 {
+		project.Id = projectID
+		err = project.Get(tx)
+		if err != nil {
+			tx.Rollback()
+			log.Fatal("can't get project!")
+			userSqlError(w, err)
+		}
+	} else {
+		project.Id = 0
 	}
 
 	// Commit
@@ -138,16 +116,16 @@ func GetProject(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 }
 
 type SaveProjectParams struct {
-	Name         string       `json:"name"`
-	Id           int          `default:"0" json:"id"`
-	User_id      int          `json:"-"`
-	Start_date   int          `json:"start_date"`
-	End_date     int          `json:"end_date"`
-	Geom         string       `json:"geom"`
-	Chronologies []int        `json:"chronologies"`
-	Layers       []layerInfos `json:"layers"`
-	Databases    []int        `json:"databases"`
-	Characs      []int        `json:"characs"`
+	Name         string                    `json:"name"`
+	Id           int                       `default:"0" json:"id"`
+	User_id      int                       `json:"-"`
+	Start_date   int                       `json:"start_date"`
+	End_date     int                       `json:"end_date"`
+	Geom         string                    `json:"geom"`
+	Chronologies []int                     `json:"chronologies"`
+	Layers       []model.ProjectLayerInfos `json:"layers"`
+	Databases    []int                     `json:"databases"`
+	Characs      []int                     `json:"characs"`
 }
 
 func SaveProject(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
