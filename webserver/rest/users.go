@@ -643,6 +643,7 @@ type LoginAnswer struct {
 	Token       string
 	Lang1       model.Lang         `json:"lang1"`
 	Lang2       model.Lang         `json:"lang2"`
+	Project_id  int                `json:"project_id"`
 	Permissions []model.Permission `json:"permissions"`
 }
 
@@ -686,11 +687,20 @@ func loginAnswer(w http.ResponseWriter, tx *sqlx.Tx, user model.User, token stri
 	}
 	log.Println("permissions : ", permissions)
 
+	projectID, err := user.GetProjectId(tx)
+	if err != nil {
+		tx.Rollback()
+		log.Fatal("can't get project!")
+		return LoginAnswer{}, err
+	}
+	log.Println("project id: ", projectID)
+
 	a := LoginAnswer{
 		User:        user,
 		Token:       token,
 		Lang1:       lang1,
 		Lang2:       lang2,
+		Project_id:  projectID,
 		Permissions: permissions,
 	}
 
