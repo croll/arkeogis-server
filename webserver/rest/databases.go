@@ -114,6 +114,7 @@ func DatabasesList(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 
 	nstmt, err := tx.PrepareNamed(q)
 	if err != nil {
+		log.Println(err)
 		userSqlError(w, err)
 		_ = tx.Rollback()
 		return
@@ -122,8 +123,8 @@ func DatabasesList(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 
 	if err != nil {
 		log.Println(err)
-		userSqlError(w, err)
 		_ = tx.Rollback()
+		userSqlError(w, err)
 		return
 	}
 
@@ -132,8 +133,8 @@ func DatabasesList(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 		err = tx.Select(&tr, "SELECT * FROM database_tr WHERE database_id = "+strconv.Itoa(database.Id))
 		if err != nil {
 			log.Println(err)
-			userSqlError(w, err)
 			_ = tx.Rollback()
+			userSqlError(w, err)
 			return
 		}
 		database.Description = model.MapSqlTranslations(tr, "Lang_isocode", "Description")
@@ -150,7 +151,6 @@ func DatabasesList(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 	if err != nil {
 		log.Println(err)
 		userSqlError(w, err)
-		_ = tx.Rollback()
 		return
 	}
 
