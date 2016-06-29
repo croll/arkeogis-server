@@ -28,15 +28,20 @@ import (
 )
 
 type ProjectLayerInfos struct {
-	Id   int    `json:"id"`
-	Type string `json:"type"`
+	Id        int    `json:"id"`
+	Type      string `json:"type"`
+	Uniq_code string `json:"uniq_code"`
 }
 
 type ProjectFullInfos struct {
 	Project
-	Chronologies []int `json:"chronologies"`
-	Layers       []ProjectLayerInfos
-	Databases    []int `json:"databases"`
+	Chronologies []struct {
+		Root_chronology_id int `json:"id"`
+	} `json:"chronologies"`
+	Layers    []ProjectLayerInfos `json:"layers"`
+	Databases []struct {
+		Database_id int `json:"id"`
+	} `json:"databases"`
 }
 
 func (pfi *ProjectFullInfos) Get(tx *sqlx.Tx) (err error) {
@@ -63,14 +68,14 @@ func (pfi *ProjectFullInfos) Get(tx *sqlx.Tx) (err error) {
 	}
 
 	// Layers WMS
-	err = tx.Select(&pfi.Layers, "SELECT ml.id, ml.type FROM project__map_layer pml LEFT JOIN map_layer ml ON pml.map_layer_id = ml.id WHERE pml.project_id = $1", pfi.Id)
+	err = tx.Select(&pfi.Layers, "SELECT ml.id, ml.type, 'wms' || ml.id AS uniq_code FROM project__map_layer pml LEFT JOIN map_layer ml ON pml.map_layer_id = ml.id WHERE pml.project_id = $1", pfi.Id)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
 	// Layers Shapefile
-	err = tx.Select(&pfi.Layers, "SELECT s.id from project__shapefile ps LEFT JOIN shapefile s ON ps.shapefile_id = s.id WHERE ps.project_id = $1", pfi.Id)
+	err = tx.Select(&pfi.Layers, "SELECT s.id, 'shp' || s.id AS uniq_code from project__shapefile ps LEFT JOIN shapefile s ON ps.shapefile_id = s.id WHERE ps.project_id = $1", pfi.Id)
 	if err != nil {
 		log.Println(err)
 		return
