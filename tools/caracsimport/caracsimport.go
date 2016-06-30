@@ -36,25 +36,25 @@ var caracsRootByLang map[string]map[string]string = map[string]map[string]string
 	"Furniture": map[string]string{
 		"en": "Furniture",
 		"fr": "Mobilier",
-		"de": "Funde auswählen",
+		"de": "Funde",
 		"es": "Mobiliario",
 	},
 	"Landscape": map[string]string{
 		"en": "Landscape",
 		"fr": "Paysage",
-		"de": "Umwelt auswählen",
+		"de": "Umwelt",
 		"es": "Paisaje",
 	},
 	"Production": map[string]string{
 		"en": "Production",
 		"fr": "Production",
-		"de": "Production auswählen",
+		"de": "Production",
 		"es": "Producción",
 	},
 	"Realestate": map[string]string{
 		"en": "Realestate",
 		"fr": "Immobilier",
-		"de": "Befunde auswählen",
+		"de": "Befunde",
 		"es": "Inmobiliario",
 	},
 }
