@@ -91,15 +91,15 @@ func DatabasesList(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 
 	type dbInfos struct {
 		model.Database
-		Description         map[string]string
-		Geographical_limit  map[string]string
-		Bibliography        map[string]string
-		Context_description map[string]string
-		Source_description  map[string]string
-		Source_relation     map[string]string
-		Copyright           map[string]string
-		Subject             map[string]string
-		Author              string
+		Description         map[string]string `json:"description"`
+		Geographical_limit  map[string]string `json:"geographical_limit"`
+		Bibliography        map[string]string `json:"bibliography"`
+		Context_description map[string]string `json:"context_description"`
+		Source_description  map[string]string `json:"source_description"`
+		Source_relation     map[string]string `json:"source_relation"`
+		Copyright           map[string]string `json:"copyright"`
+		Subject             map[string]string `json:"subject"`
+		Author              string            `json:"author"`
 	}
 
 	if params.Bounding_box != "" {
