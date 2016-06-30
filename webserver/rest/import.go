@@ -196,31 +196,27 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	import_id, err := dbImport.Save(params.File.Name)
 	if err != nil {
 		parser.AddError("Error saving import " + err.Error())
-		sendError(w, parser.Errors)
-		return
 	}
 
-	// Cache geom
-	err = dbImport.Database.CacheGeom(dbImport.Tx)
-	if err != nil {
-		parser.AddError("Error caching geom " + err.Error())
-		sendError(w, parser.Errors)
-		return
-	}
+	if len(dbImport.SitesWithError) < dbImport.NumberOfSites {
+		// Cache geom
+		err = dbImport.Database.CacheGeom(dbImport.Tx)
+		if err != nil {
+			parser.AddError("Error caching geom " + err.Error())
+		}
 
-	// Cache dates
-	err = dbImport.Database.CacheDates(dbImport.Tx)
-	if err != nil {
-		parser.AddError("Error caching dates" + err.Error())
-		sendError(w, parser.Errors)
-		return
-	}
+		// Cache dates
+		err = dbImport.Database.CacheDates(dbImport.Tx)
+		if err != nil {
+			parser.AddError("Error caching dates" + err.Error())
+		}
 
-	err = dbImport.Tx.Commit()
-	if err != nil {
-		parser.AddError("Error when inserting import into database: " + err.Error())
-		sendError(w, parser.Errors)
-		return
+		err = dbImport.Tx.Commit()
+		if err != nil {
+			parser.AddError("Error when inserting import into database: " + err.Error())
+			sendError(w, parser.Errors)
+			return
+		}
 	}
 
 	// Cache database enveloppe

@@ -509,7 +509,8 @@ func (di *DatabaseImport) checkDifferences(f *Fields) {
 // getOccupation get occupation string from field translatable in the csv file
 func (di *DatabaseImport) getOccupation(occupation string) (val string, err error) {
 	err = nil
-	switch strings.ToLower(occupation) {
+
+	switch cleanAndLower(occupation) {
 	case di.lowerTranslation("IMPORT.CSVFIELD_OCCUPATION.T_LABEL_NOT_DOCUMENTED"):
 		val = "not_documented"
 	case di.lowerTranslation("IMPORT.CSVFIELD_OCCUPATION.T_LABEL_SINGLE"):
@@ -680,26 +681,26 @@ func (di *DatabaseImport) processCharacInfos(f *Fields) error {
 		return errors.New("invalid carac name")
 	}
 	if f.CARAC_LVL1 != "" {
-		path += "->" + strings.ToLower(f.CARAC_LVL1)
+		path += "->" + cleanAndLower(f.CARAC_LVL1)
 	} else {
 		di.AddError(f.CARAC_NAME, "IMPORT.CSVFIELD_CARAC_LVL1.T_CHECK_EMPTY")
 		return errors.New("no lvl1 carac")
 	}
 	if f.CARAC_LVL2 != "" {
-		path += "->" + strings.ToLower(f.CARAC_LVL2)
+		path += "->" + cleanAndLower(f.CARAC_LVL2)
 		lvl++
 	}
 	if f.CARAC_LVL3 != "" {
-		path += "->" + strings.ToLower(f.CARAC_LVL3)
+		path += "->" + cleanAndLower(f.CARAC_LVL3)
 		lvl++
 	}
 	if f.CARAC_LVL4 != "" {
-		path += "->" + strings.ToLower(f.CARAC_LVL4)
+		path += "->" + cleanAndLower(f.CARAC_LVL4)
 		lvl++
 	}
 	//path = strings.TrimSuffix(path, "->")
 	// Check if charac exists and retrieve id
-	caracNameToLowerCase := strings.ToLower(f.CARAC_NAME)
+	caracNameToLowerCase := cleanAndLower(f.CARAC_NAME)
 	caracID := di.ArkeoCharacs[caracNameToLowerCase][caracNameToLowerCase+path]
 	if caracID == 0 {
 		log.Println("NOT FOUND: ", caracNameToLowerCase+path)
@@ -716,7 +717,7 @@ func (di *DatabaseImport) processCharacInfos(f *Fields) error {
 	*/
 
 	//	STATE_OF_KNOWLEDGE
-	switch strings.ToLower(f.STATE_OF_KNOWLEDGE) {
+	switch cleanAndLower(f.STATE_OF_KNOWLEDGE) {
 	case di.lowerTranslation("IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_NOT_DOCUMENTED"):
 		di.CurrentSiteRangeCharac.Knowledge_type = "not_documented"
 	case di.lowerTranslation("IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_LITERATURE"):
@@ -783,7 +784,7 @@ func (di *DatabaseImport) cacheCharacs() (map[string]map[string]int, error) {
 		return characs, err
 	}
 	for name := range characsRoot {
-		loweredName := strings.ToLower(name)
+		loweredName := cleanAndLower(name)
 		characs[loweredName], err = model.GetCharacPathsFromLangID(name, di.Database.Default_language)
 		if err != nil {
 			return characs, err
@@ -834,7 +835,7 @@ func (di *DatabaseImport) insertCharacInfos() error {
 
 // valueAsBool analyses YES/NO translatable values to bool
 func (di *DatabaseImport) valueAsBool(fieldName, val string) (choosenValue bool, err error) {
-	switch strings.ToLower(val) {
+	switch cleanAndLower(val) {
 	case di.lowerTranslation("IMPORT.CSVFIELD_ALL.T_LABEL_YES"):
 		choosenValue = true
 	case di.lowerTranslation("IMPORT.CSVFIELD_ALL.T_LABEL_NO"):
@@ -852,7 +853,7 @@ func (di *DatabaseImport) valueAsBool(fieldName, val string) (choosenValue bool,
 
 // lowerTranslation return translation in lower case
 func (di *DatabaseImport) lowerTranslation(s string) string {
-	return strings.ToLower(translate.T(di.Parser.Lang, s))
+	return cleanAndLower(translate.T(di.Parser.Lang, s))
 }
 
 // parseDates analyzes declared period and returns starting and ending dates
@@ -864,7 +865,7 @@ func (di *DatabaseImport) parseDates(period string) ([2]int, error) {
 
 	// fmt.Println("PERIOD", period)
 
-	if (period == "" || strings.ToLower(period) == di.lowerTranslation("IMPORT.CSVFIELD_ALL.T_CHECK_UNDETERMINED")) || strings.ToLower(period) == "null" {
+	if (period == "" || cleanAndLower(period) == di.lowerTranslation("IMPORT.CSVFIELD_ALL.T_CHECK_UNDETERMINED")) || cleanAndLower(period) == "null" {
 		return [2]int{math.MinInt32, math.MaxInt32}, nil
 	}
 
@@ -912,7 +913,7 @@ func (di *DatabaseImport) parseDates(period string) ([2]int, error) {
 				}
 			} else {
 				// Check if it is set explicitly as undefined
-				if strings.ToLower(tmpDate1) == di.lowerTranslation("IMPORT.CSVFIELD_ALL.T_CHECK_UNDETERMINED") {
+				if cleanAndLower(tmpDate1) == di.lowerTranslation("IMPORT.CSVFIELD_ALL.T_CHECK_UNDETERMINED") {
 					dates[0] = math.MinInt32
 				} else {
 					di.AddError(period, "IMPORT.CSVFIELD_PERIOD_DATE2.T_CHECK_WRONG_VALUE", "STARTING_PERIOD")
@@ -937,7 +938,7 @@ func (di *DatabaseImport) parseDates(period string) ([2]int, error) {
 				}
 			} else {
 				// Check if it is set explicitly as undefined
-				if strings.ToLower(tmpDate2) == di.lowerTranslation("IMPORT.CSVFIELD_ALL.T_CHECK_UNDETERMINED") {
+				if cleanAndLower(tmpDate2) == di.lowerTranslation("IMPORT.CSVFIELD_ALL.T_CHECK_UNDETERMINED") {
 					dates[1] = math.MaxInt32
 				} else {
 					di.AddError(period, "IMPORT.CSVFIELD_PERIOD_DATE2.T_CHECK_WRONG_VALUE", "ENDING_PERIOD")
@@ -967,4 +968,10 @@ func (di *DatabaseImport) Save(filename string) (int, error) {
 	i := model.Import{Database_id: di.Database.Id, User_id: di.Uid, Filename: filename, Number_of_lines: di.Parser.Line - 1}
 	err = i.Create(di.Tx)
 	return i.Id, err
+}
+
+func cleanAndLower(s string) string {
+	s = strings.Replace(s, " ", "", -1) // non breaking space
+	s = strings.TrimSpace(s)
+	return strings.ToLower(s)
 }
