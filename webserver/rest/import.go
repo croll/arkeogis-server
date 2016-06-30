@@ -133,7 +133,7 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	}
 
 	// Parse the file
-	parser, err := databaseimport.NewParser(filepath, params.Default_language)
+	parser, err := databaseimport.NewParser(filepath, params.Default_language, user.(model.User).First_lang_isocode)
 	if err != nil {
 		parser.AddError("IMPORT.CSV_FILE.T_ERROR_PARSING_FAILED")
 	}

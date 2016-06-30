@@ -82,7 +82,7 @@ func (di *DatabaseImport) AddError(value string, errMsg string, columns ...strin
 		SiteCode: di.CurrentSite.Code,
 		Columns:  columns,
 		Value:    value,
-		ErrMsg:   translate.T(di.Parser.Lang, errMsg),
+		ErrMsg:   translate.T(di.Parser.UserLang, errMsg),
 	})
 
 	di.CurrentSite.HasError = true
