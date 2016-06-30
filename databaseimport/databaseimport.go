@@ -937,6 +937,7 @@ func (di *DatabaseImport) Save(filename string) (int, error) {
 
 func cleanAndLower(s string) string {
 	s = strings.Replace(s, " ", "", -1) // non breaking space
+	s = strings.Replace(s, "–", "-", -1)
 	s = strings.TrimSpace(s)
 	return strings.ToLower(s)
 }
