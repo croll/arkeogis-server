@@ -54,20 +54,6 @@ type DatabaseInfos struct {
 	Init       bool
 }
 
-// SiteInfos is a meta struct which stores all the informations about a site
-type SiteInfos struct {
-	model.Site
-	model.Site_tr
-	//NbSiteRanges     int
-	HasError  bool
-	Point     *geo.Point
-	Latitude  string
-	Longitude string
-	Altitude  string
-	GeonameID string
-	Created   bool
-}
-
 // CharacsInfos holds information about characs linked to site range
 type SiteRangeCharacInfos struct {
 	model.Site_range__charac
@@ -113,7 +99,7 @@ func (di *DatabaseImport) AddError(value string, errMsg string, columns ...strin
 type DatabaseImport struct {
 	SitesProcessed         map[string]int
 	Database               *DatabaseInfos
-	CurrentSite            *SiteInfos
+	CurrentSite            *model.SiteInfos
 	CurrentSiteRange       *model.Site_range
 	CurrentSiteRangeCharac *SiteRangeCharacInfos
 	Tx                     *sqlx.Tx
@@ -135,7 +121,7 @@ func (di *DatabaseImport) New(parser *Parser, uid int, databaseName string, lang
 	di.Database.Owner = di.Uid
 	di.Database.Default_language = langIsocode
 	di.Database.Geographical_extent_geom = "0103000020E610000001000000050000000C21E7FDFF7F66C01842CEFBFF7F56C00C21E7FDFF7F66C01842CEFBFF7F56400C21E7FDFF7F66401842CEFBFF7F56400C21E7FDFF7F66401842CEFBFF7F56C00C21E7FDFF7F66C01842CEFBFF7F56C0"
-	di.CurrentSite = &SiteInfos{}
+	di.CurrentSite = &model.SiteInfos{}
 	di.Parser = parser
 	di.NumberOfSites = 0
 	di.SitesWithError = map[string]bool{}
@@ -218,7 +204,7 @@ func (di *DatabaseImport) ProcessRecord(f *Fields) {
 
 	// If site code is not empty and differs, create a new instance of SiteInfos to store datas
 	if f.SITE_SOURCE_ID != "" && f.SITE_SOURCE_ID != di.CurrentSite.Code {
-		di.CurrentSite = &SiteInfos{}
+		di.CurrentSite = &model.SiteInfos{}
 		di.CurrentSiteRange = &model.Site_range{}
 		di.CurrentSiteRangeCharac = &SiteRangeCharacInfos{}
 		di.CurrentSite.Code = f.SITE_SOURCE_ID
@@ -250,9 +236,8 @@ func (di *DatabaseImport) ProcessRecord(f *Fields) {
 			err = di.CurrentSite.Create(di.Tx)
 			// Site ID
 			di.CurrentSiteRange.Site_id = di.CurrentSite.Id
-			//di.CurrentSite.NbSiteRanges += 1
-		} else {
-			err = di.CurrentSite.Update(di.Tx)
+			//} else {
+			//	err = di.CurrentSite.Update(di.Tx)
 		}
 		if err == nil {
 			err = di.insertSiteRangeInfos()
@@ -417,17 +402,13 @@ func (di *DatabaseImport) processSiteInfos(f *Fields) {
 					skip = true
 				}
 				if !skip {
-					di.CurrentSite.Geom, err = di.CurrentSite.Point.ToWKT_2d()
-					if err != nil {
-						di.AddError(f.LONGITUDE+" "+f.LATITUDE, "IMPORT.CSVFIELD_GEOMETRY.T_INVALID", "LATITUDE", "LONGITUDE")
-					}
+					di.CurrentSite.Geom = di.CurrentSite.Point.ToEWKT_2d()
 					if di.CurrentSite.Altitude != "" {
-						di.CurrentSite.Geom_3d, err = di.CurrentSite.Point.ToWKT()
-						if err != nil {
-							di.AddError(f.LONGITUDE+" "+f.LATITUDE+" "+f.ALTITUDE, "IMPORT.CSVFIELD_GEOMETRY.T_INVALID", "LATITUDE", "LONGITUDE", "ALTITUDE")
-						}
+						di.CurrentSite.Geom_3d = di.CurrentSite.Point.ToEWKT()
 					}
 				}
+			} else {
+				log.Println("databaseimport.go:", err)
 			}
 		} else {
 			// User don't want to use Geonames, we are stuck
@@ -441,8 +422,9 @@ func (di *DatabaseImport) processSiteInfos(f *Fields) {
 					di.CurrentSite.Point = point
 					// Has we used Geonames, site location type is "centroid"
 					di.CurrentSite.Centroid = true
-					di.CurrentSite.Geom, err = di.CurrentSite.Point.ToWKT()
+					di.CurrentSite.Geom = di.CurrentSite.Point.ToEWKT()
 					if err != nil {
+						log.Println("databaseimport.go:", err)
 						di.AddError(f.GEONAME_ID, "IMPORT.CSVFIELD_GEO.T_CHECK_LAT_OR_LON_NOT_SET_AND_NO_GEONAMES", "GEONAME_ID")
 					}
 				}
@@ -534,7 +516,6 @@ func (di *DatabaseImport) processGeoDatas(f *Fields) (*geo.Point, error) {
 	var point *geo.Point
 	var epsg int
 	var err error
-	var pointToBeReturned *geo.Point
 	hasError := false
 	// If projection system is not set, we assume it's 4326 (WGS84)
 	if f.PROJECTION_SYSTEM == "" {
@@ -546,20 +527,21 @@ func (di *DatabaseImport) processGeoDatas(f *Fields) (*geo.Point, error) {
 			hasError = true
 		}
 	}
+	di.CurrentSite.EPSG = epsg
+
 	// Parse LONGITUDE
 	lon, err := strconv.ParseFloat(strings.Replace(f.LONGITUDE, ",", ".", 1), 64)
-	if err != nil || lon == 0 {
+	if err != nil {
 		di.AddError(f.LONGITUDE, "IMPORT.CSVFIELD_LONGITUDE.T_CHECK_INCORRECT_VALUE", "LONGITUDE")
 		hasError = true
 	}
 	// Parse LATITUDE
 	lat, err := strconv.ParseFloat(strings.Replace(f.LATITUDE, ",", ".", 1), 64)
-	if err != nil || lat == 0 {
+	if err != nil {
 		di.AddError(f.LATITUDE, "IMPORT.CSVFIELD_LATITUDE.T_CHECK_INCORRECT_VALUE", "LATITUDE")
 		hasError = true
 	}
 	// Parse ALTITUDE
-	// If no altitude set it to -9999
 	if f.ALTITUDE != "" {
 		alt, err := strconv.ParseFloat(f.ALTITUDE, 64)
 		if err != nil {
@@ -574,24 +556,7 @@ func (di *DatabaseImport) processGeoDatas(f *Fields) (*geo.Point, error) {
 		di.AddError(f.PROJECTION_SYSTEM, "IMPORT.CSVFIELD_GEO.T_ERROR_UNABLE_TO_GET_WKT", "EPSG", "LATITUDE", "LONGITUDE")
 		hasError = true
 	}
-	// Datas are already in WGS84, leave it untouched
-	if epsg == 4326 {
-		pointToBeReturned = point
-	} else {
-		// Convert datas to WGS84
-		point2, err := point.ToWGS84()
-		if err != nil {
-			di.AddError(f.PROJECTION_SYSTEM+" "+f.LONGITUDE+" "+f.LATITUDE, "IMPORT.CSVFIELD_GEO.T_ERROR_UNABLE_TO_CONVERT_TO_WGS84", "EPSG", "LATITUDE", "LONGITUDE")
-			pointToBeReturned = nil
-		}
-		/*
-			if err != nil {
-				di.AddError(f.PROJECTION_SYSTEM+" "+f.LONGITUDE+" "+f.LATITUDE, "IMPORT.CSVFIELD_GEO.T_ERROR_UNABLE_TO_GET_WKT", "EPSG", "LATITUDE", "LONGITUDE")
-				pointToBeReturned = nil
-			}
-		*/
-		pointToBeReturned = point2
-	}
+
 	if hasError {
 		di.AddError(f.PROJECTION_SYSTEM+" "+f.LONGITUDE+" "+f.LATITUDE, "IMPORT.CSVFIELD_GEO.T_ERROR_UNABLE_TO_CREATE_GEOMETRY", "EPSG", "LATITUDE", "LONGITUDE")
 		if err != nil {
@@ -600,7 +565,7 @@ func (di *DatabaseImport) processGeoDatas(f *Fields) (*geo.Point, error) {
 			return nil, errors.New("Error parsing coordinates")
 		}
 	}
-	return pointToBeReturned, nil
+	return point, nil
 }
 
 // processGeonames get the city name/lat/lon from the database and assign it TODO

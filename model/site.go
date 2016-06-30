@@ -22,41 +22,91 @@
 package model
 
 import (
-"github.com/jmoiron/sqlx"
+	"errors"
+
+	"github.com/croll/arkeogis-server/geo"
+	"github.com/jmoiron/sqlx"
 )
 
+// SiteInfos is a meta struct which stores all the informations about a site
+type SiteInfos struct {
+	Site
+	Site_tr
+	//NbSiteRanges     int
+	HasError  bool
+	Point     *geo.Point
+	Latitude  string
+	Longitude string
+	Altitude  string
+	GeonameID string
+	Created   bool
+	EPSG      int
+}
 
 func (s *Site) Get(tx *sqlx.Tx) (err error) {
-	stmt, err := tx.PrepareNamed("SELECT * from \"site\" WHERE id=:id")
+	stmt, err := tx.PrepareNamed("SELECT *,ST_GeomFromGeoJSON(geom) AS geom, ST_GeomFromGeoJSON(geom_3d) AS geom_3d from \"site\" WHERE id=:id")
 	if err != nil {
-		return err
+		err = errors.New("Site::Get: " + err.Error())
+		return
 	}
 	defer stmt.Close()
-	return stmt.Get(s, s)
+	err = stmt.Get(s, s)
+	if err != nil {
+		err = errors.New("Site::Get: " + err.Error())
+	}
+	return
 }
 
-func (s *Site) Create(tx *sqlx.Tx) error {
-	stmt, err := tx.PrepareNamed("INSERT INTO \"site\" (" + Site_InsertStr + ") VALUES (" + Site_InsertValuesStr + ") RETURNING id")
+func (s *SiteInfos) Create(tx *sqlx.Tx) (err error) {
+	var q string
+	if s.EPSG != 4326 {
+		q = "INSERT INTO \"site\" (\"code\", \"name\", \"city_name\", \"city_geonameid\", \"geom\", \"geom_3d\", \"centroid\", \"occupation\", \"database_id\", \"created_at\", \"updated_at\") VALUES (:code, :name, :city_name, :city_geonameid, ST_Transform(ST_GeometryFromText(:geom), 4326)::::geography, ST_Transform(ST_GeometryFromText(:geom_3d), 4326)::::geography, :centroid, :occupation, :database_id, now(), now()) RETURNING id"
+	} else {
+		q = "INSERT INTO \"site\" (\"code\", \"name\", \"city_name\", \"city_geonameid\", \"geom\", \"geom_3d\", \"centroid\", \"occupation\", \"database_id\", \"created_at\", \"updated_at\") VALUES (:code, :name, :city_name, :city_geonameid, ST_GeographyFromText(:geom), ST_GeographyFromText(:geom_3d), :centroid, :occupation, :database_id, now(), now()) RETURNING id"
+	}
+	stmt, err := tx.PrepareNamed(q)
 	if err != nil {
-		return err
+		err = errors.New("SiteInfos::Create: " + err.Error())
+		return
 	}
 	defer stmt.Close()
-	return stmt.Get(&s.Id, s)
-}
-
-func (s *Site) Update(tx *sqlx.Tx) error {
-	_, err := tx.NamedExec("UPDATE \"site\" SET "+Site_UpdateStr+" WHERE id=:id", s)
+	err = stmt.Get(&s.Id, s)
 	if err != nil {
-		return err
+		err = errors.New("SiteInfos::Create: " + err.Error())
 	}
-	return nil
+	return
 }
 
-func (sr *Site_range) Create(tx *sqlx.Tx) error {
+func (s *SiteInfos) Update(tx *sqlx.Tx) (err error) {
+	var q string
+	if s.EPSG != 4326 {
+		q = "UPDATE \"site\" SET \"code\" = :code, \"name\" = :name, \"city_name\" = :city_name, \"city_geonameid\" = :city_geonameid, geom = ST_Transform(ST_GeometryFromText(:geom), 4326)::geography, geom_3d = ST_Transform(ST_GeometryFromText(:geom_3d), 4326)::::geography, \"centroid\" = :centroid, \"occupation\" = :occupation, \"database_id\" = :database_id, \"updated_at\" = now() WHERE database_id = :id"
+	} else {
+		q = "UPDATE \"site\" SET \"code\" = :code, \"name\" = :name, \"city_name\" = :city_name, \"city_geonameid\" = :city_geonameid, geom = ST_GeographyFromText(:geom), geom_3d = ST_GeographyFromText(:geom_3d), \"centroid\" = :centroid, \"occupation\" = :occupation, \"database_id\" = :database_id, \"updated_at\" = now() WHERE id = :id"
+	}
+	stmt, err := tx.PrepareNamed(q)
+	if err != nil {
+		err = errors.New("SiteInfos::Update: " + err.Error())
+		return
+	}
+	defer stmt.Close()
+	_, err = stmt.Exec(s)
+	if err != nil {
+		err = errors.New("SiteInfos::Update: " + err.Error())
+	}
+	return
+}
+
+func (sr *Site_range) Create(tx *sqlx.Tx) (err error) {
 	stmt, err := tx.PrepareNamed("INSERT INTO \"site_range\" (" + Site_range_InsertStr + ") VALUES (" + Site_range_InsertValuesStr + ") RETURNING id")
 	if err != nil {
-		return err
+		err = errors.New("Site_rante::Create: " + err.Error())
+		return
 	}
 	defer stmt.Close()
-	return stmt.Get(&sr.Id, sr)
+	err = stmt.Get(&sr.Id, sr)
+	if err != nil {
+		err = errors.New("Site_rante::Create: " + err.Error())
+	}
+	return
 }
