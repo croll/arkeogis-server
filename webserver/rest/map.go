@@ -254,6 +254,29 @@ func MapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	}
 
 	// chronologies filters
+	/*
+		for chronocode, subfilters := range params.Chronology {
+			chronocode1 := strings.Split(chronocode, "#")
+			chronocode2 := strings.Split(chronocode1[1], ":")
+
+			//chronoid, _ := strconv.Atoi(chronocode1[0])
+			date_start, _ := strconv.Atoi(chronocode2[0])
+			date_end, _ := strconv.Atoi(chronocode2[1])
+
+			if yesno, ok := subfilters["inclorexcl"]; ok {
+				q := `"site_range".start_date1 >= ` + strconv.Itoa(date_start) + ` AND "site_range".start_date2 <= ` + strconv.Itoa(date_start)
+				q += ` AND "site_range".end_date1 >= ` + strconv.Itoa(date_end) + ` AND "site_range".end_date2 <= ` + strconv.Itoa(date_end)
+				if yesno {
+				} else {
+					q = `NOT (` + q + `)`
+				}
+				filters.AddTable("site_range")
+				filters.AddFilter("chronology", q)
+			}
+		}
+	*/
+
+	// chronologies filters
 	for chronocode, subfilters := range params.Chronology {
 		chronocode1 := strings.Split(chronocode, "#")
 		chronocode2 := strings.Split(chronocode1[1], ":")
@@ -263,11 +286,11 @@ func MapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		date_end, _ := strconv.Atoi(chronocode2[1])
 
 		if yesno, ok := subfilters["inclorexcl"]; ok {
-			q := `"site_range".start_date1 >= ` + strconv.Itoa(date_start) + ` AND "site_range".start_date2 <= ` + strconv.Itoa(date_start)
-			q += ` AND "site_range".end_date1 >= ` + strconv.Itoa(date_end) + ` AND "site_range".end_date2 <= ` + strconv.Itoa(date_end)
+			var q string
 			if yesno {
+				q = `"site_range".start_date1 >= ` + strconv.Itoa(date_start) + ` AND "site_range".end_date2 <= ` + strconv.Itoa(date_end)
 			} else {
-				q = `NOT (` + q + `)`
+				q = `"site_range".start_date2 < ` + strconv.Itoa(date_start) + ` AND "site_range".end_date1 > ` + strconv.Itoa(date_end)
 			}
 			filters.AddTable("site_range")
 			filters.AddFilter("chronology", q)
@@ -285,6 +308,7 @@ func MapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	fmt.Printf("Search took %s", elapsed)
 
 	jsonString := mapGetSitesAsJson(site_ids, tx)
+	mapDebug(site_ids, tx)
 
 	err = tx.Commit()
 	if err != nil {
@@ -296,6 +320,25 @@ func MapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Write([]byte(jsonString))
 	return
+}
+
+func mapDebug(sites []int, tx *sqlx.Tx) {
+	type row struct {
+		Id          int
+		Start_date1 int
+		Start_date2 int
+		End_date1   int
+		End_date2   int
+	}
+	rows := []row{}
+	err := tx.Select(&rows, "SELECT site.id, sr.start_date1, sr.start_date2, sr.end_date1, sr.end_date2 FROM site LEFT JOIN site_range sr ON sr.site_id = site.id WHERE site.id IN("+model.IntJoin(sites, true)+")")
+	if err != nil {
+		fmt.Println("err: ", err)
+	} else {
+		for _, r := range rows {
+			fmt.Println("r: ", r)
+		}
+	}
 }
 
 func mapGetSitesAsJson(sites []int, tx *sqlx.Tx) string {
