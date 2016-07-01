@@ -793,7 +793,9 @@ func CharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 	}
 	for _, charac := range list {
 		num := 4 - strings.Count(charac.Path, ";")
-		outp += charac.Path + strings.Repeat(";", num) + "\n"
+		if num < 4 {
+			outp += charac.Path + strings.Repeat(";", num) + "\n"
+		}
 	}
 
 	if params.Dl != "" {
