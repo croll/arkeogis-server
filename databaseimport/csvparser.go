@@ -51,6 +51,7 @@ type Parser struct {
 	UserChoices  UserChoices
 	Line         int
 	Lang         string
+	UserLang     string
 	Reader       *csv.Reader
 	Errors       []*ParserError
 }
@@ -58,7 +59,7 @@ type Parser struct {
 func (p *Parser) AddError(errMsg string, columns ...string) {
 	p.Errors = append(p.Errors, &ParserError{
 		Columns: columns,
-		ErrMsg:  translate.T(p.Lang, errMsg),
+		ErrMsg:  translate.T(p.UserLang, errMsg),
 	})
 }
 
@@ -70,7 +71,7 @@ func (p *Parser) HasError() bool {
 }
 
 // NewParser open csv file and return a  *Parser
-func NewParser(filename string, langIsocode string) (*Parser, error) {
+func NewParser(filename string, langIsocode string, userLangIsocode string) (*Parser, error) {
 	f, err := os.Open(filename)
 	if err != nil {
 		return nil, err
@@ -83,6 +84,7 @@ func NewParser(filename string, langIsocode string) (*Parser, error) {
 		Filename:    filename,
 		UserChoices: UserChoices{UseGeonames: false},
 		Lang:        langIsocode,
+		UserLang:    userLangIsocode,
 	}
 	p.Reader = csv.NewReader(f)
 	p.Reader.Comma = ';'

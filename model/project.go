@@ -21,41 +21,65 @@
 
 package model
 
-import "github.com/jmoiron/sqlx"
+import (
+	"log"
 
-/*
- * Project Object
- */
+	"github.com/jmoiron/sqlx"
+)
 
-// Get the charac from the database
-func (u *Project) Get(tx *sqlx.Tx) error {
-	var q = "SELECT * FROM \"charac\" WHERE id=:id"
-	stmt, err := tx.PrepareNamed(q)
+type ProjectLayerInfos struct {
+	Id        int    `json:"id"`
+	Type      string `json:"type"`
+	Uniq_code string `json:"uniq_code"`
+}
+
+type ProjectFullInfos struct {
+	Project
+	Chronologies []struct {
+		Root_chronology_id int `json:"id"`
+	} `json:"chronologies"`
+	Layers    []ProjectLayerInfos `json:"layers"`
+	Databases []struct {
+		Database_id int `json:"id"`
+	} `json:"databases"`
+}
+
+func (pfi *ProjectFullInfos) Get(tx *sqlx.Tx) (err error) {
+
+	// Infos
+	err = tx.Get(pfi, "SELECT *,ST_AsGeoJSON(geom) as geom from project WHERE id = $1", pfi.Id)
 	if err != nil {
-		return err
+		log.Println(err)
+		return
 	}
-	defer stmt.Close()
-	return stmt.Get(u, u)
-}
 
-// Create the charac by inserting it in the database
-func (u *Project) Create(tx *sqlx.Tx) error {
-	stmt, err := tx.PrepareNamed("INSERT INTO \"charac\" (" + Project_InsertStr + ") VALUES (" + Project_InsertValuesStr + ") RETURNING id")
+	// Chronologies
+	err = tx.Select(&pfi.Chronologies, "SELECT root_chronology_id from project__chronology WHERE project_id = $1", pfi.Id)
 	if err != nil {
-		return err
+		log.Println(err)
+		return
 	}
-	defer stmt.Close()
-	return stmt.Get(&u.Id, u)
-}
 
-// Update the charac in the database
-func (u *Project) Update(tx *sqlx.Tx) error {
-	_, err := tx.NamedExec("UPDATE \"charac\" SET "+Project_UpdateStr+" WHERE id=:id", u)
-	return err
-}
+	// Databases
+	err = tx.Select(&pfi.Databases, "SELECT database_id from project__databases WHERE project_id = $1", pfi.Id)
+	if err != nil {
+		log.Println(err)
+		return
+	}
 
-// Delete the charac from the database
-func (u *Project) Delete(tx *sqlx.Tx) error {
-	_, err := tx.NamedExec("DELETE FROM \"charac\" WHERE id=:id", u)
-	return err
+	// Layers WMS
+	err = tx.Select(&pfi.Layers, "SELECT ml.id, ml.type, 'wms' || ml.id AS uniq_code FROM project__map_layer pml LEFT JOIN map_layer ml ON pml.map_layer_id = ml.id WHERE pml.project_id = $1", pfi.Id)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	// Layers Shapefile
+	err = tx.Select(&pfi.Layers, "SELECT s.id, 'shp' || s.id AS uniq_code from project__shapefile ps LEFT JOIN shapefile s ON ps.shapefile_id = s.id WHERE ps.project_id = $1", pfi.Id)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	return
 }

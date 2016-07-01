@@ -91,15 +91,15 @@ func DatabasesList(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 
 	type dbInfos struct {
 		model.Database
-		Description         map[string]string
-		Geographical_limit  map[string]string
-		Bibliography        map[string]string
-		Context_description map[string]string
-		Source_description  map[string]string
-		Source_relation     map[string]string
-		Copyright           map[string]string
-		Subject             map[string]string
-		Author              string
+		Description         map[string]string `json:"description"`
+		Geographical_limit  map[string]string `json:"geographical_limit"`
+		Bibliography        map[string]string `json:"bibliography"`
+		Context_description map[string]string `json:"context_description"`
+		Source_description  map[string]string `json:"source_description"`
+		Source_relation     map[string]string `json:"source_relation"`
+		Copyright           map[string]string `json:"copyright"`
+		Subject             map[string]string `json:"subject"`
+		Author              string            `json:"author"`
 	}
 
 	if params.Bounding_box != "" {
@@ -114,6 +114,7 @@ func DatabasesList(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 
 	nstmt, err := tx.PrepareNamed(q)
 	if err != nil {
+		log.Println(err)
 		userSqlError(w, err)
 		_ = tx.Rollback()
 		return
@@ -122,8 +123,8 @@ func DatabasesList(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 
 	if err != nil {
 		log.Println(err)
-		userSqlError(w, err)
 		_ = tx.Rollback()
+		userSqlError(w, err)
 		return
 	}
 
@@ -132,8 +133,8 @@ func DatabasesList(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 		err = tx.Select(&tr, "SELECT * FROM database_tr WHERE database_id = "+strconv.Itoa(database.Id))
 		if err != nil {
 			log.Println(err)
-			userSqlError(w, err)
 			_ = tx.Rollback()
+			userSqlError(w, err)
 			return
 		}
 		database.Description = model.MapSqlTranslations(tr, "Lang_isocode", "Description")
@@ -150,7 +151,6 @@ func DatabasesList(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 	if err != nil {
 		log.Println(err)
 		userSqlError(w, err)
-		_ = tx.Rollback()
 		return
 	}
 

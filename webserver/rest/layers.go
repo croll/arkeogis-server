@@ -173,8 +173,8 @@ func SaveShpLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 		layer.Id = params.Id
 		err = layer.Update(tx)
 		if err != nil {
-			_ = tx.Rollback()
 			log.Println(err)
+			_ = tx.Rollback()
 			userSqlError(w, err)
 			return
 		}
@@ -338,12 +338,14 @@ func SaveWmLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		err = layer.Update(tx)
 		if err != nil {
 			log.Println(err)
+			_ = tx.Rollback()
 			userSqlError(w, err)
 			return
 		}
 		err = layer.DeleteAuthors(tx)
 		if err != nil {
 			log.Println(err)
+			_ = tx.Rollback()
 			userSqlError(w, err)
 			return
 		}
@@ -351,6 +353,7 @@ func SaveWmLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		err = layer.Create(tx)
 		if err != nil {
 			log.Println(err)
+			_ = tx.Rollback()
 			userSqlError(w, err)
 			return
 		}
@@ -359,6 +362,7 @@ func SaveWmLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	err = layer.SetAuthors(tx, params.Authors)
 	if err != nil {
 		log.Println("Error setting wm(t)s layer authors: ", err)
+		_ = tx.Rollback()
 		userSqlError(w, err)
 		return
 	}
@@ -373,6 +377,7 @@ func SaveWmLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	err = layer.SetTranslations(tx, "attribution", attribution)
 	if err != nil {
 		log.Println("Error setting attribution: ", err)
+		_ = tx.Rollback()
 		userSqlError(w, err)
 		return
 	}
@@ -387,6 +392,7 @@ func SaveWmLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	err = layer.SetTranslations(tx, "copyright", copyright)
 	if err != nil {
 		log.Println("Error setting copyright: ", err)
+		_ = tx.Rollback()
 		userSqlError(w, err)
 		return
 	}
@@ -394,6 +400,7 @@ func SaveWmLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	err = layer.SetTranslations(tx, "name", params.Name)
 	if err != nil {
 		log.Println("Error setting name: ", err)
+		_ = tx.Rollback()
 		userSqlError(w, err)
 		return
 	}
@@ -401,6 +408,7 @@ func SaveWmLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	err = layer.SetTranslations(tx, "description", params.Description)
 	if err != nil {
 		log.Println("Error setting description: ", err)
+		_ = tx.Rollback()
 		userSqlError(w, err)
 		return
 	}
@@ -455,11 +463,13 @@ func GetLayers(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	_user, ok := proute.Session.Get("user")
 	if !ok {
 		log.Println("GetLayers: can't get user in session.", _user)
+		userSqlError(w, err)
 		return
 	}
 	user, ok := _user.(model.User)
 	if !ok {
 		log.Println("GetLayers: can't cast user.", _user)
+		userSqlError(w, err)
 		return
 	}
 
@@ -534,11 +544,13 @@ func getShpLayers(params *GetLayersParams) (layers []*LayerInfos, err error) {
 
 	nstmt, err := tx.PrepareNamed(q)
 	if err != nil {
+		_ = tx.Rollback()
 		log.Println(err)
 		return
 	}
 	err = nstmt.Select(&layers, params)
 	if err != nil {
+		_ = tx.Rollback()
 		log.Println(err)
 		return
 	}
@@ -560,7 +572,6 @@ func getShpLayers(params *GetLayersParams) (layers []*LayerInfos, err error) {
 	err = tx.Commit()
 	if err != nil {
 		log.Println(err)
-		_ = tx.Rollback()
 	}
 	return
 }
@@ -630,7 +641,6 @@ func getWmLayers(params *GetLayersParams) (layers []*LayerInfos, err error) {
 	err = tx.Commit()
 	if err != nil {
 		log.Println(err)
-		_ = tx.Rollback()
 	}
 
 	return

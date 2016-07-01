@@ -23,6 +23,7 @@ package model
 
 import (
 	"database/sql"
+	"errors"
 	"strconv"
 	"time"
 
@@ -81,7 +82,7 @@ func (d *Database) DoesExist(tx *sqlx.Tx) (exists bool, err error) {
 	case err == sql.ErrNoRows:
 		return exists, nil
 	case err != nil:
-		return
+		return exists, errors.New("database::DoesExist: " + err.Error())
 	}
 	return true, nil
 }
@@ -94,7 +95,7 @@ func (d *Database) AnotherExistsWithSameName(tx *sqlx.Tx) (exists bool, err erro
 	case err == sql.ErrNoRows:
 		return exists, nil
 	case err != nil:
-		return
+		return exists, errors.New("database::AnotherExistsWithSameName: " + err.Error())
 	}
 	return true, nil
 }
@@ -104,7 +105,7 @@ func (d *Database) Get(tx *sqlx.Tx) (err error) {
 	stmt, err := tx.PrepareNamed("SELECT * from \"database\" WHERE id=:id")
 	defer stmt.Close()
 	if err != nil {
-		return err
+		return errors.New("database::Get: " + err.Error())
 	}
 	return stmt.Get(d, d)
 }
@@ -188,6 +189,10 @@ func (d *Database) GetFullInfosAsJSON(tx *sqlx.Tx, langIsocode string) (jsonStri
 
 	err = tx.Get(&jsonString, db.JSONQueryBuilder(q, "database d", "d.id = "+strconv.Itoa(d.Id)))
 
+	if err != nil {
+		err = errors.New("database::GetFullInfosAsJSON: " + err.Error())
+	}
+
 	if jsonString == "" {
 		jsonString = "null"
 	}
@@ -197,90 +202,115 @@ func (d *Database) GetFullInfosAsJSON(tx *sqlx.Tx, langIsocode string) (jsonStri
 }
 
 // Create insert the database into arkeogis db
-func (d *Database) Create(tx *sqlx.Tx) error {
+func (d *Database) Create(tx *sqlx.Tx) (err error) {
 	stmt, err := tx.PrepareNamed("INSERT INTO \"database\" (" + Database_InsertStr + ") VALUES (" + Database_InsertValuesStr + ") RETURNING id")
 	defer stmt.Close()
 	if err != nil {
-		return err
+		return errors.New("database::Create: " + err.Error())
 	}
-	return stmt.Get(&d.Id, d)
+	err = stmt.Get(&d.Id, d)
+	if err != nil {
+		err = errors.New("database::Create: " + err.Error())
+	}
+	return
 }
 
 // Update database informations
-func (d *Database) Update(tx *sqlx.Tx) error {
-	_, err := tx.NamedExec("UPDATE \"database\" SET "+Database_UpdateStr+" WHERE id=:id", d)
+func (d *Database) Update(tx *sqlx.Tx) (err error) {
+	_, err = tx.NamedExec("UPDATE \"database\" SET "+Database_UpdateStr+" WHERE id=:id", d)
 	if err != nil {
-		return err
+		err = errors.New("database::Update: " + err.Error())
 	}
-	return nil
+	return
 }
 
 // DeleteSites deletes all sites linked to a database
-func (d *Database) DeleteSites(tx *sqlx.Tx) error {
-	_, err := tx.NamedExec("DELETE FROM \"site\" WHERE database_id=:id", d)
-	return err
+func (d *Database) DeleteSites(tx *sqlx.Tx) (err error) {
+	_, err = tx.NamedExec("DELETE FROM \"site\" WHERE database_id=:id", d)
+	if err != nil {
+		err = errors.New("database::DeleteSites: " + err.Error())
+	}
+	return
 }
 
 // GetCountriesList lists all countries linked to a database
 func (d *Database) GetCountriesList(tx *sqlx.Tx, langIsocode string) ([]CountryInfos, error) {
 	countries := []CountryInfos{}
 	err := tx.Select(&countries, "SELECT ct.name, c.geonameid, c.iso_code, c.geom FROM country c LEFT JOIN database__country dc ON c.geonameid = dc.country_geonameid LEFT JOIN country_tr ct ON c.geonameid = ct.country_geonameid WHERE dc.database_id = $1 and ct.lang_isocode = $2", d.Id, langIsocode)
+	if err != nil {
+		err = errors.New("database::GetCountriesList: " + err.Error())
+	}
 	return countries, err
 }
 
 // AddCountries links countries to a database
-func (d *Database) AddCountries(tx *sqlx.Tx, countryIds []int) error {
+func (d *Database) AddCountries(tx *sqlx.Tx, countryIds []int) (err error) {
 	for _, id := range countryIds {
 		_, err := tx.Exec("INSERT INTO database__country (database_id, country_geonameid) VALUES ($1, $2)", d.Id, id)
 		if err != nil {
-			return err
+			return errors.New("database::AddCountries: " + err.Error())
 		}
 	}
-	return nil
+	return
 }
 
 // DeleteCountries unlinks countries to a database
-func (d *Database) DeleteCountries(tx *sqlx.Tx) error {
-	_, err := tx.NamedExec("DELETE FROM \"database__country\" WHERE database_id=:id", d)
-	return err
+func (d *Database) DeleteCountries(tx *sqlx.Tx) (err error) {
+	_, err = tx.NamedExec("DELETE FROM \"database__country\" WHERE database_id=:id", d)
+	if err != nil {
+		err = errors.New("database::DeleteCountries: " + err.Error())
+	}
+	return
 }
 
 // GetContinentsList lists all continents linked to a database
-func (d *Database) GetContinentsList(tx *sqlx.Tx, langIsocode string) ([]ContinentInfos, error) {
-	continents := []ContinentInfos{}
-	err := tx.Select(continents, "SELECT ct.name, c.geonameid, c.iso_code, c.geom FROM continent c LEFT JOIN database__continent dc ON c.geonameid = dc.continent_geonameid LEFT JOIN continent_tr ct ON c.geonameid = ct.continent_geonameid WHERE dc.database_id = $1 AND ct.lang_isocode = $2", d.Id, langIsocode)
+func (d *Database) GetContinentsList(tx *sqlx.Tx, langIsocode string) (continents []ContinentInfos, err error) {
+	continents = []ContinentInfos{}
+	err = tx.Select(continents, "SELECT ct.name, c.geonameid, c.iso_code, c.geom FROM continent c LEFT JOIN database__continent dc ON c.geonameid = dc.continent_geonameid LEFT JOIN continent_tr ct ON c.geonameid = ct.continent_geonameid WHERE dc.database_id = $1 AND ct.lang_isocode = $2", d.Id, langIsocode)
+	if err != nil {
+		err = errors.New("database::GetContinentsList: " + err.Error())
+	}
 	return continents, err
 }
 
 // AddContinents links continents to a database
-func (d *Database) AddContinents(tx *sqlx.Tx, continentIds []int) error {
+func (d *Database) AddContinents(tx *sqlx.Tx, continentIds []int) (err error) {
 	for _, id := range continentIds {
 		_, err := tx.Exec("INSERT INTO database__continent (database_id, continent_geonameid) VALUES ($1, $2)", d.Id, id)
 		if err != nil {
-			return err
+			return errors.New("database::AddContinents: " + err.Error())
 		}
 	}
-	return nil
+	return errors.New("database::AddContinents: " + err.Error())
 }
 
 // DeleteContinents unlinks countries to a database
-func (d *Database) DeleteContinents(tx *sqlx.Tx) error {
-	_, err := tx.NamedExec("DELETE FROM \"database__continent\" WHERE database_id=:id", d)
-	return err
+func (d *Database) DeleteContinents(tx *sqlx.Tx) (err error) {
+	_, err = tx.NamedExec("DELETE FROM \"database__continent\" WHERE database_id=:id", d)
+	if err != nil {
+		err = errors.New("database::DeleteContinents: " + err.Error())
+	}
+	return
 }
 
 // GetHandles get last handle linked to a database
 func (d *Database) GetLastHandle(tx *sqlx.Tx) (handle *Database_handle, err error) {
 	handle = &Database_handle{}
 	err = tx.Get(handle, "SELECT * FROM database_handle WHERE database_id = $1 ORDER BY id DESC LIMIT 1", d.Id)
-	return handle, err
+	if err != nil {
+		err = errors.New("database::GetLastHandle: " + err.Error())
+	}
+	return
 }
 
 // GetHandles lists all handles linked to a database
 func (d *Database) GetHandles(tx *sqlx.Tx) (handles []Database_handle, err error) {
 	handles = []Database_handle{}
 	err = tx.Select(handles, "SELECT import_id, identifier, url, declared_creation_date, created_at FROM database_handle WHERE database_id = $1", d.Id)
-	return handles, err
+	if err != nil {
+		err = errors.New("database::GetHandles: " + err.Error())
+	}
+	return
 }
 
 // AddHandle links a handle  to a database
@@ -288,27 +318,39 @@ func (d *Database) AddHandle(tx *sqlx.Tx, handle *Database_handle) (id int, err 
 	stmt, err := tx.PrepareNamed("INSERT INTO \"database_handle\" (" + Database_handle_InsertStr + ") VALUES (" + Database_handle_InsertValuesStr + ") RETURNING id")
 	defer stmt.Close()
 	if err != nil {
-		return
+		return id, errors.New("database::AddHandle: " + err.Error())
 	}
 	err = stmt.Get(&id, handle)
+	if err != nil {
+		err = errors.New("database::AddHandle: " + err.Error())
+	}
 	return
 }
 
 // UpdateHandle links continents to a database
 func (d *Database) UpdateHandle(tx *sqlx.Tx, handle *Database_handle) (err error) {
 	_, err = tx.NamedExec("UPDATE database_handle SET "+Database_handle_UpdateStr+" WHERE id = :id", handle)
+	if err != nil {
+		err = errors.New("database::UpdateHandle: " + err.Error())
+	}
 	return
 }
 
 // DeleteHandles unlinks countries to a database
 func (d *Database) DeleteHandle(tx *sqlx.Tx, id int) error {
 	_, err := tx.NamedExec("DELETE FROM \"database_handle\" WHERE identifier = $1", id)
+	if err != nil {
+		err = errors.New("database::DeleteHandle: " + err.Error())
+	}
 	return err
 }
 
 // GetAuthorsList lists all user designed as author of a database
 func (d *Database) GetAuthorsList(tx *sqlx.Tx) (authors []DatabaseAuthor, err error) {
 	err = tx.Select(&authors, "SELECT u.id, u.firstname, u.lastname FROM \"user\" u LEFT JOIN database__authors da ON u.id = da.user_id WHERE da.database_id = $1", d.Id)
+	if err != nil {
+		err = errors.New("database::GetAuthorsList: " + err.Error())
+	}
 	return
 }
 
@@ -317,7 +359,7 @@ func (d *Database) SetAuthors(tx *sqlx.Tx, authors []int) (err error) {
 	for _, uid := range authors {
 		_, err = tx.Exec("INSERT INTO \"database__authors\" (database_id, user_id) VALUES ($1, $2)", d.Id, uid)
 		if err != nil {
-			return
+			return errors.New("database::SetAuthors: " + err.Error())
 		}
 	}
 	return
@@ -326,12 +368,18 @@ func (d *Database) SetAuthors(tx *sqlx.Tx, authors []int) (err error) {
 // DeleteAuthors deletes the author linked to a database
 func (d *Database) DeleteAuthors(tx *sqlx.Tx) (err error) {
 	_, err = tx.NamedExec("DELETE FROM \"database__authors\" WHERE database_id=:id", d)
+	if err != nil {
+		err = errors.New("database::DeleteAuthors: " + err.Error())
+	}
 	return
 }
 
 // GetContextsList lists all user designed as context of a database
 func (d *Database) GetContextsList(tx *sqlx.Tx) (contexts []Database_context, err error) {
 	err = tx.Select(&contexts, "SELECT id, context FROM database_context WHERE database_id = $1", d.Id)
+	if err != nil {
+		err = errors.New("database::GetContextsList: " + err.Error())
+	}
 	return
 }
 
@@ -340,7 +388,7 @@ func (d *Database) SetContexts(tx *sqlx.Tx, contexts []string) error {
 	for _, cname := range contexts {
 		_, err := tx.Exec("INSERT INTO \"database_context\" (database_id, context) VALUES ($1, $2)", d.Id, cname)
 		if err != nil {
-			return err
+			return errors.New("database::SetContexts: " + err.Error())
 		}
 	}
 	return nil
@@ -349,6 +397,9 @@ func (d *Database) SetContexts(tx *sqlx.Tx, contexts []string) error {
 // DeleteContexts deletes the context linked to a database
 func (d *Database) DeleteContexts(tx *sqlx.Tx) error {
 	_, err := tx.NamedExec("DELETE FROM \"database_context\" WHERE database_id=:id", d)
+	if err != nil {
+		err = errors.New("database::DeleteContexts: " + err.Error())
+	}
 	return err
 }
 
@@ -366,7 +417,7 @@ func (d *Database) SetTranslations(tx *sqlx.Tx, field string, translations []str
 		if transID == 0 {
 			_, err = tx.Exec("INSERT INTO database_tr (database_id, lang_isocode, description, geographical_limit, bibliography, context_description, source_description, source_relation, copyright, subject) VALUES ($1, $2, '', '', '', '', '', '', '', '')", d.Id, tr.Lang_Isocode)
 			if err != nil {
-				return
+				err = errors.New("database::SetTranslations: " + err.Error())
 			}
 		}
 		if tr.Text != "" {
@@ -374,12 +425,18 @@ func (d *Database) SetTranslations(tx *sqlx.Tx, field string, translations []str
 		}
 	}
 
+	if err != nil {
+		err = errors.New("database::SetTranslations: " + err.Error())
+	}
 	return
 }
 
 // GetOwnerInfos get all informations about the owner of the database
 func (d *Database) GetOwnerInfos(tx *sqlx.Tx) (owner DatabaseAuthor, err error) {
 	err = tx.Get(owner, "SELECT * FROM \"user\" u LEFT JOIN \"database\" d ON u.id = d.owner WHERE d.id = $1", d.Id)
+	if err != nil {
+		err = errors.New("database::GetOwnerInfos: " + err.Error())
+	}
 	return
 }
 
@@ -387,6 +444,9 @@ func (d *Database) GetOwnerInfos(tx *sqlx.Tx) (owner DatabaseAuthor, err error) 
 func (d *Database) GetImportsList(tx *sqlx.Tx) (imports []Import, err error) {
 	imports = []Import{}
 	err = tx.Select(&imports, "SELECT i.id, u.firstname, u.lastname, i.filename, i.created_at FROM import i LEFT JOIN \"user\" u ON i.user_id = u.id WHERE database_id = $1", d.Id)
+	if err != nil {
+		err = errors.New("database::GetImportsList: " + err.Error())
+	}
 	return
 }
 
@@ -394,6 +454,9 @@ func (d *Database) GetImportsList(tx *sqlx.Tx) (imports []Import, err error) {
 func (d *Database) GetLastImport(tx *sqlx.Tx) (imp Import, err error) {
 	imp = Import{}
 	err = tx.Get(&imp, "SELECT id, filename FROM import WHERE database_id = $1 ORDER by id DESC LIMIT 1", d.Id)
+	if err != nil {
+		err = errors.New("database::GetLastImport: " + err.Error())
+	}
 	return
 }
 
@@ -401,12 +464,18 @@ func (d *Database) GetLastImport(tx *sqlx.Tx) (imp Import, err error) {
 func (d *Database) GetTranslations(tx *sqlx.Tx) (translations []Database_tr, err error) {
 	translations = []Database_tr{}
 	err = tx.Select(&translations, "SELECT * FROM database_tr WHERE database_id = $1", d.Id)
+	if err != nil {
+		err = errors.New("database::GetTranslations: " + err.Error())
+	}
 	return
 }
 
 // GetNumberOfSites returns an int which represent the number of sites linked to a database
 func (d *Database) GetNumberOfSites(tx *sqlx.Tx) (nb int, err error) {
 	err = tx.Get(&nb, "SELECT count(*) FROM site WHERE database_id = $1", d.Id)
+	if err != nil {
+		err = errors.New("database::GetNumberOfSites: " + err.Error())
+	}
 	return
 }
 
@@ -421,6 +490,10 @@ func (d *Database) UpdateFields(tx *sqlx.Tx, params interface{}, fields ...strin
 	}
 	query := "UPDATE \"database\" SET " + upd + " WHERE id = :id"
 
+	if err != nil {
+		err = errors.New("database::UpdateFields: " + err.Error())
+	}
+
 	_, err = tx.NamedExec(query, params)
 
 	return
@@ -433,11 +506,17 @@ func (d *Database) CacheGeom(tx *sqlx.Tx) (err error) {
 	//_, err = tx.NamedExec("SELECT ST_Envelope(sites.geom::::geometry) FROM (SELECT geom FROM site WHERE database_id = :id) as sites", d)
 	// Envelope
 	_, err = tx.NamedExec("UPDATE database SET geographical_extent_geom = (SELECT (ST_Envelope((SELECT ST_Multi(ST_Collect(f.geom)) as singlegeom FROM (SELECT (ST_Dump(geom::::geometry)).geom As geom FROM site WHERE database_id = :id) As f)))) WHERE id = :id", d)
+	if err != nil {
+		err = errors.New("database::CacheGeom: " + err.Error())
+	}
 	return
 }
 
 // CacheDates get database sites extend and cache enveloppe
 func (d *Database) CacheDates(tx *sqlx.Tx) (err error) {
 	_, err = tx.NamedExec("UPDATE database SET start_date = (SELECT min(start_date1) FROM site_range WHERE site_id IN (SELECT id FROM site where database_id = :id) AND start_date1 != -2147483648), end_date = (SELECT max(end_date2) FROM site_range WHERE site_id IN (SELECT id FROM site where database_id = :id) AND end_date2 != 2147483647) WHERE id = :id", d)
+	if err != nil {
+		err = errors.New("database::CheckDates: " + err.Error())
+	}
 	return
 }

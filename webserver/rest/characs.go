@@ -128,6 +128,7 @@ func CharacsRoots(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 	// transaction begin...
 	tx, err := db.DB.Beginx()
 	if err != nil {
+		log.Println(err)
 		userSqlError(w, err)
 		return
 	}
@@ -135,6 +136,7 @@ func CharacsRoots(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 	// load all roots
 	err = db.DB.Select(&characs, "SELECT * FROM charac_root")
 	if err != nil {
+		log.Println(err)
 		userSqlError(w, err)
 		_ = tx.Rollback()
 		return
@@ -145,8 +147,9 @@ func CharacsRoots(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 		charac.Charac.Id = charac.Charac_root.Root_charac_id
 		err = charac.Charac.Get(tx)
 		if err != nil {
-			userSqlError(w, err)
+			log.Println(err)
 			_ = tx.Rollback()
+			userSqlError(w, err)
 			return
 		}
 
@@ -154,6 +157,7 @@ func CharacsRoots(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 		tr := []model.Charac_tr{}
 		err = tx.Select(&tr, "SELECT * FROM charac_tr WHERE charac_id = "+strconv.Itoa(charac.Charac.Id))
 		if err != nil {
+			log.Println(err)
 			userSqlError(w, err)
 			_ = tx.Rollback()
 			return
@@ -177,7 +181,6 @@ func CharacsRoots(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 	if err != nil {
 		log.Println("commit failed")
 		userSqlError(w, err)
-		_ = tx.Rollback()
 		return
 	}
 

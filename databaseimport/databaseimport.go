@@ -54,20 +54,6 @@ type DatabaseInfos struct {
 	Init       bool
 }
 
-// SiteInfos is a meta struct which stores all the informations about a site
-type SiteInfos struct {
-	model.Site
-	model.Site_tr
-	//NbSiteRanges     int
-	HasError  bool
-	Point     *geo.Point
-	Latitude  string
-	Longitude string
-	Altitude  string
-	GeonameID string
-	Created   bool
-}
-
 // CharacsInfos holds information about characs linked to site range
 type SiteRangeCharacInfos struct {
 	model.Site_range__charac
@@ -96,7 +82,7 @@ func (di *DatabaseImport) AddError(value string, errMsg string, columns ...strin
 		SiteCode: di.CurrentSite.Code,
 		Columns:  columns,
 		Value:    value,
-		ErrMsg:   translate.T(di.Parser.Lang, errMsg),
+		ErrMsg:   translate.T(di.Parser.UserLang, errMsg),
 	})
 
 	di.CurrentSite.HasError = true
@@ -113,7 +99,7 @@ func (di *DatabaseImport) AddError(value string, errMsg string, columns ...strin
 type DatabaseImport struct {
 	SitesProcessed         map[string]int
 	Database               *DatabaseInfos
-	CurrentSite            *SiteInfos
+	CurrentSite            *model.SiteInfos
 	CurrentSiteRange       *model.Site_range
 	CurrentSiteRangeCharac *SiteRangeCharacInfos
 	Tx                     *sqlx.Tx
@@ -135,7 +121,7 @@ func (di *DatabaseImport) New(parser *Parser, uid int, databaseName string, lang
 	di.Database.Owner = di.Uid
 	di.Database.Default_language = langIsocode
 	di.Database.Geographical_extent_geom = "0103000020E610000001000000050000000C21E7FDFF7F66C01842CEFBFF7F56C00C21E7FDFF7F66C01842CEFBFF7F56400C21E7FDFF7F66401842CEFBFF7F56400C21E7FDFF7F66401842CEFBFF7F56C00C21E7FDFF7F66C01842CEFBFF7F56C0"
-	di.CurrentSite = &SiteInfos{}
+	di.CurrentSite = &model.SiteInfos{}
 	di.Parser = parser
 	di.NumberOfSites = 0
 	di.SitesWithError = map[string]bool{}
@@ -218,7 +204,7 @@ func (di *DatabaseImport) ProcessRecord(f *Fields) {
 
 	// If site code is not empty and differs, create a new instance of SiteInfos to store datas
 	if f.SITE_SOURCE_ID != "" && f.SITE_SOURCE_ID != di.CurrentSite.Code {
-		di.CurrentSite = &SiteInfos{}
+		di.CurrentSite = &model.SiteInfos{}
 		di.CurrentSiteRange = &model.Site_range{}
 		di.CurrentSiteRangeCharac = &SiteRangeCharacInfos{}
 		di.CurrentSite.Code = f.SITE_SOURCE_ID
@@ -250,9 +236,8 @@ func (di *DatabaseImport) ProcessRecord(f *Fields) {
 			err = di.CurrentSite.Create(di.Tx)
 			// Site ID
 			di.CurrentSiteRange.Site_id = di.CurrentSite.Id
-			//di.CurrentSite.NbSiteRanges += 1
-		} else {
-			err = di.CurrentSite.Update(di.Tx)
+			//} else {
+			//	err = di.CurrentSite.Update(di.Tx)
 		}
 		if err == nil {
 			err = di.insertSiteRangeInfos()
@@ -417,17 +402,13 @@ func (di *DatabaseImport) processSiteInfos(f *Fields) {
 					skip = true
 				}
 				if !skip {
-					di.CurrentSite.Geom, err = di.CurrentSite.Point.ToWKT_2d()
-					if err != nil {
-						di.AddError(f.LONGITUDE+" "+f.LATITUDE, "IMPORT.CSVFIELD_GEOMETRY.T_INVALID", "LATITUDE", "LONGITUDE")
-					}
+					di.CurrentSite.Geom = di.CurrentSite.Point.ToEWKT_2d()
 					if di.CurrentSite.Altitude != "" {
-						di.CurrentSite.Geom_3d, err = di.CurrentSite.Point.ToWKT()
-						if err != nil {
-							di.AddError(f.LONGITUDE+" "+f.LATITUDE+" "+f.ALTITUDE, "IMPORT.CSVFIELD_GEOMETRY.T_INVALID", "LATITUDE", "LONGITUDE", "ALTITUDE")
-						}
+						di.CurrentSite.Geom_3d = di.CurrentSite.Point.ToEWKT()
 					}
 				}
+			} else {
+				log.Println("databaseimport.go:", err)
 			}
 		} else {
 			// User don't want to use Geonames, we are stuck
@@ -441,8 +422,9 @@ func (di *DatabaseImport) processSiteInfos(f *Fields) {
 					di.CurrentSite.Point = point
 					// Has we used Geonames, site location type is "centroid"
 					di.CurrentSite.Centroid = true
-					di.CurrentSite.Geom, err = di.CurrentSite.Point.ToWKT()
+					di.CurrentSite.Geom = di.CurrentSite.Point.ToEWKT()
 					if err != nil {
+						log.Println("databaseimport.go:", err)
 						di.AddError(f.GEONAME_ID, "IMPORT.CSVFIELD_GEO.T_CHECK_LAT_OR_LON_NOT_SET_AND_NO_GEONAMES", "GEONAME_ID")
 					}
 				}
@@ -509,7 +491,8 @@ func (di *DatabaseImport) checkDifferences(f *Fields) {
 // getOccupation get occupation string from field translatable in the csv file
 func (di *DatabaseImport) getOccupation(occupation string) (val string, err error) {
 	err = nil
-	switch strings.ToLower(occupation) {
+
+	switch cleanAndLower(occupation) {
 	case di.lowerTranslation("IMPORT.CSVFIELD_OCCUPATION.T_LABEL_NOT_DOCUMENTED"):
 		val = "not_documented"
 	case di.lowerTranslation("IMPORT.CSVFIELD_OCCUPATION.T_LABEL_SINGLE"):
@@ -533,7 +516,6 @@ func (di *DatabaseImport) processGeoDatas(f *Fields) (*geo.Point, error) {
 	var point *geo.Point
 	var epsg int
 	var err error
-	var pointToBeReturned *geo.Point
 	hasError := false
 	// If projection system is not set, we assume it's 4326 (WGS84)
 	if f.PROJECTION_SYSTEM == "" {
@@ -545,20 +527,21 @@ func (di *DatabaseImport) processGeoDatas(f *Fields) (*geo.Point, error) {
 			hasError = true
 		}
 	}
+	di.CurrentSite.EPSG = epsg
+
 	// Parse LONGITUDE
 	lon, err := strconv.ParseFloat(strings.Replace(f.LONGITUDE, ",", ".", 1), 64)
-	if err != nil || lon == 0 {
+	if err != nil {
 		di.AddError(f.LONGITUDE, "IMPORT.CSVFIELD_LONGITUDE.T_CHECK_INCORRECT_VALUE", "LONGITUDE")
 		hasError = true
 	}
 	// Parse LATITUDE
 	lat, err := strconv.ParseFloat(strings.Replace(f.LATITUDE, ",", ".", 1), 64)
-	if err != nil || lat == 0 {
+	if err != nil {
 		di.AddError(f.LATITUDE, "IMPORT.CSVFIELD_LATITUDE.T_CHECK_INCORRECT_VALUE", "LATITUDE")
 		hasError = true
 	}
 	// Parse ALTITUDE
-	// If no altitude set it to -9999
 	if f.ALTITUDE != "" {
 		alt, err := strconv.ParseFloat(f.ALTITUDE, 64)
 		if err != nil {
@@ -573,24 +556,7 @@ func (di *DatabaseImport) processGeoDatas(f *Fields) (*geo.Point, error) {
 		di.AddError(f.PROJECTION_SYSTEM, "IMPORT.CSVFIELD_GEO.T_ERROR_UNABLE_TO_GET_WKT", "EPSG", "LATITUDE", "LONGITUDE")
 		hasError = true
 	}
-	// Datas are already in WGS84, leave it untouched
-	if epsg == 4326 {
-		pointToBeReturned = point
-	} else {
-		// Convert datas to WGS84
-		point2, err := point.ToWGS84()
-		if err != nil {
-			di.AddError(f.PROJECTION_SYSTEM+" "+f.LONGITUDE+" "+f.LATITUDE, "IMPORT.CSVFIELD_GEO.T_ERROR_UNABLE_TO_CONVERT_TO_WGS84", "EPSG", "LATITUDE", "LONGITUDE")
-			pointToBeReturned = nil
-		}
-		/*
-			if err != nil {
-				di.AddError(f.PROJECTION_SYSTEM+" "+f.LONGITUDE+" "+f.LATITUDE, "IMPORT.CSVFIELD_GEO.T_ERROR_UNABLE_TO_GET_WKT", "EPSG", "LATITUDE", "LONGITUDE")
-				pointToBeReturned = nil
-			}
-		*/
-		pointToBeReturned = point2
-	}
+
 	if hasError {
 		di.AddError(f.PROJECTION_SYSTEM+" "+f.LONGITUDE+" "+f.LATITUDE, "IMPORT.CSVFIELD_GEO.T_ERROR_UNABLE_TO_CREATE_GEOMETRY", "EPSG", "LATITUDE", "LONGITUDE")
 		if err != nil {
@@ -599,7 +565,7 @@ func (di *DatabaseImport) processGeoDatas(f *Fields) (*geo.Point, error) {
 			return nil, errors.New("Error parsing coordinates")
 		}
 	}
-	return pointToBeReturned, nil
+	return point, nil
 }
 
 // processGeonames get the city name/lat/lon from the database and assign it TODO
@@ -680,26 +646,26 @@ func (di *DatabaseImport) processCharacInfos(f *Fields) error {
 		return errors.New("invalid carac name")
 	}
 	if f.CARAC_LVL1 != "" {
-		path += "->" + strings.ToLower(f.CARAC_LVL1)
+		path += "->" + cleanAndLower(f.CARAC_LVL1)
 	} else {
 		di.AddError(f.CARAC_NAME, "IMPORT.CSVFIELD_CARAC_LVL1.T_CHECK_EMPTY")
 		return errors.New("no lvl1 carac")
 	}
 	if f.CARAC_LVL2 != "" {
-		path += "->" + strings.ToLower(f.CARAC_LVL2)
+		path += "->" + cleanAndLower(f.CARAC_LVL2)
 		lvl++
 	}
 	if f.CARAC_LVL3 != "" {
-		path += "->" + strings.ToLower(f.CARAC_LVL3)
+		path += "->" + cleanAndLower(f.CARAC_LVL3)
 		lvl++
 	}
 	if f.CARAC_LVL4 != "" {
-		path += "->" + strings.ToLower(f.CARAC_LVL4)
+		path += "->" + cleanAndLower(f.CARAC_LVL4)
 		lvl++
 	}
 	//path = strings.TrimSuffix(path, "->")
 	// Check if charac exists and retrieve id
-	caracNameToLowerCase := strings.ToLower(f.CARAC_NAME)
+	caracNameToLowerCase := cleanAndLower(f.CARAC_NAME)
 	caracID := di.ArkeoCharacs[caracNameToLowerCase][caracNameToLowerCase+path]
 	if caracID == 0 {
 		log.Println("NOT FOUND: ", caracNameToLowerCase+path)
@@ -716,7 +682,7 @@ func (di *DatabaseImport) processCharacInfos(f *Fields) error {
 	*/
 
 	//	STATE_OF_KNOWLEDGE
-	switch strings.ToLower(f.STATE_OF_KNOWLEDGE) {
+	switch cleanAndLower(f.STATE_OF_KNOWLEDGE) {
 	case di.lowerTranslation("IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_NOT_DOCUMENTED"):
 		di.CurrentSiteRangeCharac.Knowledge_type = "not_documented"
 	case di.lowerTranslation("IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_LITERATURE"):
@@ -783,7 +749,7 @@ func (di *DatabaseImport) cacheCharacs() (map[string]map[string]int, error) {
 		return characs, err
 	}
 	for name := range characsRoot {
-		loweredName := strings.ToLower(name)
+		loweredName := cleanAndLower(name)
 		characs[loweredName], err = model.GetCharacPathsFromLangID(name, di.Database.Default_language)
 		if err != nil {
 			return characs, err
@@ -834,7 +800,7 @@ func (di *DatabaseImport) insertCharacInfos() error {
 
 // valueAsBool analyses YES/NO translatable values to bool
 func (di *DatabaseImport) valueAsBool(fieldName, val string) (choosenValue bool, err error) {
-	switch strings.ToLower(val) {
+	switch cleanAndLower(val) {
 	case di.lowerTranslation("IMPORT.CSVFIELD_ALL.T_LABEL_YES"):
 		choosenValue = true
 	case di.lowerTranslation("IMPORT.CSVFIELD_ALL.T_LABEL_NO"):
@@ -852,7 +818,7 @@ func (di *DatabaseImport) valueAsBool(fieldName, val string) (choosenValue bool,
 
 // lowerTranslation return translation in lower case
 func (di *DatabaseImport) lowerTranslation(s string) string {
-	return strings.ToLower(translate.T(di.Parser.Lang, s))
+	return cleanAndLower(translate.T(di.Parser.Lang, s))
 }
 
 // parseDates analyzes declared period and returns starting and ending dates
@@ -864,7 +830,7 @@ func (di *DatabaseImport) parseDates(period string) ([2]int, error) {
 
 	// fmt.Println("PERIOD", period)
 
-	if (period == "" || strings.ToLower(period) == di.lowerTranslation("IMPORT.CSVFIELD_ALL.T_CHECK_UNDETERMINED")) || strings.ToLower(period) == "null" {
+	if (period == "" || cleanAndLower(period) == di.lowerTranslation("IMPORT.CSVFIELD_ALL.T_CHECK_UNDETERMINED")) || cleanAndLower(period) == "null" {
 		return [2]int{math.MinInt32, math.MaxInt32}, nil
 	}
 
@@ -912,7 +878,7 @@ func (di *DatabaseImport) parseDates(period string) ([2]int, error) {
 				}
 			} else {
 				// Check if it is set explicitly as undefined
-				if strings.ToLower(tmpDate1) == di.lowerTranslation("IMPORT.CSVFIELD_ALL.T_CHECK_UNDETERMINED") {
+				if cleanAndLower(tmpDate1) == di.lowerTranslation("IMPORT.CSVFIELD_ALL.T_CHECK_UNDETERMINED") {
 					dates[0] = math.MinInt32
 				} else {
 					di.AddError(period, "IMPORT.CSVFIELD_PERIOD_DATE2.T_CHECK_WRONG_VALUE", "STARTING_PERIOD")
@@ -937,7 +903,7 @@ func (di *DatabaseImport) parseDates(period string) ([2]int, error) {
 				}
 			} else {
 				// Check if it is set explicitly as undefined
-				if strings.ToLower(tmpDate2) == di.lowerTranslation("IMPORT.CSVFIELD_ALL.T_CHECK_UNDETERMINED") {
+				if cleanAndLower(tmpDate2) == di.lowerTranslation("IMPORT.CSVFIELD_ALL.T_CHECK_UNDETERMINED") {
 					dates[1] = math.MaxInt32
 				} else {
 					di.AddError(period, "IMPORT.CSVFIELD_PERIOD_DATE2.T_CHECK_WRONG_VALUE", "ENDING_PERIOD")
@@ -967,4 +933,11 @@ func (di *DatabaseImport) Save(filename string) (int, error) {
 	i := model.Import{Database_id: di.Database.Id, User_id: di.Uid, Filename: filename, Number_of_lines: di.Parser.Line - 1}
 	err = i.Create(di.Tx)
 	return i.Id, err
+}
+
+func cleanAndLower(s string) string {
+	s = strings.Replace(s, " ", "", -1) // non breaking space
+	s = strings.Replace(s, "–", "-", -1)
+	s = strings.TrimSpace(s)
+	return strings.ToLower(s)
 }

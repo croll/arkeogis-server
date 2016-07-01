@@ -22,7 +22,7 @@
 package model
 
 import (
-	"fmt"
+	"errors"
 	"log"
 
 	"strings"
@@ -36,47 +36,67 @@ import (
  */
 
 // Get the charac from the database
-func (u *Charac) Get(tx *sqlx.Tx) error {
+func (u *Charac) Get(tx *sqlx.Tx) (err error) {
 	var q = "SELECT * FROM \"charac\" WHERE id=:id"
 	stmt, err := tx.PrepareNamed(q)
 	if err != nil {
-		return err
+		return errors.New("model.charac::Get " + err.Error())
 	}
 	defer stmt.Close()
-	return stmt.Get(u, u)
+	err = stmt.Get(u, u)
+	if err != nil {
+		err = errors.New("model.charac::Get " + err.Error())
+	}
+	return
 }
 
 // Create the charac by inserting it in the database
-func (u *Charac) Create(tx *sqlx.Tx) error {
+func (u *Charac) Create(tx *sqlx.Tx) (err error) {
 	stmt, err := tx.PrepareNamed("INSERT INTO \"charac\" (" + Charac_InsertStr + ") VALUES (" + Charac_InsertValuesStr + ") RETURNING id")
 	if err != nil {
-		return err
+		return errors.New("model.charac::Create " + err.Error())
 	}
 	defer stmt.Close()
-	return stmt.Get(&u.Id, u)
+	err = stmt.Get(&u.Id, u)
+	if err != nil {
+		err = errors.New("model.charac::Create " + err.Error())
+	}
+	return
 }
 
 // Update the charac in the database
-func (u *Charac) Update(tx *sqlx.Tx) error {
-	_, err := tx.NamedExec("UPDATE \"charac\" SET "+Charac_UpdateStr+" WHERE id=:id", u)
-	return err
+func (u *Charac) Update(tx *sqlx.Tx) (err error) {
+	_, err = tx.NamedExec("UPDATE \"charac\" SET "+Charac_UpdateStr+" WHERE id=:id", u)
+	if err != nil {
+		err = errors.New("model.charac::Update " + err.Error())
+	}
+	return
 }
 
 // Delete the charac from the database
-func (u *Charac) Delete(tx *sqlx.Tx) error {
-	_, err := tx.NamedExec("DELETE FROM \"charac\" WHERE id=:id", u)
-	return err
+func (u *Charac) Delete(tx *sqlx.Tx) (err error) {
+	_, err = tx.NamedExec("DELETE FROM \"charac\" WHERE id=:id", u)
+	if err != nil {
+		err = errors.New("model.charac::Delete " + err.Error())
+	}
+	return
 }
 
 // Childs return Charac childs
-func (u *Charac) Childs(tx *sqlx.Tx) ([]Charac, error) {
-	answer := []Charac{}
+func (u *Charac) Childs(tx *sqlx.Tx) (answer []Charac, err error) {
+	answer = []Charac{}
 	var q = "SELECT * FROM \"charac\" WHERE parent_id=:id order by \"order\""
 	stmt, err := tx.PrepareNamed(q)
 	if err != nil {
-		return answer, err
+		if err != nil {
+			err = errors.New("model.charac::Childs" + err.Error())
+		}
+		return
 	}
 	err = stmt.Select(&answer, u)
+	if err != nil {
+		err = errors.New("model.charac::Childs" + err.Error())
+	}
 	stmt.Close()
 	return answer, err
 }
@@ -86,37 +106,56 @@ func (u *Charac) Childs(tx *sqlx.Tx) ([]Charac, error) {
  */
 
 // Get the charac_root from the database
-func (u *Charac_root) Get(tx *sqlx.Tx) error {
+func (u *Charac_root) Get(tx *sqlx.Tx) (err error) {
 	var q = "SELECT root_charac_id, admin_group_id FROM \"charac_root\" WHERE root_charac_id=:root_charac_id"
 	stmt, err := tx.PrepareNamed(q)
 	if err != nil {
-		return err
+		if err != nil {
+			err = errors.New("model.charac_root::Get" + err.Error())
+		}
+		return
 	}
 	defer stmt.Close()
-	return stmt.Get(u, u)
+	err = stmt.Get(u, u)
+	if err != nil {
+		err = errors.New("model.charac_root::Get" + err.Error())
+	}
+	return
 }
 
 // Create the charac_root by inserting it in the database
-func (u *Charac_root) Create(tx *sqlx.Tx) error {
+func (u *Charac_root) Create(tx *sqlx.Tx) (err error) {
 	//stmt, err := tx.PrepareNamed("INSERT INTO \"charac_root\" (" + Charac_root_InsertStr + ", root_charac_id) VALUES (" + Charac_root_InsertValuesStr + ", :root_charac_id) RETURNING root_charac_id")
 	stmt, err := tx.PrepareNamed("INSERT INTO \"charac_root\" (\"admin_group_id\", root_charac_id) VALUES (:admin_group_id, :root_charac_id) RETURNING root_charac_id")
 	if err != nil {
-		return err
+		if err != nil {
+			err = errors.New("model.charac_root::Create" + err.Error())
+		}
 	}
 	defer stmt.Close()
-	return stmt.Get(&u.Root_charac_id, u)
+	err = stmt.Get(&u.Root_charac_id, u)
+	if err != nil {
+		err = errors.New("model.charac_root::Create" + err.Error())
+	}
+	return
 }
 
 // Update the charac_root in the database
-func (u *Charac_root) Update(tx *sqlx.Tx) error {
-	_, err := tx.NamedExec("UPDATE \"charac_root\" SET \"admin_group_id\" = :admin_group_id WHERE root_charac_id=:root_charac_id", u)
-	return err
+func (u *Charac_root) Update(tx *sqlx.Tx) (err error) {
+	_, err = tx.NamedExec("UPDATE \"charac_root\" SET \"admin_group_id\" = :admin_group_id WHERE root_charac_id=:root_charac_id", u)
+	if err != nil {
+		err = errors.New("model.charac_root::Update" + err.Error())
+	}
+	return
 }
 
 // Delete the charac_root from the database
-func (u *Charac_root) Delete(tx *sqlx.Tx) error {
-	_, err := tx.NamedExec("DELETE FROM \"charac_root\" WHERE root_charac_id=:root_charac_id", u)
-	return err
+func (u *Charac_root) Delete(tx *sqlx.Tx) (err error) {
+	_, err = tx.NamedExec("DELETE FROM \"charac_root\" WHERE root_charac_id=:root_charac_id", u)
+	if err != nil {
+		err = errors.New("model.charac_root::Delete" + err.Error())
+	}
+	return
 }
 
 /*
@@ -205,6 +244,9 @@ func GetCharacPathsFromLang(name string, lang string) (caracs map[string]int, er
 	caracs = map[string]int{}
 	rows, err := db.DB.Query("WITH RECURSIVE nodes_cte(id, path) AS (SELECT ca.id, cat.name::TEXT AS path FROM charac AS ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON cat.lang_isocode = lang.isocode WHERE lang.iso_code = $2 AND ca.id = (SELECT ca.id FROM charac ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON lang.isocode = cat.lang_isocode WHERE lang.iso_code = $2 AND lower(cat.name) = lower($1)) UNION ALL SELECT ca.id, (p.path || '->' || cat.name) FROM nodes_cte AS p, charac AS ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON cat.lang_isocode = lang.isocode WHERE lang.iso_code = $2 AND ca.parent_id = p.id) SELECT * FROM nodes_cte AS n ORDER BY n.id ASC;", name, lang)
 	if err != nil {
+		if err != nil {
+			err = errors.New("model.charac_root::GetCharacPathsFromLang " + err.Error())
+		}
 		return
 	}
 	defer rows.Close()
@@ -214,21 +256,29 @@ func GetCharacPathsFromLang(name string, lang string) (caracs map[string]int, er
 	)
 	for rows.Next() {
 		if err = rows.Scan(&id, &path); err != nil {
+			if err != nil {
+				err = errors.New("model.charac_root::GetCharacPathsFromLang " + err.Error())
+			}
 			return
 		}
 		caracs[path] = id
 	}
 	if err = rows.Err(); err != nil {
+		if err != nil {
+			err = errors.New("model.charac_root::GetCharacPathsFromLang " + err.Error())
+		}
 		return
 	}
-	fmt.Println(caracs)
 	return
 }
 
 func GetCharacPathsFromLangID(name string, langIsocode string) (caracs map[string]int, err error) {
 	caracs = map[string]int{}
-	rows, err := db.DB.Query("WITH RECURSIVE nodes_cte(id, path) AS (SELECT ca.id, cat.name::TEXT AS path FROM charac AS ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON cat.lang_isocode = lang.isocode WHERE lang.isocode = $2 AND ca.id = (SELECT ca.id FROM charac ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON lang.isocode = cat.lang_isocode WHERE lang.isocode = $2 AND lower(cat.name) = lower($1)) UNION ALL SELECT ca.id, (p.path || '->' || cat.name) FROM nodes_cte AS p, charac AS ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON cat.lang_isocode = lang.isocode WHERE lang.isocode = $2 AND ca.parent_id = p.id) SELECT * FROM nodes_cte AS n ORDER BY n.id ASC;", name, langIsocode)
+	rows, err := db.DB.Query("WITH RECURSIVE nodes_cte(id, path) AS (SELECT ca.id, cat.name::TEXT AS path FROM charac AS ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON cat.lang_isocode = lang.isocode WHERE lang.isocode = $2 AND ca.id = (SELECT ca.id FROM charac ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON lang.isocode = cat.lang_isocode WHERE lang.isocode = $2 AND lower(cat.name) = lower($1) AND ca.parent_id = 0) UNION ALL SELECT ca.id, (p.path || '->' || cat.name) FROM nodes_cte AS p, charac AS ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON cat.lang_isocode = lang.isocode WHERE lang.isocode = $2 AND ca.parent_id = p.id) SELECT * FROM nodes_cte AS n ORDER BY n.id ASC;", name, langIsocode)
 	if err != nil {
+		if err != nil {
+			err = errors.New("model.charac_root::GetCharacPathsFromLangID " + err.Error())
+		}
 		return
 	}
 	defer rows.Close()
@@ -238,12 +288,18 @@ func GetCharacPathsFromLangID(name string, langIsocode string) (caracs map[strin
 	)
 	for rows.Next() {
 		if err = rows.Scan(&id, &path); err != nil {
+			if err != nil {
+				err = errors.New("model.charac_root::GetCharacPathsFromLangID " + err.Error())
+			}
 			return
 		}
 		path = strings.ToLower(path)
 		caracs[path] = id
 	}
 	if err = rows.Err(); err != nil {
+		if err != nil {
+			err = errors.New("model.charac_root::GetCharacPathsFromLangID " + err.Error())
+		}
 		return
 	}
 	return
@@ -253,6 +309,9 @@ func GetAllCharacPathIDsFromLangIsocode(langIsocode string) (caracs map[int]stri
 	caracs = map[int]string{}
 	rows, err := db.DB.Query("WITH RECURSIVE nodes_cte(id, path) AS (SELECT ca.id, cat.charac_id::TEXT AS path FROM charac AS ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON cat.lang_isocode = lang.isocode WHERE lang.isocode = $1 AND ca.parent_id = 0 UNION ALL SELECT ca.id, (p.path|| '->' || ca.id) FROM nodes_cte AS p, charac AS ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON cat.lang_isocode = lang.isocode WHERE lang.isocode = $1 AND ca.parent_id = p.id) SELECT * FROM nodes_cte AS n ORDER BY n.id ASC", langIsocode)
 	if err != nil {
+		if err != nil {
+			err = errors.New("model.charac_root::GetAllCharacPathIDsFromLangIsocode " + err.Error())
+		}
 		return
 	}
 	defer rows.Close()
@@ -262,11 +321,17 @@ func GetAllCharacPathIDsFromLangIsocode(langIsocode string) (caracs map[int]stri
 	)
 	for rows.Next() {
 		if err = rows.Scan(&id, &path); err != nil {
+			if err != nil {
+				err = errors.New("model.charac_root::GetAllCharacPathIDsFromLangIsocode " + err.Error())
+			}
 			return
 		}
 		caracs[id] = path
 	}
 	if err = rows.Err(); err != nil {
+		if err != nil {
+			err = errors.New("model.charac_root::GetAllCharacPathIDsFromLangIsocode " + err.Error())
+		}
 		return
 	}
 	return
@@ -276,6 +341,9 @@ func GetAllCharacsRootFromLangIsocode(langIsocode string) (caracsRoot map[string
 	caracsRoot = map[string]int{}
 	rows, err := db.DB.Query("SELECT id, name FROM charac ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id WHERE ca.parent_id = 0 AND cat.lang_isocode = $1", langIsocode)
 	if err != nil {
+		if err != nil {
+			err = errors.New("model.charac_root::GetAllCharacsRootFromLangIsocode " + err.Error())
+		}
 		return
 	}
 	defer rows.Close()
@@ -285,11 +353,17 @@ func GetAllCharacsRootFromLangIsocode(langIsocode string) (caracsRoot map[string
 	)
 	for rows.Next() {
 		if err = rows.Scan(&id, &name); err != nil {
+			if err != nil {
+				err = errors.New("model.charac_root::GetAllCharacsRootFromLangIsocode " + err.Error())
+			}
 			return
 		}
 		caracsRoot[name] = id
 	}
 	if err := rows.Err(); err != nil {
+		if err != nil {
+			err = errors.New("model.charac_root::GetAllCharacsRootFromLangIsocode " + err.Error())
+		}
 		return caracsRoot, err
 	}
 	return
@@ -300,3 +374,5 @@ func GetAllCharacsRootFromLangIsocode(langIsocode string) (caracsRoot map[string
 //WITH RECURSIVE nodes_cte(id, path) AS (SELECT ca.id, cat.charac_id::TEXT AS path FROM charac AS ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON cat.lang_isocode = lang.isocode WHERE lang.isocode = 47 AND ca.parent_id = 0 UNION ALL SELECT ca.id, (p.path|| '->' || ca.id) FROM nodes_cte AS p, charac AS ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON cat.lang_isocode = lang.isocode WHERE lang.isocode = 47 AND ca.parent_id = p.id) SELECT * FROM nodes_cte AS n ORDER BY n.id ASC
 
 // SELECT s.code, s.name, sr.start_date1, sr.start_date2, sr.end_date1, sr.end_date2, src.exceptional, src.knowledge_type, srctr.comment, srctr.bibliography FROM site s LEFT JOIN site_range sr ON s.id = sr.site_id LEFT JOIN site_range__charac src ON sr.id = src.site_range_id LEFT JOIN site_range__charac_tr srctr ON src.id = srctr.site_range__charac_id;
+
+//WITH RECURSIVE nodes_cte(id, path) AS (SELECT ca.id, cat.name::TEXT AS path FROM charac AS ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON cat.lang_isocode = lang.isocode WHERE lang.isocode = 'en' AND ca.id = (SELECT ca.id FROM charac ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON lang.isocode = cat.lang_isocode WHERE lang.isocode = 'en' AND lower(cat.name) = lower('Furniture') AND ca.parent_id = 0) UNION ALL SELECT ca.id, (p.path || '->' || cat.name) FROM nodes_cte AS p, charac AS ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON cat.lang_isocode = lang.isocode WHERE lang.isocode = 'en' AND ca.parent_id = p.id) SELECT * FROM nodes_cte AS n ORDER BY n.id ASC;

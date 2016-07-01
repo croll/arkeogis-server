@@ -641,9 +641,10 @@ func UserInfos(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 type LoginAnswer struct {
 	User        model.User
 	Token       string
-	Lang1       model.Lang         `json:"lang1"`
-	Lang2       model.Lang         `json:"lang2"`
-	Permissions []model.Permission `json:"permissions"`
+	Lang1       model.Lang             `json:"lang1"`
+	Lang2       model.Lang             `json:"lang2"`
+	Project     model.ProjectFullInfos `json:"project"`
+	Permissions []model.Permission     `json:"permissions"`
 }
 
 func loginAnswer(w http.ResponseWriter, tx *sqlx.Tx, user model.User, token string) (LoginAnswer, error) {
@@ -686,11 +687,35 @@ func loginAnswer(w http.ResponseWriter, tx *sqlx.Tx, user model.User, token stri
 	}
 	log.Println("permissions : ", permissions)
 
+	projectID, err := user.GetProjectId(tx)
+
+	if err != nil {
+		tx.Rollback()
+		log.Fatal("can't get project!")
+		return LoginAnswer{}, err
+	}
+
+	project := model.ProjectFullInfos{}
+	if projectID > 0 {
+		project.Id = projectID
+		err = project.Get(tx)
+		if err != nil {
+			tx.Rollback()
+			log.Fatal("can't get project informations!")
+			return LoginAnswer{}, err
+		}
+	} else {
+		project.Id = 0
+	}
+
+	log.Println("project: ", project)
+
 	a := LoginAnswer{
 		User:        user,
 		Token:       token,
 		Lang1:       lang1,
 		Lang2:       lang2,
+		Project:     project,
 		Permissions: permissions,
 	}
 

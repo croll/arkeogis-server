@@ -22,6 +22,7 @@
 package model
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"strconv"
@@ -238,6 +239,16 @@ func (u *User) SetCompanies(tx *sqlx.Tx, companies []Company) error {
 		}
 	}
 	return nil
+}
+
+// GetProjectId get the project of the user
+func (u *User) GetProjectId(tx *sqlx.Tx) (projectID int, err error) {
+	err = tx.Get(&projectID, "SELECT id FROM project WHERE user_id = $1", u.Id)
+	if err == sql.ErrNoRows {
+		err = nil
+		projectID = 0
+	}
+	return
 }
 
 // GetUsers return an array of groups of the User
