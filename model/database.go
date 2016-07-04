@@ -528,12 +528,11 @@ func (d *Database) CacheDates(tx *sqlx.Tx) (err error) {
 
 // ExportCSV exports database and sites as as csv file
 func (d *Database) ExportCSV(tx *sqlx.Tx) (outp string, err error) {
-	outp = "SITE_SOURCE_ID;SITE_NAME;MAIN_CITY_NAME;GEONAME_ID;PROJECTION_SYSTEM;LONGITUDE;LATITUDE;ALTITUDE	;CITY_CENTROID;OCCUPATION;STATE_OF_KNOWLEDGE;STARTING_PERIOD;ENDING_PERIOD;CARAC_NAME;CARAC_LVL1;CARAC_LVL2;CARAC_LVL3	CARAC_LVL4;CARAC_EXP;BIBLIOGRAPHY;COMMENTS"
+	outp = "SITE_SOURCE_ID;SITE_NAME;MAIN_CITY_NAME;GEONAME_ID;PROJECTION_SYSTEM;LONGITUDE;LATITUDE;ALTITUDE	;CITY_CENTROID;OCCUPATION;STATE_OF_KNOWLEDGE;STARTING_PERIOD;ENDING_PERIOD;CARAC_NAME;CARAC_LVL1;CARAC_LVL2;CARAC_LVL3;CARAC_LVL4;CARAC_EXP;BIBLIOGRAPHY;COMMENTS;\n"
 
 	// Datatabse isocode
-	var isocode string
 
-	err = tx.Get(&isocode, "SELECT default_language FROM \"database\" WHERE id = $1", d.Id)
+	err = tx.Get(d, "SELECT name, default_language FROM \"database\" WHERE id = $1", d.Id)
 	if err != nil {
 		return
 	}
@@ -543,7 +542,7 @@ func (d *Database) ExportCSV(tx *sqlx.Tx) (outp string, err error) {
 
 	q := "WITH RECURSIVE nodes_cte(id, path) AS (SELECT ca.id, cat.name::TEXT AS path FROM charac AS ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON cat.lang_isocode = lang.isocode WHERE lang.isocode = $1 AND ca.parent_id = 0 UNION ALL SELECT ca.id, (p.path|| ';' || cat.name) FROM nodes_cte AS p, charac AS ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON cat.lang_isocode = lang.isocode WHERE lang.isocode = $1 AND ca.parent_id = p.id) SELECT * FROM nodes_cte AS n ORDER BY n.id ASC\n"
 
-	rows, err := tx.Query(q, isocode)
+	rows, err := tx.Query(q, d.Default_language)
 	switch {
 	case err == sql.ErrNoRows:
 		rows.Close()
@@ -561,15 +560,13 @@ func (d *Database) ExportCSV(tx *sqlx.Tx) (outp string, err error) {
 		characs[id] = path
 	}
 
-	q = "SELECT s.code, s.name, s.city_name, s.city_geonameid, ST_X(s.geom::geometry) as longitude, ST_Y(s.geom::geometry) as latitude, ST_X(s.geom_3d::geometry) as longitude_3d, ST_Y(s.geom_3d::geometry) as latitude3d, ST_Z(s.geom_3d::geometry) as altitude, s.centroid, s.occupation, sr.start_date1, sr.start_date2, sr.end_date1, sr.end_date2, src.exceptional, src.knowledge_type, srctr.bibliography, srctr.comment, c.id as charac_id FROM site s LEFT JOIN site_range sr ON s.id = sr.site_id LEFT JOIN site_tr str ON s.id = str.site_id LEFT JOIN site_range__charac src ON sr.id = src.site_range_id LEFT JOIN site_range__charac_tr srctr ON src.id = srctr.site_range__charac_id LEFT JOIN charac c ON src.charac_id = c.id WHERE s.database_id = $1 AND str.lang_isocode IS NULL OR str.lang_isocode = $2 "
+	q = "SELECT s.code, s.name, s.city_name, s.city_geonameid, ST_X(s.geom::geometry) as longitude, ST_Y(s.geom::geometry) as latitude, ST_X(s.geom_3d::geometry) as longitude_3d, ST_Y(s.geom_3d::geometry) as latitude3d, ST_Z(s.geom_3d::geometry) as altitude, s.centroid, s.occupation, sr.start_date1, sr.start_date2, sr.end_date1, sr.end_date2, src.exceptional, src.knowledge_type, srctr.bibliography, srctr.comment, c.id as charac_id FROM site s LEFT JOIN site_range sr ON s.id = sr.site_id LEFT JOIN site_tr str ON s.id = str.site_id LEFT JOIN site_range__charac src ON sr.id = src.site_range_id LEFT JOIN site_range__charac_tr srctr ON src.id = srctr.site_range__charac_id LEFT JOIN charac c ON src.charac_id = c.id WHERE s.database_id = $1 AND str.lang_isocode IS NULL OR str.lang_isocode = $2 ORDER BY s.id"
 
-	rows2, err := tx.Query(q, d.Id, isocode)
+	rows2, err := tx.Query(q, d.Id, d.Default_language)
 	if err != nil {
 		rows2.Close()
 		return
 	}
-	fmt.Println(d.Id)
-	fmt.Println(isocode)
 	for rows2.Next() {
 		var (
 			code           string
@@ -623,35 +620,35 @@ func (d *Database) ExportCSV(tx *sqlx.Tx) (outp string, err error) {
 		}
 		// Centroid
 		if centroid {
-			scentroid = translate.T(isocode, "IMPORT.CSVFIELD_ALL.T_LABEL_YES")
+			scentroid = translate.T(d.Default_language, "IMPORT.CSVFIELD_ALL.T_LABEL_YES")
 		} else {
-			scentroid = translate.T(isocode, "IMPORT.CSVFIELD_ALL.T_LABEL_NO")
+			scentroid = translate.T(d.Default_language, "IMPORT.CSVFIELD_ALL.T_LABEL_NO")
 		}
 		// Occupation
 		switch occupation {
 		case "not_documented":
-			soccupation = translate.T(isocode, "IMPORT.CSVFIELD_OCCUPATION.T_LABEL_NOT_DOCUMENTED")
+			soccupation = translate.T(d.Default_language, "IMPORT.CSVFIELD_OCCUPATION.T_LABEL_NOT_DOCUMENTED")
 		case "single":
-			soccupation = translate.T(isocode, "IMPORT.CSVFIELD_OCCUPATION.T_LABEL_SINGLE")
+			soccupation = translate.T(d.Default_language, "IMPORT.CSVFIELD_OCCUPATION.T_LABEL_SINGLE")
 		case "continuous":
-			soccupation = translate.T(isocode, "IMPORT.CSVFIELD_OCCUPATION.T_LABEL_CONTINUOUS")
+			soccupation = translate.T(d.Default_language, "IMPORT.CSVFIELD_OCCUPATION.T_LABEL_CONTINUOUS")
 		case "multiple":
-			soccupation = translate.T(isocode, "IMPORT.CSVFIELD_OCCUPATION.T_LABEL_MULTIPLE")
+			soccupation = translate.T(d.Default_language, "IMPORT.CSVFIELD_OCCUPATION.T_LABEL_MULTIPLE")
 		}
 		// State of knowledge
 		switch knowledge_type {
 		case "not_documented":
-			knowledge_type = translate.T(isocode, "IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_NOT_DOCUMENTED")
+			knowledge_type = translate.T(d.Default_language, "IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_NOT_DOCUMENTED")
 		case "literature":
-			knowledge_type = translate.T(isocode, "IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_LITERATURE")
+			knowledge_type = translate.T(d.Default_language, "IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_LITERATURE")
 		case "prospected_aerial":
-			knowledge_type = translate.T(isocode, "IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_PROSPECTED_AERIAL")
+			knowledge_type = translate.T(d.Default_language, "IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_PROSPECTED_AERIAL")
 		case "prospected_pedestrian":
-			knowledge_type = translate.T(isocode, "IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_PROSPECTED_PEDESTRIAN")
+			knowledge_type = translate.T(d.Default_language, "IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_PROSPECTED_PEDESTRIAN")
 		case "surveyed":
-			knowledge_type = translate.T(isocode, "IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_SURVEYED")
+			knowledge_type = translate.T(d.Default_language, "IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_SURVEYED")
 		case "dig":
-			knowledge_type = translate.T(isocode, "IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_DIG")
+			knowledge_type = translate.T(d.Default_language, "IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_DIG")
 		}
 		// Dates
 		if start_date1 < 0 && start_date1 > math.MinInt32 {
@@ -691,11 +688,11 @@ func (d *Database) ExportCSV(tx *sqlx.Tx) (outp string, err error) {
 		}
 		// Caracs exp
 		if exceptional {
-			sexceptional = translate.T(isocode, "IMPORT.CSVFIELD_ALL.T_LABEL_YES")
+			sexceptional = translate.T(d.Default_language, "IMPORT.CSVFIELD_ALL.T_LABEL_YES")
 		} else {
-			sexceptional = translate.T(isocode, "IMPORT.CSVFIELD_ALL.T_LABEL_NO")
+			sexceptional = translate.T(d.Default_language, "IMPORT.CSVFIELD_ALL.T_LABEL_NO")
 		}
-		outp += code + ";" + name + ";" + city_name + ";" + cgeonameid + ";4326;" + slongitude + ";" + slatitude + ";" + saltitude + ";" + scentroid + ";" + soccupation + ";" + knowledge_type + ";" + startingPeriod + ";" + endingPeriod + ";" + scharacs + ";" + sexceptional + ";" + bibliography + ";" + comment + "\n"
+		outp += code + ";" + name + ";" + city_name + ";" + cgeonameid + ";4326;" + slongitude + ";" + slatitude + ";" + saltitude + ";" + scentroid + ";" + soccupation + ";" + knowledge_type + ";" + startingPeriod + ";" + endingPeriod + ";" + scharacs + ";" + sexceptional + ";" + bibliography + ";" + comment + ";\n"
 	}
 
 	return

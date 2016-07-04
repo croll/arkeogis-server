@@ -24,10 +24,12 @@ package rest
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"reflect"
 	"strconv"
+	"time"
 
 	db "github.com/croll/arkeogis-server/db"
 	"github.com/croll/arkeogis-server/model"
@@ -310,6 +312,11 @@ func DatabaseExportCSV(w http.ResponseWriter, r *http.Request, proute routes.Pro
 		userSqlError(w, err)
 		return
 	}
-	//w.Header().Set("Content-Type", "text/csv")
+	t := time.Now()
+	filename := d.Name + "-" + fmt.Sprintf("%d-%d-%d %d:%d:%d",
+		t.Year(), t.Month(), t.Day(),
+		t.Hour(), t.Minute(), t.Second()) + ".csv"
+	w.Header().Set("Content-Type", "text/csv")
+	w.Header().Set("Content-Disposition", "attachment; filename="+filename)
 	w.Write([]byte(csvContent))
 }
