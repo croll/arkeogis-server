@@ -30,8 +30,8 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"strings"
 	"regexp"
+	"strings"
 
 	config "github.com/croll/arkeogis-server/config"
 )
@@ -137,12 +137,12 @@ func printPsql(sql Sql) {
 			if len(row.Comment) > 0 {
 				tmp := constraintRegexp.FindStringSubmatch(strings.ToLower(row.Comment))
 				if len(tmp) == 3 {
-						switch(tmp[1]) {
-						case "ondelete":
-							constraintFromComment = "ON DELETE "+strings.ToUpper(tmp[2])
-						case "onupdate":
-							constraintFromComment = "ON UPDATE "+strings.ToUpper(tmp[2])
-						}
+					switch tmp[1] {
+					case "ondelete":
+						constraintFromComment = "ON DELETE " + strings.ToUpper(tmp[2])
+					case "onupdate":
+						constraintFromComment = "ON UPDATE " + strings.ToUpper(tmp[2])
+					}
 				}
 			}
 
@@ -189,7 +189,7 @@ func printPsql(sql Sql) {
 				}
 
 				if isgeo {
-					indexes += fmt.Sprintf("CREATE INDEX \"i_%s.%s\" ON \"%s\" USING GIST ( %s );\n",
+					indexes += fmt.Sprintf("CREATE INDEX \"i_%s.%s\" ON \"%s\" USING GIST ( \"%s\" );\n",
 						table.Name, strings.Join(key.Parts, ","), table.Name, strings.Join(key.Parts, "\", \""))
 				} else {
 					indexes += fmt.Sprintf("CREATE INDEX \"i_%s.%s\" ON \"%s\" ( \"%s\" );\n",
