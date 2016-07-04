@@ -27,6 +27,7 @@ import (
 	"log"
 	"reflect"
 	"strconv"
+	"strings"
 
 	"net/http"
 
@@ -40,6 +41,12 @@ import (
 
 type CharacGetParams struct {
 	Id int `min:"1" error:"Charac Id is mandatory"`
+}
+
+type CharacListCsvParams struct {
+	Isocode string `json:"isocode"`
+	Name    string `json:"name"`
+	Dl      string `json:"dl"`
 }
 
 func init() {
@@ -57,14 +64,20 @@ func init() {
 			Method:      "GET",
 		},
 		&routes.Route{
+			Path:        "/api/characs/csv",
+			Func:        CharacListCsv,
+			Description: "Get all characs as csv",
+			Params:      reflect.TypeOf(CharacListCsvParams{}),
+			Method:      "GET",
+			Permissions: []string{},
+		},
+		&routes.Route{
 			Path:        "/api/characs",
 			Description: "Create/Update a characlogie",
 			Func:        CharacsUpdate,
 			Method:      "POST",
 			Json:        reflect.TypeOf(CharacsUpdateStruct{}),
-			Permissions: []string{
-				"adminusers",
-			},
+			Permissions: []string{},
 		},
 		&routes.Route{
 			Path:        "/api/characs/{id:[0-9]+}",
@@ -602,20 +615,20 @@ func CharacsGetTree(w http.ResponseWriter, r *http.Request, proute routes.Proute
 	// get the user
 	_user, ok := proute.Session.Get("user")
 	if !ok {
-		log.Println("CharacsUpdate: can't get user in session...", _user)
+		log.Println("CharacsGetTree: can't get user in session...", _user)
 		_ = tx.Rollback()
 		return
 	}
 	user, ok := _user.(model.User)
 	if !ok {
-		log.Println("CharacsUpdate: can't cast user...", _user)
+		log.Println("CharacsGetTree: can't cast user...", _user)
 		_ = tx.Rollback()
 		return
 	}
 	err = user.Get(tx)
 	user.Password = "" // immediatly erase password field, we don't need it
 	if err != nil {
-		log.Println("CharacsUpdate: can't load user...", _user)
+		log.Println("CharacsGetTree: can't load user...", _user)
 		userSqlError(w, err)
 		_ = tx.Rollback()
 		return
@@ -750,4 +763,44 @@ func CharacsDelete(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 		_ = tx.Rollback()
 		return
 	}
+}
+
+func CharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+	params := proute.Params.(*CharacListCsvParams)
+	q := "WITH RECURSIVE nodes_cte(id, path) AS (SELECT id, cat.name::::TEXT AS path FROM charac AS ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON cat.lang_isocode = lang.isocode WHERE lang.isocode = :isocode AND ca.id = (SELECT ca.id FROM charac ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON lang.isocode = cat.lang_isocode WHERE lang.isocode = :isocode AND lower(cat.name) = lower(:name) AND ca.parent_id = 0) UNION ALL SELECT ca.id, (p.path || ';' || cat.name) FROM nodes_cte AS p, charac AS ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON cat.lang_isocode = lang.isocode WHERE lang.isocode = :isocode AND ca.parent_id = p.id) SELECT * FROM nodes_cte AS n ORDER BY n.id ASC;"
+	if params.Name == "" {
+		http.Error(w, "Please provide a charac name in url", 500)
+		return
+	}
+	if params.Isocode == "" {
+		http.Error(w, "Please provide an isocode in url", 500)
+		return
+	}
+	list := []struct {
+		Id   int
+		Path string
+	}{}
+	stmt, err := db.DB.PrepareNamed(q)
+	outp := ""
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "INTERNAL SERVER ERROR", 500)
+	}
+	err = stmt.Select(&list, params)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "INTERNAL SERVER ERROR", 500)
+	}
+	for _, charac := range list {
+		num := 4 - strings.Count(charac.Path, ";")
+		if num < 4 {
+			outp += charac.Path + strings.Repeat(";", num) + "\n"
+		}
+	}
+
+	if params.Dl != "" {
+		w.Header().Set("Content-Type", "text/csv")
+	}
+
+	w.Write([]byte(outp))
 }

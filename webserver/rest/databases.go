@@ -23,6 +23,7 @@ package rest
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"reflect"
@@ -43,7 +44,7 @@ func init() {
 		&routes.Route{
 			Path:        "/api/database",
 			Description: "Get list of all databases in arkeogis",
-			Func:        DatabasesList,
+			Func:        DatabaseList,
 			Method:      "GET",
 			Permissions: []string{},
 			Params:      reflect.TypeOf(DatabaseListParams{}),
@@ -76,8 +77,8 @@ type DatabaseListParams struct {
 	Check_dates  bool `json:"check_dates"`
 }
 
-// DatabasesList returns the list of databases
-func DatabasesList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+// DatabaseList returns the list of databases
+func DatabaseList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	params := proute.Params.(*DatabaseListParams)
 
@@ -87,10 +88,14 @@ func DatabasesList(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 		return
 	}
 
-	q := "SELECT d.*, ST_AsGeoJSON(d.geographical_extent_geom) as geographical_extent_geom, u.firstname || ' ' || u.lastname as author FROM \"database\" d LEFT JOIN \"user\" u ON d.owner = u.id WHERE d.id > 0"
+	_user, _ := proute.Session.Get("user")
+	user := _user.(model.User)
+
+	q := "SELECT d.*, ST_AsGeoJSON(d.geographical_extent_geom) as geographical_extent_geom, l.name as license, (SELECT count(*) from site WHERE database_id = d.id) AS number_of_sites, (SELECT number_of_lines FROM import WHERE database_id = d.id ORDER BY id DESC LIMIT 1) AS number_of_lines, u.firstname || ' ' || u.lastname as author FROM \"database\" d LEFT JOIN \"user\" u ON d.owner = u.id LEFT JOIN license l ON l.id = d.license_id WHERE 1 = 1"
 
 	type dbInfos struct {
 		model.Database
+		Author              string            `json:"author"`
 		Description         map[string]string `json:"description"`
 		Geographical_limit  map[string]string `json:"geographical_limit"`
 		Bibliography        map[string]string `json:"bibliography"`
@@ -99,7 +104,22 @@ func DatabasesList(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 		Source_relation     map[string]string `json:"source_relation"`
 		Copyright           map[string]string `json:"copyright"`
 		Subject             map[string]string `json:"subject"`
-		Author              string            `json:"author"`
+		Number_of_lines     int               `json:"number_of_lines"`
+		Number_of_sites     int               `json:"number_of_sites"`
+		License             string            `json:"license"`
+		Contexts            []string          `json:"context"`
+		Countries           []struct {
+			Id   int
+			Name string
+		} `json:"countries"`
+		Continents []struct {
+			Id   int
+			Name string
+		} `json:"continents"`
+		Authors []struct {
+			Id       int
+			Fullname string
+		} `json:"authors"`
 	}
 
 	if params.Bounding_box != "" {
@@ -114,12 +134,64 @@ func DatabasesList(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 
 	nstmt, err := tx.PrepareNamed(q)
 	if err != nil {
+		err = errors.New("rest.databases::DatabaseList : (infos) " + err.Error())
 		log.Println(err)
 		userSqlError(w, err)
 		_ = tx.Rollback()
 		return
 	}
 	err = nstmt.Select(&databases, params)
+
+	for _, database := range databases {
+
+		// Authors
+		astmt, err := tx.PrepareNamed("SELECT id, firstname || ' ' || lastname  as fullname FROM \"user\" u LEFT JOIN database__authors da ON u.id = da.user_id WHERE da.database_id = :id")
+		if err != nil {
+			err = errors.New("rest.databases::DatabaseList (authors) : " + err.Error())
+			log.Println(err)
+			userSqlError(w, err)
+			_ = tx.Rollback()
+			return
+		}
+		err = astmt.Select(&database.Authors, database)
+
+		// Contexts
+		cstmt, err := tx.PrepareNamed("SELECT context FROM database_context WHERE database_id = :id")
+		if err != nil {
+			err = errors.New("rest.databases::DatabaseList (contexts) : " + err.Error())
+			log.Println(err)
+			userSqlError(w, err)
+			_ = tx.Rollback()
+			return
+		}
+		err = cstmt.Select(&database.Authors, database)
+
+		// Countries
+		if database.Geographical_extent == "country" {
+			coustmt, err := tx.Preparex("SELECT ctr.name FROM country_tr ctr LEFT JOIN country c ON ctr.country_geonameid = c.geonameid LEFT JOIN database__country dc ON c.geonameid = dc.country_geonameid WHERE dc.database_id = $1 AND ctr.lang_isocode = $2")
+			if err != nil {
+				err = errors.New("rest.databases::DatabaseList (countries) : " + err.Error())
+				log.Println(err)
+				userSqlError(w, err)
+				_ = tx.Rollback()
+				return
+			}
+			err = coustmt.Select(&database.Countries, database.Id, user.First_lang_isocode)
+		}
+
+		// Continents
+		if database.Geographical_extent == "continent" {
+			constmt, err := tx.Preparex("SELECT ctr.name FROM continent_tr ctr LEFT JOIN continent c ON ctr.continent_geonameid = c.geonameid LEFT JOIN database__continent dc ON c.geonameid = dc.continent_geonameid WHERE dc.database_id = $1 AND ctr.lang_isocode = $2")
+			if err != nil {
+				err = errors.New("rest.databases::DatabaseList : (continents) " + err.Error())
+				log.Println(err)
+				userSqlError(w, err)
+				_ = tx.Rollback()
+				return
+			}
+			err = constmt.Select(&database.Continents, database.Id, user.First_lang_isocode)
+		}
+	}
 
 	if err != nil {
 		log.Println(err)

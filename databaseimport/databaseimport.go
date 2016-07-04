@@ -422,7 +422,8 @@ func (di *DatabaseImport) processSiteInfos(f *Fields) {
 					di.CurrentSite.Point = point
 					// Has we used Geonames, site location type is "centroid"
 					di.CurrentSite.Centroid = true
-					di.CurrentSite.Geom = di.CurrentSite.Point.ToEWKT()
+					di.CurrentSite.Geom = di.CurrentSite.Point.ToEWKT_2d()
+					di.CurrentSite.Geom_3d = di.CurrentSite.Point.ToEWKT()
 					if err != nil {
 						log.Println("databaseimport.go:", err)
 						di.AddError(f.GEONAME_ID, "IMPORT.CSVFIELD_GEO.T_CHECK_LAT_OR_LON_NOT_SET_AND_NO_GEONAMES", "GEONAME_ID")
@@ -580,10 +581,6 @@ func (di *DatabaseImport) processGeonames(f *Fields) (*geo.Point, error) {
 		return nil, err
 	}
 	point, err := geo.NewPointByGeonameID(id)
-	if err != nil {
-		di.AddError(f.GEONAME_ID, "IMPORT.CSVFIELD_GEONAME_ID.T_ERROR_NO_MATCH", "GEONAME_ID")
-		return nil, err
-	}
 	if err != nil {
 		di.AddError(f.GEONAME_ID, "IMPORT.CSVFIELD_GEONAME_ID.T_ERROR_NO_MATCH", "GEONAME_ID")
 		return nil, err
