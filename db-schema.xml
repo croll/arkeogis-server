@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- SQL XML created by WWW SQL Designer, https://github.com/ondras/wwwsqldesigner/ -->
-<!-- Active URL: https://www.croll.fr/sqldesigner/ -->
+<!-- Active URL: https://croll.fr/sqldesigner/ -->
 <sql>
 <datatypes db="postgresql">
 	<group label="Numeric" color="rgb(238,238,170)">
@@ -559,7 +559,6 @@
 <table x="34" y="755" name="map_layer">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
-<relation table="map_layer__authors" row="map_layer_id" />
 </row>
 <row name="creator_user_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
@@ -1244,13 +1243,14 @@
 <part>root_chronology_id</part>
 </key>
 </table>
-<table x="43" y="1192" name="map_layer__authors">
+<table x="40" y="1192" name="map_layer__authors">
 <row name="user_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="user" row="id" />
 </row>
 <row name="map_layer_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
+<relation table="map_layer" row="id" />
 </row>
 <key type="PRIMARY" name="">
 <part>user_id</part>
