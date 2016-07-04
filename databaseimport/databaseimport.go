@@ -639,13 +639,13 @@ func (di *DatabaseImport) processCharacInfos(f *Fields) error {
 	path := ""
 	lvl := 1
 	if f.CARAC_NAME == "" {
-		di.AddError(f.CARAC_NAME, "IMPORT.CSVFIELD_CARAC_NAME.T_CHECK_EMPTY", "CARAC_NAME")
+		di.AddError("", "IMPORT.CSVFIELD_CARAC_NAME.T_CHECK_EMPTY", "CARAC_NAME")
 		return errors.New("invalid carac name")
 	}
 	if f.CARAC_LVL1 != "" {
 		path += "->" + cleanAndLower(f.CARAC_LVL1)
 	} else {
-		di.AddError(f.CARAC_NAME, "IMPORT.CSVFIELD_CARAC_LVL1.T_CHECK_EMPTY")
+		di.AddError("", "IMPORT.CSVFIELD_CARAC_LVL1.T_CHECK_EMPTY", "CARAC_LVL1")
 		return errors.New("no lvl1 carac")
 	}
 	if f.CARAC_LVL2 != "" {
