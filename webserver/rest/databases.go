@@ -58,6 +58,14 @@ func init() {
 			Params:      reflect.TypeOf(DatabaseInfosParams{}),
 		},
 		&routes.Route{
+			Path:        "/api/database/{id:[0-9]+}/export",
+			Description: "Export database as csv",
+			Func:        DatabaseExportCSV,
+			Method:      "GET",
+			Permissions: []string{},
+			Params:      reflect.TypeOf(DatabaseInfosParams{}),
+		},
+		&routes.Route{
 			Path:        "/api/licences",
 			Description: "Get list of licenses",
 			Func:        LicensesList,
@@ -283,4 +291,25 @@ func DatabaseInfos(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Write([]byte(dbInfos))
+}
+
+func DatabaseExportCSV(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+	params := proute.Params.(*DatabaseInfosParams)
+	tx, err := db.DB.Beginx()
+	if err != nil {
+		log.Println("can't start transaction")
+		userSqlError(w, err)
+		return
+	}
+	d := model.DatabaseFullInfos{}
+	d.Id = params.Id
+
+	csvContent, err := d.ExportCSV(tx)
+	if err != nil {
+		log.Println("Unable to export database")
+		userSqlError(w, err)
+		return
+	}
+	//w.Header().Set("Content-Type", "text/csv")
+	w.Write([]byte(csvContent))
 }

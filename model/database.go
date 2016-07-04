@@ -24,10 +24,15 @@ package model
 import (
 	"database/sql"
 	"errors"
+	"fmt"
+	"log"
+	"math"
 	"strconv"
+	"strings"
 	"time"
 
 	db "github.com/croll/arkeogis-server/db"
+	"github.com/croll/arkeogis-server/translate"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -518,5 +523,180 @@ func (d *Database) CacheDates(tx *sqlx.Tx) (err error) {
 	if err != nil {
 		err = errors.New("database::CheckDates: " + err.Error())
 	}
+	return
+}
+
+// ExportCSV exports database and sites as as csv file
+func (d *Database) ExportCSV(tx *sqlx.Tx) (outp string, err error) {
+	outp = "SITE_SOURCE_ID;SITE_NAME;MAIN_CITY_NAME;GEONAME_ID;PROJECTION_SYSTEM;LONGITUDE;LATITUDE;ALTITUDE	;CITY_CENTROID;OCCUPATION;STATE_OF_KNOWLEDGE;STARTING_PERIOD;ENDING_PERIOD;CARAC_NAME;CARAC_LVL1;CARAC_LVL2;CARAC_LVL3	CARAC_LVL4;CARAC_EXP;BIBLIOGRAPHY;COMMENTS"
+
+	// Datatabse isocode
+	var isocode string
+
+	err = tx.Get(&isocode, "SELECT default_language FROM \"database\" WHERE id = $1", d.Id)
+	if err != nil {
+		return
+	}
+
+	// Cache characs
+	characs := make(map[int]string)
+
+	q := "WITH RECURSIVE nodes_cte(id, path) AS (SELECT ca.id, cat.name::TEXT AS path FROM charac AS ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON cat.lang_isocode = lang.isocode WHERE lang.isocode = $1 AND ca.parent_id = 0 UNION ALL SELECT ca.id, (p.path|| ';' || cat.name) FROM nodes_cte AS p, charac AS ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON cat.lang_isocode = lang.isocode WHERE lang.isocode = $1 AND ca.parent_id = p.id) SELECT * FROM nodes_cte AS n ORDER BY n.id ASC\n"
+
+	rows, err := tx.Query(q, isocode)
+	switch {
+	case err == sql.ErrNoRows:
+		rows.Close()
+		return outp, nil
+	case err != nil:
+		rows.Close()
+		return
+	}
+	for rows.Next() {
+		var id int
+		var path string
+		if err = rows.Scan(&id, &path); err != nil {
+			return
+		}
+		characs[id] = path
+	}
+
+	q = "SELECT s.code, s.name, s.city_name, s.city_geonameid, ST_X(s.geom::geometry) as longitude, ST_Y(s.geom::geometry) as latitude, ST_X(s.geom_3d::geometry) as longitude_3d, ST_Y(s.geom_3d::geometry) as latitude3d, ST_Z(s.geom_3d::geometry) as altitude, s.centroid, s.occupation, sr.start_date1, sr.start_date2, sr.end_date1, sr.end_date2, src.exceptional, src.knowledge_type, srctr.bibliography, srctr.comment, c.id as charac_id FROM site s LEFT JOIN site_range sr ON s.id = sr.site_id LEFT JOIN site_tr str ON s.id = str.site_id LEFT JOIN site_range__charac src ON sr.id = src.site_range_id LEFT JOIN site_range__charac_tr srctr ON src.id = srctr.site_range__charac_id LEFT JOIN charac c ON src.charac_id = c.id WHERE s.database_id = $1 AND str.lang_isocode IS NULL OR str.lang_isocode = $2 "
+
+	rows2, err := tx.Query(q, d.Id, isocode)
+	if err != nil {
+		rows2.Close()
+		return
+	}
+	fmt.Println(d.Id)
+	fmt.Println(isocode)
+	for rows2.Next() {
+		var (
+			code           string
+			name           string
+			city_name      string
+			city_geonameid int
+			longitude      float64
+			latitude       float64
+			longitude3d    float64
+			latitude3d     float64
+			altitude3d     float64
+			centroid       bool
+			occupation     string
+			start_date1    int
+			start_date2    int
+			end_date1      int
+			end_date2      int
+			knowledge_type string
+			exceptional    bool
+			bibliography   string
+			comment        string
+			charac_id      int
+			slongitude     string
+			slatitude      string
+			saltitude      string
+			scentroid      string
+			soccupation    string
+			scharacs       string
+			sexceptional   string
+			// description    string
+		)
+		if err = rows2.Scan(&code, &name, &city_name, &city_geonameid, &longitude, &latitude, &longitude3d, &latitude3d, &altitude3d, &centroid, &occupation, &start_date1, &start_date2, &end_date1, &end_date2, &exceptional, &knowledge_type, &bibliography, &comment, &charac_id); err != nil {
+			log.Println(err)
+			rows2.Close()
+			return
+		}
+		// Geonameid
+		var cgeonameid string
+		if city_geonameid != 0 {
+			cgeonameid = strconv.Itoa(city_geonameid)
+		}
+		// Longitude
+		slongitude = strconv.FormatFloat(longitude, 'f', -1, 32)
+		// Latitude
+		slatitude = strconv.FormatFloat(latitude, 'f', -1, 32)
+		// Altitude
+		if longitude3d == 0 && latitude3d == 0 && altitude3d == 0 {
+			saltitude = ""
+		} else {
+			saltitude = strconv.FormatFloat(altitude3d, 'f', -1, 32)
+		}
+		// Centroid
+		if centroid {
+			scentroid = translate.T(isocode, "IMPORT.CSVFIELD_ALL.T_LABEL_YES")
+		} else {
+			scentroid = translate.T(isocode, "IMPORT.CSVFIELD_ALL.T_LABEL_NO")
+		}
+		// Occupation
+		switch occupation {
+		case "not_documented":
+			soccupation = translate.T(isocode, "IMPORT.CSVFIELD_OCCUPATION.T_LABEL_NOT_DOCUMENTED")
+		case "single":
+			soccupation = translate.T(isocode, "IMPORT.CSVFIELD_OCCUPATION.T_LABEL_SINGLE")
+		case "continuous":
+			soccupation = translate.T(isocode, "IMPORT.CSVFIELD_OCCUPATION.T_LABEL_CONTINUOUS")
+		case "multiple":
+			soccupation = translate.T(isocode, "IMPORT.CSVFIELD_OCCUPATION.T_LABEL_MULTIPLE")
+		}
+		// State of knowledge
+		switch knowledge_type {
+		case "not_documented":
+			knowledge_type = translate.T(isocode, "IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_NOT_DOCUMENTED")
+		case "literature":
+			knowledge_type = translate.T(isocode, "IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_LITERATURE")
+		case "prospected_aerial":
+			knowledge_type = translate.T(isocode, "IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_PROSPECTED_AERIAL")
+		case "prospected_pedestrian":
+			knowledge_type = translate.T(isocode, "IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_PROSPECTED_PEDESTRIAN")
+		case "surveyed":
+			knowledge_type = translate.T(isocode, "IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_SURVEYED")
+		case "dig":
+			knowledge_type = translate.T(isocode, "IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_DIG")
+		}
+		// Dates
+		if start_date1 < 0 && start_date1 > math.MinInt32 {
+			start_date1++
+		}
+		if start_date2 < 0 && start_date2 > math.MinInt32 {
+			start_date2++
+		}
+		// Starting period
+		startingPeriod := ""
+		if start_date1 != math.MinInt32 {
+			startingPeriod += strconv.Itoa(start_date1)
+		}
+		if start_date1 != math.MinInt32 && start_date2 != math.MaxInt32 && start_date1 != start_date2 {
+			startingPeriod += ":"
+		}
+		if start_date2 != math.MaxInt32 && start_date1 != start_date2 {
+			startingPeriod += strconv.Itoa(start_date2)
+		}
+		fmt.Println(math.MaxInt32)
+		// Ending period
+		endingPeriod := ""
+		if end_date1 != math.MinInt32 {
+			endingPeriod += strconv.Itoa(end_date1)
+		}
+		if end_date1 != math.MinInt32 && end_date2 != math.MaxInt32 && end_date1 != end_date2 {
+			endingPeriod += ":"
+		}
+		if end_date2 != math.MaxInt32 && end_date1 != end_date2 {
+			endingPeriod += strconv.Itoa(end_date2)
+		}
+		// Caracs
+		var characPath = characs[charac_id]
+		num := strings.Count(characPath, ";")
+		if num < 4 {
+			scharacs += characPath + strings.Repeat(";", num)
+		}
+		// Caracs exp
+		if exceptional {
+			sexceptional = translate.T(isocode, "IMPORT.CSVFIELD_ALL.T_LABEL_YES")
+		} else {
+			sexceptional = translate.T(isocode, "IMPORT.CSVFIELD_ALL.T_LABEL_NO")
+		}
+		outp += code + ";" + name + ";" + city_name + ";" + cgeonameid + ";4326;" + slongitude + ";" + slatitude + ";" + saltitude + ";" + scentroid + ";" + soccupation + ";" + knowledge_type + ";" + startingPeriod + ";" + endingPeriod + ";" + scharacs + ";" + sexceptional + ";" + bibliography + ";" + comment + "\n"
+	}
+
 	return
 }

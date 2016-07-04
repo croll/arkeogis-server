@@ -698,7 +698,7 @@ func (di *DatabaseImport) processCharacInfos(f *Fields) error {
 		} else {
 			di.AddError(f.STATE_OF_KNOWLEDGE, "IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_CHECK_INVALID", "STATE_OF_KNOWLEDGE")
 		}
-		return errors.New("Bad value for knoledge type")
+		return errors.New("Bad value for knowledge type")
 	}
 
 	// EXCEPTIONAL
