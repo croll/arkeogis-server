@@ -76,6 +76,7 @@ type DatabaseFullInfos struct {
 	Contexts      []Database_context `json:"contexts"`
 	Translations  []Database_tr      `json:"translations"`
 	NumberOfSites int                `json:"number_of_sites"`
+	NumberOfLines int                `json:"number_of_lines"`
 	Owner_name    string             `json:"owner_name"`
 }
 
@@ -129,6 +130,7 @@ func (d *Database) GetFullInfosRepresentation(tx *sqlx.Tx, langIsocode string) (
 		db.Translations = make([]Database_tr, 0)
 		db.Handles = make([]Database_handle, 0)
 		db.NumberOfSites = 0
+		db.NumberOfLines = 0
 		return
 	}
 
@@ -169,7 +171,7 @@ func (d *Database) GetFullInfosAsJSON(tx *sqlx.Tx, langIsocode string) (jsonStri
 
 	var q = make([]string, 7)
 
-	q[0] = db.AsJSON("SELECT db.id, name, scale_resolution, geographical_extent, type, declared_creation_date, owner, editor, contributor, default_language, state, license_id, published, soft_deleted, db.created_at, db.updated_at, firstname || ' ' || lastname as owner_name, (SELECT count(*) FROM site WHERE database_id = db.id) as number_of_sites FROM \"database\" db LEFT JOIN \"user\" u ON db.owner = u.id WHERE db.id = d.id", false, "infos", true)
+	q[0] = db.AsJSON("SELECT db.*, firstname || ' ' || lastname as owner_name, (SELECT count(*) FROM site WHERE database_id = db.id) as number_of_sites FROM \"database\" db LEFT JOIN \"user\" u ON db.owner = u.id WHERE db.id = d.id", false, "infos", true)
 
 	q[1] = db.AsJSON("SELECT u.id, u.firstname, u.lastname FROM \"user\" u LEFT JOIN database__authors da ON u.id = da.user_id WHERE da.database_id = d.id", true, "authors", true)
 
@@ -177,7 +179,7 @@ func (d *Database) GetFullInfosAsJSON(tx *sqlx.Tx, langIsocode string) (jsonStri
 
 	q[3] = db.AsJSON("SELECT ct.name, c.geonameid, c.iso_code, c.geom FROM continent c LEFT JOIN database__continent dc ON c.geonameid = dc.continent_geonameid LEFT JOIN continent_tr ct ON c.geonameid = ct.continent_geonameid WHERE dc.database_id = d.id AND ct.lang_isocode = '"+langIsocode+"'", true, "continents", true)
 
-	q[4] = db.AsJSON("SELECT i.id, u.firstname, u.lastname, i.filename, i.created_at FROM import i LEFT JOIN \"user\" u ON i.user_id = u.id WHERE database_id = d.id", true, "imports", true)
+	q[4] = db.AsJSON("SELECT i.*, u.firstname, u.lastname FROM import i LEFT JOIN \"user\" u ON i.user_id = u.id WHERE database_id = d.id ORDER BY i.id DESC", true, "imports", true)
 
 	q[5] = db.AsJSON("SELECT context FROM database_context WHERE database_id = d.id", true, "contexts", true)
 
@@ -226,6 +228,59 @@ func (d *Database) Update(tx *sqlx.Tx) (err error) {
 	if err != nil {
 		err = errors.New("database::Update: " + err.Error())
 	}
+	return
+}
+
+// Delete database and all infos associated
+func (d *Database) Delete(tx *sqlx.Tx) (err error) {
+
+	err = d.DeleteContexts(tx)
+	if err != nil {
+		return
+	}
+
+	err = d.DeleteContinents(tx)
+	if err != nil {
+		return
+	}
+
+	err = d.DeleteCountries(tx)
+	if err != nil {
+		return
+	}
+
+	err = d.DeleteAuthors(tx)
+	if err != nil {
+		return
+	}
+
+	err = d.DeleteHandles(tx)
+	if err != nil {
+		return
+	}
+
+	err = d.DeleteImports(tx)
+	if err != nil {
+		return
+	}
+
+	err = d.DeleteSites(tx)
+	if err != nil {
+		return
+	}
+
+	_, err = tx.NamedExec("DELETE FROM \"database_tr\" WHERE database_id=:id", d)
+	if err != nil {
+		return
+	}
+
+	_, err = tx.NamedExec("DELETE FROM \"project__databases\" WHERE database_id=:id", d)
+	if err != nil {
+		return
+	}
+
+	_, err = tx.NamedExec("DELETE FROM \"database\" WHERE id=:id", d)
+
 	return
 }
 
@@ -341,11 +396,28 @@ func (d *Database) UpdateHandle(tx *sqlx.Tx, handle *Database_handle) (err error
 	return
 }
 
-// DeleteHandles unlinks countries to a database
-func (d *Database) DeleteHandle(tx *sqlx.Tx, id int) error {
-	_, err := tx.NamedExec("DELETE FROM \"database_handle\" WHERE identifier = $1", id)
+// DeleteHandles unlinks handles
+func (d *Database) DeleteSpecificHandle(tx *sqlx.Tx, id int) error {
+	_, err := tx.Exec("DELETE FROM \"database_handle\" WHERE identifier = $1", id)
 	if err != nil {
 		err = errors.New("database::DeleteHandle: " + err.Error())
+	}
+	return err
+}
+
+func (d *Database) DeleteHandles(tx *sqlx.Tx) error {
+	_, err := tx.NamedExec("DELETE FROM \"database_handle\" WHERE database_id = :id", d)
+	if err != nil {
+		err = errors.New("database::DeleteHandles: " + err.Error())
+	}
+	return err
+}
+
+// DeleteImports unlinks database import logs
+func (d *Database) DeleteImports(tx *sqlx.Tx) error {
+	_, err := tx.NamedExec("DELETE FROM \"import\" WHERE database_id= :id", d)
+	if err != nil {
+		err = errors.New("database::DeleteImports: " + err.Error())
 	}
 	return err
 }
@@ -448,7 +520,8 @@ func (d *Database) GetOwnerInfos(tx *sqlx.Tx) (owner DatabaseAuthor, err error) 
 // GetImportsList lists all informations about an import (date, filename, etc)
 func (d *Database) GetImportsList(tx *sqlx.Tx) (imports []Import, err error) {
 	imports = []Import{}
-	err = tx.Select(&imports, "SELECT i.id, u.firstname, u.lastname, i.filename, i.created_at FROM import i LEFT JOIN \"user\" u ON i.user_id = u.id WHERE database_id = $1", d.Id)
+	fmt.Println("ICI");
+	err = tx.Select(&imports, "SELECT *, u.firstname, u.lastname FROM import i LEFT JOIN \"user\" u ON i.user_id = u.id WHERE database_id = $1", d.Id)
 	if err != nil {
 		err = errors.New("database::GetImportsList: " + err.Error())
 	}
@@ -458,7 +531,7 @@ func (d *Database) GetImportsList(tx *sqlx.Tx) (imports []Import, err error) {
 // GetLastImport lists last import informations
 func (d *Database) GetLastImport(tx *sqlx.Tx) (imp Import, err error) {
 	imp = Import{}
-	err = tx.Get(&imp, "SELECT id, filename FROM import WHERE database_id = $1 ORDER by id DESC LIMIT 1", d.Id)
+	err = tx.Get(&imp, "SELECT * FROM import WHERE database_id = $1 ORDER by id DESC LIMIT 1", d.Id)
 	if err != nil {
 		err = errors.New("database::GetLastImport: " + err.Error())
 	}

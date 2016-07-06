@@ -23,6 +23,7 @@ package rest
 
 import (
 	//	"github.com/croll/arkeogis-server/csvimport"
+	"crypto/md5"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -109,6 +110,9 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	var user interface{}
 
+	filehash := fmt.Sprintf("%x", md5.Sum([]byte(params.File.Name)))
+	filepath := "./uploaded/databases/" + filehash + "_" + params.File.Name
+
 	var ok bool
 	if user, ok = proute.Session.Get("user"); !ok || user.(model.User).Id == 0 {
 		http.Error(w, "Not logged in", http.StatusForbidden)
@@ -116,8 +120,6 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	}
 
 	var dbImport *databaseimport.DatabaseImport
-
-	filepath := "./uploaded/databases" + params.File.Name
 
 	outfile, err := os.Create(filepath)
 	if err != nil {
@@ -153,7 +155,7 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	// Init import
 	dbImport = new(databaseimport.DatabaseImport)
-	err = dbImport.New(parser, user.(model.User).Id, params.Name, params.Default_language)
+	err = dbImport.New(parser, user.(model.User).Id, params.Name, params.Default_language, filehash)
 	if err != nil {
 		parser.AddError(err.Error())
 		sendError(w, parser.Errors)

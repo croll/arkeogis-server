@@ -133,8 +133,7 @@ func SaveShpLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 	if params.File != nil {
 
 		filehash = fmt.Sprintf("%x", md5.Sum([]byte(params.File.Name)))
-		filename := params.File.Name
-		filepath := "./uploaded/shp/" + filehash + "_" + filename
+		filepath := "./uploaded/shp/" + filehash + "_" + params.File.Name 
 
 		outfile, err := os.Create(filepath)
 		if err != nil {

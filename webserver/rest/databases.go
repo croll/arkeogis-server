@@ -68,6 +68,14 @@ func init() {
 			Params:      reflect.TypeOf(DatabaseInfosParams{}),
 		},
 		&routes.Route{
+			Path:        "/api/database/delete",
+			Description: "Delete database",
+			Func:        DatabaseDelete,
+			Method:      "POST",
+			Permissions: []string{},
+			Json:      reflect.TypeOf(DatabaseInfosParams{}),
+		},
+		&routes.Route{
 			Path:        "/api/licences",
 			Description: "Get list of licenses",
 			Func:        LicensesList,
@@ -319,4 +327,43 @@ func DatabaseExportCSV(w http.ResponseWriter, r *http.Request, proute routes.Pro
 	w.Header().Set("Content-Type", "text/csv")
 	w.Header().Set("Content-Disposition", "attachment; filename="+filename)
 	w.Write([]byte(csvContent))
+}
+
+func DatabaseDelete(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+	params := proute.Json.(*DatabaseInfosParams)
+	tx, err := db.DB.Beginx()
+	if err != nil {
+		log.Println("can't start transaction")
+		userSqlError(w, err)
+		return
+	}
+	d := model.Database{}
+	d.Id = params.Id
+
+	if params.Id == 0 {
+		log.Println("Unable to delete database. Id is not provided")
+		userSqlError(w, err)
+		tx.Rollback()
+		return
+	}
+
+	fmt.Println("DELETE DB")
+	fmt.Println(params.Id)
+
+	err = d.Delete(tx)
+	if err != nil {
+		log.Println("Unable to delete database")
+		userSqlError(w, err)
+		tx.Rollback()
+		return
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		log.Println("Unable to delete database")
+		userSqlError(w, err)
+		tx.Rollback()
+		return
+	}
+
 }
