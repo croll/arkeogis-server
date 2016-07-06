@@ -302,14 +302,17 @@ func DatabaseInfos(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 	d := model.DatabaseFullInfos{}
 	d.Id = params.Id
 
-	dbInfos, err := d.GetFullInfosAsJSON(tx, proute.Lang1.Isocode)
+	// dbInfos, err := d.GetFullInfosAsJSON(tx, proute.Lang1.Isocode)
+	dbInfos, err := d.GetFullInfosRepresentation(tx, proute.Lang1.Isocode)
 
 	if err != nil {
 		log.Println("Error getting database infos", err)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte(dbInfos))
+	// w.Write([]byte(dbInfos))
+	l, _ := json.Marshal(dbInfos)
+	w.Write(l)
 }
 
 func DatabaseExportCSV(w http.ResponseWriter, r *http.Request, proute routes.Proute) {

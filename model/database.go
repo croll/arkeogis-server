@@ -38,9 +38,9 @@ import (
 
 // DatabaseAuthor stores essential informations about an author
 type DatabaseAuthor struct {
-	Id        string
-	Firstname string
-	Lastname  string
+	Id        string `json:"id"`
+	Firstname string `json:"firstname"`
+	Lastname  string `json:"lastname"`
 }
 
 // CountryInfos store country info and translations
@@ -65,10 +65,16 @@ type ContinentInfos struct {
 	Geom                sql.NullString `json:"-"`
 }
 
+// ImportFullInfos stores all informations about an import
+type ImportFullInfos struct {
+	Import
+	Fullname string `json:"fullname"`
+}
+
 // DatabaseFullInfos stores all informations about a database
 type DatabaseFullInfos struct {
 	Database
-	Imports       []Import
+	Imports       []ImportFullInfos			 `json:"imports"`
 	Countries     []CountryInfos     `json:"countries"`
 	Continents    []ContinentInfos   `json:"continents"`
 	Handles       []Database_handle  `json:"handles"`
@@ -76,8 +82,8 @@ type DatabaseFullInfos struct {
 	Contexts      []Database_context `json:"contexts"`
 	Translations  []Database_tr      `json:"translations"`
 	NumberOfSites int                `json:"number_of_sites"`
-	NumberOfLines int                `json:"number_of_lines"`
 	Owner_name    string             `json:"owner_name"`
+	License string `json:"license"`
 }
 
 // DoesExist check if database exist with a name and an owner
@@ -121,7 +127,7 @@ func (d *Database) GetFullInfosRepresentation(tx *sqlx.Tx, langIsocode string) (
 	db = DatabaseFullInfos{}
 
 	if d.Id == 0 {
-		db.Imports = make([]Import, 0)
+		db.Imports = make([]ImportFullInfos, 0)
 		db.Countries = make([]CountryInfos, 0)
 		db.Continents = make([]ContinentInfos, 0)
 		db.Handles = make([]Database_handle, 0)
@@ -130,20 +136,26 @@ func (d *Database) GetFullInfosRepresentation(tx *sqlx.Tx, langIsocode string) (
 		db.Translations = make([]Database_tr, 0)
 		db.Handles = make([]Database_handle, 0)
 		db.NumberOfSites = 0
-		db.NumberOfLines = 0
+		db.License = "-"
 		return
 	}
 
-	err = tx.Get(&db, "SELECT name, scale_resolution, geographical_extent, type, declared_creation_date, owner, editor, contributor, default_language, state, license_id, published, soft_deleted, d.created_at, d.updated_at, firstname || ' ' || lastname as owner_name FROM \"database\" d LEFT JOIN \"user\" u ON d.owner = u.id WHERE d.id = $1", d.Id)
+	// err = tx.Get(&db, "SELECT name, scale_resolution, geographical_extent, type, declared_creation_date, owner, editor, contributor, default_language, state, license_id, published, soft_deleted, d.created_at, d.updated_at, firstname || ' ' || lastname as owner_name FROM \"database\" d LEFT JOIN \"user\" u ON d.owner = u.id WHERE d.id = $1", d.Id)
+
+	err = tx.Get(&db, "SELECT d.*, ST_AsGeoJSON(d.geographical_extent_geom) as geographical_extent_geom, firstname || ' ' || lastname as owner_name, l.name AS license, (SELECT count(*) FROM site WHERE database_id = d.id) as numberofsites FROM \"database\" d LEFT JOIN \"user\" u ON d.owner = u.id LEFT JOIN \"license\" l ON d.license_id = l.id WHERE d.id = $1", d.Id)
+	if err != nil {
+		return
+	}
+
 	db.Authors, err = d.GetAuthorsList(tx)
 	if err != nil {
 		return
 	}
-	db.Countries, err = d.GetCountriesList(tx, langIsocode)
+	db.Countries, err = d.GetCountryList(tx, langIsocode)
 	if err != nil {
 		return
 	}
-	db.Continents, err = d.GetContinentsList(tx, langIsocode)
+	db.Continents, err = d.GetContinentList(tx, langIsocode)
 	if err != nil {
 		return
 	}
@@ -151,15 +163,11 @@ func (d *Database) GetFullInfosRepresentation(tx *sqlx.Tx, langIsocode string) (
 	if err != nil {
 		return
 	}
-	db.Imports, err = d.GetImportsList(tx)
+	db.Imports, err = d.GetImportList(tx)
 	if err != nil {
 		return
 	}
 	db.NumberOfSites, err = d.GetNumberOfSites(tx)
-	if err != nil {
-		return
-	}
-	db.Translations, err = d.GetTranslations(tx)
 	if err != nil {
 		return
 	}
@@ -171,7 +179,7 @@ func (d *Database) GetFullInfosAsJSON(tx *sqlx.Tx, langIsocode string) (jsonStri
 
 	var q = make([]string, 7)
 
-	q[0] = db.AsJSON("SELECT db.*, ST_AsGeoJSON(db.geographical_extent_geom) as geographical_extent_geom, firstname || ' ' || lastname as owner_name, (SELECT count(*) FROM site WHERE database_id = db.id) as number_of_sites FROM \"database\" db LEFT JOIN \"user\" u ON db.owner = u.id WHERE db.id = d.id", false, "infos", true)
+	q[0] = db.AsJSON("SELECT db.*, ST_AsGeoJSON(db.geographical_extent_geom) as geographical_extent_geom, firstname || ' ' || lastname as owner_name, l.name AS license, (SELECT count(*) FROM site WHERE database_id = db.id) as number_of_sites FROM \"database\" db LEFT JOIN \"user\" u ON db.owner = u.id LEFT JOIN \"license\" l ON d.license_id = l.id WHERE db.id = d.id", false, "infos", true)
 
 	q[1] = db.AsJSON("SELECT u.id, u.firstname, u.lastname FROM \"user\" u LEFT JOIN database__authors da ON u.id = da.user_id WHERE da.database_id = d.id", true, "authors", true)
 
@@ -293,12 +301,12 @@ func (d *Database) DeleteSites(tx *sqlx.Tx) (err error) {
 	return
 }
 
-// GetCountriesList lists all countries linked to a database
-func (d *Database) GetCountriesList(tx *sqlx.Tx, langIsocode string) ([]CountryInfos, error) {
+// GetCountryList lists all countries linked to a database
+func (d *Database) GetCountryList(tx *sqlx.Tx, langIsocode string) ([]CountryInfos, error) {
 	countries := []CountryInfos{}
 	err := tx.Select(&countries, "SELECT ct.name, c.geonameid, c.iso_code, c.geom FROM country c LEFT JOIN database__country dc ON c.geonameid = dc.country_geonameid LEFT JOIN country_tr ct ON c.geonameid = ct.country_geonameid WHERE dc.database_id = $1 and ct.lang_isocode = $2", d.Id, langIsocode)
 	if err != nil {
-		err = errors.New("database::GetCountriesList: " + err.Error())
+		err = errors.New("database::GetCountryList: " + err.Error())
 	}
 	return countries, err
 }
@@ -323,12 +331,12 @@ func (d *Database) DeleteCountries(tx *sqlx.Tx) (err error) {
 	return
 }
 
-// GetContinentsList lists all continents linked to a database
-func (d *Database) GetContinentsList(tx *sqlx.Tx, langIsocode string) (continents []ContinentInfos, err error) {
+// GetContinentList lists all continents linked to a database
+func (d *Database) GetContinentList(tx *sqlx.Tx, langIsocode string) (continents []ContinentInfos, err error) {
 	continents = []ContinentInfos{}
-	err = tx.Select(continents, "SELECT ct.name, c.geonameid, c.iso_code, c.geom FROM continent c LEFT JOIN database__continent dc ON c.geonameid = dc.continent_geonameid LEFT JOIN continent_tr ct ON c.geonameid = ct.continent_geonameid WHERE dc.database_id = $1 AND ct.lang_isocode = $2", d.Id, langIsocode)
+	err = tx.Select(&continents, "SELECT ct.name, c.geonameid, c.iso_code, c.geom FROM continent c LEFT JOIN database__continent dc ON c.geonameid = dc.continent_geonameid LEFT JOIN continent_tr ct ON c.geonameid = ct.continent_geonameid WHERE dc.database_id = $1 AND ct.lang_isocode = $2", d.Id, langIsocode)
 	if err != nil {
-		err = errors.New("database::GetContinentsList: " + err.Error())
+		err = errors.New("database::GetContinentList: " + err.Error())
 	}
 	return continents, err
 }
@@ -356,7 +364,7 @@ func (d *Database) DeleteContinents(tx *sqlx.Tx) (err error) {
 // GetHandles get last handle linked to a database
 func (d *Database) GetLastHandle(tx *sqlx.Tx) (handle *Database_handle, err error) {
 	handle = &Database_handle{}
-	err = tx.Get(handle, "SELECT * FROM database_handle WHERE database_id = $1 ORDER BY id DESC LIMIT 1", d.Id)
+	err = tx.Get(&handle, "SELECT * FROM database_handle WHERE database_id = $1 ORDER BY id DESC LIMIT 1", d.Id)
 	if err != nil {
 		err = errors.New("database::GetLastHandle: " + err.Error())
 	}
@@ -366,7 +374,7 @@ func (d *Database) GetLastHandle(tx *sqlx.Tx) (handle *Database_handle, err erro
 // GetHandles lists all handles linked to a database
 func (d *Database) GetHandles(tx *sqlx.Tx) (handles []Database_handle, err error) {
 	handles = []Database_handle{}
-	err = tx.Select(handles, "SELECT import_id, identifier, url, declared_creation_date, created_at FROM database_handle WHERE database_id = $1", d.Id)
+	err = tx.Select(&handles, "SELECT import_id, identifier, url, declared_creation_date, created_at FROM database_handle WHERE database_id = $1", d.Id)
 	if err != nil {
 		err = errors.New("database::GetHandles: " + err.Error())
 	}
@@ -517,13 +525,14 @@ func (d *Database) GetOwnerInfos(tx *sqlx.Tx) (owner DatabaseAuthor, err error) 
 	return
 }
 
-// GetImportsList lists all informations about an import (date, filename, etc)
-func (d *Database) GetImportsList(tx *sqlx.Tx) (imports []Import, err error) {
-	imports = []Import{}
-	fmt.Println("ICI");
-	err = tx.Select(&imports, "SELECT *, u.firstname, u.lastname FROM import i LEFT JOIN \"user\" u ON i.user_id = u.id WHERE database_id = $1", d.Id)
+// GetImportList lists all informations about an import (date, filename, etc)
+func (d *Database) GetImportList(tx *sqlx.Tx) (imports []ImportFullInfos, err error) {
+	imports = []ImportFullInfos{}
+	err = tx.Select(&imports, "SELECT i.*, u.firstname || ' ' ||  u.lastname AS fullname FROM import i LEFT JOIN \"user\" u ON i.user_id = u.id WHERE i.database_id = $1", d.Id)
+	fmt.Println("------------------------")
+	fmt.Println(imports)
 	if err != nil {
-		err = errors.New("database::GetImportsList: " + err.Error())
+		err = errors.New("database::GetImportList: " + err.Error())
 	}
 	return
 }
@@ -531,7 +540,7 @@ func (d *Database) GetImportsList(tx *sqlx.Tx) (imports []Import, err error) {
 // GetLastImport lists last import informations
 func (d *Database) GetLastImport(tx *sqlx.Tx) (imp Import, err error) {
 	imp = Import{}
-	err = tx.Get(&imp, "SELECT * FROM import WHERE database_id = $1 ORDER by id DESC LIMIT 1", d.Id)
+	err = tx.Get(&imp, "SELECT * FROM import WHERE i.jdatabase_id = $1 ORDER by id DESC LIMIT 1", d.Id)
 	if err != nil {
 		err = errors.New("database::GetLastImport: " + err.Error())
 	}
