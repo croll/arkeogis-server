@@ -111,10 +111,11 @@ type DatabaseImport struct {
 	SitesWithError   map[string]bool
 	CachedSiteRanges map[string]int
 	Errors           []*ImportError
+	Md5sum string
 }
 
 // New creates a new import process
-func (di *DatabaseImport) New(parser *Parser, uid int, databaseName string, langIsocode string) error {
+func (di *DatabaseImport) New(parser *Parser, uid int, databaseName string, langIsocode string, filehash string) error {
 	var err error
 	di.Database = &DatabaseInfos{}
 	di.Uid = uid
@@ -125,6 +126,7 @@ func (di *DatabaseImport) New(parser *Parser, uid int, databaseName string, lang
 	di.Parser = parser
 	di.NumberOfSites = 0
 	di.SitesWithError = map[string]bool{}
+	di.Md5sum = filehash
 
 	// Start database transaction
 	di.Tx, err = db.DB.Beginx()
@@ -927,7 +929,7 @@ func (di *DatabaseImport) parseDates(period string) ([2]int, error) {
 
 func (di *DatabaseImport) Save(filename string) (int, error) {
 	var err error
-	i := model.Import{Database_id: di.Database.Id, User_id: di.Uid, Filename: filename, Number_of_lines: di.Parser.Line - 1}
+	i := model.Import{Database_id: di.Database.Id, User_id: di.Uid, Filename: filename, Number_of_lines: di.Parser.Line - 1, Md5sum: di.Md5sum}
 	err = i.Create(di.Tx)
 	return i.Id, err
 }
