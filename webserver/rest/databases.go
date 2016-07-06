@@ -30,6 +30,7 @@ import (
 	"reflect"
 	"strconv"
 	"time"
+	"io/ioutil"
 
 	db "github.com/croll/arkeogis-server/db"
 	"github.com/croll/arkeogis-server/model"
@@ -63,6 +64,14 @@ func init() {
 			Path:        "/api/database/{id:[0-9]+}/export",
 			Description: "Export database as csv",
 			Func:        DatabaseExportCSV,
+			Method:      "GET",
+			Permissions: []string{},
+			Params:      reflect.TypeOf(DatabaseInfosParams{}),
+		},
+		&routes.Route{
+			Path:        "/api/database/{id:[0-9]+}/csv",
+			Description: "Get the csv used at import",
+			Func:        DatabaseGetImportedCSV,
 			Method:      "GET",
 			Permissions: []string{},
 			Params:      reflect.TypeOf(DatabaseInfosParams{}),
@@ -366,4 +375,35 @@ func DatabaseDelete(w http.ResponseWriter, r *http.Request, proute routes.Proute
 		return
 	}
 
+}
+
+func DatabaseGetImportedCSV(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+	params := proute.Params.(*DatabaseInfosParams)
+
+	var infos struct {
+		Md5sum string
+		Filename string
+	}
+
+	err := db.DB.Get(&infos, "SELECT md5sum, filename FROM import WHERE database_id = $1 ORDER BY id DESC LIMIT 1", params.Id)
+
+	filename := infos.Md5sum+"_"+infos.Filename
+
+	if err != nil {
+		log.Println("Unable to get imported csv database")
+		userSqlError(w, err)
+		return;
+	}
+
+	content, err := ioutil.ReadFile("./uploaded/databases/"+filename)
+
+	if err != nil {
+		log.Println("Unable to read the csv file")
+		userSqlError(w, err)
+		return;
+	}
+
+	w.Header().Set("Content-Type", "text/csv")
+	w.Header().Set("Content-Disposition", "attachment; filename="+infos.Filename)
+	w.Write([]byte(content))
 }

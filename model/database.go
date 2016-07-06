@@ -171,7 +171,7 @@ func (d *Database) GetFullInfosAsJSON(tx *sqlx.Tx, langIsocode string) (jsonStri
 
 	var q = make([]string, 7)
 
-	q[0] = db.AsJSON("SELECT db.*, firstname || ' ' || lastname as owner_name, (SELECT count(*) FROM site WHERE database_id = db.id) as number_of_sites FROM \"database\" db LEFT JOIN \"user\" u ON db.owner = u.id WHERE db.id = d.id", false, "infos", true)
+	q[0] = db.AsJSON("SELECT db.*, ST_AsGeoJSON(db.geographical_extent_geom) as geographical_extent_geom, firstname || ' ' || lastname as owner_name, (SELECT count(*) FROM site WHERE database_id = db.id) as number_of_sites FROM \"database\" db LEFT JOIN \"user\" u ON db.owner = u.id WHERE db.id = d.id", false, "infos", true)
 
 	q[1] = db.AsJSON("SELECT u.id, u.firstname, u.lastname FROM \"user\" u LEFT JOIN database__authors da ON u.id = da.user_id WHERE da.database_id = d.id", true, "authors", true)
 
