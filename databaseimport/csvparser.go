@@ -28,6 +28,7 @@ import (
 	"io"
 	"os"
 	"reflect"
+	"strconv"
 
 	"github.com/croll/arkeogis-server/translate"
 	//"strconv"
@@ -147,6 +148,11 @@ func (p *Parser) Parse(fn func(r *Fields)) error {
 // checkHeader analyzes the first line of csv to check if fields names correspond to fields of struct Fields
 // If not, trigger and error and exit
 func (p *Parser) checkHeader(record []string) error {
+
+	if len(record) > 21 {
+		p.AddError("IMPORT.CSV_FILE.T_CHECK_HEADER_TOO_MUCH_FIELDS", strconv.Itoa(len(record)))
+		return errors.New("Too much fields detected in csv");
+	}
 	f := Fields{}
 	// Store if we found header file witch defines lvl1 for a charac like furniture, realestate, etc
 	p.HeaderFields = make(map[int]string)
@@ -155,7 +161,7 @@ func (p *Parser) checkHeader(record []string) error {
 		v = strings.TrimSpace(v)
 		// Check if field name found in csv exists in Fields struct definition
 		if !r.FieldByName(v).IsValid() {
-			p.AddError("IMPORT.CSV_FILE.T_CHECK_UNRECOGNIZED_FIELD", v)
+			p.AddError("IMPORT.CSV_FILE.T_CHECK_HEADER_UNRECOGNIZED_FIELD", v)
 		} else {
 			// Store detected header column
 			p.HeaderFields[k] = v
