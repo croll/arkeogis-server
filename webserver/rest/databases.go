@@ -303,7 +303,7 @@ func DatabaseInfos(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 	d.Id = params.Id
 
 	// dbInfos, err := d.GetFullInfosAsJSON(tx, proute.Lang1.Isocode)
-	dbInfos, err := d.GetFullInfosRepresentation(tx, proute.Lang1.Isocode)
+	dbInfos, err := d.GetFullInfos(tx, proute.Lang1.Isocode)
 
 	if err != nil {
 		log.Println("Error getting database infos", err)

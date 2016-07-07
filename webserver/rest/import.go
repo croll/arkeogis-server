@@ -56,6 +56,16 @@ func init() {
 			},
 		},
 		&routes.Route{
+			Path:        "/api/import/update-step1",
+			Description: "Four step of ArkeoGIS import procedure",
+			Func:        ImportStep1Update,
+			Method:      "POST",
+			Json:        reflect.TypeOf(ImportStep1UpdateT{}),
+			Permissions: []string{
+				"import",
+			},
+		},
+		&routes.Route{
 			Path:        "/api/import/step3",
 			Description: "Third step of ArkeoGIS import procedure",
 			Func:        ImportStep3,
@@ -105,8 +115,6 @@ type ImportStep1T struct {
 func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	params := proute.Json.(*ImportStep1T)
-
-	fmt.Println("LANG ISO CODE: ", proute.Lang1.Isocode)
 
 	var user interface{}
 
@@ -249,6 +257,98 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	lok, _ := json.Marshal(response)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(lok)
+}
+
+
+// ImportStep1UpdateT struct holds information provided by user
+type ImportStep1UpdateT struct {
+	Id int
+	Name                string
+	Geographical_extent string
+	Continents          []model.Continent
+	Countries           []model.Country
+}
+
+// ImportStep1Update is called by rest
+func ImportStep1Update(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+
+	params := proute.Json.(*ImportStep1UpdateT)
+
+	tx, err := db.DB.Beginx()
+	if err != nil {
+		http.Error(w, "Error updating step1 informations: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	var user interface{}
+
+	var ok bool
+	if user, ok = proute.Session.Get("user"); !ok || user.(model.User).Id == 0 {
+		http.Error(w, "Not logged in", http.StatusForbidden)
+		return
+	}
+
+	var d = &model.Database{}
+	d.Id = params.Id
+
+	// Update datatabase name and geographical extent
+	err = d.UpdateFields(tx, params, "name", "geographical_extent")
+	if err != nil {
+		log.Println("Error updating database fields: ", err)
+		tx.Rollback()
+		userSqlError(w, err)
+		return
+	}
+
+	// Delete linked continents
+	err = d.DeleteContinents(tx)
+	if err != nil {
+		log.Println("Error updating database : unabled to delete continents", err)
+		tx.Rollback()
+		return
+	}
+
+	// Delete linked countries
+	err = d.DeleteCountries(tx)
+	if err != nil {
+		log.Println("Error updating database : unabled to delete countries", err)
+		tx.Rollback()
+		return
+	}
+
+	if params.Geographical_extent == "country" {
+		// Insert countries
+		var countriesID = make([]int, 0)
+		for _, c := range params.Countries {
+			countriesID = append(countriesID, c.Geonameid)
+		}
+		err = d.AddCountries(tx, countriesID)
+		if err != nil {
+			log.Println("Error updating database : unabled to add countries", err)
+			tx.Rollback()
+			return
+		}
+	} else if params.Geographical_extent == "continent" {
+		// Insert continents
+		var continentsID = make([]int, 0)
+		for _, c := range params.Continents {
+			continentsID = append(continentsID, c.Geonameid)
+		}
+		err = d.AddContinents(tx, continentsID)
+		if err != nil {
+			log.Println("Error updating database : unabled to add continents", err)
+			tx.Rollback()
+			return
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		log.Println("Error updating database infos: ", err)
+		userSqlError(w, err)
+		return
+	}
+
 }
 
 func sendError(w http.ResponseWriter, errors []*databaseimport.ParserError) {

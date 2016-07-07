@@ -80,10 +80,17 @@ type DatabaseFullInfos struct {
 	Handles       []Database_handle  `json:"handles"`
 	Authors       []DatabaseAuthor   `json:"authors"`
 	Contexts      []Database_context `json:"contexts"`
-	Translations  []Database_tr      `json:"translations"`
 	NumberOfSites int                `json:"number_of_sites"`
 	Owner_name    string             `json:"owner_name"`
 	License string `json:"license"`
+	Description              map[string]string `json:"description"`
+	Geographical_limit  map[string]string `json:"geographical_limit"`
+	Bibliography        map[string]string `json:"bibliography"`
+	Context_description map[string]string `json:"context_description"`
+	Source_description  map[string]string `json:"source_description"`
+	Source_relation     map[string]string `json:"source_relation"`
+	Copyright           map[string]string `json:"copyright"`
+	Subject             map[string]string `json:"subject"`
 }
 
 // DoesExist check if database exist with a name and an owner
@@ -122,8 +129,8 @@ func (d *Database) Get(tx *sqlx.Tx) (err error) {
 	return stmt.Get(d, d)
 }
 
-// GetFullInfosRepresentation returns all informations about a database
-func (d *Database) GetFullInfosRepresentation(tx *sqlx.Tx, langIsocode string) (db DatabaseFullInfos, err error) {
+// GetFullInfos returns all informations about a database
+func (d *Database) GetFullInfos(tx *sqlx.Tx, langIsocode string) (db DatabaseFullInfos, err error) {
 	db = DatabaseFullInfos{}
 
 	if d.Id == 0 {
@@ -133,7 +140,6 @@ func (d *Database) GetFullInfosRepresentation(tx *sqlx.Tx, langIsocode string) (
 		db.Handles = make([]Database_handle, 0)
 		db.Authors = make([]DatabaseAuthor, 0)
 		db.Contexts = make([]Database_context, 0)
-		db.Translations = make([]Database_tr, 0)
 		db.Handles = make([]Database_handle, 0)
 		db.NumberOfSites = 0
 		db.License = "-"
@@ -171,6 +177,7 @@ func (d *Database) GetFullInfosRepresentation(tx *sqlx.Tx, langIsocode string) (
 	if err != nil {
 		return
 	}
+	err = db.GetTranslations(tx)
 	return
 }
 
@@ -349,7 +356,7 @@ func (d *Database) AddContinents(tx *sqlx.Tx, continentIds []int) (err error) {
 			return errors.New("database::AddContinents: " + err.Error())
 		}
 	}
-	return errors.New("database::AddContinents: " + err.Error())
+	return
 }
 
 // DeleteContinents unlinks countries to a database
@@ -543,16 +550,6 @@ func (d *Database) GetLastImport(tx *sqlx.Tx) (imp Import, err error) {
 	err = tx.Get(&imp, "SELECT * FROM import WHERE i.jdatabase_id = $1 ORDER by id DESC LIMIT 1", d.Id)
 	if err != nil {
 		err = errors.New("database::GetLastImport: " + err.Error())
-	}
-	return
-}
-
-// GetTranslations lists all translated fields from database
-func (d *Database) GetTranslations(tx *sqlx.Tx) (translations []Database_tr, err error) {
-	translations = []Database_tr{}
-	err = tx.Select(&translations, "SELECT * FROM database_tr WHERE database_id = $1", d.Id)
-	if err != nil {
-		err = errors.New("database::GetTranslations: " + err.Error())
 	}
 	return
 }
@@ -777,5 +774,23 @@ func (d *Database) ExportCSV(tx *sqlx.Tx) (outp string, err error) {
 		outp += code + ";" + name + ";" + city_name + ";" + cgeonameid + ";4326;" + slongitude + ";" + slatitude + ";" + saltitude + ";" + scentroid + ";" + soccupation + ";" + knowledge_type + ";" + startingPeriod + ";" + endingPeriod + ";" + scharacs + ";" + sexceptional + ";" + bibliography + ";" + comment + ";\n"
 	}
 
+	return
+}
+
+// GetTranslations lists all translated fields from database
+func (d *DatabaseFullInfos) GetTranslations(tx *sqlx.Tx) (err error) {
+	tr := []Database_tr{}
+	err = tx.Select(&tr, "SELECT * FROM database_tr WHERE database_id = $1", d.Id)
+	if err != nil {
+		return
+	}
+	d.Description = MapSqlTranslations(tr, "Lang_isocode", "Description")
+	d.Geographical_limit = MapSqlTranslations(tr, "Lang_isocode", "Geographical_limit")
+	d.Bibliography = MapSqlTranslations(tr, "Lang_isocode", "Bibliography")
+	d.Context_description = MapSqlTranslations(tr, "Lang_isocode", "Context_description")
+	d.Source_description = MapSqlTranslations(tr, "Lang_isocode", "Source_description")
+	d.Source_relation = MapSqlTranslations(tr, "Lang_isocode", "Source_relation")
+	d.Copyright = MapSqlTranslations(tr, "Lang_isocode", "Copyright")
+	d.Subject = MapSqlTranslations(tr, "Lang_isocode", "Subject")
 	return
 }
