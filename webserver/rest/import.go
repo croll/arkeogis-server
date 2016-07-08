@@ -132,6 +132,7 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	outfile, err := os.Create(filepath)
 	if err != nil {
 		http.Error(w, "Error saving file: "+err.Error(), http.StatusBadRequest)
+		log.Println(err)
 		return
 	}
 
@@ -139,6 +140,7 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	_, err = io.WriteString(outfile, string(params.File.Content))
 	if err != nil {
 		http.Error(w, "Error saving file: "+err.Error(), http.StatusBadRequest)
+		log.Println(err)
 		return
 	}
 
@@ -193,7 +195,6 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		sendError(w, parser.Errors)
 		return
 	}
-
 	parser.Parse(dbImport.ProcessRecord)
 	/*
 		if err != nil {
@@ -202,6 +203,7 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 			}
 		}
 	*/
+
 
 	import_id, err := dbImport.Save(params.File.Name)
 	if err != nil {
@@ -227,6 +229,8 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 			sendError(w, parser.Errors)
 			return
 		}
+	} else {
+		err = dbImport.Tx.Rollback()
 	}
 
 	// Cache database enveloppe

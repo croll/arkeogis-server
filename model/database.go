@@ -307,9 +307,6 @@ func (d *Database) Delete(tx *sqlx.Tx) (err error) {
 // DeleteSites deletes all sites linked to a database
 func (d *Database) DeleteSites(tx *sqlx.Tx) (err error) {
 	_, err = tx.NamedExec("DELETE FROM \"site\" WHERE database_id=:id", d)
-	if err != nil {
-		err = errors.New("database::DeleteSites: " + err.Error())
-	}
 	return
 }
 
@@ -543,9 +540,7 @@ func (d *Database) GetOwnerInfos(tx *sqlx.Tx) (owner DatabaseAuthor, err error) 
 // GetImportList lists all informations about an import (date, filename, etc)
 func (d *Database) GetImportList(tx *sqlx.Tx) (imports []ImportFullInfos, err error) {
 	imports = []ImportFullInfos{}
-	err = tx.Select(&imports, "SELECT i.*, u.firstname || ' ' ||  u.lastname AS fullname FROM import i LEFT JOIN \"user\" u ON i.user_id = u.id WHERE i.database_id = $1", d.Id)
-	fmt.Println("------------------------")
-	fmt.Println(imports)
+	err = tx.Select(&imports, "SELECT i.*, u.firstname || ' ' ||  u.lastname AS fullname FROM import i LEFT JOIN \"user\" u ON i.user_id = u.id WHERE i.database_id = $1 ORDER BY id DESC", d.Id)
 	if err != nil {
 		err = errors.New("database::GetImportList: " + err.Error())
 	}

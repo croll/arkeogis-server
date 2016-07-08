@@ -298,8 +298,6 @@ func (di *DatabaseImport) ProcessEssentialDatabaseInfos(name string, geographica
 		if err != nil {
 			return err
 		}
-		// fmt.Println(di.Database)
-
 		// Delete linked continents
 		err = di.Database.DeleteContinents(di.Tx)
 		if err != nil {
@@ -313,7 +311,11 @@ func (di *DatabaseImport) ProcessEssentialDatabaseInfos(name string, geographica
 		}
 
 		// Delete linked sites
-		di.Database.DeleteSites(di.Tx)
+		err = di.Database.DeleteSites(di.Tx)
+		if err != nil {
+			return err
+		}
+
 
 	} else {
 		di.setDefaultValues()
