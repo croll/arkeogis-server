@@ -41,6 +41,7 @@ type DatabaseAuthor struct {
 	Id        string `json:"id"`
 	Firstname string `json:"firstname"`
 	Lastname  string `json:"lastname"`
+	Fullname string `json:"fullname"`
 }
 
 // CountryInfos store country info and translations
@@ -170,6 +171,10 @@ func (d *Database) GetFullInfos(tx *sqlx.Tx, langIsocode string) (db DatabaseFul
 		return
 	}
 	db.Imports, err = d.GetImportList(tx)
+	if err != nil {
+		return
+	}
+	db.Contexts, err = d.GetContextsList(tx)
 	if err != nil {
 		return
 	}
@@ -371,9 +376,12 @@ func (d *Database) DeleteContinents(tx *sqlx.Tx) (err error) {
 // GetHandles get last handle linked to a database
 func (d *Database) GetLastHandle(tx *sqlx.Tx) (handle *Database_handle, err error) {
 	handle = &Database_handle{}
-	err = tx.Get(&handle, "SELECT * FROM database_handle WHERE database_id = $1 ORDER BY id DESC LIMIT 1", d.Id)
-	if err != nil {
-		err = errors.New("database::GetLastHandle: " + err.Error())
+	err = tx.Get(handle, "SELECT * FROM database_handle WHERE database_id = $1 ORDER BY id DESC LIMIT 1", d.Id)
+	switch {
+	case err == sql.ErrNoRows:
+		return handle, nil
+	case err != nil:
+		return
 	}
 	return
 }
@@ -439,7 +447,7 @@ func (d *Database) DeleteImports(tx *sqlx.Tx) error {
 
 // GetAuthorsList lists all user designed as author of a database
 func (d *Database) GetAuthorsList(tx *sqlx.Tx) (authors []DatabaseAuthor, err error) {
-	err = tx.Select(&authors, "SELECT u.id, u.firstname, u.lastname FROM \"user\" u LEFT JOIN database__authors da ON u.id = da.user_id WHERE da.database_id = $1", d.Id)
+	err = tx.Select(&authors, "SELECT u.id, u.firstname, u.lastname, u.firstname || ' ' || u.lastname AS fullname FROM \"user\" u LEFT JOIN database__authors da ON u.id = da.user_id WHERE da.database_id = $1", d.Id)
 	if err != nil {
 		err = errors.New("database::GetAuthorsList: " + err.Error())
 	}

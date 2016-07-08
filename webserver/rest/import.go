@@ -263,7 +263,6 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 // ImportStep1UpdateT struct holds information provided by user
 type ImportStep1UpdateT struct {
 	Id int
-	Name                string
 	Geographical_extent string
 	Continents          []model.Continent
 	Countries           []model.Country
@@ -272,13 +271,17 @@ type ImportStep1UpdateT struct {
 // ImportStep1Update is called by rest
 func ImportStep1Update(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
+	log.Println("LA")
 	params := proute.Json.(*ImportStep1UpdateT)
+
+	log.Println("LA1")
 
 	tx, err := db.DB.Beginx()
 	if err != nil {
 		http.Error(w, "Error updating step1 informations: "+err.Error(), http.StatusBadRequest)
 		return
 	}
+	log.Println("LA2")
 
 	var user interface{}
 
@@ -287,18 +290,24 @@ func ImportStep1Update(w http.ResponseWriter, r *http.Request, proute routes.Pro
 		http.Error(w, "Not logged in", http.StatusForbidden)
 		return
 	}
+	log.Println("LA3")
 
 	var d = &model.Database{}
 	d.Id = params.Id
 
+	log.Println("ICI")
+
 	// Update datatabase name and geographical extent
-	err = d.UpdateFields(tx, params, "name", "geographical_extent")
+	log.Println(params.Geographical_extent)
+	log.Println("ICI0")
+	err = d.UpdateFields(tx, params, "geographical_extent")
 	if err != nil {
 		log.Println("Error updating database fields: ", err)
 		tx.Rollback()
 		userSqlError(w, err)
 		return
 	}
+	log.Println("ICI1")
 
 	// Delete linked continents
 	err = d.DeleteContinents(tx)
@@ -307,6 +316,7 @@ func ImportStep1Update(w http.ResponseWriter, r *http.Request, proute routes.Pro
 		tx.Rollback()
 		return
 	}
+	log.Println("ICI2")
 
 	// Delete linked countries
 	err = d.DeleteCountries(tx)
@@ -316,6 +326,7 @@ func ImportStep1Update(w http.ResponseWriter, r *http.Request, proute routes.Pro
 		return
 	}
 
+	log.Println("ICI3")
 	if params.Geographical_extent == "country" {
 		// Insert countries
 		var countriesID = make([]int, 0)
@@ -410,8 +421,6 @@ func ImportStep3(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		http.Error(w, "Error saving step3 informations: "+err.Error(), http.StatusBadRequest)
 		return
 	}
-
-	fmt.Println("LANG ISO CODE: ", proute.Lang1.Isocode)
 
 	d := &model.Database{Id: params.Id}
 
