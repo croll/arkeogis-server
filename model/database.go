@@ -24,7 +24,6 @@ package model
 import (
 	"database/sql"
 	"errors"
-	"fmt"
 	"log"
 	"math"
 	"strconv"
@@ -750,7 +749,6 @@ func (d *Database) ExportCSV(tx *sqlx.Tx) (outp string, err error) {
 		if start_date2 != math.MaxInt32 && start_date1 != start_date2 {
 			startingPeriod += strconv.Itoa(start_date2)
 		}
-		fmt.Println(math.MaxInt32)
 		// Ending period
 		endingPeriod := ""
 		if end_date1 != math.MinInt32 {

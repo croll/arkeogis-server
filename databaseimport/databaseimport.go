@@ -315,8 +315,6 @@ func (di *DatabaseImport) ProcessEssentialDatabaseInfos(name string, geographica
 		if err != nil {
 			return err
 		}
-
-
 	} else {
 		di.setDefaultValues()
 	}

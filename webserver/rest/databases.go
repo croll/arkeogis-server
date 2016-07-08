@@ -359,9 +359,6 @@ func DatabaseDelete(w http.ResponseWriter, r *http.Request, proute routes.Proute
 		return
 	}
 
-	fmt.Println("DELETE DB")
-	fmt.Println(params.Id)
-
 	err = d.Delete(tx)
 	if err != nil {
 		log.Println("Unable to delete database")

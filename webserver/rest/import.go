@@ -275,17 +275,14 @@ type ImportStep1UpdateT struct {
 // ImportStep1Update is called by rest
 func ImportStep1Update(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
-	log.Println("LA")
 	params := proute.Json.(*ImportStep1UpdateT)
 
-	log.Println("LA1")
 
 	tx, err := db.DB.Beginx()
 	if err != nil {
 		http.Error(w, "Error updating step1 informations: "+err.Error(), http.StatusBadRequest)
 		return
 	}
-	log.Println("LA2")
 
 	var user interface{}
 
@@ -294,16 +291,12 @@ func ImportStep1Update(w http.ResponseWriter, r *http.Request, proute routes.Pro
 		http.Error(w, "Not logged in", http.StatusForbidden)
 		return
 	}
-	log.Println("LA3")
 
 	var d = &model.Database{}
 	d.Id = params.Id
 
-	log.Println("ICI")
 
 	// Update datatabase name and geographical extent
-	log.Println(params.Geographical_extent)
-	log.Println("ICI0")
 	err = d.UpdateFields(tx, params, "geographical_extent")
 	if err != nil {
 		log.Println("Error updating database fields: ", err)
@@ -311,7 +304,6 @@ func ImportStep1Update(w http.ResponseWriter, r *http.Request, proute routes.Pro
 		userSqlError(w, err)
 		return
 	}
-	log.Println("ICI1")
 
 	// Delete linked continents
 	err = d.DeleteContinents(tx)
@@ -320,7 +312,6 @@ func ImportStep1Update(w http.ResponseWriter, r *http.Request, proute routes.Pro
 		tx.Rollback()
 		return
 	}
-	log.Println("ICI2")
 
 	// Delete linked countries
 	err = d.DeleteCountries(tx)
@@ -330,7 +321,6 @@ func ImportStep1Update(w http.ResponseWriter, r *http.Request, proute routes.Pro
 		return
 	}
 
-	log.Println("ICI3")
 	if params.Geographical_extent == "country" {
 		// Insert countries
 		var countriesID = make([]int, 0)
