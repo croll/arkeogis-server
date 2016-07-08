@@ -390,6 +390,12 @@ func DatabaseGetImportedCSV(w http.ResponseWriter, r *http.Request, proute route
 
 	err := db.DB.Get(&infos, "SELECT md5sum, filename FROM import WHERE database_id = $1 ORDER BY id DESC LIMIT 1", params.Id)
 
+	if infos.Md5sum == "" {
+		w.Header().Set("Content-Type", "text/plain")
+		w.Write([]byte("No file found. Please reimport database."))
+		return
+	}
+
 	filename := infos.Md5sum+"_"+infos.Filename
 
 	if err != nil {
