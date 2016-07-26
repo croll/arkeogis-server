@@ -41,21 +41,20 @@ import (
 )
 
 var (
-	//Langs                map[string]int
-	IsoCodes             map[string]bool
-	ContinentsById       map[int]bool
-	CachedContinentsById map[int]bool
-	Countries            map[string]int
-	CachedCountries      map[string]int
-	CountriesById        map[int]string
-	CitiesById           map[int]bool
-	CachedCitiesById     map[int]bool
+	isoCodes             map[string]bool
+	continentsByID       map[int]bool
+	cachedcontinentsByID map[int]bool
+	countries            map[string]int
+	cachedCountries      map[string]int
+	countriesByID        map[int]string
+	citiesByID           map[int]bool
+	cachedCitiesByID     map[int]bool
 	acNum                int
 )
 
-const geom_nowhere = "ST_GeometryFromText('POINT(2.5559 49.0083)', 4326)" // Paris (CDG)
+const geomNowhere = "ST_GeometryFromText('POINT(2.5559 49.0083)', 4326)" // Paris (CDG)
 
-func downloadFromUrl(url string) error {
+func downloadFromURL(url string) error {
 	tokens := strings.Split(url, "/")
 	fileName := tokens[len(tokens)-1]
 
@@ -90,7 +89,6 @@ func downloadFromUrl(url string) error {
 func importFile(fileName string) error {
 	fileExt := filepath.Ext(fileName)
 	fileNameWithoutExt := strings.Replace(fileName, fileExt, "", 1)
-	var err error
 	var rc io.Reader
 	switch fileExt {
 	case ".zip":
@@ -114,6 +112,7 @@ func importFile(fileName string) error {
 			return errors.New("No usable file found in " + fileNameWithoutExt + ".zip")
 		}
 	case ".txt":
+		var err error
 		rc, err = os.Open(fileName)
 		if err != nil {
 			return err
@@ -123,26 +122,29 @@ func importFile(fileName string) error {
 	}
 	switch fileNameWithoutExt {
 	case "iso-languagecodes":
-		err = importLanguageCodes(rc)
+		err := importLanguageCodes(rc)
+		if err != nil {
+			return err
+		}
 	case "allCountries":
 		switch acNum {
 		case 0:
-			err = importCountries(rc)
+			err := importcountries(rc)
 			if err != nil {
 				return err
 			}
 			acNum++
 		case 1:
-			err = importCities(rc)
+			err := importCities(rc)
 			if err != nil {
 				return err
 			}
 		}
 	case "alternateNames":
-		err = importAlternateNames(rc)
-	}
-	if err != nil {
-		fmt.Println(err)
+		err := importAlternateNames(rc)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -180,11 +182,10 @@ func importLanguageCodes(rc io.Reader) error {
 	}
 	// If true, show a warning message and exit
 	if nbLang > 1 {
-		return errors.New("/!\\ Database already contains langs. As everything is linked to langs in arkeogis, feel free to destroys the db yourself.")
-	} else {
-		if err := insertDefaultValues(); err != nil {
-			log.Fatal("Error inserting default values", err)
-		}
+		return errors.New("/!\\ Database already contains langs. As everything is linked to langs in arkeogis, feel free to destroys the db yourself")
+	}
+	if err2 := insertDefaultValues(); err2 != nil {
+		log.Fatal("Error inserting default values", err2.Error())
 	}
 	// Langs map stores the langs and associates them to their id for further use.
 	tx := db.DB.MustBegin()
@@ -206,16 +207,17 @@ func importLanguageCodes(rc io.Reader) error {
 		s := strings.Split(line, "\t")
 		// Skip first line
 		if lineNum == 0 {
-			lineNum += 1
+			lineNum++
 			continue
 		}
 		// Skip blank lang iso code
 		if strings.TrimSpace(s[2]) == "" {
 			continue
 		}
+		isoCode := strings.TrimSpace(s[2])
 		// var id int
 		//if _, ok := Langs[s[2]]; !ok {
-		tx.Exec("INSERT INTO lang (isocode, active) VALUES ($1, false)", s[2])
+		tx.Exec("INSERT INTO lang (isocode, active) VALUES ($1, false)", isoCode)
 		// if err = stmt.QueryRow(s[2]).Scan(&id); err != nil {
 		//  fmt.Println("Error inserting lang.", err)
 		//  tx.Rollback()
@@ -223,7 +225,7 @@ func importLanguageCodes(rc io.Reader) error {
 		// }
 		// Langs[s[2]] = id
 		//}
-		IsoCodes[s[2]] = true
+		isoCodes[isoCode] = true
 	}
 
 	// activate default langs
@@ -256,8 +258,8 @@ func importLanguageCodes(rc io.Reader) error {
 	tx.MustExec("insert into lang_tr (lang_isocode, lang_isocode_tr, name) values ('eu', 'es', 'Vasco')")
 	tx.MustExec("insert into lang_tr (lang_isocode, lang_isocode_tr, name) values ('eu', 'eu', 'Euskera')")
 
-	if err := tx.Commit(); err != nil {
-		return err
+	if err2 := tx.Commit(); err2 != nil {
+		return err2
 	}
 	err = importContinents()
 	if err != nil {
@@ -266,8 +268,8 @@ func importLanguageCodes(rc io.Reader) error {
 	return nil
 }
 
-// func cacheExistingCountries makes an index of existing counries in database
-func cacheExistingCountries() {
+// func cacheExistingcountries makes an index of existing counries in database
+func cacheExistingcountries() {
 	rows, err := db.DB.Query("SELECT geonameid, iso_code FROM country")
 	if err != nil {
 		log.Fatal("Error caching existing countries", err)
@@ -275,32 +277,32 @@ func cacheExistingCountries() {
 	defer rows.Close()
 
 	var geonameid int
-	var iso_code string
+	var isoCode string
 	for rows.Next() {
-		if err := rows.Scan(&geonameid, &iso_code); err != nil {
+		if err := rows.Scan(&geonameid, &isoCode); err != nil {
 			log.Fatal(err)
 		}
-		CachedCountries[iso_code] = geonameid
+		cachedCountries[isoCode] = geonameid
 	}
 	if err := rows.Err(); err != nil {
 		log.Fatal("Error caching existing countries #2", err)
 	}
 }
 
-// func importCountries parses the geoname file "countryInfo.txt" and populates it in the database
+// func importcountries parses the geoname file "countryInfo.txt" and populates it in the database
 // If country already set in database it updates it
 // Else it adds it
 // Warning: No country is removed from database by this function !
 
-func importCountries(rc io.Reader) error {
+func importcountries(rc io.Reader) error {
 	scan := bufio.NewScanner(rc)
 	// Make an index from existing countries in database
-	cacheExistingCountries()
+	cacheExistingcountries()
 	tx := db.DB.MustBegin()
 	tx.MustExec("SET CONSTRAINTS ALL DEFERRED")
 	var stmtInsert1, stmtInsert2, stmtUpdate1, stmtUpdate2 *sql.Stmt
 	var errStmt1, errStmt2 error
-	if len(CachedCountries) > 1 {
+	if len(cachedCountries) > 1 {
 		fmt.Println("- Updating existing countries")
 		stmtUpdate1, errStmt1 = tx.Prepare("UPDATE country SET iso_code = $2 WHERE geonameid = $1")
 		stmtUpdate2, errStmt2 = tx.Prepare("UPDATE country_tr SET lang_isocode = $2, name = $3, name_ascii = $4 WHERE country_geonameid = $1")
@@ -316,7 +318,7 @@ func importCountries(rc io.Reader) error {
 		return errStmt2
 	}
 
-	rgxp_onlycities, _ := regexp.Compile("^PCLI")
+	rgxpOnlyCities, _ := regexp.Compile("^PCLI")
 
 	for scan.Scan() {
 		line := scan.Text()
@@ -326,13 +328,13 @@ func importCountries(rc io.Reader) error {
 			continue
 		}
 		// get only cities
-		if !rgxp_onlycities.MatchString(strings.TrimSpace(s[7])) {
+		if !rgxpOnlyCities.MatchString(strings.TrimSpace(s[7])) {
 			continue
 		}
 		if strings.TrimSpace(s[0]) == "" {
 			fmt.Println("GeonameID not found:", s[0])
+			continue
 		}
-		GeonameID, _ := strconv.Atoi(s[0])
 		if strings.TrimSpace(s[1]) == "" {
 			fmt.Println("Country name not found:", s[1])
 			continue
@@ -341,28 +343,31 @@ func importCountries(rc io.Reader) error {
 			fmt.Println("Country ASCII name not found:", s[1])
 			continue
 		}
-		name_ascii := strings.ToLower(s[2])
+		GeonameID, _ := strconv.Atoi(strings.TrimSpace(s[0]))
+		name := strings.TrimSpace(s[1])
+		nameASCII := strings.ToLower(strings.TrimSpace(s[2]))
+		isoCode := strings.TrimSpace(s[8])
 
-		if _, ok := CachedCountries[s[0]]; ok {
-			if _, err := stmtUpdate1.Exec(GeonameID, s[8]); err != nil {
+		if _, ok := cachedCountries[isoCode]; ok {
+			if _, err := stmtUpdate1.Exec(GeonameID, isoCode); err != nil {
 				tx.Rollback()
 				return err
 			}
-			if _, err := stmtUpdate2.Exec(GeonameID, "D", s[1], name_ascii); err != nil {
+			if _, err := stmtUpdate2.Exec(GeonameID, "D", name, nameASCII); err != nil {
 				tx.Rollback()
 				return err
 			}
 		} else {
-			if _, err := stmtInsert1.Exec(GeonameID, s[8], time.Now(), time.Now()); err != nil {
+			if _, err := stmtInsert1.Exec(GeonameID, isoCode, time.Now(), time.Now()); err != nil {
 				tx.Rollback()
 				return err
 			}
-			if _, err := stmtInsert2.Exec(GeonameID, "D", s[1], name_ascii); err != nil {
+			if _, err := stmtInsert2.Exec(GeonameID, "D", name, nameASCII); err != nil {
 				tx.Rollback()
 				return err
 			}
-			CountriesById[GeonameID] = s[8]
-			Countries[s[8]] = GeonameID
+			countriesByID[GeonameID] = isoCode
+			countries[isoCode] = GeonameID
 		}
 	}
 	if err := tx.Commit(); err != nil {
@@ -378,12 +383,12 @@ func cacheExistingCities() {
 		log.Fatal(err)
 	}
 	defer rows.Close()
-	var geonameid int
+	var geonameID int
 	for rows.Next() {
-		if err := rows.Scan(&geonameid); err != nil {
+		if err := rows.Scan(&geonameID); err != nil {
 			log.Fatal(err)
 		}
-		CachedCitiesById[geonameid] = true
+		cachedCitiesByID[geonameID] = true
 	}
 	if err := rows.Err(); err != nil {
 		log.Fatal(err)
@@ -403,7 +408,7 @@ func importCities(rc io.Reader) error {
 	var errStmt1, errStmt2 error
 	// var lon, lat float64
 	//var err error
-	if len(CachedCitiesById) > 1 {
+	if len(cachedCitiesByID) > 1 {
 		fmt.Println("- Updating existing cities")
 		stmtUpdate1, errStmt1 = tx.Prepare("UPDATE city SET country_geonameid = $2, geom_centroid = ST_GeomFromText($3, 4326), updated_at=now() WHERE geonameid = $1")
 		stmtUpdate2, errStmt2 = tx.Prepare("UPDATE city_tr SET lang_isocode = $2, name = $3, name_ascii = $4 WHERE city_geonameid = $1")
@@ -419,7 +424,7 @@ func importCities(rc io.Reader) error {
 		return errStmt2
 	}
 
-	rgxp_onlycities, _ := regexp.Compile("^PPL.*")
+	rgxpOnlyCities, _ := regexp.Compile("^PPL.*")
 
 	for scan.Scan() {
 		line := scan.Text()
@@ -429,13 +434,12 @@ func importCities(rc io.Reader) error {
 			continue
 		}
 		// get only cities
-		if !rgxp_onlycities.MatchString(strings.TrimSpace(s[7])) {
+		if !rgxpOnlyCities.MatchString(strings.TrimSpace(s[7])) {
 			continue
 		}
 		if strings.TrimSpace(s[0]) == "" {
 			fmt.Println("GeonameID not found")
 		}
-		GeonameID, _ := strconv.Atoi(s[0])
 		if strings.TrimSpace(s[1]) == "" {
 			fmt.Println("City name not found")
 			continue
@@ -452,40 +456,45 @@ func importCities(rc io.Reader) error {
 			fmt.Println("Longitude not Found")
 			continue
 		}
-		lat, err := strconv.ParseFloat(s[4], 64)
+
+		lat, err := strconv.ParseFloat(strings.TrimSpace(s[4]), 64)
 		if err != nil {
 			fmt.Println("Unable to convert latitude to float")
 		}
-		lon, err := strconv.ParseFloat(s[5], 64)
+		lon, err := strconv.ParseFloat(strings.TrimSpace(s[5]), 64)
 		if err != nil {
 			fmt.Println("Unable to convert longitude to float")
 		}
+
+		GeonameID, _ := strconv.Atoi(strings.TrimSpace(s[0]))
+		isoCode := strings.TrimSpace(s[8])
+		name := strings.TrimSpace(s[1])
+		nameASCII := strings.ToLower(strings.TrimSpace(s[2]))
 		geom := fmt.Sprintf("POINT(%f %f)", lon, lat)
 
-		name_ascii := strings.ToLower(s[2])
-		if _, ok := Countries[s[8]]; !ok {
-			fmt.Println("City", s[1], "not inserted his country iso code \""+s[8]+"\" is not found.")
+		if _, ok := countries[isoCode]; !ok {
+			fmt.Println("City", name, "not inserted his country iso code \""+isoCode+"\" is not found.")
 			continue
 		}
-		if _, ok := CachedCitiesById[GeonameID]; ok {
-			if _, err := stmtUpdate1.Exec(GeonameID, Countries[s[8]], geom); err != nil {
+		if _, ok := cachedCitiesByID[GeonameID]; ok {
+			if _, err := stmtUpdate1.Exec(GeonameID, countries[isoCode], geom); err != nil {
 				tx.Rollback()
 				return err
 			}
-			if _, err := stmtUpdate2.Exec(GeonameID, "D", s[1], name_ascii); err != nil {
+			if _, err := stmtUpdate2.Exec(GeonameID, "D", name, nameASCII); err != nil {
 				tx.Rollback()
 				return err
 			}
 		} else {
-			if _, err := stmtInsert1.Exec(GeonameID, Countries[s[8]], geom); err != nil {
+			if _, err := stmtInsert1.Exec(GeonameID, countries[isoCode], geom); err != nil {
 				tx.Rollback()
 				return err
 			}
-			if _, err := stmtInsert2.Exec(GeonameID, "D", s[1], name_ascii); err != nil {
+			if _, err := stmtInsert2.Exec(GeonameID, "D", name, nameASCII); err != nil {
 				tx.Rollback()
 				return err
 			}
-			CitiesById[GeonameID] = true
+			citiesByID[GeonameID] = true
 		}
 	}
 	if err := tx.Commit(); err != nil {
@@ -501,12 +510,12 @@ func cacheExistingContinents() {
 		log.Fatal(err)
 	}
 	defer rows.Close()
-	var geonameid int
+	var geonameID int
 	for rows.Next() {
-		if err := rows.Scan(&geonameid); err != nil {
+		if err := rows.Scan(&geonameID); err != nil {
 			log.Fatal(err)
 		}
-		CachedContinentsById[geonameid] = true
+		cachedcontinentsByID[geonameID] = true
 	}
 	if err := rows.Err(); err != nil {
 		log.Fatal(err)
@@ -553,7 +562,7 @@ func importContinents() error {
 	tx.MustExec("SET CONSTRAINTS ALL DEFERRED")
 	var stmtInsert1, stmtInsert2, stmtUpdate1, stmtUpdate2 *sql.Stmt
 	var errStmt1, errStmt2 error
-	if len(CachedContinentsById) > 1 {
+	if len(cachedcontinentsByID) > 1 {
 		fmt.Println("- Updating existing continents")
 		stmtUpdate1, errStmt1 = tx.Prepare("UPDATE continent SET iso_code = $2, updated_at = $3 WHERE geonameid = $1")
 		stmtUpdate2, errStmt2 = tx.Prepare("UPDATE continent_tr SET lang_isocode = $2, name = $3, name_ascii = $4 WHERE continent_geonameid = $1")
@@ -569,7 +578,7 @@ func importContinents() error {
 		return errStmt2
 	}
 	for GeonameID, infos := range geonamesContinents {
-		if _, ok := CachedContinentsById[GeonameID]; ok {
+		if _, ok := cachedcontinentsByID[GeonameID]; ok {
 			if _, err := stmtUpdate1.Exec(GeonameID, infos["IsoCode"], time.Now()); err != nil {
 				tx.Rollback()
 				return err
@@ -588,7 +597,7 @@ func importContinents() error {
 				return err
 			}
 		}
-		ContinentsById[GeonameID] = true
+		continentsByID[GeonameID] = true
 	}
 	/*
 		for scan.Scan() {
@@ -616,7 +625,7 @@ func importContinents() error {
 				continue
 			}
 			name_ascii := strings.ToLower(s[2])
-			if _, ok := ContinentsById[GeonameID]; ok {
+			if _, ok := continentsByID[GeonameID]; ok {
 				if _, err := stmtUpdate1.Exec(GeonameID, s[8], time.Now()); err != nil {
 					tx.Rollback()
 					return err
@@ -635,7 +644,7 @@ func importContinents() error {
 					return err
 				}
 			}
-			ContinentsById[GeonameID] = s[8]
+			continentsByID[GeonameID] = s[8]
 			Continents[s[8]] = GeonameID
 		}
 	*/
@@ -681,27 +690,29 @@ func importAlternateNames(rc io.Reader) error {
 		}
 		GeonameID, _ := strconv.Atoi(s[1])
 		// Skip line with no lang defined or without lang code with len of 2
-		iso_code := strings.TrimSpace(s[2])
-		if iso_code == "" || len(iso_code) != 2 {
+		isoCode := strings.TrimSpace(s[2])
+		if isoCode == "" || len(isoCode) != 2 {
 			continue
 		}
 		// Check if isocode exists
-		if _, ok := IsoCodes[iso_code]; !ok {
-			fmt.Println("iso code", iso_code, "does not exist in our lang table.")
+		if _, ok := isoCodes[isoCode]; !ok {
+			fmt.Println("iso code", isoCode, "does not exist in our lang table.")
 			continue
 		}
 		// Skip line with no name
 		if strings.TrimSpace(s[3]) == "" {
 			continue
 		}
-		preferred, _ := strconv.Atoi(s[4])
+		preferred, _ := strconv.Atoi(strings.TrimSpace(s[4]))
 		// Uniq code
-		uniqCode := s[1] + "_" + iso_code
+		uniqCode := strings.TrimSpace(s[1]) + "_" + isoCode
+		// Name
+		name := strings.TrimSpace(s[3])
 
-		if _, ok := CitiesById[GeonameID]; ok {
+		if _, ok := citiesByID[GeonameID]; ok {
 			if _, ok := alreadyProcessed[uniqCode]; ok {
 				if preferred == 1 {
-					_, err = tx.Exec("DELETE FROM city_tr WHERE city_geonameid = $1 AND lang_isocode = $2", GeonameID, iso_code)
+					_, err = tx.Exec("DELETE FROM city_tr WHERE city_geonameid = $1 AND lang_isocode = $2", GeonameID, isoCode)
 					if err != nil {
 						return err
 					}
@@ -709,14 +720,14 @@ func importAlternateNames(rc io.Reader) error {
 					continue
 				}
 			}
-			if _, err = stmtCity.Exec(GeonameID, iso_code, s[3], ""); err != nil {
+			if _, err = stmtCity.Exec(GeonameID, isoCode, name, ""); err != nil {
 				tx.Rollback()
 				return err
 			}
-		} else if _, ok := CountriesById[GeonameID]; ok {
+		} else if _, ok := countriesByID[GeonameID]; ok {
 			if _, ok := alreadyProcessed[uniqCode]; ok {
 				if preferred == 1 {
-					_, err = tx.Exec("DELETE FROM country_tr WHERE country_geonameid = $1 AND lang_isocode = $2", GeonameID, iso_code)
+					_, err = tx.Exec("DELETE FROM country_tr WHERE country_geonameid = $1 AND lang_isocode = $2", GeonameID, isoCode)
 					if err != nil {
 						return err
 					}
@@ -724,14 +735,14 @@ func importAlternateNames(rc io.Reader) error {
 					continue
 				}
 			}
-			if _, err = stmtCountry.Exec(GeonameID, iso_code, s[3], ""); err != nil {
+			if _, err = stmtCountry.Exec(GeonameID, isoCode, name, ""); err != nil {
 				tx.Rollback()
 				return err
 			}
-		} else if _, ok := ContinentsById[GeonameID]; ok {
+		} else if _, ok := continentsByID[GeonameID]; ok {
 			if _, ok := alreadyProcessed[uniqCode]; ok {
 				if preferred == 1 {
-					_, err = tx.Exec("DELETE FROM continent_tr WHERE continent_geonameid = $1 AND lang_isocode = $2", GeonameID, iso_code)
+					_, err = tx.Exec("DELETE FROM continent_tr WHERE continent_geonameid = $1 AND lang_isocode = $2", GeonameID, isoCode)
 					if err != nil {
 						return err
 					}
@@ -739,7 +750,7 @@ func importAlternateNames(rc io.Reader) error {
 					continue
 				}
 			}
-			if _, err = stmtContinent.Exec(GeonameID, iso_code, s[3], ""); err != nil {
+			if _, err = stmtContinent.Exec(GeonameID, isoCode, name, ""); err != nil {
 				tx.Rollback()
 				return err
 			}
@@ -762,28 +773,28 @@ func insertDefaultValues() error {
 		return err
 	}
 	// Insert "undefined" continent and populate cache index
-	var undefinedContinentId int
-	err = db.DB.QueryRow("INSERT INTO continent (geonameid, iso_code, created_at, updated_at) VALUES (0, 'U', $1, $2) RETURNING geonameid", time.Now(), time.Now()).Scan(&undefinedContinentId)
+	var undefinedContinentID int
+	err = db.DB.QueryRow("INSERT INTO continent (geonameid, iso_code, created_at, updated_at) VALUES (0, 'U', $1, $2) RETURNING geonameid", time.Now(), time.Now()).Scan(&undefinedContinentID)
 	if err != nil {
 		fmt.Println("can't insert default continent D : ", err)
 		return err
 	}
 	// Insert "undefined" country and populate cache index
-	var undefinedCountryId int
-	err = db.DB.QueryRow("INSERT INTO country (geonameid, iso_code, created_at, updated_at) VALUES (0, 'U', $1, $2) RETURNING geonameid", time.Now(), time.Now()).Scan(&undefinedCountryId)
+	var undefinedCountryID int
+	err = db.DB.QueryRow("INSERT INTO country (geonameid, iso_code, created_at, updated_at) VALUES (0, 'U', $1, $2) RETURNING geonameid", time.Now(), time.Now()).Scan(&undefinedCountryID)
 	if err != nil {
 		fmt.Println("can't insert default country D : ", err)
 		return err
 	}
-	Countries["U"] = undefinedCountryId
+	countries["U"] = undefinedCountryID
 	// Insert "undefined" city
-	var undefinedCityId int
-	err = db.DB.QueryRow("INSERT INTO city (geonameid, country_geonameid, geom_centroid, created_at, updated_at) VALUES (0, 0, " + geom_nowhere + ", now(), now()) RETURNING geonameid").Scan(&undefinedCityId)
+	var undefinedCityID int
+	err = db.DB.QueryRow("INSERT INTO city (geonameid, country_geonameid, geom_centroid, created_at, updated_at) VALUES (0, 0, " + geomNowhere + ", now(), now()) RETURNING geonameid").Scan(&undefinedCityID)
 	if err != nil {
 		fmt.Println("can't insert city : ", err)
 		return err
 	}
-	CitiesById[undefinedCityId] = true
+	citiesByID[undefinedCityID] = true
 	return nil
 }
 
@@ -792,18 +803,18 @@ func main() {
 	files := []string{"iso-languagecodes.txt", "allCountries.zip", "allCountries.zip", "alternateNames.zip"}
 	//	files := []string{"alternateNames.zip"}
 	//Langs = map[string]int{}
-	IsoCodes = map[string]bool{}
-	ContinentsById = map[int]bool{}
-	CachedContinentsById = map[int]bool{}
-	Countries = map[string]int{}
-	CachedCountries = map[string]int{}
-	CountriesById = map[int]string{}
-	CachedCitiesById = map[int]bool{}
-	CitiesById = map[int]bool{}
+	isoCodes = map[string]bool{}
+	continentsByID = map[int]bool{}
+	cachedcontinentsByID = map[int]bool{}
+	countries = map[string]int{}
+	cachedCountries = map[string]int{}
+	countriesByID = map[int]string{}
+	cachedCitiesByID = map[int]bool{}
+	citiesByID = map[int]bool{}
 	l := len(files)
 	for i := 0; i < l; i++ {
 		url := "http://download.geonames.org/export/dump/" + files[i]
-		if err := downloadFromUrl(url); err != nil {
+		if err := downloadFromURL(url); err != nil {
 			fmt.Println(err)
 		}
 		if err := importFile(files[i]); err != nil {
