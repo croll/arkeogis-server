@@ -84,7 +84,7 @@ func NewPointByGeonameID(geonameID int) (*Point, error) {
 
 	fmt.Println(geonameID)
 
-	err := db.DB.Get(&coords, "SELECT ST_X(geom_centroid::geometry) AS y, ST_Y(geom_centroid::geometry) AS x FROM city WHERE geonameid = $1", geonameID)
+	err := db.DB.Get(&coords, "SELECT ST_X(geom_centroid::geometry) AS x, ST_Y(geom_centroid::geometry) AS y FROM city WHERE geonameid = $1", geonameID)
 
 	if err == sql.ErrNoRows {
 		return nil, err
