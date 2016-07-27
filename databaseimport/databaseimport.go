@@ -111,7 +111,7 @@ type DatabaseImport struct {
 	SitesWithError   map[string]bool
 	CachedSiteRanges map[string]int
 	Errors           []*ImportError
-	Md5sum string
+	Md5sum           string
 }
 
 // New creates a new import process
@@ -910,19 +910,16 @@ func (di *DatabaseImport) parseDates(period string) ([2]int, error) {
 			}
 		}
 
-		// Arkeogis hack on negative dates
-		if dates[0] < 1 && dates[0] != math.MinInt32 {
-			dates[0] += 1
-		}
-
-		if dates[1] < 1 && dates[1] != math.MinInt32 {
-			dates[1] += 1
-		}
-
 	}
 
-	// fmt.Println("Date1 and Date2", dates, "---")
-	// fmt.Println("----")
+	// Arkeogis hack on negative dates
+	if dates[0] < 1 && dates[0] != math.MinInt32 {
+		dates[0] += 1
+	}
+
+	if dates[1] < 1 && dates[1] != math.MinInt32 {
+		dates[1] += 1
+	}
 
 	return dates, nil
 }
