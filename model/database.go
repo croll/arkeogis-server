@@ -22,7 +22,9 @@
 package model
 
 import (
+	"bytes"
 	"database/sql"
+	"encoding/csv"
 	"errors"
 	"log"
 	"math"
@@ -40,7 +42,7 @@ type DatabaseAuthor struct {
 	Id        string `json:"id"`
 	Firstname string `json:"firstname"`
 	Lastname  string `json:"lastname"`
-	Fullname string `json:"fullname"`
+	Fullname  string `json:"fullname"`
 }
 
 // CountryInfos store country info and translations
@@ -74,23 +76,23 @@ type ImportFullInfos struct {
 // DatabaseFullInfos stores all informations about a database
 type DatabaseFullInfos struct {
 	Database
-	Imports       []ImportFullInfos			 `json:"imports"`
-	Countries     []CountryInfos     `json:"countries"`
-	Continents    []ContinentInfos   `json:"continents"`
-	Handles       []Database_handle  `json:"handles"`
-	Authors       []DatabaseAuthor   `json:"authors"`
-	Contexts      []Database_context `json:"contexts"`
-	NumberOfSites int                `json:"number_of_sites"`
-	Owner_name    string             `json:"owner_name"`
-	License string `json:"license"`
-	Description              map[string]string `json:"description"`
-	Geographical_limit  map[string]string `json:"geographical_limit"`
-	Bibliography        map[string]string `json:"bibliography"`
-	Context_description map[string]string `json:"context_description"`
-	Source_description  map[string]string `json:"source_description"`
-	Source_relation     map[string]string `json:"source_relation"`
-	Copyright           map[string]string `json:"copyright"`
-	Subject             map[string]string `json:"subject"`
+	Imports             []ImportFullInfos  `json:"imports"`
+	Countries           []CountryInfos     `json:"countries"`
+	Continents          []ContinentInfos   `json:"continents"`
+	Handles             []Database_handle  `json:"handles"`
+	Authors             []DatabaseAuthor   `json:"authors"`
+	Contexts            []Database_context `json:"contexts"`
+	NumberOfSites       int                `json:"number_of_sites"`
+	Owner_name          string             `json:"owner_name"`
+	License             string             `json:"license"`
+	Description         map[string]string  `json:"description"`
+	Geographical_limit  map[string]string  `json:"geographical_limit"`
+	Bibliography        map[string]string  `json:"bibliography"`
+	Context_description map[string]string  `json:"context_description"`
+	Source_description  map[string]string  `json:"source_description"`
+	Source_relation     map[string]string  `json:"source_relation"`
+	Copyright           map[string]string  `json:"copyright"`
+	Subject             map[string]string  `json:"subject"`
 }
 
 // DoesExist check if database exist with a name and an owner
@@ -609,9 +611,20 @@ func (d *Database) CacheDates(tx *sqlx.Tx) (err error) {
 
 // ExportCSV exports database and sites as as csv file
 func (d *Database) ExportCSV(tx *sqlx.Tx) (outp string, err error) {
-	outp = "SITE_SOURCE_ID;SITE_NAME;MAIN_CITY_NAME;GEONAME_ID;PROJECTION_SYSTEM;LONGITUDE;LATITUDE;ALTITUDE	;CITY_CENTROID;OCCUPATION;STATE_OF_KNOWLEDGE;STARTING_PERIOD;ENDING_PERIOD;CARAC_NAME;CARAC_LVL1;CARAC_LVL2;CARAC_LVL3;CARAC_LVL4;CARAC_EXP;BIBLIOGRAPHY;COMMENTS;\n"
 
-	// Datatabse isocode
+	var buff bytes.Buffer
+
+	w := csv.NewWriter(&buff)
+	w.Comma = ';'
+	w.UseCRLF = true
+
+	err = w.Write([]string{"SITE_SOURCE_ID", "SITE_NAME", "MAIN_CITY_NAME", "GEONAME_ID", "PROJECTION_SYSTEM", "LONGITUDE", "LATITUDE", "ALTITUDE", "CITY_CENTROID", "STATE_OF_KNOWLEDGE", "OCCUPATION", "STARTING_PERIOD", "ENDING_PERIOD", "CARAC_NAME", "CARAC_LVL1", "CARAC_LVL2", "CARAC_LVL3", "CARAC_LVL4", "CARAC_EXP", "BIBLIOGRAPHY", "COMMENTS"})
+	if err != nil {
+		log.Println("database::ExportCSV : ", err.Error())
+	}
+	w.Flush()
+
+	// Datatabase isocode
 
 	err = tx.Get(d, "SELECT name, default_language FROM \"database\" WHERE id = $1", d.Id)
 	if err != nil {
@@ -621,7 +634,7 @@ func (d *Database) ExportCSV(tx *sqlx.Tx) (outp string, err error) {
 	// Cache characs
 	characs := make(map[int]string)
 
-	q := "WITH RECURSIVE nodes_cte(id, path) AS (SELECT ca.id, cat.name::TEXT AS path FROM charac AS ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON cat.lang_isocode = lang.isocode WHERE lang.isocode = $1 AND ca.parent_id = 0 UNION ALL SELECT ca.id, (p.path|| ';' || cat.name) FROM nodes_cte AS p, charac AS ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON cat.lang_isocode = lang.isocode WHERE lang.isocode = $1 AND ca.parent_id = p.id) SELECT * FROM nodes_cte AS n ORDER BY n.id ASC\n"
+	q := "WITH RECURSIVE nodes_cte(id, path) AS (SELECT ca.id, cat.name::TEXT AS path FROM charac AS ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON cat.lang_isocode = lang.isocode WHERE lang.isocode = $1 AND ca.parent_id = 0 UNION ALL SELECT ca.id, (p.path || ';' || cat.name) FROM nodes_cte AS p, charac AS ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON cat.lang_isocode = lang.isocode WHERE lang.isocode = $1 AND ca.parent_id = p.id) SELECT * FROM nodes_cte AS n ORDER BY n.id ASC\n"
 
 	rows, err := tx.Query(q, d.Default_language)
 	switch {
@@ -676,6 +689,11 @@ func (d *Database) ExportCSV(tx *sqlx.Tx) (outp string, err error) {
 			scentroid      string
 			soccupation    string
 			scharacs       string
+			scharac_name   string
+			scharac_lvl1   string
+			scharac_lvl2   string
+			scharac_lvl3   string
+			scharac_lvl4   string
 			sexceptional   string
 			// description    string
 		)
@@ -731,12 +749,18 @@ func (d *Database) ExportCSV(tx *sqlx.Tx) (outp string, err error) {
 		case "dig":
 			knowledge_type = translate.T(d.Default_language, "IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_DIG")
 		}
-		// Dates
+		// Revert hack on dates
 		if start_date1 < 0 && start_date1 > math.MinInt32 {
-			start_date1++
+			start_date1--
 		}
 		if start_date2 < 0 && start_date2 > math.MinInt32 {
-			start_date2++
+			start_date2--
+		}
+		if end_date1 < 0 && end_date1 > math.MinInt32 {
+			end_date1--
+		}
+		if end_date2 < 0 && end_date2 > math.MinInt32 {
+			end_date2--
 		}
 		// Starting period
 		startingPeriod := ""
@@ -749,6 +773,9 @@ func (d *Database) ExportCSV(tx *sqlx.Tx) (outp string, err error) {
 		if start_date2 != math.MaxInt32 && start_date1 != start_date2 {
 			startingPeriod += strconv.Itoa(start_date2)
 		}
+		if startingPeriod == "" {
+			startingPeriod = translate.T(d.Default_language, "IMPORT.CSVFIELD_ALL.T_CHECK_UNDETERMINED")
+		}
 		// Ending period
 		endingPeriod := ""
 		if end_date1 != math.MinInt32 {
@@ -760,22 +787,56 @@ func (d *Database) ExportCSV(tx *sqlx.Tx) (outp string, err error) {
 		if end_date2 != math.MaxInt32 && end_date1 != end_date2 {
 			endingPeriod += strconv.Itoa(end_date2)
 		}
+		if endingPeriod == "" {
+			endingPeriod = translate.T(d.Default_language, "IMPORT.CSVFIELD_ALL.T_CHECK_UNDETERMINED")
+		}
 		// Caracs
 		var characPath = characs[charac_id]
+		// fmt.Println(code, characPath)
 		num := strings.Count(characPath, ";")
 		if num < 4 {
-			scharacs += characPath + strings.Repeat(";", num)
+			scharacs += characPath + strings.Repeat(";", 4-num)
+		} else {
+			scharacs = characPath
 		}
+		scharac_lvl2 = ""
+		scharac_lvl3 = ""
+		scharac_lvl4 = ""
+		for i, c := range strings.Split(scharacs, ";") {
+			// fmt.Println(i, c)
+			switch i {
+			case 0:
+				scharac_name = c
+			case 1:
+				scharac_lvl1 = c
+			case 2:
+				scharac_lvl2 = c
+			case 3:
+				scharac_lvl3 = c
+			case 4:
+				scharac_lvl4 = c
+			}
+
+		}
+		// fmt.Println(scharac_name, scharac_lvl1, scharac_lvl2, scharac_lvl3, scharac_lvl4)
+		// fmt.Println(startingPeriod, endingPeriod)
 		// Caracs exp
 		if exceptional {
 			sexceptional = translate.T(d.Default_language, "IMPORT.CSVFIELD_ALL.T_LABEL_YES")
 		} else {
 			sexceptional = translate.T(d.Default_language, "IMPORT.CSVFIELD_ALL.T_LABEL_NO")
 		}
-		outp += code + ";" + name + ";" + city_name + ";" + cgeonameid + ";4326;" + slongitude + ";" + slatitude + ";" + saltitude + ";" + scentroid + ";" + soccupation + ";" + knowledge_type + ";" + startingPeriod + ";" + endingPeriod + ";" + scharacs + ";" + sexceptional + ";" + bibliography + ";" + comment + ";\n"
+
+		line := []string{code, name, city_name, cgeonameid, "4326", slongitude, slatitude, saltitude, scentroid, knowledge_type, soccupation, startingPeriod, endingPeriod, scharac_name, scharac_lvl1, scharac_lvl2, scharac_lvl3, scharac_lvl4, sexceptional, bibliography, comment}
+
+		err := w.Write(line)
+		w.Flush()
+		if err != nil {
+			log.Println("database::ExportCSV : ", err.Error())
+		}
 	}
 
-	return
+	return buff.String(), nil
 }
 
 // GetTranslations lists all translated fields from database
