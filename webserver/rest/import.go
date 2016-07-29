@@ -393,6 +393,7 @@ type ImportStep3T struct {
 	Scale_resolution       string   `min:"1" error:"Scale resolution is mandatory"`
 	Subject                string   `min:"1" error:"Subject is mandatory"`
 	State                  string   `min:"1" error:"State is mandatory"`
+	Published              bool
 	Description            []struct {
 		Lang_Isocode string
 		Text         string
@@ -411,7 +412,7 @@ func ImportStep3(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	d := &model.Database{Id: params.Id}
 
-	err = d.UpdateFields(tx, params, "type", "declared_creation_date", "license_id", "scale_resolution", "state")
+	err = d.UpdateFields(tx, params, "type", "declared_creation_date", "license_id", "scale_resolution", "state", "published")
 	if err != nil {
 		log.Println("Error updating database fields: ", err)
 		userSqlError(w, err)
