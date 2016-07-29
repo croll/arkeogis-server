@@ -26,6 +26,7 @@ import (
 	"crypto/md5"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 
@@ -85,47 +86,43 @@ func init() {
 				"import",
 			},
 		},
-		&routes.Route{
-			Path:        "/api/import/step5",
-			Description: "Last step of ArkeoGIS import procedure",
-			Func:        ImportStep5,
-			Method:      "GET",
-			Permissions: []string{
-				"import",
-			},
-		},
 	}
 	routes.RegisterMultiple(Routes)
 }
 
 // ImportStep1T struct holds information provided by user
 type ImportStep1T struct {
-	Name                string
-	Geographical_extent string
-	Default_language    string
+	Name                string `min:"3" max:"50" error:"Wrong length for database name"`
+	Geographical_extent string `enum:"undefined,country,continent,international_waters,world" error:"Wrong geographical extent"`
+	Default_language    string `min:"2" max:"2" error:"Wrong lang"`
 	Continents          []model.Continent
 	Countries           []model.Country
 	UseGeonames         bool
-	Separator           string
-	EchapCharacter      string
+	Separator           string `min:"1" max:"1" error:"Wrong separator"`
+	EchapCharacter      string `min:"1" max:"1" error:"Wrong echap characted"`
 	File                *routes.File
 }
 
 // ImportStep1 is called by rest
 func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
-	params := proute.Json.(*ImportStep1T)
-
 	var user interface{}
-
-	filehash := fmt.Sprintf("%x", md5.Sum([]byte(params.File.Name)))
-	filepath := "./uploaded/databases/" + filehash + "_" + params.File.Name
 
 	var ok bool
 	if user, ok = proute.Session.Get("user"); !ok || user.(model.User).Id == 0 {
 		http.Error(w, "Not logged in", http.StatusForbidden)
 		return
 	}
+
+	params := proute.Json.(*ImportStep1T)
+
+	if params.File == nil {
+		userSqlError(w, errors.New("No file provided"))
+		return
+	}
+
+	filehash := fmt.Sprintf("%x", md5.Sum([]byte(params.File.Name)))
+	filepath := "./uploaded/databases/" + filehash + "_" + params.File.Name
 
 	var dbImport *databaseimport.DatabaseImport
 
@@ -204,7 +201,6 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		}
 	*/
 
-
 	import_id, err := dbImport.Save(params.File.Name)
 	if err != nil {
 		parser.AddError("Error saving import " + err.Error())
@@ -263,10 +259,9 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	w.Write(lok)
 }
 
-
 // ImportStep1UpdateT struct holds information provided by user
 type ImportStep1UpdateT struct {
-	Id int
+	Id                  int
 	Geographical_extent string
 	Continents          []model.Continent
 	Countries           []model.Country
@@ -276,7 +271,6 @@ type ImportStep1UpdateT struct {
 func ImportStep1Update(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	params := proute.Json.(*ImportStep1UpdateT)
-
 
 	tx, err := db.DB.Beginx()
 	if err != nil {
@@ -294,7 +288,6 @@ func ImportStep1Update(w http.ResponseWriter, r *http.Request, proute routes.Pro
 
 	var d = &model.Database{}
 	d.Id = params.Id
-
 
 	// Update datatabase name and geographical extent
 	err = d.UpdateFields(tx, params, "geographical_extent")
@@ -391,19 +384,19 @@ func writeResponse(w http.ResponseWriter, numberOfSites int, sitesWithError []st
 */
 
 type ImportStep3T struct {
-	Id                     int
-	Authors                []int
-	Type                   string
+	Id                     int    `min:"1" error:"Wrong database id"`
+	Authors                []int  `min:"1" error:"Wrong num of authors"`
+	Type                   string `enum:"undefined,inventory,research,literary-work" error:"Wrong database type"`
 	Declared_creation_date time.Time
-	Contexts               []string
-	License_ID             int
-	Scale_resolution       string
-	Subject                string
-	State                  string
+	Contexts               []string `min:"1" error:"Wrong context"`
+	License_ID             int      `min:"1" error:"Wrong license id"`
+	Scale_resolution       string   `min:"1" error:"Scale resolution is mandatory"`
+	Subject                string   `min:"1" error:"Subject is mandatory"`
+	State                  string   `min:"1" error:"State is mandatory"`
 	Description            []struct {
 		Lang_Isocode string
 		Text         string
-	}
+	} `min:"1" error:"Description is mandatory"`
 }
 
 func ImportStep3(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
@@ -612,7 +605,4 @@ func ImportStep4(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		userSqlError(w, err)
 		return
 	}
-}
-
-func ImportStep5(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 }
