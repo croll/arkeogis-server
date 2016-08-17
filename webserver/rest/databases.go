@@ -25,12 +25,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"reflect"
 	"strconv"
 	"time"
-	"io/ioutil"
 
 	db "github.com/croll/arkeogis-server/db"
 	"github.com/croll/arkeogis-server/model"
@@ -39,7 +39,8 @@ import (
 
 // DatabaseInfosParams are params received by REST query
 type DatabaseInfosParams struct {
-	Id int `min:"0" error:"Database Id is mandatory"`
+	Id       int `min:"0" error:"Database Id is mandatory"`
+	ImportID int
 }
 
 func init() {
@@ -69,7 +70,7 @@ func init() {
 			Params:      reflect.TypeOf(DatabaseInfosParams{}),
 		},
 		&routes.Route{
-			Path:        "/api/database/{id:[0-9]+}/csv",
+			Path:        "/api/database/{id:[0-9]+}/csv/{importid:[0-9]{0,}}",
 			Description: "Get the csv used at import",
 			Func:        DatabaseGetImportedCSV,
 			Method:      "GET",
@@ -82,7 +83,7 @@ func init() {
 			Func:        DatabaseDelete,
 			Method:      "POST",
 			Permissions: []string{},
-			Json:      reflect.TypeOf(DatabaseInfosParams{}),
+			Json:        reflect.TypeOf(DatabaseInfosParams{}),
 		},
 		&routes.Route{
 			Path:        "/api/licences",
@@ -380,12 +381,18 @@ func DatabaseDelete(w http.ResponseWriter, r *http.Request, proute routes.Proute
 func DatabaseGetImportedCSV(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	params := proute.Params.(*DatabaseInfosParams)
 
+	var err error
+
 	var infos struct {
-		Md5sum string
+		Md5sum   string
 		Filename string
 	}
 
-	err := db.DB.Get(&infos, "SELECT md5sum, filename FROM import WHERE database_id = $1 ORDER BY id DESC LIMIT 1", params.Id)
+	if params.ImportID > 0 {
+		err = db.DB.Get(&infos, "SELECT md5sum, filename FROM import WHERE database_id = $1 AND id = $2", params.Id, params.ImportID)
+	} else {
+		err = db.DB.Get(&infos, "SELECT md5sum, filename FROM import WHERE database_id = $1 ORDER BY id DESC LIMIT 1", params.Id)
+	}
 
 	if infos.Md5sum == "" {
 		w.Header().Set("Content-Type", "text/plain")
@@ -393,20 +400,20 @@ func DatabaseGetImportedCSV(w http.ResponseWriter, r *http.Request, proute route
 		return
 	}
 
-	filename := infos.Md5sum+"_"+infos.Filename
+	filename := infos.Md5sum + "_" + infos.Filename
 
 	if err != nil {
 		log.Println("Unable to get imported csv database")
 		userSqlError(w, err)
-		return;
+		return
 	}
 
-	content, err := ioutil.ReadFile("./uploaded/databases/"+filename)
+	content, err := ioutil.ReadFile("./uploaded/databases/" + filename)
 
 	if err != nil {
 		log.Println("Unable to read the csv file")
 		userSqlError(w, err)
-		return;
+		return
 	}
 
 	w.Header().Set("Content-Type", "text/csv")

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- SQL XML created by WWW SQL Designer, https://github.com/ondras/wwwsqldesigner/ -->
-<!-- Active URL: https://croll.fr/sqldesigner/ -->
+<!-- Active URL: https://www.croll.fr/sqldesigner/ -->
 <sql>
 <datatypes db="postgresql">
 	<group label="Numeric" color="rgb(238,238,170)">
@@ -352,7 +352,7 @@
 <part>geom_3d</part>
 </key>
 </table>
-<table x="266" y="455" name="database_tr">
+<table x="273" y="512" name="database_tr">
 <row name="database_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="database" row="id" />
@@ -559,6 +559,7 @@
 <table x="34" y="755" name="map_layer">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
+<relation table="map_layer__authors" row="map_layer_id" />
 </row>
 <row name="creator_user_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
@@ -989,7 +990,7 @@
 <part>user_id</part>
 </key>
 </table>
-<table x="288" y="148" name="import">
+<table x="290" y="146" name="import">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
@@ -1009,7 +1010,10 @@
 </row>
 <row name="number_of_lines" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
-</row>
+<default>0</default></row>
+<row name="number_of_sites" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<default>0</default></row>
 <row name="created_at" null="0" autoincrement="0">
 <datatype>TIMESTAMP</datatype>
 </row>
@@ -1017,7 +1021,7 @@
 <part>id</part>
 </key>
 </table>
-<table x="301" y="344" name="license">
+<table x="283" y="374" name="license">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
@@ -1243,14 +1247,13 @@
 <part>root_chronology_id</part>
 </key>
 </table>
-<table x="40" y="1192" name="map_layer__authors">
+<table x="43" y="1192" name="map_layer__authors">
 <row name="user_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="user" row="id" />
 </row>
 <row name="map_layer_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
-<relation table="map_layer" row="id" />
 </row>
 <key type="PRIMARY" name="">
 <part>user_id</part>

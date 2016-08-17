@@ -926,7 +926,7 @@ func (di *DatabaseImport) parseDates(period string) ([2]int, error) {
 
 func (di *DatabaseImport) Save(filename string) (int, error) {
 	var err error
-	i := model.Import{Database_id: di.Database.Id, User_id: di.Uid, Filename: filename, Number_of_lines: di.Parser.Line - 1, Md5sum: di.Md5sum}
+	i := model.Import{Database_id: di.Database.Id, User_id: di.Uid, Filename: filename, Number_of_lines: di.Parser.Line - 1, Number_of_sites: di.NumberOfSites, Md5sum: di.Md5sum}
 	err = i.Create(di.Tx)
 	return i.Id, err
 }

@@ -221,6 +221,7 @@ type Import struct {
 	Md5sum	string	`db:"md5sum" json:"md5sum"`
 	Filename	string	`db:"filename" json:"filename"`
 	Number_of_lines	int	`db:"number_of_lines" json:"number_of_lines"`
+	Number_of_sites	int	`db:"number_of_sites" json:"number_of_sites"`
 	Created_at	time.Time	`db:"created_at" json:"created_at"`
 }
 
@@ -587,9 +588,9 @@ const Country_tr_UpdateStr = "\"name\" = :name, \"name_ascii\" = :name_ascii"
 const Database__authors_InsertStr = ""
 const Database__authors_InsertValuesStr = ""
 const Database__authors_UpdateStr = ""
-const Import_InsertStr = "\"database_id\", \"user_id\", \"md5sum\", \"filename\", \"number_of_lines\", \"created_at\""
-const Import_InsertValuesStr = ":database_id, :user_id, :md5sum, :filename, :number_of_lines, now()"
-const Import_UpdateStr = "\"database_id\" = :database_id, \"user_id\" = :user_id, \"md5sum\" = :md5sum, \"filename\" = :filename, \"number_of_lines\" = :number_of_lines"
+const Import_InsertStr = "\"database_id\", \"user_id\", \"md5sum\", \"filename\", \"number_of_lines\", \"number_of_sites\", \"created_at\""
+const Import_InsertValuesStr = ":database_id, :user_id, :md5sum, :filename, :number_of_lines, :number_of_sites, now()"
+const Import_UpdateStr = "\"database_id\" = :database_id, \"user_id\" = :user_id, \"md5sum\" = :md5sum, \"filename\" = :filename, \"number_of_lines\" = :number_of_lines, \"number_of_sites\" = :number_of_sites"
 const License_InsertStr = "\"name\", \"url\""
 const License_InsertValuesStr = ":name, :url"
 const License_UpdateStr = "\"name\" = :name, \"url\" = :url"

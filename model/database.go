@@ -82,7 +82,6 @@ type DatabaseFullInfos struct {
 	Handles             []Database_handle  `json:"handles"`
 	Authors             []DatabaseAuthor   `json:"authors"`
 	Contexts            []Database_context `json:"contexts"`
-	NumberOfSites       int                `json:"number_of_sites"`
 	Owner_name          string             `json:"owner_name"`
 	License             string             `json:"license"`
 	Description         map[string]string  `json:"description"`
@@ -143,14 +142,13 @@ func (d *Database) GetFullInfos(tx *sqlx.Tx, langIsocode string) (db DatabaseFul
 		db.Authors = make([]DatabaseAuthor, 0)
 		db.Contexts = make([]Database_context, 0)
 		db.Handles = make([]Database_handle, 0)
-		db.NumberOfSites = 0
 		db.License = "-"
 		return
 	}
 
 	// err = tx.Get(&db, "SELECT name, scale_resolution, geographical_extent, type, declared_creation_date, owner, editor, contributor, default_language, state, license_id, published, soft_deleted, d.created_at, d.updated_at, firstname || ' ' || lastname as owner_name FROM \"database\" d LEFT JOIN \"user\" u ON d.owner = u.id WHERE d.id = $1", d.Id)
 
-	err = tx.Get(&db, "SELECT d.*, ST_AsGeoJSON(d.geographical_extent_geom) as geographical_extent_geom, firstname || ' ' || lastname as owner_name, l.name AS license, (SELECT count(*) FROM site WHERE database_id = d.id) as numberofsites FROM \"database\" d LEFT JOIN \"user\" u ON d.owner = u.id LEFT JOIN \"license\" l ON d.license_id = l.id WHERE d.id = $1", d.Id)
+	err = tx.Get(&db, "SELECT d.*, ST_AsGeoJSON(d.geographical_extent_geom) as geographical_extent_geom, firstname || ' ' || lastname as owner_name, l.name AS license FROM \"database\" d LEFT JOIN \"user\" u ON d.owner = u.id LEFT JOIN \"license\" l ON d.license_id = l.id WHERE d.id = $1", d.Id)
 	if err != nil {
 		return
 	}
@@ -179,10 +177,6 @@ func (d *Database) GetFullInfos(tx *sqlx.Tx, langIsocode string) (db DatabaseFul
 	if err != nil {
 		return
 	}
-	db.NumberOfSites, err = d.GetNumberOfSites(tx)
-	if err != nil {
-		return
-	}
 	err = db.GetTranslations(tx)
 	return
 }
@@ -192,7 +186,7 @@ func (d *Database) GetFullInfosAsJSON(tx *sqlx.Tx, langIsocode string) (jsonStri
 
 	var q = make([]string, 7)
 
-	q[0] = db.AsJSON("SELECT db.*, ST_AsGeoJSON(db.geographical_extent_geom) as geographical_extent_geom, firstname || ' ' || lastname as owner_name, l.name AS license, (SELECT count(*) FROM site WHERE database_id = db.id) as number_of_sites FROM \"database\" db LEFT JOIN \"user\" u ON db.owner = u.id LEFT JOIN \"license\" l ON d.license_id = l.id WHERE db.id = d.id", false, "infos", true)
+	q[0] = db.AsJSON("SELECT db.*, ST_AsGeoJSON(db.geographical_extent_geom) as geographical_extent_geom, firstname || ' ' || lastname as owner_name, l.name AS license FROM \"database\" db LEFT JOIN \"user\" u ON db.owner = u.id LEFT JOIN \"license\" l ON d.license_id = l.id WHERE db.id = d.id", false, "infos", true)
 
 	q[1] = db.AsJSON("SELECT u.id, u.firstname, u.lastname FROM \"user\" u LEFT JOIN database__authors da ON u.id = da.user_id WHERE da.database_id = d.id", true, "authors", true)
 
@@ -554,15 +548,6 @@ func (d *Database) GetLastImport(tx *sqlx.Tx) (imp Import, err error) {
 	err = tx.Get(&imp, "SELECT * FROM import WHERE i.jdatabase_id = $1 ORDER by id DESC LIMIT 1", d.Id)
 	if err != nil {
 		err = errors.New("database::GetLastImport: " + err.Error())
-	}
-	return
-}
-
-// GetNumberOfSites returns an int which represent the number of sites linked to a database
-func (d *Database) GetNumberOfSites(tx *sqlx.Tx) (nb int, err error) {
-	err = tx.Get(&nb, "SELECT count(*) FROM site WHERE database_id = $1", d.Id)
-	if err != nil {
-		err = errors.New("database::GetNumberOfSites: " + err.Error())
 	}
 	return
 }
