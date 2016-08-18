@@ -133,7 +133,7 @@ func SaveShpLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 	if params.File != nil {
 
 		filehash = fmt.Sprintf("%x", md5.Sum([]byte(params.File.Name)))
-		filepath := "./uploaded/shp/" + filehash + "_" + params.File.Name 
+		filepath := "./uploaded/shp/" + filehash + "_" + params.File.Name
 
 		outfile, err := os.Create(filepath)
 		if err != nil {
@@ -532,7 +532,7 @@ func getShpLayers(params *GetLayersParams) (layers []*LayerInfos, err error) {
 	}
 
 	if params.Check_dates {
-		q += " AND m.start_date > :start_date AND m.end_date < :end_date"
+		q += " AND m.start_date >= :start_date+1 AND m.end_date <= :end_date"
 	}
 
 	in := model.IntJoin(params.Ids, false)
