@@ -155,7 +155,7 @@ func DatabaseList(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 	}
 
 	if params.Check_dates {
-		q += " AND d.start_date >= :start_date -1 AND d.end_date <= :end_date"
+		q += " AND d.start_date >= :start_date AND d.end_date <= :end_date"
 	}
 
 	databases := []dbInfos{}

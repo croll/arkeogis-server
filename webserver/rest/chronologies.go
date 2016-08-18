@@ -208,7 +208,7 @@ func ChronologiesRoots(w http.ResponseWriter, r *http.Request, proute routes.Pro
 
 		// check if chronology is in requested date bounds
 		if params.Check_dates {
-			if chrono.Start_date >= params.Start_date-1 && chrono.End_date <= params.End_date {
+			if chrono.Start_date >= params.Start_date && chrono.End_date <= params.End_date {
 				returnedChronologies = append(returnedChronologies, chrono)
 			}
 		} else {

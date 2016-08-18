@@ -532,7 +532,7 @@ func getShpLayers(params *GetLayersParams) (layers []*LayerInfos, err error) {
 	}
 
 	if params.Check_dates {
-		q += " AND m.start_date >= :start_date-1 AND m.end_date <= :end_date"
+		q += " AND m.start_date >= :start_date AND m.end_date <= :end_date"
 	}
 
 	in := model.IntJoin(params.Ids, false)
@@ -604,7 +604,7 @@ func getWmLayers(params *GetLayersParams) (layers []*LayerInfos, err error) {
 	}
 
 	if params.Check_dates {
-		q += " AND m.start_date >= :start_date-1 AND m.end_date <= :end_date"
+		q += " AND m.start_date >= :start_date AND m.end_date <= :end_date"
 	}
 
 	in := model.IntJoin(params.Ids, false)
