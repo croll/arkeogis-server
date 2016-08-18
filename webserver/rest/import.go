@@ -106,20 +106,15 @@ type ImportStep1T struct {
 // ImportStep1 is called by rest
 func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
-	var user interface{}
-
-	var ok bool
-	if user, ok = proute.Session.Get("user"); !ok || user.(model.User).Id == 0 {
-		http.Error(w, "Not logged in", http.StatusForbidden)
-		return
-	}
-
 	params := proute.Json.(*ImportStep1T)
 
 	if params.File == nil {
 		userSqlError(w, errors.New("No file provided"))
 		return
 	}
+
+	_user, _ := proute.Session.Get("user")
+	user := _user.(model.User)
 
 	filehash := fmt.Sprintf("%x", md5.Sum([]byte(params.File.Name)))
 	filepath := "./uploaded/databases/" + filehash + "_" + params.File.Name
@@ -142,7 +137,7 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	}
 
 	// Parse the file
-	parser, err := databaseimport.NewParser(filepath, params.Default_language, user.(model.User).First_lang_isocode)
+	parser, err := databaseimport.NewParser(filepath, params.Default_language, user.First_lang_isocode)
 	if err != nil {
 		parser.AddError("IMPORT.CSV_FILE.T_ERROR_PARSING_FAILED")
 	}
@@ -162,7 +157,7 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	// Init import
 	dbImport = new(databaseimport.DatabaseImport)
-	err = dbImport.New(parser, user.(model.User).Id, params.Name, params.Default_language, filehash)
+	err = dbImport.New(parser, user.Id, params.Name, params.Default_language, filehash)
 	if err != nil {
 		parser.AddError(err.Error())
 		sendError(w, parser.Errors)
@@ -278,14 +273,6 @@ func ImportStep1Update(w http.ResponseWriter, r *http.Request, proute routes.Pro
 		return
 	}
 
-	var user interface{}
-
-	var ok bool
-	if user, ok = proute.Session.Get("user"); !ok || user.(model.User).Id == 0 {
-		http.Error(w, "Not logged in", http.StatusForbidden)
-		return
-	}
-
 	var d = &model.Database{}
 	d.Id = params.Id
 
@@ -393,6 +380,7 @@ type ImportStep3T struct {
 	Scale_resolution       string   `min:"1" error:"Scale resolution is mandatory"`
 	Subject                string   `min:"1" error:"Subject is mandatory"`
 	State                  string   `min:"1" error:"State is mandatory"`
+	Project_ID             int      `min:"1" error:"Project id is mandatory"`
 	Published              bool
 	Description            []struct {
 		Lang_Isocode string
@@ -406,13 +394,14 @@ func ImportStep3(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	tx, err := db.DB.Beginx()
 	if err != nil {
-		http.Error(w, "Error saving step3 informations: "+err.Error(), http.StatusBadRequest)
+		http.Error(w, "Error step3 informations: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	d := &model.Database{Id: params.Id}
 
 	err = d.UpdateFields(tx, params, "type", "declared_creation_date", "license_id", "scale_resolution", "state", "published")
+
 	if err != nil {
 		log.Println("Error updating database fields: ", err)
 		userSqlError(w, err)
@@ -464,6 +453,23 @@ func ImportStep3(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		return
 	}
 
+	// Link database to user project
+	fmt.Println(d.Id, params.Project_ID)
+	linked, _ := d.IsLinkedToProject(tx, params.Project_ID)
+	if err != nil {
+		log.Println("Error checking if database is linked to project: ", err)
+		userSqlError(w, err)
+		return
+	}
+	if !linked {
+		err = d.LinkToUserProject(tx, params.Project_ID)
+	}
+	if err != nil {
+		log.Println("Error auto linking database to user project: ", err)
+		userSqlError(w, err)
+		return
+	}
+
 	err = tx.Commit()
 	if err != nil {
 		log.Println("Error commiting step 3 infos: ", err)
@@ -495,6 +501,7 @@ type ImportStep4T struct {
 }
 
 func ImportStep4(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+
 	params := proute.Json.(*ImportStep4T)
 
 	tx, err := db.DB.Beginx()

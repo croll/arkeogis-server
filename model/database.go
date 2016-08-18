@@ -594,6 +594,23 @@ func (d *Database) CacheDates(tx *sqlx.Tx) (err error) {
 	return
 }
 
+// IsLinkedToProject returns true or false if database is linked or not to user project
+func (d *Database) IsLinkedToProject(tx *sqlx.Tx, project_ID int) (linked bool, err error) {
+	linked = false
+	c := 0
+	err = tx.Get(&c, "SELECT count(*) FROM project__databases WHERE project_id = $1 AND database_id = $2", project_ID, d.Id)
+	if c > 0 {
+		linked = true
+	}
+	return
+}
+
+// LinkToUserProject links database to project
+func (d *Database) LinkToUserProject(tx *sqlx.Tx, project_ID int) (err error) {
+	_, err = tx.Exec("INSERT INTO project__databases (project_id, database_id) VALUES ($1, $2)", project_ID, d.Id)
+	return
+}
+
 // ExportCSV exports database and sites as as csv file
 func (d *Database) ExportCSV(tx *sqlx.Tx) (outp string, err error) {
 
