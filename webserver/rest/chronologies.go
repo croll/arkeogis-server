@@ -139,6 +139,7 @@ func ChronologiesRoots(w http.ResponseWriter, r *http.Request, proute routes.Pro
 	params := proute.Params.(*ChronologiesRootsParams)
 
 	chronologies := []*row{}
+	returnedChronologies := []*row{}
 
 	// transaction begin...
 	tx, err := db.DB.Beginx()
@@ -175,20 +176,13 @@ func ChronologiesRoots(w http.ResponseWriter, r *http.Request, proute routes.Pro
 	}
 
 	// load all root chronologies
-	for i, chrono := range chronologies {
+	for _, chrono := range chronologies {
 		chrono.Chronology.Id = chrono.Chronology_root.Root_chronology_id
 		err = chrono.Chronology.Get(tx)
 		if err != nil {
 			userSqlError(w, err)
 			_ = tx.Rollback()
 			return
-		}
-
-		// check if chronology is in requested date bounds
-		if params.Check_dates {
-			if chrono.Start_date < params.Start_date || chrono.End_date > params.End_date {
-				chronologies = append(chronologies[:i], chronologies[i+1:]...)
-			}
 		}
 
 		// load translations
@@ -211,9 +205,18 @@ func ChronologiesRoots(w http.ResponseWriter, r *http.Request, proute routes.Pro
 			_ = tx.Rollback()
 			return
 		}
+
+		// check if chronology is in requested date bounds
+		if params.Check_dates {
+			if chrono.Start_date >= params.Start_date-1 && chrono.End_date <= params.End_date {
+				returnedChronologies = append(returnedChronologies, chrono)
+			}
+		} else {
+			returnedChronologies = append(returnedChronologies, chrono)
+		}
 	}
 
-	j, err := json.Marshal(chronologies)
+	j, _ := json.Marshal(returnedChronologies)
 	w.Write(j)
 }
 
