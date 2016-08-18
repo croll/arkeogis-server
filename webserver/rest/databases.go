@@ -151,7 +151,7 @@ func DatabaseList(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 	}
 
 	if params.Bounding_box != "" {
-		q += " AND ST_Contains(ST_GeomFromGeoJSON(:bounding_box), geographical_extent_geom::::geometry)"
+		q += " AND (ST_Contains(ST_GeomFromGeoJSON(:bounding_box), geographical_extent_geom::::geometry) OR ST_Contains(geographical_extent_geom::::geometry, ST_GeomFromGeoJSON(:bounding_box)) OR ST_Overlaps(ST_GeomFromGeoJSON(:bounding_box), geographical_extent_geom::::geometry))"
 	}
 
 	if params.Check_dates {

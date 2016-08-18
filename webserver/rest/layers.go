@@ -528,11 +528,11 @@ func getShpLayers(params *GetLayersParams) (layers []*LayerInfos, err error) {
 	}
 
 	if params.Bounding_box != "" {
-		q += " AND ST_Contains(ST_GeomFromGeoJSON(:bounding_box), m.geographical_extent_geom::::geometry)"
+		q += " AND (ST_Contains(ST_GeomFromGeoJSON(:bounding_box), m.geographical_extent_geom::::geometry) OR ST_Contains(m.geographical_extent_geom::::geometry, ST_GeomFromGeoJSON(:bounding_box)) OR ST_Overlaps(ST_GeomFromGeoJSON(:bounding_box), m.geographical_extent_geom::::geometry))"
 	}
 
 	if params.Check_dates {
-		q += " AND m.start_date >= :start_date+1 AND m.end_date <= :end_date"
+		q += " AND m.start_date >= :start_date-1 AND m.end_date <= :end_date"
 	}
 
 	in := model.IntJoin(params.Ids, false)
@@ -600,11 +600,11 @@ func getWmLayers(params *GetLayersParams) (layers []*LayerInfos, err error) {
 	}
 
 	if params.Bounding_box != "" {
-		q += " AND ST_Contains(ST_GeomFromGeoJSON(:bounding_box), m.geographical_extent_geom::::geometry)"
+		q += " AND (ST_Contains(ST_GeomFromGeoJSON(:bounding_box), m.geographical_extent_geom::::geometry) OR ST_Contains(m.geographical_extent_geom::::geometry, ST_GeomFromGeoJSON(:bounding_box)) OR ST_Overlaps(ST_GeomFromGeoJSON(:bounding_box), m.geographical_extent_geom::::geometry))"
 	}
 
 	if params.Check_dates {
-		q += " AND m.start_date > :start_date AND m.end_date < :end_date"
+		q += " AND m.start_date >= :start_date-1 AND m.end_date <= :end_date"
 	}
 
 	in := model.IntJoin(params.Ids, false)

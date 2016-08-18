@@ -152,7 +152,7 @@ func ChronologiesRoots(w http.ResponseWriter, r *http.Request, proute routes.Pro
 	q := "SELECT *,ST_AsGeoJSON(geom) as geom FROM chronology_root WHERE 1 = 1"
 
 	if params.Bounding_box != "" {
-		q += " AND ST_Contains(ST_GeomFromGeoJSON(:bounding_box), geom::::geometry)"
+		q += " AND (ST_Contains(ST_GeomFromGeoJSON(:bounding_box), geom::::geometry) OR ST_Contains(geom::::geometry, ST_GeomFromGeoJSON(:bounding_box)) OR ST_Overlaps(ST_GeomFromGeoJSON(:bounding_box), geom::::geometry))"
 	}
 
 	if params.Active {
