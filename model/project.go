@@ -25,12 +25,15 @@ import (
 	"log"
 
 	"github.com/jmoiron/sqlx"
+	sqlx_types "github.com/jmoiron/sqlx/types"
 )
 
 type ProjectLayerInfos struct {
-	Id        int    `json:"id"`
-	Type      string `json:"type"`
-	Uniq_code string `json:"uniq_code"`
+	Id                       int                 `json:"id"`
+	Type                     string              `json:"type"`
+	Uniq_code                string              `json:"uniq_code"`
+	Geographical_extent_geom string              `json:"geom"`
+	Translations             sqlx_types.JSONText `db:"translations" json:"translations"`
 }
 
 type ProjectFullInfos struct {
@@ -68,14 +71,16 @@ func (pfi *ProjectFullInfos) Get(tx *sqlx.Tx) (err error) {
 	}
 
 	// Layers WMS
-	err = tx.Select(&pfi.Layers, "SELECT ml.id, ml.type, 'wms' || ml.id AS uniq_code FROM project__map_layer pml LEFT JOIN map_layer ml ON pml.map_layer_id = ml.id WHERE pml.project_id = $1", pfi.Id)
+	transquery := GetQueryTranslationsAsJSONObject("map_layer_tr", "tbl.map_layer_id = ml.id", "", false, "name", "attribution", "copyright")
+	err = tx.Select(&pfi.Layers, "SELECT ml.id, ml.geographical_extent_geom, ("+transquery+") as translations, ml.type, 'wms' || ml.id AS uniq_code FROM project__map_layer pml LEFT JOIN map_layer ml ON pml.map_layer_id = ml.id WHERE pml.project_id = $1", pfi.Id)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
 	// Layers Shapefile
-	err = tx.Select(&pfi.Layers, "SELECT s.id, 'shp' || s.id AS uniq_code from project__shapefile ps LEFT JOIN shapefile s ON ps.shapefile_id = s.id WHERE ps.project_id = $1", pfi.Id)
+	transquery = GetQueryTranslationsAsJSONObject("shapefile_tr", "tbl.shapefile_id = s.id", "", false, "name", "attribution", "copyright")
+	err = tx.Select(&pfi.Layers, "SELECT s.id, s.geographical_extent_geom, ("+transquery+") as translations, 'shp' || s.id AS uniq_code from project__shapefile ps LEFT JOIN shapefile s ON ps.shapefile_id = s.id WHERE ps.project_id = $1", pfi.Id)
 	if err != nil {
 		log.Println(err)
 		return
