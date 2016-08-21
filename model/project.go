@@ -36,6 +36,8 @@ type ProjectLayerInfos struct {
 	Min_scale                int                 `json:"min_scale"`
 	Max_scale                int                 `json:"max_scale"`
 	Translations             sqlx_types.JSONText `db:"translations" json:"translations"`
+	Url                      string              `json:"url"`
+	Identifier               string              `json:"identifier"`
 }
 
 type ProjectFullInfos struct {
@@ -74,7 +76,7 @@ func (pfi *ProjectFullInfos) Get(tx *sqlx.Tx) (err error) {
 
 	// Layers WMS
 	transquery := GetQueryTranslationsAsJSONObject("map_layer_tr", "tbl.map_layer_id = ml.id", "", false, "name", "attribution", "copyright")
-	err = tx.Select(&pfi.Layers, "SELECT ml.id, ml.geographical_extent_geom, ("+transquery+") as translations, ml.min_scale, ml.max_scale, ml.type, 'wms' || ml.id AS uniq_code FROM project__map_layer pml LEFT JOIN map_layer ml ON pml.map_layer_id = ml.id WHERE pml.project_id = $1", pfi.Id)
+	err = tx.Select(&pfi.Layers, "SELECT ml.id, ml.geographical_extent_geom, url, identifier, ("+transquery+") as translations, ml.min_scale, ml.max_scale, ml.type, 'wms' || ml.id AS uniq_code FROM project__map_layer pml LEFT JOIN map_layer ml ON pml.map_layer_id = ml.id WHERE pml.project_id = $1", pfi.Id)
 	if err != nil {
 		log.Println(err)
 		return
