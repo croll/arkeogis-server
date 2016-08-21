@@ -87,6 +87,7 @@ func GetProject(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		tx.Rollback()
 		log.Fatal("can't get project!")
 		userSqlError(w, err)
+		return
 	}
 
 	if projectID > 0 {
@@ -96,6 +97,7 @@ func GetProject(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 			tx.Rollback()
 			log.Fatal("can't get project!")
 			userSqlError(w, err)
+			return
 		}
 	} else {
 		project.Id = 0
