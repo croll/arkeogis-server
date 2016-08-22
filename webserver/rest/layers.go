@@ -38,7 +38,7 @@ import (
 	routes "github.com/croll/arkeogis-server/webserver/routes"
 )
 
-type GetLayersParams struct {
+type LayersParams struct {
 	Ids          []int `json:"ids"`
 	Type         string
 	Published    bool
@@ -50,9 +50,9 @@ type GetLayersParams struct {
 	Check_dates  bool `json:"check_dates"`
 }
 
-type PostLayerParams struct {
-	Id   int    `json:"id"`
-	Type string `json:"type"`
+type LayerParams struct {
+	Id   int    `json:"id" min:"1"`
+	Type string `json:"type" min:"3" max:"3"`
 }
 
 type LayerInfos struct {
@@ -97,7 +97,7 @@ func init() {
 			Description: "Get wms, wmts and shapefiles",
 			Func:        GetLayers,
 			Permissions: []string{},
-			Params:      reflect.TypeOf(GetLayersParams{}),
+			Params:      reflect.TypeOf(LayersParams{}),
 			Method:      "GET",
 		},
 		&routes.Route{
@@ -105,7 +105,7 @@ func init() {
 			Description: "Get layer informations",
 			Func:        GetLayer,
 			Permissions: []string{},
-			Params:      reflect.TypeOf(GetLayerParams{}),
+			Params:      reflect.TypeOf(LayerParams{}),
 			Method:      "GET",
 		},
 		&routes.Route{
@@ -113,8 +113,16 @@ func init() {
 			Description: "Delete layer",
 			Func:        DeleteLayer,
 			Permissions: []string{},
-			Json:        reflect.TypeOf(PostLayerParams{}),
+			Json:        reflect.TypeOf(LayerParams{}),
 			Method:      "POST",
+		},
+		&routes.Route{
+			Path:        "/api/layer/{id:[0-9]+}/geojson",
+			Description: "Get SHP geojson",
+			Func:        GetShpGeojson,
+			Permissions: []string{},
+			Params:      reflect.TypeOf(struct{ Id int }{}),
+			Method:      "GET",
 		},
 	}
 	routes.RegisterMultiple(Routes)
@@ -467,7 +475,7 @@ func SaveWmLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 // GetLayers returns layers list
 func GetLayers(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
-	params := proute.Params.(*GetLayersParams)
+	params := proute.Params.(*LayersParams)
 
 	var err error
 
@@ -520,7 +528,7 @@ func GetLayers(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 }
 
-func getShpLayers(params *GetLayersParams) (layers []*LayerInfos, err error) {
+func getShpLayers(params *LayersParams) (layers []*LayerInfos, err error) {
 
 	layers = []*LayerInfos{}
 
@@ -588,7 +596,7 @@ func getShpLayers(params *GetLayersParams) (layers []*LayerInfos, err error) {
 	return
 }
 
-func getWmLayers(params *GetLayersParams) (layers []*LayerInfos, err error) {
+func getWmLayers(params *LayersParams) (layers []*LayerInfos, err error) {
 
 	layers = []*LayerInfos{}
 
@@ -658,15 +666,10 @@ func getWmLayers(params *GetLayersParams) (layers []*LayerInfos, err error) {
 	return
 }
 
-type GetLayerParams struct {
-	Id   int
-	Type string
-}
-
 // GetLayer returns all infos about a layer
 func GetLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
-	params := proute.Params.(*GetLayerParams)
+	params := proute.Params.(*LayerParams)
 
 	var q []string
 	var query string
@@ -700,24 +703,11 @@ func GetLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 func DeleteLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
-	params := proute.Json.(*PostLayerParams)
+	params := proute.Json.(*LayerParams)
 
-	fmt.Println("-------------------")
 	tx, err := db.DB.Beginx()
 	if err != nil {
 		log.Println("can't start transaction")
-		userSqlError(w, err)
-		return
-	}
-
-	if params.Id == 0 {
-		log.Println("No layer id defined, can't delete it")
-		userSqlError(w, err)
-		return
-	}
-
-	if params.Type == "" {
-		log.Println("No layer type defined, can't delete it")
 		userSqlError(w, err)
 		return
 	}
@@ -745,4 +735,30 @@ func DeleteLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		userSqlError(w, err)
 		return
 	}
+}
+
+func GetShpGeojson(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+
+	params := proute.Params.(*struct{ Id int })
+
+	var geoJSON string
+
+	tx, err := db.DB.Beginx()
+	if err != nil {
+		log.Println("can't start transaction")
+		userSqlError(w, err)
+		return
+	}
+
+	err = tx.Get(&geoJSON, "SELECT geojson FROM shapefile WHERE id = $1", params.Id)
+	if err != nil {
+		log.Println("can't get geojson")
+		userSqlError(w, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(geoJSON))
+	return
+
 }
