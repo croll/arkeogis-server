@@ -38,6 +38,42 @@ import (
 	routes "github.com/croll/arkeogis-server/webserver/routes"
 )
 
+type GetLayersParams struct {
+	Ids          []int `json:"ids"`
+	Type         string
+	Published    bool
+	Author       int
+	Iso_code     string
+	Bounding_box string
+	Start_date   int  `json:"start_date"`
+	End_date     int  `json:"end_date"`
+	Check_dates  bool `json:"check_dates"`
+}
+
+type PostLayerParams struct {
+	Id   int    `json:"id"`
+	Type string `json:"type"`
+}
+
+type LayerInfos struct {
+	Id                       int               `json:"id"`
+	Geographical_extent_geom string            `json:"geographical_extent_geom"`
+	Creator_user_id          int               `json:"creator_user_id"`
+	Published                bool              `json:"published"`
+	Created_at               time.Time         `json:"created_at"`
+	Author                   string            `json:"author"`
+	Type                     string            `json:"type"`
+	Start_date               int               `json:"start_date"`
+	End_date                 int               `json:"end_date"`
+	Min_scale                int               `json:"min_scale"`
+	Max_scale                int               `json:"max_scale"`
+	Uniq_code                string            `json:"uniq_code"`
+	Name                     map[string]string `json:"name"`
+	Attribution              map[string]string `json:"attribution"`
+	Copyright                map[string]string `json:"copyright"`
+	Description              map[string]string `json:"description"`
+}
+
 func init() {
 	Routes := []*routes.Route{
 		&routes.Route{
@@ -71,6 +107,14 @@ func init() {
 			Permissions: []string{},
 			Params:      reflect.TypeOf(GetLayerParams{}),
 			Method:      "GET",
+		},
+		&routes.Route{
+			Path:        "/api/layer/delete",
+			Description: "Delete layer",
+			Func:        DeleteLayer,
+			Permissions: []string{},
+			Json:        reflect.TypeOf(PostLayerParams{}),
+			Method:      "POST",
 		},
 	}
 	routes.RegisterMultiple(Routes)
@@ -420,37 +464,6 @@ func SaveWmLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	}
 }
 
-type GetLayersParams struct {
-	Ids          []int `json:"ids"`
-	Type         string
-	Published    bool
-	Author       int
-	Iso_code     string
-	Bounding_box string
-	Start_date   int  `json:"start_date"`
-	End_date     int  `json:"end_date"`
-	Check_dates  bool `json:"check_dates"`
-}
-
-type LayerInfos struct {
-	Id                       int               `json:"id"`
-	Geographical_extent_geom string            `json:"geographical_extent_geom"`
-	Creator_user_id          int               `json:"creator_user_id"`
-	Published                bool              `json:"published"`
-	Created_at               time.Time         `json:"created_at"`
-	Author                   string            `json:"author"`
-	Type                     string            `json:"type"`
-	Start_date               int               `json:"start_date"`
-	End_date                 int               `json:"end_date"`
-	Min_scale                int               `json:"min_scale"`
-	Max_scale                int               `json:"max_scale"`
-	Uniq_code                string            `json:"uniq_code"`
-	Name                     map[string]string `json:"name"`
-	Attribution              map[string]string `json:"attribution"`
-	Copyright                map[string]string `json:"copyright"`
-	Description              map[string]string `json:"description"`
-}
-
 // GetLayers returns layers list
 func GetLayers(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
@@ -683,4 +696,53 @@ func GetLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	w.Write([]byte(jsonString))
 	return
 
+}
+
+func DeleteLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+
+	params := proute.Json.(*PostLayerParams)
+
+	fmt.Println("-------------------")
+	tx, err := db.DB.Beginx()
+	if err != nil {
+		log.Println("can't start transaction")
+		userSqlError(w, err)
+		return
+	}
+
+	if params.Id == 0 {
+		log.Println("No layer id defined, can't delete it")
+		userSqlError(w, err)
+		return
+	}
+
+	if params.Type == "" {
+		log.Println("No layer type defined, can't delete it")
+		userSqlError(w, err)
+		return
+	}
+
+	if params.Type == "shp" {
+		tx.Exec("DELETE FROM shapefile_tr WHERE shapefile_id = $1", params.Id)
+		tx.Exec("DELETE FROM shapefile__authors WHERE shapefile_id = $1", params.Id)
+		_, err = tx.Exec("DELETE FROM shapefile WHERE id = $1", params.Id)
+	} else {
+		tx.Exec("DELETE FROM map_layer WHERE map_layer_id = $1", params.Id)
+		tx.Exec("DELETE FROM map_layer__authors WHERE shapefile_id = $1", params.Id)
+		_, err = tx.Exec("DELETE FROM map_layer WHERE id = $1", params.Id)
+	}
+
+	if err != nil {
+		log.Println("Unable to delete layer:", err)
+		userSqlError(w, err)
+		return
+	}
+
+	err = tx.Commit()
+
+	if err != nil {
+		log.Println("Unable to delete layer:", err)
+		userSqlError(w, err)
+		return
+	}
 }
