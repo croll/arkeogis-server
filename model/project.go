@@ -84,7 +84,7 @@ func (pfi *ProjectFullInfos) Get(tx *sqlx.Tx) (err error) {
 
 	// Layers Shapefile
 	transquery = GetQueryTranslationsAsJSONObject("shapefile_tr", "tbl.shapefile_id = s.id", "", false, "name", "attribution", "copyright")
-	err = tx.Select(&pfi.Layers, "SELECT s.id, s.geographical_extent_geom, ("+transquery+") as translations, 'shp' || s.id AS uniq_code from project__shapefile ps LEFT JOIN shapefile s ON ps.shapefile_id = s.id WHERE ps.project_id = $1", pfi.Id)
+	err = tx.Select(&pfi.Layers, "SELECT s.id, s.geographical_extent_geom, ("+transquery+") as translations, 'shp' as type, 'shp' || s.id AS uniq_code from project__shapefile ps LEFT JOIN shapefile s ON ps.shapefile_id = s.id WHERE ps.project_id = $1", pfi.Id)
 	if err != nil {
 		log.Println(err)
 		return
