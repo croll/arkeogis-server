@@ -43,6 +43,12 @@ type Config struct {
 		Port     string `json:"port,omitempty"`
 		SslMode  string `json:"sslmode,omitempty"`
 	} `json:"database"`
+	Mail struct {
+		Host     string `json:"host"`
+		User     string `json:"user"`
+		Password string `json:"password"`
+		Sender   string `json:"sender"`
+	} `json:"mail"`
 }
 
 var Main Config        // The main configuration (server port, database credentials, etc.)
