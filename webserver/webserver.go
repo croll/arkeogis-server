@@ -31,13 +31,19 @@ import (
 
 	"github.com/codegangsta/negroni"
 	config "github.com/croll/arkeogis-server/config"
-	"github.com/croll/arkeogis-server/mail"
+//	"github.com/croll/arkeogis-server/mail"
 	"github.com/croll/arkeogis-server/webserver/rest"
 	routes "github.com/croll/arkeogis-server/webserver/routes"
 )
 
 func StartServer() {
-	mail.Send()
+	/*
+	fmt.Println("SENDING MAIL")
+	errrr := mail.Send([]string{"beve@croll.fr"}, "pouet", "poeut")
+	if errrr != nil {
+		fmt.Println(errrr);
+	}
+	*/
 	fmt.Println("starting web server...")
 	rest.P()
 	// Log to file
