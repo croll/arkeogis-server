@@ -9,8 +9,6 @@ import (
 )
 
 func init() {
-	// Connect to the remote SMTP server.
-
 }
 
 func Send() (err error) {
