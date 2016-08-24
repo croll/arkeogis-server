@@ -22,7 +22,6 @@
 package webserver
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -31,20 +30,12 @@ import (
 
 	"github.com/codegangsta/negroni"
 	config "github.com/croll/arkeogis-server/config"
-//	"github.com/croll/arkeogis-server/mail"
+	//	"github.com/croll/arkeogis-server/mail"
 	"github.com/croll/arkeogis-server/webserver/rest"
 	routes "github.com/croll/arkeogis-server/webserver/routes"
 )
 
 func StartServer() {
-	/*
-	fmt.Println("SENDING MAIL")
-	errrr := mail.Send([]string{"beve@croll.fr"}, "pouet", "poeut")
-	if errrr != nil {
-		fmt.Println(errrr);
-	}
-	*/
-	fmt.Println("starting web server...")
 	rest.P()
 	// Log to file
 	f, err := os.OpenFile("logs/arkeogis.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
@@ -60,12 +51,19 @@ func StartServer() {
 	// Configure Negroni and start server
 	Negroni := negroni.New(
 		negroni.NewRecovery(),
-		//negroni.HandlerFunc(authMiddleware),
 		negroni.HandlerFunc(crossDomainMiddleware),
 		negroni.NewLogger(),
 		negroni.NewStatic(http.Dir(config.WebPath)),
 	)
 	Negroni.UseHandler(routes.MuxRouter)
+	/* DEBUG SENDING MAIL
+	fmt.Println("SENDING MAIL")
+	errrr := mail.Send([]string{"beve@croll.fr"}, "pouet", "poeut", "fr")
+	if errrr != nil {
+		log.Println(errors.ErrorStack(errrr))
+	}
+	fmt.Println("starting web server...")
+	*/
 	Negroni.Run(":" + strconv.Itoa(config.Main.Server.Port))
 }
 
@@ -74,18 +72,4 @@ func crossDomainMiddleware(w http.ResponseWriter, r *http.Request, next http.Han
 	w.Header().Set("Access-Control-Allow-Credentials", "true")
 	w.Header().Set("Access-Control-Allow-Methods", "POST,GET,OPTIONS,PUT,DELETE,TRACE")
 	next(w, r)
-}
-
-// AuthMiddleware ...
-func authMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-	err := getUserFromAuth(r.Header.Get("Authorization"))
-	if err != nil {
-		w.WriteHeader(401)
-		return
-	}
-	next(w, r)
-}
-
-func getUserFromAuth(code string) interface{} {
-	return nil
 }
