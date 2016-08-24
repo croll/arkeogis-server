@@ -171,7 +171,7 @@ func (di *DatabaseImport) New(parser *Parser, uid int, databaseName string, lang
 
 // periodRegexp is used to match if starting and ending periods are valid
 //var periodRegexp = regexp.MustCompile(`(-?\d{0,}):(-?\d{0,})`)
-var validDateRexep = regexp.MustCompile(`^-?\d{0,}\p{L}{0,}:?-?\d{0,}\p{L}{0,}$`)
+var validDateRegexp = regexp.MustCompile(`^-?\d{0,}\p{L}{0,}:?-?\d{0,}\p{L}{0,}$`)
 var uniqDateRegexp = regexp.MustCompile(`^(-?\d+\p{L}{0,})$`)
 var periodRegexpDate1 = regexp.MustCompile(`^(-?\d{0,}\p{L}{0,}):-?\d{0,}\p{L}{0,}$`)
 var periodRegexpDate2 = regexp.MustCompile(`^-?\d{0,}\p{L}{0,}:(-?\d{0,}\p{L}{0,})$`)
@@ -833,7 +833,7 @@ func (di *DatabaseImport) parseDates(period string) ([2]int, error) {
 		return [2]int{math.MinInt32, math.MaxInt32}, nil
 	}
 
-	if !validDateRexep.MatchString(period) {
+	if !validDateRegexp.MatchString(period) {
 		return [2]int{0, 0}, errors.New("Invalid period")
 	}
 

@@ -47,7 +47,7 @@ type Config struct {
 		Host     string `json:"host"`
 		User     string `json:"user"`
 		Password string `json:"password"`
-		From     string `json:"sender"`
+		From     string `json:"from"`
 	} `json:"mail"`
 }
 
