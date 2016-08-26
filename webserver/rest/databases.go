@@ -165,10 +165,17 @@ func DatabaseList(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 		err = errors.New("rest.databases::DatabaseList : (infos) " + err.Error())
 		log.Println(err)
 		userSqlError(w, err)
-		_ = tx.Rollback()
+		tx.Rollback()
 		return
 	}
 	err = nstmt.Select(&databases, params)
+	if err != nil {
+		err = errors.New("rest.databases::DatabaseList : (infos) " + err.Error())
+		log.Println(err)
+		userSqlError(w, err)
+		tx.Rollback()
+		return
+	}
 
 	for _, database := range databases {
 
@@ -178,10 +185,17 @@ func DatabaseList(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 			err = errors.New("rest.databases::DatabaseList (authors) : " + err.Error())
 			log.Println(err)
 			userSqlError(w, err)
-			_ = tx.Rollback()
+			tx.Rollback()
 			return
 		}
 		err = astmt.Select(&database.Authors, database)
+		if err != nil {
+			err = errors.New("rest.databases::DatabaseList (authors) : " + err.Error())
+			log.Println(err)
+			userSqlError(w, err)
+			tx.Rollback()
+			return
+		}
 
 		// Contexts
 		cstmt, err := tx.PrepareNamed("SELECT context FROM database_context WHERE database_id = :id")
@@ -189,7 +203,7 @@ func DatabaseList(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 			err = errors.New("rest.databases::DatabaseList (contexts) : " + err.Error())
 			log.Println(err)
 			userSqlError(w, err)
-			_ = tx.Rollback()
+			tx.Rollback()
 			return
 		}
 		err = cstmt.Select(&database.Authors, database)
@@ -201,7 +215,7 @@ func DatabaseList(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 				err = errors.New("rest.databases::DatabaseList (countries) : " + err.Error())
 				log.Println(err)
 				userSqlError(w, err)
-				_ = tx.Rollback()
+				tx.Rollback()
 				return
 			}
 			err = coustmt.Select(&database.Countries, database.Id, user.First_lang_isocode)
@@ -214,7 +228,7 @@ func DatabaseList(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 				err = errors.New("rest.databases::DatabaseList : (continents) " + err.Error())
 				log.Println(err)
 				userSqlError(w, err)
-				_ = tx.Rollback()
+				tx.Rollback()
 				return
 			}
 			err = constmt.Select(&database.Continents, database.Id, user.First_lang_isocode)
@@ -223,7 +237,7 @@ func DatabaseList(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 
 	if err != nil {
 		log.Println(err)
-		_ = tx.Rollback()
+		tx.Rollback()
 		userSqlError(w, err)
 		return
 	}
@@ -308,6 +322,15 @@ func DatabaseInfos(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 
 	if err != nil {
 		log.Println("Error getting database infos", err)
+		tx.Rollback()
+		return
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		log.Println("Error getting database infos", err)
+		userSqlError(w, err)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -328,6 +351,13 @@ func DatabaseExportCSV(w http.ResponseWriter, r *http.Request, proute routes.Pro
 	d.Id = params.Id
 
 	csvContent, err := d.ExportCSV(tx)
+	if err != nil {
+		log.Println("Unable to export database")
+		userSqlError(w, err)
+		tx.Rollback()
+		return
+	}
+	err = tx.Commit()
 	if err != nil {
 		log.Println("Unable to export database")
 		userSqlError(w, err)
