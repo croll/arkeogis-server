@@ -40,13 +40,19 @@ import (
 )
 
 type CharacGetParams struct {
-	Id int `min:"1" error:"Charac Id is mandatory"`
+	Id         int `min:"1" error:"Charac Id is mandatory"`
+	Project_id int
 }
 
 type CharacListCsvParams struct {
 	Isocode string `json:"isocode"`
 	Name    string `json:"name"`
 	Dl      string `json:"dl"`
+}
+
+type CharacSetHiddensParams struct {
+	Id         int `min:"1" error:"Charac Id is mandatory"`
+	Project_id int
 }
 
 func init() {
@@ -73,7 +79,7 @@ func init() {
 		},
 		&routes.Route{
 			Path:        "/api/characs",
-			Description: "Create/Update a characlogie",
+			Description: "Create/Update a charac",
 			Func:        CharacsUpdate,
 			Method:      "POST",
 			Json:        reflect.TypeOf(CharacsUpdateStruct{}),
@@ -88,13 +94,21 @@ func init() {
 		},
 		&routes.Route{
 			Path:        "/api/characs/{id:[0-9]+}",
-			Description: "Delete a characlogie",
+			Description: "Delete a charac",
 			Func:        CharacsDelete,
 			Method:      "DELETE",
 			Permissions: []string{
 				"adminusers",
 			},
 			Params: reflect.TypeOf(CharacGetParams{}),
+		},
+		&routes.Route{
+			Path:        "/api/characs/{id:[0-9]+}/hiddens/{project_id:[0-9]+}",
+			Description: "",
+			Func:        CharacSetHiddens,
+			Method:      "POST",
+			Params:      reflect.TypeOf(CharacSetHiddensParams{}),
+			Json:        reflect.TypeOf(CharacSetHiddensStruct{}),
 		},
 	}
 	routes.RegisterMultiple(Routes)
@@ -206,6 +220,7 @@ type CharacTreeStruct struct {
 	Name        map[string]string  `json:"name"`
 	Description map[string]string  `json:"description"`
 	Content     []CharacTreeStruct `json:"content"`
+	Hidden      bool               `json:"hidden"`
 }
 
 // CharacsUpdateStruct structure (json)
@@ -471,7 +486,7 @@ func CharacsUpdate(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 		}
 	}
 
-	answer, err := characsGetTree(w, tx, c.Id, user)
+	answer, err := characsGetTree(w, tx, c.Id, 0, user)
 
 	// commit...
 	err = tx.Commit()
@@ -490,23 +505,7 @@ func CharacsUpdate(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 	w.Write(j)
 }
 
-/*
-type CharacTreeStruct struct {
-	model.Charac
-	Name        map[string]string      `json:"name"`
-	Description map[string]string      `json:"description"`
-	Content     []CharacTreeStruct `json:"content"`
-}
-
-// CharacsUpdateStruct structure (json)
-type CharacsUpdateStruct struct {
-	model.Charac_root
-	CharacTreeStruct
-	UsersInGroup []model.User `json:"users_in_group"` // read-only, used to display users of the group
-}
-*/
-
-func getCharacRecursive(tx *sqlx.Tx, charac *CharacTreeStruct) error {
+func getCharacRecursive(tx *sqlx.Tx, charac *CharacTreeStruct, project_id int) error {
 	var err error = nil
 
 	// load translations
@@ -518,6 +517,16 @@ func getCharacRecursive(tx *sqlx.Tx, charac *CharacTreeStruct) error {
 	charac.Name = model.MapSqlTranslations(tr, "Lang_isocode", "Name")
 	charac.Description = model.MapSqlTranslations(tr, "Lang_isocode", "Description")
 
+	// check if enabled in project
+	if project_id > 0 {
+		hiddenCount := 0
+		tx.Get(&hiddenCount, "SELECT count(*) FROM project_hidden_characs WHERE project_id = "+strconv.Itoa(project_id)+" AND charac_id = "+strconv.Itoa(charac.Id))
+		if hiddenCount > 0 {
+			charac.Hidden = true
+			log.Println("found hidden : ", charac.Id)
+		}
+	}
+
 	// get the childs of this charac from the db
 	childs, err := charac.Charac.Childs(tx)
 	if err != nil {
@@ -528,7 +537,7 @@ func getCharacRecursive(tx *sqlx.Tx, charac *CharacTreeStruct) error {
 	charac.Content = make([]CharacTreeStruct, len(childs))
 	for i, child := range childs {
 		charac.Content[i].Charac = child
-		err = getCharacRecursive(tx, &charac.Content[i])
+		err = getCharacRecursive(tx, &charac.Content[i], project_id)
 		if err != nil {
 			return err
 		}
@@ -537,7 +546,7 @@ func getCharacRecursive(tx *sqlx.Tx, charac *CharacTreeStruct) error {
 	return nil
 }
 
-func characsGetTree(w http.ResponseWriter, tx *sqlx.Tx, id int, user model.User) (answer *CharacsUpdateStruct, err error) {
+func characsGetTree(w http.ResponseWriter, tx *sqlx.Tx, id int, project_id int, user model.User) (answer *CharacsUpdateStruct, err error) {
 
 	// answer structure that will be printed when everything is done
 	answer = &CharacsUpdateStruct{}
@@ -561,7 +570,7 @@ func characsGetTree(w http.ResponseWriter, tx *sqlx.Tx, id int, user model.User)
 	}
 
 	// now get the charac translations and all childrens
-	err = getCharacRecursive(tx, &answer.CharacTreeStruct)
+	err = getCharacRecursive(tx, &answer.CharacTreeStruct, project_id)
 	if err != nil {
 		userSqlError(w, err)
 		_ = tx.Rollback()
@@ -634,7 +643,7 @@ func CharacsGetTree(w http.ResponseWriter, r *http.Request, proute routes.Proute
 		return
 	}
 
-	answer, err := characsGetTree(w, tx, params.Id, user)
+	answer, err := characsGetTree(w, tx, params.Id, params.Project_id, user)
 
 	// commit...
 	err = tx.Commit()
@@ -708,7 +717,7 @@ func CharacsDelete(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 	}
 
 	// get the full characlogie tree
-	answer, err := characsGetTree(w, tx, params.Id, user)
+	answer, err := characsGetTree(w, tx, params.Id, 0, user)
 
 	// delete charac_root
 	err = answer.Charac_root.Delete(tx)
@@ -753,6 +762,66 @@ func CharacsDelete(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 		userSqlError(w, err)
 		_ = tx.Rollback()
 		return
+	}
+
+	// commit...
+	err = tx.Commit()
+	if err != nil {
+		log.Println("commit failed")
+		userSqlError(w, err)
+		_ = tx.Rollback()
+		return
+	}
+}
+
+// CharacSetHiddensStruct structure (json)
+type CharacSetHiddensStruct struct {
+	HiddenIds []int `json:"hidden_ids"`
+}
+
+func CharacSetHiddens(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+	params := proute.Params.(*CharacSetHiddensParams)
+	c := proute.Json.(*CharacSetHiddensStruct)
+
+	log.Println("c: ", c)
+
+	// transaction begin...
+	tx, err := db.DB.Beginx()
+	if err != nil {
+		userSqlError(w, err)
+		return
+	}
+
+	// get the user
+	_user, ok := proute.Session.Get("user")
+	if !ok {
+		log.Println("CharacsUpdate: can't get user in session...", _user)
+		_ = tx.Rollback()
+		return
+	}
+
+	user, ok := _user.(model.User)
+	if !ok {
+		log.Println("CharacsUpdate: can't cast user...", _user)
+		_ = tx.Rollback()
+		return
+	}
+
+	// check if the user is the owner of the project
+	count := 0
+	tx.Get(&count, "SELECT count(*) FROM project WHERE id = "+strconv.Itoa(params.Project_id)+" AND user_id = "+strconv.Itoa(user.Id))
+	if count != 1 {
+		log.Println("CharacSetHiddens: user is not the owner...", user, params.Project_id)
+		_ = tx.Rollback()
+		return
+	}
+
+	// delete previous settings
+	tx.Exec("DELETE FROM project_hidden_characs WHERE project_id = " + strconv.Itoa(params.Project_id))
+
+	for _, id := range c.HiddenIds {
+		log.Println("deleting: ", id)
+		tx.Exec("INSERT INTO project_hidden_characs (project_id, charac_id) VALUES (" + strconv.Itoa(params.Project_id) + "," + strconv.Itoa(id) + ")")
 	}
 
 	// commit...
