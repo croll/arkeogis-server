@@ -171,7 +171,7 @@
 <part>id</part>
 </key>
 </table>
-<table x="1343" y="887" name="chronology">
+<table x="1341" y="894" name="chronology">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
@@ -198,7 +198,7 @@
 <part>id</part>
 </key>
 </table>
-<table x="1504" y="887" name="chronology_tr">
+<table x="1508" y="897" name="chronology_tr">
 <row name="lang_isocode" null="0" autoincrement="0">
 <datatype>CHAR(2)</datatype>
 <relation table="lang" row="isocode" />
@@ -344,6 +344,9 @@
 <row name="updated_at" null="0" autoincrement="0">
 <datatype>TIMESTAMP</datatype>
 </row>
+<row name="altitude" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<default>-999999</default></row>
 <key type="PRIMARY" name="">
 <part>id</part>
 </key>
@@ -1224,7 +1227,7 @@
 <part>root_charac_id</part>
 </key>
 </table>
-<table x="1345" y="704" name="chronology_root">
+<table x="1345" y="701" name="chronology_root">
 <row name="root_chronology_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="chronology" row="id" />
@@ -1245,6 +1248,9 @@
 <default>'false'</default></row>
 <row name="geom" null="0" autoincrement="0">
 <datatype>VARCHAR(POLYGON)</datatype>
+</row>
+<row name="cached_langs" null="0" autoincrement="0">
+<datatype>TEXT</datatype>
 </row>
 <key type="PRIMARY" name="">
 <part>root_chronology_id</part>
