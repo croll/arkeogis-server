@@ -107,7 +107,7 @@ func (u *Charac) Childs(tx *sqlx.Tx) (answer []Charac, err error) {
 
 // Get the charac_root from the database
 func (u *Charac_root) Get(tx *sqlx.Tx) (err error) {
-	var q = "SELECT root_charac_id, admin_group_id FROM \"charac_root\" WHERE root_charac_id=:root_charac_id"
+	var q = "SELECT root_charac_id, admin_group_id, cached_langs FROM \"charac_root\" WHERE root_charac_id=:root_charac_id"
 	stmt, err := tx.PrepareNamed(q)
 	if err != nil {
 		if err != nil {
@@ -126,7 +126,7 @@ func (u *Charac_root) Get(tx *sqlx.Tx) (err error) {
 // Create the charac_root by inserting it in the database
 func (u *Charac_root) Create(tx *sqlx.Tx) (err error) {
 	//stmt, err := tx.PrepareNamed("INSERT INTO \"charac_root\" (" + Charac_root_InsertStr + ", root_charac_id) VALUES (" + Charac_root_InsertValuesStr + ", :root_charac_id) RETURNING root_charac_id")
-	stmt, err := tx.PrepareNamed("INSERT INTO \"charac_root\" (\"admin_group_id\", root_charac_id) VALUES (:admin_group_id, :root_charac_id) RETURNING root_charac_id")
+	stmt, err := tx.PrepareNamed("INSERT INTO \"charac_root\" (\"admin_group_id\", root_charac_id, cached_langs) VALUES (:admin_group_id, :root_charac_id, :cached_langs) RETURNING root_charac_id")
 	if err != nil {
 		if err != nil {
 			err = errors.New("model.charac_root::Create" + err.Error())
@@ -142,7 +142,7 @@ func (u *Charac_root) Create(tx *sqlx.Tx) (err error) {
 
 // Update the charac_root in the database
 func (u *Charac_root) Update(tx *sqlx.Tx) (err error) {
-	_, err = tx.NamedExec("UPDATE \"charac_root\" SET \"admin_group_id\" = :admin_group_id WHERE root_charac_id=:root_charac_id", u)
+	_, err = tx.NamedExec("UPDATE \"charac_root\" SET \"admin_group_id\" = :admin_group_id, cached_langs = :cached_langs WHERE root_charac_id=:root_charac_id", u)
 	if err != nil {
 		err = errors.New("model.charac_root::Update" + err.Error())
 	}
