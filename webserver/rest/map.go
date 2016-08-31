@@ -364,49 +364,7 @@ func mapGetSitesAsJson(sites []int, tx *sqlx.Tx) string {
 	q += `			) characs`
 	q += `	   	FROM site_range sr WHERE sr.site_id = s.id) q_src`
 	q += `	)`
-	q += `	 FROM (SELECT si.id, si.code, si.name, si.centroid, si.occupation, d.name as database_name FROM site si LEFT JOIN database d ON si.database_id = d.id WHERE si.id = s.id) site_infos`
-	q += `)`
-	q += `|| '}}'`
-	q += ` FROM site s WHERE s.id IN (` + model.IntJoin(sites, true) + `)`
-
-	err := tx.Select(&jsonResult, q)
-
-	elapsed := time.Since(start)
-	fmt.Printf("mapGetSitesAsJson took %s", elapsed)
-
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-
-	jsonString := `{"type": "FeatureCollection", "features": [` + strings.Join(jsonResult, ",") + `]}`
-
-	return jsonString
-}
-
-func mapGetSiteFullInfoAsJson(sites []int, tx *sqlx.Tx) string {
-
-	// for measuring execution time
-	start := time.Now()
-
-	var jsonResult []string
-
-	q := `SELECT '{"type": "Feature", ' ||`
-	q += `'"geometry": {"type": "Point", "coordinates": [' || (`
-	q += `	SELECT ST_X(geom::geometry) || ', ' || ST_Y(geom::geometry) AS coordinates FROM site WHERE id = s.id`
-	q += `) || ']}, ' ||`
-	q += `'"properties": {"infos": ' || (`
-	q += `	SELECT row_to_json(site_infos) || ',' || `
-	q += `	'"site_ranges": ' || (`
-	q += `		SELECT  array_to_json(array_agg(row_to_json(q_src))) FROM (`
-	q += `			SELECT *,`
-	q += `			(`
-	q += `				SELECT array_to_json(array_agg(row_to_json(q_src2))) FROM (`
-	q += `					SELECT src.*, srctr.comment, srctr.bibliography FROM site_range__charac src LEFT JOIN site_range__charac_tr srctr ON src.id = srctr.site_range__charac_id WHERE src.site_range_id IN (SELECT site_range_id FROM site_range__charac WHERE site_range_id = sr.id)`
-	q += `				) q_src2`
-	q += `			) characs`
-	q += `	   	FROM site_range sr WHERE sr.site_id = s.id) q_src`
-	q += `	)`
-	q += `	 FROM (SELECT si.code, si.name, si.city_name, si.city_geonameid, si.centroid, si.occupation, si.created_at, si.updated_at, d.name as database_name FROM site si LEFT JOIN database d ON si.database_id = d.id WHERE si.id = s.id) site_infos`
+	q += `	 FROM (SELECT si.id, si.code, si.name, si.centroid, si.occupation, d.id AS database_id, d.name as database_name FROM site si LEFT JOIN database d ON si.database_id = d.id WHERE si.id = s.id) site_infos`
 	q += `)`
 	q += `|| '}}'`
 	q += ` FROM site s WHERE s.id IN (` + model.IntJoin(sites, true) + `)`
