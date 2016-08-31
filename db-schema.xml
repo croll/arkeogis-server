@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- SQL XML created by WWW SQL Designer, https://github.com/ondras/wwwsqldesigner/ -->
-<!-- Active URL: https://www.croll.fr/sqldesigner/ -->
+<!-- Active URL: https://croll.fr/sqldesigner/ -->
 <sql>
 <datatypes db="postgresql">
 	<group label="Numeric" color="rgb(238,238,170)">
@@ -1208,7 +1208,7 @@
 <part>id</part>
 </key>
 </table>
-<table x="1352" y="416" name="charac_root">
+<table x="1353" y="387" name="charac_root">
 <row name="root_charac_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="charac" row="id" />
@@ -1216,6 +1216,9 @@
 <row name="admin_group_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="group" row="id" />
+</row>
+<row name="cached_langs" null="0" autoincrement="0">
+<datatype>TEXT</datatype>
 </row>
 <key type="PRIMARY" name="">
 <part>root_charac_id</part>
