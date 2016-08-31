@@ -18,6 +18,7 @@ type Charac struct {
 type Charac_root struct {
 	Root_charac_id	int	`db:"root_charac_id" json:"root_charac_id"`	// Charac.Id
 	Admin_group_id	int	`db:"admin_group_id" json:"admin_group_id"`	// Group.Id
+	Cached_langs	string	`db:"cached_langs" json:"cached_langs"`
 }
 
 
@@ -624,9 +625,9 @@ const Photo_UpdateStr = "\"photo\" = :photo"
 const Database_context_InsertStr = "\"database_id\", \"context\""
 const Database_context_InsertValuesStr = ":database_id, :context"
 const Database_context_UpdateStr = "\"database_id\" = :database_id, \"context\" = :context"
-const Charac_root_InsertStr = "\"admin_group_id\""
-const Charac_root_InsertValuesStr = ":admin_group_id"
-const Charac_root_UpdateStr = "\"admin_group_id\" = :admin_group_id"
+const Charac_root_InsertStr = "\"admin_group_id\", \"cached_langs\""
+const Charac_root_InsertValuesStr = ":admin_group_id, :cached_langs"
+const Charac_root_UpdateStr = "\"admin_group_id\" = :admin_group_id, \"cached_langs\" = :cached_langs"
 const Chronology_root_InsertStr = "\"admin_group_id\", \"author_user_id\", \"credits\", \"active\", \"geom\""
 const Chronology_root_InsertValuesStr = ":admin_group_id, :author_user_id, :credits, :active, :geom"
 const Chronology_root_UpdateStr = "\"admin_group_id\" = :admin_group_id, \"author_user_id\" = :author_user_id, \"credits\" = :credits, \"active\" = :active, \"geom\" = :geom"
