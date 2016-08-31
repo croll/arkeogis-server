@@ -476,6 +476,7 @@ func CharacsUpdate(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 		//characroot.Geom = c.Charac_root.Geom
 		//characroot.Author_user_id = c.Charac_root.Author_user_id
 		//characroot.Admin_group_id = c.Charac_root.Admin_group_id
+		characroot.Cached_langs = c.Charac_root.Cached_langs
 
 		err = characroot.Update(tx)
 		if err != nil {
