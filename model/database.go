@@ -587,7 +587,7 @@ func (d *Database) CacheGeom(tx *sqlx.Tx) (err error) {
 
 // CacheDates get database sites extend and cache enveloppe
 func (d *Database) CacheDates(tx *sqlx.Tx) (err error) {
-	_, err = tx.NamedExec("UPDATE database SET start_date = (SELECT min(start_date1) FROM site_range WHERE site_id IN (SELECT id FROM site where database_id = :id) AND start_date1 != -2147483648), end_date = (SELECT max(end_date2) FROM site_range WHERE site_id IN (SELECT id FROM site where database_id = :id) AND end_date2 != 2147483647) WHERE id = :id", d)
+	_, err = tx.NamedExec("UPDATE database SET start_date = (SELECT COALESCE(min(start_date1),-2147483648) FROM site_range WHERE site_id IN (SELECT id FROM site where database_id = :id) AND start_date1 != -2147483648), end_date = (SELECT COALESCE(max(end_date2),2147483647) FROM site_range WHERE site_id IN (SELECT id FROM site where database_id = :id) AND end_date2 != 2147483647) WHERE id = :id", d)
 	if err != nil {
 		err = errors.New("database::CheckDates: " + err.Error())
 	}
