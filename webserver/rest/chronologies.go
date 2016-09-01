@@ -462,6 +462,7 @@ func ChronologiesUpdate(w http.ResponseWriter, r *http.Request, proute routes.Pr
 		chronoroot.Geom = c.Chronology_root.Geom
 		chronoroot.Author_user_id = c.Chronology_root.Author_user_id
 		//chronoroot.Admin_group_id = c.Chronology_root.Admin_group_id
+		chronoroot.Cached_langs = c.Chronology_root.Cached_langs
 
 		err = chronoroot.Update(tx)
 		if err != nil {
