@@ -308,7 +308,7 @@ type Photo struct {
 
 
 type Project struct {
-	Id	int	`db:"id" json:"id"`
+	Id	int	`db:"id" json:"id"`	// Project__charac.Project_id
 	Name	string	`db:"name" json:"name" min:"1" error:"PROJECT.FIELD_NAME.T_CHECK_MANDATORY" max:"255" error:"PROJECT.FIELD_NAME.T_CHECK_INCORRECT"`
 	User_id	int	`db:"user_id" json:"user_id"`	// User.Id
 	Created_at	time.Time	`db:"created_at" json:"created_at"`
@@ -319,13 +319,19 @@ type Project struct {
 }
 
 
+type Project__charac struct {
+	Project_id	int	`db:"project_id" json:"project_id"`
+	Root_charac_id	int	`db:"root_charac_id" json:"root_charac_id"`	// Charac.Id
+}
+
+
 type Project__chronology struct {
 	Project_id	int	`db:"project_id" json:"project_id"`	// Project.Id
 	Root_chronology_id	int	`db:"root_chronology_id" json:"root_chronology_id"`	// Chronology.Id
 }
 
 
-type Project__databases struct {
+type Project__database struct {
 	Project_id	int	`db:"project_id" json:"project_id"`	// Project.Id
 	Database_id	int	`db:"database_id" json:"database_id"`	// Database.Id
 }
@@ -546,9 +552,9 @@ const Shapefile_UpdateStr = "\"creator_user_id\" = :creator_user_id, \"filename\
 const Shapefile_tr_InsertStr = "\"name\", \"attribution\", \"copyright\", \"description\""
 const Shapefile_tr_InsertValuesStr = ":name, :attribution, :copyright, :description"
 const Shapefile_tr_UpdateStr = "\"name\" = :name, \"attribution\" = :attribution, \"copyright\" = :copyright, \"description\" = :description"
-const Project__databases_InsertStr = ""
-const Project__databases_InsertValuesStr = ""
-const Project__databases_UpdateStr = ""
+const Project__database_InsertStr = ""
+const Project__database_InsertValuesStr = ""
+const Project__database_UpdateStr = ""
 const Project__map_layer_InsertStr = ""
 const Project__map_layer_InsertValuesStr = ""
 const Project__map_layer_UpdateStr = ""
@@ -636,3 +642,6 @@ const Chronology_root_UpdateStr = "\"admin_group_id\" = :admin_group_id, \"autho
 const Map_layer__authors_InsertStr = ""
 const Map_layer__authors_InsertValuesStr = ""
 const Map_layer__authors_UpdateStr = ""
+const Project__charac_InsertStr = ""
+const Project__charac_InsertValuesStr = ""
+const Project__charac_UpdateStr = ""

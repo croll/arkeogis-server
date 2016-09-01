@@ -289,7 +289,7 @@ func (d *Database) Delete(tx *sqlx.Tx) (err error) {
 		return
 	}
 
-	_, err = tx.NamedExec("DELETE FROM \"project__databases\" WHERE database_id=:id", d)
+	_, err = tx.NamedExec("DELETE FROM \"project__database\" WHERE database_id=:id", d)
 	if err != nil {
 		return
 	}
@@ -598,7 +598,7 @@ func (d *Database) CacheDates(tx *sqlx.Tx) (err error) {
 func (d *Database) IsLinkedToProject(tx *sqlx.Tx, project_ID int) (linked bool, err error) {
 	linked = false
 	c := 0
-	err = tx.Get(&c, "SELECT count(*) FROM project__databases WHERE project_id = $1 AND database_id = $2", project_ID, d.Id)
+	err = tx.Get(&c, "SELECT count(*) FROM project__database WHERE project_id = $1 AND database_id = $2", project_ID, d.Id)
 	if c > 0 {
 		linked = true
 	}
@@ -607,7 +607,7 @@ func (d *Database) IsLinkedToProject(tx *sqlx.Tx, project_ID int) (linked bool, 
 
 // LinkToUserProject links database to project
 func (d *Database) LinkToUserProject(tx *sqlx.Tx, project_ID int) (err error) {
-	_, err = tx.Exec("INSERT INTO project__databases (project_id, database_id) VALUES ($1, $2)", project_ID, d.Id)
+	_, err = tx.Exec("INSERT INTO project__database (project_id, database_id) VALUES ($1, $2)", project_ID, d.Id)
 	return
 }
 

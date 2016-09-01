@@ -187,7 +187,14 @@ func SaveProject(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 			userSqlError(w, err)
 			return
 		}
-		_, err = tx.NamedExec("DELETE FROM \"project__databases\" WHERE project_id=:id", params)
+		_, err = tx.NamedExec("DELETE FROM \"project__charac\" WHERE project_id=:id", params)
+		if err != nil {
+			log.Println("Save Project: Error deleting project__charac", err)
+			_ = tx.Rollback()
+			userSqlError(w, err)
+			return
+		}
+		_, err = tx.NamedExec("DELETE FROM \"project__database\" WHERE project_id=:id", params)
 		if err != nil {
 			log.Println("Save Project: Error deleting project__database", err)
 			_ = tx.Rollback()
@@ -209,7 +216,6 @@ func SaveProject(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 			return
 		}
 	}
-
 	// Insert chronologies
 
 	stmtChronos, err := tx.PrepareNamed("INSERT INTO \"project__chronology\" (project_id, root_chronology_id) VALUES (:project_id, :id)")
@@ -225,6 +231,29 @@ func SaveProject(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 			Id         int
 			Project_id int
 		}{Id: chronoId, Project_id: params.Id})
+		if err != nil {
+			log.Println(err)
+			_ = tx.Rollback()
+			userSqlError(w, err)
+			return
+		}
+	}
+
+	// Insert characs
+
+	stmtCharacs, err := tx.PrepareNamed("INSERT INTO \"project__charac\" (project_id, root_charac_id) VALUES (:project_id, :id)")
+	if err != nil {
+		log.Println("Save Project: Error inserting chronologies", err)
+		_ = tx.Rollback()
+		userSqlError(w, err)
+		return
+	}
+
+	for _, characId := range params.Characs {
+		_, err = stmtCharacs.Exec(struct {
+			Id         int
+			Project_id int
+		}{Id: characId, Project_id: params.Id})
 		if err != nil {
 			log.Println(err)
 			_ = tx.Rollback()
@@ -271,9 +300,9 @@ func SaveProject(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		}
 	}
 
-	// Insert chronologies
+	// Insert databases
 
-	stmtDatabases, err := tx.PrepareNamed("INSERT INTO \"project__databases\" (project_id, database_id) VALUES (:project_id, :id)")
+	stmtDatabases, err := tx.PrepareNamed("INSERT INTO \"project__database\" (project_id, database_id) VALUES (:project_id, :id)")
 	if err != nil {
 		log.Println("Save Project: Error inserting databases", err)
 		_ = tx.Rollback()

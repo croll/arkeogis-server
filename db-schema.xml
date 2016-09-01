@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- SQL XML created by WWW SQL Designer, https://github.com/ondras/wwwsqldesigner/ -->
-<!-- Active URL: https://croll.fr/sqldesigner/ -->
+<!-- Active URL: https://www.croll.fr/sqldesigner/ -->
 <sql>
 <datatypes db="postgresql">
 	<group label="Numeric" color="rgb(238,238,170)">
@@ -143,6 +143,7 @@
 <table x="1114" y="174" name="project">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
+<relation table="project__charac" row="project_id" />
 </row>
 <row name="name" null="0" autoincrement="0">
 <datatype>VARCHAR(255)</datatype>
@@ -218,7 +219,7 @@
 <part>lang_isocode</part>
 </key>
 </table>
-<table x="1086" y="778" name="project__chronology">
+<table x="1072" y="813" name="project__chronology">
 <row name="project_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="project" row="id" />
@@ -726,7 +727,7 @@
 <part>lang_isocode</part>
 </key>
 </table>
-<table x="1075" y="905" name="project__databases">
+<table x="1075" y="905" name="project__database">
 <row name="project_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="project" row="id" />
@@ -1227,7 +1228,7 @@
 <part>root_charac_id</part>
 </key>
 </table>
-<table x="1345" y="701" name="chronology_root">
+<table x="1345" y="697" name="chronology_root">
 <row name="root_chronology_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="chronology" row="id" />
@@ -1267,6 +1268,19 @@
 <key type="PRIMARY" name="">
 <part>user_id</part>
 <part>map_layer_id</part>
+</key>
+</table>
+<table x="1079" y="1190" name="project__charac">
+<row name="project_id" null="1" autoincrement="1">
+<datatype>INTEGER</datatype>
+<default>NULL</default></row>
+<row name="root_charac_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="charac" row="id" />
+</row>
+<key type="PRIMARY" name="">
+<part>project_id</part>
+<part>root_charac_id</part>
 </key>
 </table>
 </sql>

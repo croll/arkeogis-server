@@ -45,7 +45,10 @@ type ProjectFullInfos struct {
 	Chronologies []struct {
 		Root_chronology_id int `json:"id"`
 	} `json:"chronologies"`
-	Layers    []ProjectLayerInfos `json:"layers"`
+	Layers  []ProjectLayerInfos `json:"layers"`
+	Characs []struct {
+		Root_charac_id int `json:"id"`
+	} `json:"characs"`
 	Databases []struct {
 		Database_id int `json:"id"`
 	} `json:"databases"`
@@ -67,8 +70,15 @@ func (pfi *ProjectFullInfos) Get(tx *sqlx.Tx) (err error) {
 		return
 	}
 
+	// Characs
+	err = tx.Select(&pfi.Characs, "SELECT root_charac_id from project__charac WHERE project_id = $1", pfi.Id)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
 	// Databases
-	err = tx.Select(&pfi.Databases, "SELECT database_id from project__databases WHERE project_id = $1", pfi.Id)
+	err = tx.Select(&pfi.Databases, "SELECT database_id from project__database WHERE project_id = $1", pfi.Id)
 	if err != nil {
 		log.Println(err)
 		return
