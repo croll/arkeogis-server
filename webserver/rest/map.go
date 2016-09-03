@@ -356,7 +356,7 @@ func mapGetSitesAsJson(sites []int, tx *sqlx.Tx) string {
 	q += `	SELECT row_to_json(site_infos) || ',' || `
 	q += `	'"site_ranges": ' || (`
 	q += `		SELECT  array_to_json(array_agg(row_to_json(q_src))) FROM (`
-	q += `			SELECT `
+	q += `			SELECT start_date1 as start_date, end_date2 as end_date, `
 	q += `			(`
 	q += `				SELECT array_to_json(array_agg(row_to_json(q_src2))) FROM (`
 	q += `					SELECT src.* FROM site_range__charac src WHERE src.site_range_id IN (SELECT site_range_id FROM site_range__charac WHERE site_range_id = sr.id)`
