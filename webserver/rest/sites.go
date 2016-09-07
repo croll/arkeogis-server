@@ -84,7 +84,7 @@ func GetSite(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	q += `			) characs`
 	q += `	   	FROM site_range sr WHERE sr.site_id = s.id) q_src`
 	q += `	)`
-	q += `	 FROM (SELECT si.code, si.name, si.city_name, si.city_geonameid, si.centroid, si.occupation, si.altitude, si.created_at, si.updated_at, d.name as database_name, (SELECT array_to_json(array_agg(row_to_json(d_src))) FROM (SELECT firstname || ' ' || lastname as fullname FROM "user" u LEFT JOIN database__authors da ON u.id = da.user_id WHERE da.database_id = 43) d_src) as authors FROM site si LEFT JOIN database d ON si.database_id = d.id WHERE si.id = s.id) site_infos`
+	q += `	 FROM (SELECT si.code, si.name, si.city_name, si.city_geonameid, si.centroid, si.occupation, si.altitude, si.created_at, si.updated_at, d.name as database_name, (SELECT array_to_json(array_agg(row_to_json(d_src))) FROM (SELECT firstname || ' ' || lastname as fullname FROM "user" u LEFT JOIN database__authors da ON u.id = da.user_id WHERE da.database_id = si.database_id) d_src) as authors FROM site si LEFT JOIN database d ON si.database_id = d.id WHERE si.id = s.id) site_infos`
 	q += `)`
 	q += `|| '}}'`
 	q += ` FROM site s WHERE s.id = ($1)`
