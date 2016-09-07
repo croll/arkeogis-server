@@ -110,7 +110,7 @@ type MapSearchParams struct {
 	Centroid   map[string]bool            `json:"centroid"`
 	Knowledge  map[string]bool            `json:"knowledge"`
 	Occupation map[string]bool            `json:"occupation"`
-	Database   map[string]map[string]bool `json:"database"`
+	Database   []int                      `json:"database"`
 	Chronology map[string]map[string]bool `json:"chronology"`
 	Charac     map[string]map[string]bool `json:"charac"`
 }
@@ -142,39 +142,9 @@ func MapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	filters.AddFilter("database_published", `"database".published = true`)
 
 	// add database filter
-	for iddb, subfilters := range params.Database {
-		if strings.HasPrefix(iddb, "type:") {
-			var dbtype = strings.Replace(iddb, "type:", "", 1)
-			if dbtype == "inventory" || dbtype == "research" || dbtype == "literary-work" || dbtype == "undefined" {
-				for subfilter, yesno := range subfilters {
-					if subfilter == "inclorexcl" {
-						var compare string
-						if yesno {
-							compare = "="
-						} else {
-							compare = "!="
-						}
-						filters.AddTable("database")
-						filters.AddFilter("database", `"database".type" `+compare+` '`+dbtype+`'`)
-					}
-				}
-			}
-		} else {
-			id, err := strconv.Atoi(iddb)
-			if err == nil {
-				for subfilter, yesno := range subfilters {
-					if subfilter == "inclorexcl" {
-						var compare string
-						if yesno {
-							compare = "="
-						} else {
-							compare = "!="
-						}
-						filters.AddFilter("database", `"site".database_id `+compare+` `+strconv.Itoa(id))
-					}
-				}
-			}
-		}
+	fmt.Println("database: ", params.Database)
+	for _, iddb := range params.Database {
+		filters.AddFilter("database", `"site".database_id = `+strconv.Itoa(iddb))
 	}
 
 	// add centroid filter
