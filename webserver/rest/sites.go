@@ -79,7 +79,10 @@ func GetSite(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	q += `			SELECT *,`
 	q += `			(`
 	q += `				SELECT array_to_json(array_agg(row_to_json(q_src2))) FROM (`
-	q += `					SELECT src.*, srctr.comment, srctr.bibliography FROM site_range__charac src LEFT JOIN site_range__charac_tr srctr ON src.id = srctr.site_range__charac_id WHERE src.site_range_id IN (SELECT site_range_id FROM site_range__charac WHERE site_range_id = sr.id)`
+	q += `					SELECT src.charac_id as id, src.exceptional, src.knowledge_type, srctr.comment, srctr.bibliography `
+	// // q += `					(SELECT row_to_json(q_src3) FROM (SELECT comment FROM site_range__charac_tr WHERE site_range__charac_id = src.id) q_src3) as comment, `
+	// q += `					(SELECT row_to_json(q_src4) FROM (SELECT bibliography FROM site_range__charac_tr WHERE site_range__charac_id = src.id) q_src4) as bibliography `
+	q += `                  FROM site_range__charac src LEFT JOIN site_range__charac_tr srctr ON src.id = srctr.site_range__charac_id WHERE src.site_range_id IN (SELECT site_range_id FROM site_range__charac WHERE site_range_id = sr.id)`
 	q += `				) q_src2`
 	q += `			) characs`
 	q += `	   	FROM site_range sr WHERE sr.site_id = s.id) q_src`
