@@ -52,11 +52,13 @@ func init() {
 type MapSqlQuery struct {
 	Tables        map[string]bool
 	GroupedWheres map[string][]string
+	Excludes      map[string][]string
 }
 
 func (sql *MapSqlQuery) Init() {
 	sql.Tables = map[string]bool{}
 	sql.GroupedWheres = make(map[string][]string)
+	sql.Excludes = make(map[string][]string)
 }
 
 func (sql *MapSqlQuery) AddTable(name string) {
@@ -73,11 +75,24 @@ func (sql *MapSqlQuery) AddFilter(filtergroup string, where string) {
 	}
 }
 
+func (sql *MapSqlQuery) AddExclude(tablename string, where string) {
+	if _, ok := sql.Excludes[tablename]; ok {
+		sql.Excludes[tablename] = append(sql.Excludes[tablename], where)
+	} else {
+		sql.Excludes[tablename] = []string{
+			where,
+		}
+	}
+}
+
 func (sql *MapSqlQuery) BuildQuery() string {
 	q := "SELECT site.id FROM site"
 
 	// dependences
 	if join, ok := sql.Tables["site_range__charac"]; ok && join {
+		sql.AddTable("site_range")
+	}
+	if excludes, ok := sql.Excludes["site_range__charac"]; ok && len(excludes) > 0 {
 		sql.AddTable("site_range")
 	}
 
@@ -91,6 +106,13 @@ func (sql *MapSqlQuery) BuildQuery() string {
 		q += ` LEFT JOIN "site_range__charac" ON "site_range__charac".site_range_id = "site_range".id`
 	}
 
+	if excludes, ok := sql.Excludes["site_range__charac"]; ok && len(excludes) > 0 {
+		q += ` LEFT JOIN "site_range__charac" "x_site_range__charac" ON "x_site_range__charac".site_range_id = "site_range".id`
+		for _, exclude := range excludes {
+			q += ` AND ` + exclude
+		}
+	}
+
 	q += " WHERE 1=1"
 	for _, groupfilters := range sql.GroupedWheres {
 		q += " AND ( 1=0 "
@@ -100,19 +122,34 @@ func (sql *MapSqlQuery) BuildQuery() string {
 		q += ")"
 	}
 
+	if excludes, ok := sql.Excludes["site_range__charac"]; ok && len(excludes) > 0 {
+		q += " AND x_site_range__charac.id is null"
+	}
+
 	q += " GROUP BY site.id"
 
 	return q
 }
 
+type MapSearchParamsChronology struct {
+	StartDate                int    `json:"start_date"`
+	EndDate                  int    `json:"end_date"`
+	ExistenceInsideInclude   string `json:"existence_inside_include"`
+	ExistenceInsidePart      string `json:"existence_inside_part"`
+	ExistenceInsideSureness  string `json:"existence_inside_sureness"`
+	ExistenceOutsideInclude  string `json:"existence_outside_include"`
+	ExistenceOutsideSureness string `json:"existence_outside_sureness"`
+	SelectedChronologyId     int    `json:"selected_chronology_id"`
+}
+
 // MapSearchParams is the query filter for searching sites
 type MapSearchParams struct {
-	Centroid   map[string]bool            `json:"centroid"`
-	Knowledge  map[string]bool            `json:"knowledge"`
-	Occupation map[string]bool            `json:"occupation"`
-	Database   []int                      `json:"database"`
-	Chronology map[string]map[string]bool `json:"chronology"`
-	Charac     map[string]map[string]bool `json:"charac"`
+	Centroid   map[string]bool             `json:"centroid"`
+	Knowledge  map[string]bool             `json:"knowledge"`
+	Occupation map[string]bool             `json:"occupation"`
+	Database   []int                       `json:"database"`
+	Chronology []MapSearchParamsChronology `json:"chronology"`
+	Characs    map[int]string              `json:"characs"`
 }
 
 // MapSearch search for sites using many filters
@@ -123,7 +160,7 @@ func MapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	params := proute.Json.(*MapSearchParams)
 
-	//fmt.Println("params: ", params)
+	fmt.Println("params: ", params)
 
 	tx, err := db.DB.Beginx()
 	if err != nil {
@@ -195,32 +232,32 @@ func MapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	}
 
 	// characs filters
-	for characidstr, subfilters := range params.Charac {
-		characid, _ := strconv.Atoi(characidstr)
-		q := "( 1=1 "
-		if yesno, ok := subfilters["inclorexcl"]; ok {
-			var compare string
-			if yesno {
-				compare = "="
-			} else {
-				compare = "!="
-			}
-			q += ` AND "site_range__charac".charac_id ` + compare + ` ` + strconv.Itoa(characid)
+	var includes []int
+	var excludes []int
+	q_exceptional := "1=1"
+	for characid, include := range params.Characs {
+		if include == "+" {
+			includes = append(includes, characid)
+		} else if include == "!" {
+			q_exceptional += " OR site_range__charac.charac_id=" + strconv.Itoa(characid) + " AND site_range__charac.exceptional=true"
+			excludes = append(excludes, characid)
+		} else if include == "-" {
+			excludes = append(excludes, characid)
 		}
-		if yesno, ok := subfilters["exceptional"]; ok {
-			var compare string
-			if yesno {
-				compare = "="
-			} else {
-				compare = "!="
-			}
-			q += ` AND "site_range__charac".exceptional ` + compare + ` true`
-		}
+	}
 
-		q += ")"
-
+	if len(includes) > 0 {
 		filters.AddTable("site_range__charac")
-		filters.AddFilter("charac", q)
+		filters.AddFilter("charac", `site_range__charac.charac_id IN (`+model.IntJoin(includes, true)+`)`)
+	}
+
+	if q_exceptional != "1=1" {
+		filters.AddTable("site_range__charac")
+		filters.AddFilter("charac", q_exceptional)
+	}
+
+	if len(excludes) > 0 {
+		filters.AddExclude("site_range__charac", "x_site_range__charac.charac_id IN ("+model.IntJoin(excludes, true)+")")
 	}
 
 	// chronologies filters
@@ -247,25 +284,27 @@ func MapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	*/
 
 	// chronologies filters
-	for chronocode, subfilters := range params.Chronology {
-		chronocode1 := strings.Split(chronocode, "#")
-		chronocode2 := strings.Split(chronocode1[1], ":")
+	/*
+		for chronocode, subfilters := range params.Chronology {
+			chronocode1 := strings.Split(chronocode, "#")
+			chronocode2 := strings.Split(chronocode1[1], ":")
 
-		//chronoid, _ := strconv.Atoi(chronocode1[0])
-		date_start, _ := strconv.Atoi(chronocode2[0])
-		date_end, _ := strconv.Atoi(chronocode2[1])
+			//chronoid, _ := strconv.Atoi(chronocode1[0])
+			date_start, _ := strconv.Atoi(chronocode2[0])
+			date_end, _ := strconv.Atoi(chronocode2[1])
 
-		if yesno, ok := subfilters["inclorexcl"]; ok {
-			var q string
-			if yesno {
-				q = `"site_range".start_date1 >= ` + strconv.Itoa(date_start) + ` AND "site_range".end_date2 <= ` + strconv.Itoa(date_end)
-			} else {
-				q = `"site_range".start_date2 < ` + strconv.Itoa(date_start) + ` AND "site_range".end_date1 > ` + strconv.Itoa(date_end)
+			if yesno, ok := subfilters["inclorexcl"]; ok {
+				var q string
+				if yesno {
+					q = `"site_range".start_date1 >= ` + strconv.Itoa(date_start) + ` AND "site_range".end_date2 <= ` + strconv.Itoa(date_end)
+				} else {
+					q = `"site_range".start_date2 < ` + strconv.Itoa(date_start) + ` AND "site_range".end_date1 > ` + strconv.Itoa(date_end)
+				}
+				filters.AddTable("site_range")
+				filters.AddFilter("chronology", q)
 			}
-			filters.AddTable("site_range")
-			filters.AddFilter("chronology", q)
 		}
-	}
+	*/
 
 	q := filters.BuildQuery()
 	fmt.Println("q: ", q)
@@ -304,11 +343,11 @@ func mapDebug(sites []int, tx *sqlx.Tx) {
 	err := tx.Select(&rows, "SELECT site.id, sr.start_date1, sr.start_date2, sr.end_date1, sr.end_date2 FROM site LEFT JOIN site_range sr ON sr.site_id = site.id WHERE site.id IN("+model.IntJoin(sites, true)+")")
 	if err != nil {
 		fmt.Println("err: ", err)
-	} else {
+	} /*else {
 		for _, r := range rows {
 			fmt.Println("r: ", r)
 		}
-	}
+	}*/
 }
 
 func mapGetSitesAsJson(sites []int, tx *sqlx.Tx) string {
