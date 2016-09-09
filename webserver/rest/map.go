@@ -345,52 +345,6 @@ func MapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		}
 	}
 
-	// chronologies filters
-	/*
-		for chronocode, subfilters := range params.Chronology {
-			chronocode1 := strings.Split(chronocode, "#")
-			chronocode2 := strings.Split(chronocode1[1], ":")
-
-			//chronoid, _ := strconv.Atoi(chronocode1[0])
-			date_start, _ := strconv.Atoi(chronocode2[0])
-			date_end, _ := strconv.Atoi(chronocode2[1])
-
-			if yesno, ok := subfilters["inclorexcl"]; ok {
-				q := `"site_range".start_date1 >= ` + strconv.Itoa(date_start) + ` AND "site_range".start_date2 <= ` + strconv.Itoa(date_start)
-				q += ` AND "site_range".end_date1 >= ` + strconv.Itoa(date_end) + ` AND "site_range".end_date2 <= ` + strconv.Itoa(date_end)
-				if yesno {
-				} else {
-					q = `NOT (` + q + `)`
-				}
-				filters.AddTable("site_range")
-				filters.AddFilter("chronology", q)
-			}
-		}
-	*/
-
-	// chronologies filters
-	/*
-		for chronocode, subfilters := range params.Chronology {
-			chronocode1 := strings.Split(chronocode, "#")
-			chronocode2 := strings.Split(chronocode1[1], ":")
-
-			//chronoid, _ := strconv.Atoi(chronocode1[0])
-			date_start, _ := strconv.Atoi(chronocode2[0])
-			date_end, _ := strconv.Atoi(chronocode2[1])
-
-			if yesno, ok := subfilters["inclorexcl"]; ok {
-				var q string
-				if yesno {
-					q = `"site_range".start_date1 >= ` + strconv.Itoa(date_start) + ` AND "site_range".end_date2 <= ` + strconv.Itoa(date_end)
-				} else {
-					q = `"site_range".start_date2 < ` + strconv.Itoa(date_start) + ` AND "site_range".end_date1 > ` + strconv.Itoa(date_end)
-				}
-				filters.AddTable("site_range")
-				filters.AddFilter("chronology", q)
-			}
-		}
-	*/
-
 	q := filters.BuildQuery()
 	fmt.Println("q: ", q)
 
