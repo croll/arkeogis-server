@@ -107,10 +107,18 @@ func (sql *MapSqlQuery) BuildQuery() string {
 	}
 
 	if excludes, ok := sql.Excludes["site_range__charac"]; ok && len(excludes) > 0 {
-		q += ` LEFT JOIN "site_range__charac" "x_site_range__charac" ON "x_site_range__charac".site_range_id = "site_range".id`
+		q += ` LEFT JOIN "site_range__charac" "x_site_range__charac" ON "x_site_range__charac".site_range_id = "site_range".id AND (1=0`
 		for _, exclude := range excludes {
-			q += ` AND ` + exclude
+			q += ` OR ` + exclude
 		}
+		q += ")"
+	}
+	if excludes, ok := sql.Excludes["site"]; ok && len(excludes) > 0 {
+		q += ` LEFT JOIN "site" "x_site" ON "x_site".id = "site".id AND (1=0`
+		for _, exclude := range excludes {
+			q += ` OR ` + exclude
+		}
+		q += ")"
 	}
 
 	q += " WHERE 1=1"
@@ -124,6 +132,10 @@ func (sql *MapSqlQuery) BuildQuery() string {
 
 	if excludes, ok := sql.Excludes["site_range__charac"]; ok && len(excludes) > 0 {
 		q += " AND x_site_range__charac.id is null"
+	}
+
+	if excludes, ok := sql.Excludes["site"]; ok && len(excludes) > 0 {
+		q += " AND x_site.id is null"
 	}
 
 	q += " GROUP BY site.id"
@@ -267,23 +279,34 @@ func MapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		var start_date_str = strconv.Itoa(chronology.StartDate)
 		var end_date_str = strconv.Itoa(chronology.EndDate)
 
+		var tblname string
+		if chronology.ExistenceInsideInclude == "+" {
+			tblname = "site"
+		} else if chronology.ExistenceInsideInclude == "-" {
+			tblname = "x_site"
+		} else {
+			log.Println("ExistenceInsideInclude is bad : ", chronology.ExistenceInsideInclude)
+			_ = tx.Rollback()
+			return
+		}
+
 		switch chronology.ExistenceInsideSureness {
 		case "potentially":
-			q += " AND start_date1 <= " + end_date_str + " AND end_date2 >= " + start_date_str
+			q += " AND " + tblname + ".start_date1 <= " + end_date_str + " AND " + tblname + ".end_date2 >= " + start_date_str
 			if chronology.ExistenceInsidePart == "full" {
-				q += " AND start_date1 >= " + start_date_str + " AND end_date2 <= " + end_date_str
+				q += " AND " + tblname + ".start_date1 >= " + start_date_str + " AND " + tblname + ".end_date2 <= " + end_date_str
 			}
 		case "certainly":
-			q += " AND start_date2 <= " + end_date_str + " AND end_date1 >= " + start_date_str
+			q += " AND " + tblname + ".start_date2 <= " + end_date_str + " AND " + tblname + ".end_date1 >= " + start_date_str
 			if chronology.ExistenceInsidePart == "full" {
-				q += " AND start_date2 >= " + start_date_str + " AND end_date1 <= " + end_date_str
+				q += " AND " + tblname + ".start_date2 >= " + start_date_str + " AND " + tblname + ".end_date1 <= " + end_date_str
 			}
 		case "potentially-only":
-			q += " AND start_date1 <= " + end_date_str + " AND end_date2 >= " + start_date_str
-			q += " AND start_date2 > " + end_date_str + " AND end_date1 < " + start_date_str
+			q += " AND " + tblname + ".start_date1 <= " + end_date_str + " AND " + tblname + ".end_date2 >= " + start_date_str
+			q += " AND " + tblname + ".start_date2 > " + end_date_str + " AND " + tblname + ".end_date1 < " + start_date_str
 
 			if chronology.ExistenceInsidePart == "full" {
-				q += " AND start_date1 >= " + start_date_str + " AND end_date2 <= " + end_date_str
+				q += " AND " + tblname + ".start_date1 >= " + start_date_str + " AND " + tblname + ".end_date2 <= " + end_date_str
 			}
 		}
 
@@ -293,19 +316,23 @@ func MapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		case "+": // it must
 			switch chronology.ExistenceOutsideSureness {
 			case "potentially":
-				q += " AND (start_date2 < " + start_date_str + " OR end_date1 >= " + end_date_str + ")"
+				q += " AND (" + tblname + ".start_date2 < " + start_date_str + " OR " + tblname + ".end_date1 >= " + end_date_str + ")"
 			case "certainly":
-				q += " AND (start_date1 < " + start_date_str + " OR end_date1 >= " + end_date_str + ")"
+				q += " AND (" + tblname + ".start_date1 < " + start_date_str + " OR " + tblname + ".end_date1 >= " + end_date_str + ")"
 			case "potentially-only":
-				q += " AND (start_date2 < " + start_date_str + " AND start_date1 >= " + start_date_str
-				q += " OR end_date1 > " + end_date_str + " AND end_date2 <= " + end_date_str + ")"
+				q += " AND (" + tblname + ".start_date2 < " + start_date_str + " AND " + tblname + ".start_date1 >= " + start_date_str
+				q += " OR " + tblname + ".end_date1 > " + end_date_str + " AND " + tblname + ".end_date2 <= " + end_date_str + ")"
 			}
 
 		case "-": // it must not
 		}
 
 		if q != "1=1" {
-			filters.AddFilter("chronology", q)
+			if chronology.ExistenceInsideInclude == "+" {
+				filters.AddFilter("chronology", q)
+			} else if chronology.ExistenceInsideInclude == "-" {
+				filters.AddExclude("site", q)
+			}
 		}
 	}
 
