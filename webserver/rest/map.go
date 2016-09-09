@@ -144,12 +144,12 @@ type MapSearchParamsChronology struct {
 
 // MapSearchParams is the query filter for searching sites
 type MapSearchParams struct {
-	Centroid   map[string]bool             `json:"centroid"`
-	Knowledge  map[string]bool             `json:"knowledge"`
-	Occupation map[string]bool             `json:"occupation"`
-	Database   []int                       `json:"database"`
-	Chronology []MapSearchParamsChronology `json:"chronology"`
-	Characs    map[int]string              `json:"characs"`
+	Centroid     map[string]bool             `json:"centroid"`
+	Knowledge    map[string]bool             `json:"knowledge"`
+	Occupation   map[string]bool             `json:"occupation"`
+	Database     []int                       `json:"database"`
+	Chronologies []MapSearchParamsChronology `json:"chronologies"`
+	Characs      map[int]string              `json:"characs"`
 }
 
 // MapSearch search for sites using many filters
@@ -258,6 +258,38 @@ func MapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	if len(excludes) > 0 {
 		filters.AddExclude("site_range__charac", "x_site_range__charac.charac_id IN ("+model.IntJoin(excludes, true)+")")
+	}
+
+	for _, chronology := range params.Chronologies {
+
+		q := "1=1"
+
+		var start_date_str = strconv.Itoa(chronology.StartDate)
+		var end_date_str = strconv.Itoa(chronology.EndDate)
+
+		switch chronology.ExistenceInsideSureness {
+		case "potentially":
+			q += " AND start_date1 <= " + end_date_str + " AND end_date2 >= " + start_date_str
+			if chronology.ExistenceInsidePart == "full" {
+				q += " AND start_date1 >= " + start_date_str + " AND end_date2 <= " + end_date_str
+			}
+		case "certainly":
+			q += " AND start_date2 <= " + end_date_str + " AND end_date1 >= " + start_date_str
+			if chronology.ExistenceInsidePart == "full" {
+				q += " AND start_date2 >= " + start_date_str + " AND end_date1 <= " + end_date_str
+			}
+		case "potentially-only":
+			q += " AND start_date1 <= " + end_date_str + " AND end_date2 >= " + start_date_str
+			q += " AND start_date2 > " + end_date_str + " AND end_date1 < " + start_date_str
+
+			if chronology.ExistenceInsidePart == "full" {
+				q += " AND start_date1 >= " + start_date_str + " AND end_date2 <= " + end_date_str
+			}
+		}
+
+		if q != "1=1" {
+			filters.AddFilter("chronology", q)
+		}
 	}
 
 	// chronologies filters
