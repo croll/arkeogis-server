@@ -325,6 +325,15 @@ func MapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 			}
 
 		case "-": // it must not
+			switch chronology.ExistenceOutsideSureness {
+			case "potentially":
+				q += " AND NOT (" + tblname + ".start_date2 < " + start_date_str + " OR " + tblname + ".end_date1 >= " + end_date_str + ")"
+			case "certainly":
+				q += " AND NOT (" + tblname + ".start_date1 < " + start_date_str + " OR " + tblname + ".end_date1 >= " + end_date_str + ")"
+			case "potentially-only":
+				q += " AND NOT (" + tblname + ".start_date2 < " + start_date_str + " AND " + tblname + ".start_date1 >= " + start_date_str
+				q += " OR " + tblname + ".end_date1 > " + end_date_str + " AND " + tblname + ".end_date2 <= " + end_date_str + ")"
+			}
 		}
 
 		if q != "1=1" {
