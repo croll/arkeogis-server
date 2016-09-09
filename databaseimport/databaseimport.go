@@ -206,6 +206,15 @@ func (di *DatabaseImport) ProcessRecord(f *Fields) {
 
 	// If site code is not empty and differs, create a new instance of SiteInfos to store datas
 	if f.SITE_SOURCE_ID != "" && f.SITE_SOURCE_ID != di.CurrentSite.Code {
+		// Cache dates if necessary
+		if di.CurrentSite.Code != "" {
+			fmt.Println(f.SITE_SOURCE_ID, di.CurrentSite.Code)
+			err = di.CurrentSite.CacheDates(di.Tx)
+			if err != nil {
+				di.AddError("", "IMPORT.SITE_CACHING_DATES.T_LABEL", "SITE_SOURCE_ID")
+				return
+			}
+		}
 		di.CurrentSite = &model.SiteInfos{}
 		di.CurrentSiteRange = &model.Site_range{}
 		di.CurrentSiteRangeCharac = &SiteRangeCharacInfos{}

@@ -100,7 +100,7 @@
 <part>username</part>
 </key>
 </table>
-<table x="923" y="596" name="lang">
+<table x="921" y="620" name="lang">
 <row name="isocode" null="0" autoincrement="0">
 <datatype>CHAR(2)</datatype>
 </row>
@@ -303,7 +303,7 @@
 <part>id</part>
 </key>
 </table>
-<table x="909" y="44" name="site">
+<table x="964" y="10" name="site">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
@@ -348,12 +348,36 @@
 <row name="altitude" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <default>-999999</default></row>
+<row name="start_date1" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<default>-2147483648</default></row>
+<row name="start_date2" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<default>-2147483648</default></row>
+<row name="end_date1" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<default>2147483647</default></row>
+<row name="end_date2" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<default>2147483647</default></row>
 <key type="PRIMARY" name="">
 <part>id</part>
 </key>
 <key type="INDEX" name="">
 <part>geom</part>
 <part>geom_3d</part>
+</key>
+<key type="INDEX" name="">
+<part>start_date1</part>
+</key>
+<key type="INDEX" name="">
+<part>start_date2</part>
+</key>
+<key type="INDEX" name="">
+<part>end_date1</part>
+</key>
+<key type="INDEX" name="">
+<part>end_date2</part>
 </key>
 </table>
 <table x="273" y="512" name="database_tr">
@@ -437,7 +461,7 @@
 <part>lang_isocode</part>
 </key>
 </table>
-<table x="909" y="374" name="site_range">
+<table x="910" y="413" name="site_range">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
@@ -449,15 +473,15 @@
 <row name="start_date1" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 </row>
-<row name="start_date2" null="1" autoincrement="0">
+<row name="start_date2" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
-<default>NULL</default></row>
+</row>
 <row name="end_date1" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 </row>
-<row name="end_date2" null="1" autoincrement="0">
+<row name="end_date2" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
-<default>NULL</default></row>
+</row>
 <row name="created_at" null="0" autoincrement="0">
 <datatype>TIMESTAMP</datatype>
 </row>

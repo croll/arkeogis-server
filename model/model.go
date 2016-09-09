@@ -410,6 +410,10 @@ type Site struct {
 	Created_at	time.Time	`db:"created_at" json:"created_at"`
 	Updated_at	time.Time	`db:"updated_at" json:"updated_at"`
 	Altitude	int	`db:"altitude" json:"altitude"`
+	Start_date1	int	`db:"start_date1" json:"start_date1"`
+	Start_date2	int	`db:"start_date2" json:"start_date2"`
+	End_date1	int	`db:"end_date1" json:"end_date1"`
+	End_date2	int	`db:"end_date2" json:"end_date2"`
 }
 
 
@@ -513,9 +517,9 @@ const Project__chronology_UpdateStr = ""
 const Database_InsertStr = "\"name\", \"scale_resolution\", \"geographical_extent\", \"type\", \"owner\", \"editor\", \"contributor\", \"default_language\", \"state\", \"license_id\", \"published\", \"soft_deleted\", \"geographical_extent_geom\", \"start_date\", \"end_date\", \"declared_creation_date\", \"created_at\", \"updated_at\""
 const Database_InsertValuesStr = ":name, :scale_resolution, :geographical_extent, :type, :owner, :editor, :contributor, :default_language, :state, :license_id, :published, :soft_deleted, :geographical_extent_geom, :start_date, :end_date, :declared_creation_date, now(), now()"
 const Database_UpdateStr = "\"name\" = :name, \"scale_resolution\" = :scale_resolution, \"geographical_extent\" = :geographical_extent, \"type\" = :type, \"owner\" = :owner, \"editor\" = :editor, \"contributor\" = :contributor, \"default_language\" = :default_language, \"state\" = :state, \"license_id\" = :license_id, \"published\" = :published, \"soft_deleted\" = :soft_deleted, \"geographical_extent_geom\" = :geographical_extent_geom, \"start_date\" = :start_date, \"end_date\" = :end_date, \"declared_creation_date\" = :declared_creation_date, \"updated_at\" = now()"
-const Site_InsertStr = "\"code\", \"name\", \"city_name\", \"city_geonameid\", \"geom\", \"geom_3d\", \"centroid\", \"occupation\", \"database_id\", \"created_at\", \"updated_at\", \"altitude\""
-const Site_InsertValuesStr = ":code, :name, :city_name, :city_geonameid, :geom, :geom_3d, :centroid, :occupation, :database_id, now(), now(), :altitude"
-const Site_UpdateStr = "\"code\" = :code, \"name\" = :name, \"city_name\" = :city_name, \"city_geonameid\" = :city_geonameid, \"geom\" = :geom, \"geom_3d\" = :geom_3d, \"centroid\" = :centroid, \"occupation\" = :occupation, \"database_id\" = :database_id, \"updated_at\" = now(), \"altitude\" = :altitude"
+const Site_InsertStr = "\"code\", \"name\", \"city_name\", \"city_geonameid\", \"geom\", \"geom_3d\", \"centroid\", \"occupation\", \"database_id\", \"created_at\", \"updated_at\", \"altitude\", \"start_date1\", \"start_date2\", \"end_date1\", \"end_date2\""
+const Site_InsertValuesStr = ":code, :name, :city_name, :city_geonameid, :geom, :geom_3d, :centroid, :occupation, :database_id, now(), now(), :altitude, :start_date1, :start_date2, :end_date1, :end_date2"
+const Site_UpdateStr = "\"code\" = :code, \"name\" = :name, \"city_name\" = :city_name, \"city_geonameid\" = :city_geonameid, \"geom\" = :geom, \"geom_3d\" = :geom_3d, \"centroid\" = :centroid, \"occupation\" = :occupation, \"database_id\" = :database_id, \"updated_at\" = now(), \"altitude\" = :altitude, \"start_date1\" = :start_date1, \"start_date2\" = :start_date2, \"end_date1\" = :end_date1, \"end_date2\" = :end_date2"
 const Database_tr_InsertStr = "\"description\", \"geographical_limit\", \"bibliography\", \"context_description\", \"source_description\", \"source_relation\", \"copyright\", \"subject\""
 const Database_tr_InsertValuesStr = ":description, :geographical_limit, :bibliography, :context_description, :source_description, :source_relation, :copyright, :subject"
 const Database_tr_UpdateStr = "\"description\" = :description, \"geographical_limit\" = :geographical_limit, \"bibliography\" = :bibliography, \"context_description\" = :context_description, \"source_description\" = :source_description, \"source_relation\" = :source_relation, \"copyright\" = :copyright, \"subject\" = :subject"

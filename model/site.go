@@ -77,6 +77,22 @@ func (s *SiteInfos) Create(tx *sqlx.Tx) (err error) {
 	return
 }
 
+// CacheDates get database sites extend and cache enveloppe
+func (s *SiteInfos) CacheDates(tx *sqlx.Tx) (err error) {
+
+	// dates := struct {
+	// 	Start_Date1 int
+	// 	Start_Date2 int
+	// 	End_Date1   int
+	// 	End_Date2   int
+	// }{}
+
+	// _, err = tx.Exec("UPDATE site SET start_date1 = x.start_date1, SET start_date2 = x.start_date2, SET end_date1 = x.end_date1, SET end_date2 = x.end_date2 FROM (SELECT min(start_date1) as start_date1, min(start_date2) as start_date2, max(end_date1) as end_date1, max(end_date2) as end_date2 FROM site WHERE id = $1) x WHERE id = $1", s.Id)
+
+	_, err = tx.Exec("UPDATE site SET (start_date1, start_date2, end_date1, end_date2) = (SELECT min(start_date1), min(start_date2), max(end_date1), max(end_date2) FROM site_range WHERE site_id = $1) WHERE id = $1", s.Id)
+	return
+}
+
 func (s *SiteInfos) Update(tx *sqlx.Tx) (err error) {
 	var q string
 	if s.EPSG != 4326 {
