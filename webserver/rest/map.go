@@ -287,6 +287,23 @@ func MapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 			}
 		}
 
+		switch chronology.ExistenceOutsideInclude {
+		case "": // it can
+			// do nothing
+		case "+": // it must
+			switch chronology.ExistenceOutsideSureness {
+			case "potentially":
+				q += " AND (start_date2 < " + start_date_str + " OR end_date1 >= " + end_date_str + ")"
+			case "certainly":
+				q += " AND (start_date1 < " + start_date_str + " OR end_date1 >= " + end_date_str + ")"
+			case "potentially-only":
+				q += " AND (start_date2 < " + start_date_str + " AND start_date1 >= " + start_date_str
+				q += " OR end_date1 > " + end_date_str + " AND end_date2 <= " + end_date_str + ")"
+			}
+
+		case "-": // it must not
+		}
+
 		if q != "1=1" {
 			filters.AddFilter("chronology", q)
 		}
