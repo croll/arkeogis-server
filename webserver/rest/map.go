@@ -150,6 +150,9 @@ type MapSearchParamsAreaGeometry struct {
 
 type MapSearchParamsArea struct {
 	Type    string                      `json:"type"`
+	Lat     float32                     `json:lat`
+	Lng     float32                     `json:'lng'`
+	Radius  float32                     `json:'radius'`
 	Geojson MapSearchParamsAreaGeometry `json:"geojson"`
 }
 
@@ -172,7 +175,7 @@ type MapSearchParams struct {
 	Database     []int                       `json:"database"`
 	Chronologies []MapSearchParamsChronology `json:"chronologies"`
 	Characs      map[int]string              `json:"characs"`
-	//Area         MapSearchParamsArea         `json:"area"`
+	Area         MapSearchParamsArea         `json:"area"`
 }
 
 // MapSearch search for sites using many filters
@@ -208,12 +211,12 @@ func MapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		filters.AddFilter("database", `"site".database_id = `+strconv.Itoa(iddb))
 	}
 
-	// geojson filter
-	/*if true {
-		fmt.Println("geojson.geometry : ", string(params.Area.Geojson.Geometry))
-		q_args = append(q_args, params.Area.Geojson.Geometry)
-		filters.AddFilter("area", `ST_Contains(ST_GeomFromGeoJSON($`+strconv.Itoa(len(q_args))+`), "site".geom::geometry)`)
-	}*/
+	// if true {
+	fmt.Println("geojson.geometry : ", params.Area.Geojson)
+	fmt.Println("geojson.geometry : ", params.Area.Geojson.Geometry)
+	q_args = append(q_args, params.Area.Geojson.Geometry)
+	filters.AddFilter("area", `ST_Contains(ST_SetSRID(ST_GeomFromGeoJSON($`+strconv.Itoa(len(q_args))+`),4326), "site".geom::geometry)`)
+	//}
 
 	// add centroid filter
 	for inclorexcl, yesno := range params.Centroid {
