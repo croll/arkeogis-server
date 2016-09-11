@@ -215,7 +215,8 @@ func MapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	fmt.Println("geojson.geometry : ", params.Area.Geojson)
 	fmt.Println("geojson.geometry : ", params.Area.Geojson.Geometry)
 	q_args = append(q_args, params.Area.Geojson.Geometry)
-	filters.AddFilter("area", `ST_Contains(ST_SetSRID(ST_GeomFromGeoJSON($`+strconv.Itoa(len(q_args))+`),4326), "site".geom::geometry)`)
+	// filters.AddFilter("area", `ST_Contains(ST_SetSRID(ST_GeomFromGeoJSON($`+strconv.Itoa(len(q_args))+`),4326), "site".geom::geometry)`)
+	filters.AddFilter("area", `ST_Within("site".geom::geometry, ST_SetSRID(ST_GeomFromGeoJSON($`+strconv.Itoa(len(q_args))+`),4326))`)
 	//}
 
 	// add centroid filter
