@@ -34,6 +34,7 @@ import (
 	"github.com/croll/arkeogis-server/model"
 	routes "github.com/croll/arkeogis-server/webserver/routes"
 	"github.com/jmoiron/sqlx"
+	sqlx_types "github.com/jmoiron/sqlx/types"
 )
 
 func init() {
@@ -143,6 +144,15 @@ func (sql *MapSqlQuery) BuildQuery() string {
 	return q
 }
 
+type MapSearchParamsAreaGeometry struct {
+	Geometry sqlx_types.JSONText `json:"geometry"`
+}
+
+type MapSearchParamsArea struct {
+	Type    string                      `json:"type"`
+	Geojson MapSearchParamsAreaGeometry `json:"geojson"`
+}
+
 type MapSearchParamsChronology struct {
 	StartDate                int    `json:"start_date"`
 	EndDate                  int    `json:"end_date"`
@@ -162,10 +172,12 @@ type MapSearchParams struct {
 	Database     []int                       `json:"database"`
 	Chronologies []MapSearchParamsChronology `json:"chronologies"`
 	Characs      map[int]string              `json:"characs"`
+	//Area         MapSearchParamsArea         `json:"area"`
 }
 
 // MapSearch search for sites using many filters
 func MapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+	q_args := []interface{}{}
 
 	// for measuring execution time
 	start := time.Now()
@@ -195,6 +207,13 @@ func MapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	for _, iddb := range params.Database {
 		filters.AddFilter("database", `"site".database_id = `+strconv.Itoa(iddb))
 	}
+
+	// geojson filter
+	/*if true {
+		fmt.Println("geojson.geometry : ", string(params.Area.Geojson.Geometry))
+		q_args = append(q_args, params.Area.Geojson.Geometry)
+		filters.AddFilter("area", `ST_Contains(ST_GeomFromGeoJSON($`+strconv.Itoa(len(q_args))+`), "site".geom::geometry)`)
+	}*/
 
 	// add centroid filter
 	for inclorexcl, yesno := range params.Centroid {
@@ -349,7 +368,13 @@ func MapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	fmt.Println("q: ", q)
 
 	site_ids := []int{}
-	err = tx.Select(&site_ids, q)
+	err = tx.Select(&site_ids, q, q_args...)
+	if err != nil {
+		fmt.Println("query failed : ", err)
+		userSqlError(w, err)
+		_ = tx.Rollback()
+		return
+	}
 	//fmt.Println("site_ids : ", site_ids)
 
 	elapsed := time.Since(start)
