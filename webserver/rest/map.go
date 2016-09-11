@@ -244,17 +244,11 @@ func MapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	}
 
 	// add occupation filter
-	for occupation, yesno := range params.Occupation {
-		var compare string
-		if yesno {
-			compare = "="
-		} else {
-			compare = "!="
-		}
-
+	for _, occupation := range params.Others.Occupation {
 		switch occupation {
 		case "not_documented", "single", "continuous", "multiple":
-			filters.AddFilter("occupation", `"site".occupation `+compare+` '`+occupation+`'`)
+			filters.AddTable(`site_range__charac`)
+			filters.AddFilter("occupation", `"site".occupation = '`+occupation+`'`)
 		}
 	}
 
