@@ -235,18 +235,11 @@ func MapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	}
 
 	// add knowledge filter
-	for knowledge, yesno := range params.Knowledge {
-		var compare string
-		if yesno {
-			compare = "="
-		} else {
-			compare = "!="
-		}
-
+	for _, knowledge := range params.Others.Knowledges {
 		switch knowledge {
 		case "literature", "surveyed", "dig", "not_documented", "prospected_aerial", "prospected_pedestrian":
 			filters.AddTable(`site_range__charac`)
-			filters.AddFilter("knowledge", `"site_range__charac".knowledge_type `+compare+` '`+knowledge+`'`)
+			filters.AddFilter("knowledge", `"site_range__charac".knowledge_type = '`+knowledge+`'`)
 		}
 	}
 
