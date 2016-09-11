@@ -172,9 +172,9 @@ type MapSearchParamsAreaGeometry struct {
 
 type MapSearchParamsArea struct {
 	Type    string                      `json:"type"`
-	Lat     float32                     `json:lat`
-	Lng     float32                     `json:'lng'`
-	Radius  float32                     `json:'radius'`
+	Lat     float32                     `json:"lat"`
+	Lng     float32                     `json:"lng"`
+	Radius  float32                     `json:"radius"`
 	Geojson MapSearchParamsAreaGeometry `json:"geojson"`
 }
 
