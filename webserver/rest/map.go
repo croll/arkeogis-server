@@ -233,13 +233,17 @@ func MapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		filters.AddFilter("database", `"site".database_id = `+strconv.Itoa(iddb))
 	}
 
-	// if true {
-	fmt.Println("geojson.geometry : ", params.Area.Geojson)
-	fmt.Println("geojson.geometry : ", params.Area.Geojson.Geometry)
-	q_args = append(q_args, params.Area.Geojson.Geometry)
-	// filters.AddFilter("area", `ST_Contains(ST_SetSRID(ST_GeomFromGeoJSON($`+strconv.Itoa(len(q_args))+`),4326), "site".geom::geometry)`)
-	filters.AddFilter("area", `ST_Within("site".geom::geometry, ST_SetSRID(ST_GeomFromGeoJSON($`+strconv.Itoa(len(q_args))+`),4326))`)
-	//}
+	// Area filter
+	fmt.Println(params.Area.Type, params.Area.Lat, params.Area.Lng, params.Area.Radius)
+	if params.Area.Type == "disc" || params.Area.Type == "custom" {
+		q_args = append(q_args, params.Area.Lng)
+		q_args = append(q_args, params.Area.Lat)
+		q_args = append(q_args, params.Area.Radius)
+		filters.AddFilter("area", `ST_DWithin("site".geom, Geography(ST_MakePoint($`+strconv.Itoa(len(q_args)-2)+`, $`+strconv.Itoa(len(q_args)-1)+`)), $`+strconv.Itoa(len(q_args))+`)`)
+	} else {
+		q_args = append(q_args, params.Area.Geojson.Geometry)
+		filters.AddFilter("area", `ST_Within("site".geom::geometry, ST_SetSRID(ST_GeomFromGeoJSON($`+strconv.Itoa(len(q_args))+`),4326))`)
+	}
 
 	// add centroid filter
 	switch params.Others.Centroid {
