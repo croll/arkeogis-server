@@ -144,6 +144,15 @@ func (sql *MapSqlQuery) BuildQuery() string {
 	return q
 }
 
+type MapSearchParamsOthers struct {
+	Centroid      string   `json:"centroid"`
+	CharacsLinked string   `json:"characs_linked"`
+	Knowledges    []string `json:"knowledges"`
+	Occupation    []string `json:"occupation"`
+	TextSearch    string   `json:"text_search"`
+	TextSearchIn  []string `json:"text_search_in"`
+}
+
 type MapSearchParamsAreaGeometry struct {
 	Geometry sqlx_types.JSONText `json:"geometry"`
 }
@@ -166,12 +175,12 @@ type MapSearchParamsChronology struct {
 
 // MapSearchParams is the query filter for searching sites
 type MapSearchParams struct {
-	Centroid     map[string]bool             `json:"centroid"`
 	Knowledge    map[string]bool             `json:"knowledge"`
 	Occupation   map[string]bool             `json:"occupation"`
 	Database     []int                       `json:"database"`
 	Chronologies []MapSearchParamsChronology `json:"chronologies"`
 	Characs      map[int]string              `json:"characs"`
+	Others       MapSearchParamsOthers       `json:"others"`
 	//Area         MapSearchParamsArea         `json:"area"`
 }
 
@@ -216,19 +225,13 @@ func MapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	}*/
 
 	// add centroid filter
-	for inclorexcl, yesno := range params.Centroid {
-		var compare string
-		if yesno {
-			compare = "="
-		} else {
-			compare = "!="
-		}
-
-		if inclorexcl == "centroid-include" {
-			filters.AddFilter("centroid", `"site".centroid `+compare+` true`)
-		} else if inclorexcl == "centroid-exclude" {
-			filters.AddFilter("centroid", `"site".centroid `+compare+` false`)
-		}
+	switch params.Others.Centroid {
+	case "with":
+		filters.AddFilter("centroid", `"site".centroid = true`)
+	case "without":
+		filters.AddFilter("centroid", `"site".centroid = false`)
+	case "":
+		// do not filter
 	}
 
 	// add knowledge filter
