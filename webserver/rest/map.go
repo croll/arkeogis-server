@@ -51,43 +51,57 @@ func init() {
 	routes.RegisterMultiple(Routes)
 }
 
+type MapSqlQueryWhere struct {
+	Where      string
+	AndBetween bool
+}
+
 type MapSqlQuery struct {
 	Tables        map[string]bool
-	GroupedWheres map[string][]string
-	Excludes      map[string][]string
+	GroupedWheres map[string][]MapSqlQueryWhere
+	Excludes      map[string][]MapSqlQueryWhere
 }
 
 func (sql *MapSqlQuery) Init() {
 	sql.Tables = map[string]bool{}
-	sql.GroupedWheres = make(map[string][]string)
-	sql.Excludes = make(map[string][]string)
+	sql.GroupedWheres = make(map[string][]MapSqlQueryWhere)
+	sql.Excludes = make(map[string][]MapSqlQueryWhere)
 }
 
 func (sql *MapSqlQuery) AddTable(name string) {
 	sql.Tables[name] = true
 }
 
-func (sql *MapSqlQuery) AddFilter(filtergroup string, where string) {
+func (sql *MapSqlQuery) AddFilter(filtergroup string, where string, andBetween bool) {
+	querywhere := MapSqlQueryWhere{
+		Where:      where,
+		AndBetween: andBetween,
+	}
 	if _, ok := sql.GroupedWheres[filtergroup]; ok {
-		sql.GroupedWheres[filtergroup] = append(sql.GroupedWheres[filtergroup], where)
+		sql.GroupedWheres[filtergroup] = append(sql.GroupedWheres[filtergroup], querywhere)
 	} else {
-		sql.GroupedWheres[filtergroup] = []string{
-			where,
+		sql.GroupedWheres[filtergroup] = []MapSqlQueryWhere{
+			querywhere,
 		}
 	}
 }
 
-func (sql *MapSqlQuery) AddExclude(tablename string, where string) {
+func (sql *MapSqlQuery) AddExclude(tablename string, where string, andBetween bool) {
+	querywhere := MapSqlQueryWhere{
+		Where:      where,
+		AndBetween: andBetween,
+	}
 	if _, ok := sql.Excludes[tablename]; ok {
-		sql.Excludes[tablename] = append(sql.Excludes[tablename], where)
+		sql.Excludes[tablename] = append(sql.Excludes[tablename], querywhere)
 	} else {
-		sql.Excludes[tablename] = []string{
-			where,
+		sql.Excludes[tablename] = []MapSqlQueryWhere{
+			querywhere,
 		}
 	}
 }
 
 func (sql *MapSqlQuery) BuildQuery() string {
+	var CharacRootID = regexp.MustCompile(`^site_range__charac_([0-9]+)$`)
 	q := "SELECT site.id FROM site"
 
 	// dependences includes
@@ -98,10 +112,25 @@ func (sql *MapSqlQuery) BuildQuery() string {
 	if join, ok := sql.Tables["site_range__charac"]; ok && join {
 		sql.AddTable("site_range")
 	}
+	for tablename, ok := range sql.Tables {
+		if !ok {
+			continue
+		}
+		res := CharacRootID.FindStringSubmatch(tablename)
+		if len(res) == 2 {
+			sql.AddTable("site_range")
+		}
+	}
 
 	// dependences exclude
 	if excludes, ok := sql.Excludes["site_range__charac"]; ok && len(excludes) > 0 {
 		sql.AddTable("site_range")
+	}
+	for tablename, _ := range sql.Excludes {
+		res := CharacRootID.FindStringSubmatch(tablename)
+		if len(res) == 2 {
+			sql.AddTable("site_range")
+		}
 	}
 
 	// joins include
@@ -119,7 +148,6 @@ func (sql *MapSqlQuery) BuildQuery() string {
 	}
 
 	// joins include on mutliple same table
-	var CharacRootID = regexp.MustCompile(`^site_range__charac_([0-9]+)$`)
 	for tablename, ok := range sql.Tables {
 		if !ok {
 			continue
@@ -133,15 +161,23 @@ func (sql *MapSqlQuery) BuildQuery() string {
 	// joins exclude
 	if excludes, ok := sql.Excludes["site_range__charac"]; ok && len(excludes) > 0 {
 		q += ` LEFT JOIN "site_range__charac" "x_site_range__charac" ON "x_site_range__charac".site_range_id = "site_range".id AND (1=0`
-		for _, exclude := range excludes {
-			q += ` OR ` + exclude
+		for _, filter := range excludes {
+			if filter.AndBetween {
+				q += " AND (" + filter.Where + ")"
+			} else {
+				q += " OR (" + filter.Where + ")"
+			}
 		}
 		q += ")"
 	}
 	if excludes, ok := sql.Excludes["site"]; ok && len(excludes) > 0 {
 		q += ` LEFT JOIN "site" "x_site" ON "x_site".id = "site".id AND (1=0`
-		for _, exclude := range excludes {
-			q += ` OR ` + exclude
+		for _, filter := range excludes {
+			if filter.AndBetween {
+				q += " AND (" + filter.Where + ")"
+			} else {
+				q += " OR (" + filter.Where + ")"
+			}
 		}
 		q += ")"
 	}
@@ -151,8 +187,12 @@ func (sql *MapSqlQuery) BuildQuery() string {
 		res := CharacRootID.FindStringSubmatch(tablename)
 		if len(res) == 2 {
 			q += ` LEFT JOIN "site_range__charac" "` + tablename + `" ON "` + tablename + `".site_range_id = "site_range".id AND (1=0`
-			for _, exclude := range excludes {
-				q += ` OR ` + exclude
+			for _, filter := range excludes {
+				if filter.AndBetween {
+					q += " AND (" + filter.Where + ")"
+				} else {
+					q += " OR (" + filter.Where + ")"
+				}
 			}
 			q += ")"
 		}
@@ -163,7 +203,11 @@ func (sql *MapSqlQuery) BuildQuery() string {
 	for _, groupfilters := range sql.GroupedWheres {
 		q += " AND ( 1=0 "
 		for _, filter := range groupfilters {
-			q += " OR " + filter
+			if filter.AndBetween {
+				q += " AND (" + filter.Where + ")"
+			} else {
+				q += " OR (" + filter.Where + ")"
+			}
 		}
 		q += ")"
 	}
@@ -262,12 +306,12 @@ func MapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	// custom hard coded / mandatory filters
 	filters.AddTable("database")
-	filters.AddFilter("database_published", `"database".published = true`)
+	filters.AddFilter("database_published", `"database".published = true`, false)
 
 	// add database filter
 	fmt.Println("database: ", params.Database)
 	for _, iddb := range params.Database {
-		filters.AddFilter("database", `"site".database_id = `+strconv.Itoa(iddb))
+		filters.AddFilter("database", `"site".database_id = `+strconv.Itoa(iddb), false)
 	}
 
 	// Area filter
@@ -276,18 +320,18 @@ func MapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		q_args = append(q_args, params.Area.Lng)
 		q_args = append(q_args, params.Area.Lat)
 		q_args = append(q_args, params.Area.Radius)
-		filters.AddFilter("area", `ST_DWithin("site".geom, Geography(ST_MakePoint($`+strconv.Itoa(len(q_args)-2)+`, $`+strconv.Itoa(len(q_args)-1)+`)), $`+strconv.Itoa(len(q_args))+`)`)
+		filters.AddFilter("area", `ST_DWithin("site".geom, Geography(ST_MakePoint($`+strconv.Itoa(len(q_args)-2)+`, $`+strconv.Itoa(len(q_args)-1)+`)), $`+strconv.Itoa(len(q_args))+`)`, false)
 	} else {
 		q_args = append(q_args, params.Area.Geojson.Geometry)
-		filters.AddFilter("area", `ST_Within("site".geom::geometry, ST_SetSRID(ST_GeomFromGeoJSON($`+strconv.Itoa(len(q_args))+`),4326))`)
+		filters.AddFilter("area", `ST_Within("site".geom::geometry, ST_SetSRID(ST_GeomFromGeoJSON($`+strconv.Itoa(len(q_args))+`),4326))`, false)
 	}
 
 	// add centroid filter
 	switch params.Others.Centroid {
 	case "with":
-		filters.AddFilter("centroid", `"site".centroid = true`)
+		filters.AddFilter("centroid", `"site".centroid = true`, false)
 	case "without":
-		filters.AddFilter("centroid", `"site".centroid = false`)
+		filters.AddFilter("centroid", `"site".centroid = false`, false)
 	case "":
 		// do not filter
 	}
@@ -297,7 +341,7 @@ func MapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		switch knowledge {
 		case "literature", "surveyed", "dig", "not_documented", "prospected_aerial", "prospected_pedestrian":
 			filters.AddTable(`site_range__charac`)
-			filters.AddFilter("knowledge", `"site_range__charac".knowledge_type = '`+knowledge+`'`)
+			filters.AddFilter("knowledge", `"site_range__charac".knowledge_type = '`+knowledge+`'`, false)
 		}
 	}
 
@@ -306,27 +350,29 @@ func MapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		switch occupation {
 		case "not_documented", "single", "continuous", "multiple":
 			filters.AddTable(`site_range__charac`)
-			filters.AddFilter("occupation", `"site".occupation = '`+occupation+`'`)
+			filters.AddFilter("occupation", `"site".occupation = '`+occupation+`'`, false)
 		}
 	}
 
 	// text filter
-	for _, textSearchIn := range params.Others.TextSearchIn {
-		switch textSearchIn {
-		case "site_name":
-			q_args = append(q_args, "%"+params.Others.TextSearch+"%")
-			filters.AddFilter("text_search", `"site".name ILIKE $`+strconv.Itoa(len(q_args)))
-		case "city_name":
-			q_args = append(q_args, "%"+params.Others.TextSearch+"%")
-			filters.AddFilter("text_search", `"site".city_name ILIKE $`+strconv.Itoa(len(q_args)))
-		case "bibliography":
-			filters.AddTable(`site_range__charac_tr`)
-			q_args = append(q_args, "%"+params.Others.TextSearch+"%")
-			filters.AddFilter("text_search", `"site_range__charac_tr".bibliography ILIKE $`+strconv.Itoa(len(q_args)))
-		case "comment":
-			filters.AddTable(`site_range__charac_tr`)
-			q_args = append(q_args, "%"+params.Others.TextSearch+"%")
-			filters.AddFilter("text_search", `"site_range__charac_tr".comment ILIKE $`+strconv.Itoa(len(q_args)))
+	if params.Others.TextSearch != "" {
+		for _, textSearchIn := range params.Others.TextSearchIn {
+			switch textSearchIn {
+			case "site_name":
+				q_args = append(q_args, "%"+params.Others.TextSearch+"%")
+				filters.AddFilter("text_search", `"site".name ILIKE $`+strconv.Itoa(len(q_args)), false)
+			case "city_name":
+				q_args = append(q_args, "%"+params.Others.TextSearch+"%")
+				filters.AddFilter("text_search", `"site".city_name ILIKE $`+strconv.Itoa(len(q_args)), false)
+			case "bibliography":
+				filters.AddTable(`site_range__charac_tr`)
+				q_args = append(q_args, "%"+params.Others.TextSearch+"%")
+				filters.AddFilter("text_search", `"site_range__charac_tr".bibliography ILIKE $`+strconv.Itoa(len(q_args)), false)
+			case "comment":
+				filters.AddTable(`site_range__charac_tr`)
+				q_args = append(q_args, "%"+params.Others.TextSearch+"%")
+				filters.AddFilter("text_search", `"site_range__charac_tr".comment ILIKE $`+strconv.Itoa(len(q_args)), false)
+			}
 		}
 	}
 
@@ -354,16 +400,25 @@ func MapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		}
 	}
 
+	characsAndBetween := false
+	if params.Others.CharacsLinked == "all" {
+		characsAndBetween = true
+	}
+
 	for rootid, characids := range includes {
 		filters.AddTable("site_range__charac_" + strconv.Itoa(rootid))
-		filters.AddFilter("charac", `site_range__charac_`+strconv.Itoa(rootid)+`.charac_id IN (`+model.IntJoin(characids, true)+`)`)
+		filters.AddFilter("charac", `site_range__charac_`+strconv.Itoa(rootid)+`.charac_id IN (`+model.IntJoin(characids, true)+`)`, characsAndBetween)
 	}
 
 	for rootid, characids := range exceptionals {
 		filters.AddTable("site_range__charac_" + strconv.Itoa(rootid))
 		for _, characid := range characids {
-			filters.AddFilter("charac", `site_range__charac_`+strconv.Itoa(rootid)+`.charac_id=`+strconv.Itoa(characid)+` AND site_range__charac_`+strconv.Itoa(rootid)+`.exceptional=true`)
+			filters.AddFilter("charac", `site_range__charac_`+strconv.Itoa(rootid)+`.charac_id=`+strconv.Itoa(characid)+` AND site_range__charac_`+strconv.Itoa(rootid)+`.exceptional=true`, characsAndBetween)
 		}
+	}
+
+	for rootid, characids := range excludes {
+		filters.AddExclude("x_site_range__charac_"+strconv.Itoa(rootid), "x_site_range__charac_"+strconv.Itoa(rootid)+".charac_id IN ("+model.IntJoin(characids, true)+")", characsAndBetween)
 	}
 
 	/*
@@ -437,9 +492,9 @@ func MapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 		if q != "1=1" {
 			if chronology.ExistenceInsideInclude == "+" {
-				filters.AddFilter("chronology", q)
+				filters.AddFilter("chronology", q, false)
 			} else if chronology.ExistenceInsideInclude == "-" {
-				filters.AddExclude("site", q)
+				filters.AddExclude("site", q, false)
 			}
 		}
 	}
