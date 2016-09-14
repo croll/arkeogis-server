@@ -29,10 +29,10 @@ import (
 	"os"
 	"reflect"
 	"strconv"
+	"strings"
 
 	"github.com/croll/arkeogis-server/translate"
 	//"strconv"
-	"strings"
 )
 
 // Handle errors
@@ -133,7 +133,7 @@ func (p *Parser) Parse(fn func(r *Fields)) error {
 		// Parse lines after first line
 		// Ok we assign fields vlues to struct Fields
 		for k, v := range record {
-			r.Elem().FieldByName(p.HeaderFields[k]).SetString(v)
+			r.Elem().FieldByName(p.HeaderFields[k]).SetString(strings.TrimSpace(v))
 		}
 		// Process line
 		fn(&f)
@@ -151,7 +151,7 @@ func (p *Parser) checkHeader(record []string) error {
 
 	if len(record) > 21 {
 		p.AddError("IMPORT.CSV_FILE.T_CHECK_HEADER_TOO_MUCH_FIELDS", strconv.Itoa(len(record)))
-		return errors.New("Too much fields detected in csv");
+		return errors.New("Too much fields detected in csv")
 	}
 	f := Fields{}
 	// Store if we found header file witch defines lvl1 for a charac like furniture, realestate, etc
