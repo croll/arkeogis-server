@@ -468,7 +468,7 @@ func mapGetSitesAsJson(sites []int, tx *sqlx.Tx) string {
 	q += `			) characs`
 	q += `	   	FROM site_range sr WHERE sr.site_id = s.id) q_src`
 	q += `	)`
-	q += `	 FROM (SELECT si.id, si.code, si.name, si.centroid, si.occupation, d.id AS database_id, d.name as database_name FROM site si LEFT JOIN database d ON si.database_id = d.id WHERE si.id = s.id) site_infos`
+	q += `	 FROM (SELECT si.id, si.code, si.name, si.centroid, si.occupation, si.start_date1, si.start_date2, si.end_date1, si.end_date2, d.id AS database_id, d.name as database_name FROM site si LEFT JOIN database d ON si.database_id = d.id WHERE si.id = s.id) site_infos`
 	q += `)`
 	q += `|| '}}'`
 	q += ` FROM site s WHERE s.id IN (` + model.IntJoin(sites, true) + `)`
