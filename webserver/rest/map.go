@@ -26,6 +26,7 @@ import (
 	"log"
 	"net/http"
 	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -117,6 +118,18 @@ func (sql *MapSqlQuery) BuildQuery() string {
 		q += ` LEFT JOIN "site_range__charac_tr" ON "site_range__charac_tr".site_range__charac_id = "site_range__charac".id AND "database"."default_language" = "site_range__charac_tr".lang_isocode`
 	}
 
+	// joins include on mutliple same table
+	var CharacRootID = regexp.MustCompile(`^site_range__charac_([0-9]+)$`)
+	for tablename, ok := range sql.Tables {
+		if !ok {
+			continue
+		}
+		res := CharacRootID.FindStringSubmatch(tablename)
+		if len(res) == 2 {
+			q += ` LEFT JOIN "site_range__charac" "` + tablename + `" ON "` + tablename + `".site_range_id = "site_range".id`
+		}
+	}
+
 	// joins exclude
 	if excludes, ok := sql.Excludes["site_range__charac"]; ok && len(excludes) > 0 {
 		q += ` LEFT JOIN "site_range__charac" "x_site_range__charac" ON "x_site_range__charac".site_range_id = "site_range".id AND (1=0`
@@ -131,6 +144,18 @@ func (sql *MapSqlQuery) BuildQuery() string {
 			q += ` OR ` + exclude
 		}
 		q += ")"
+	}
+
+	// joins exclude on mutliple same table
+	for tablename, excludes := range sql.Excludes {
+		res := CharacRootID.FindStringSubmatch(tablename)
+		if len(res) == 2 {
+			q += ` LEFT JOIN "site_range__charac" "` + tablename + `" ON "` + tablename + `".site_range_id = "site_range".id AND (1=0`
+			for _, exclude := range excludes {
+				q += ` OR ` + exclude
+			}
+			q += ")"
+		}
 	}
 
 	// filters include
@@ -149,6 +174,12 @@ func (sql *MapSqlQuery) BuildQuery() string {
 	}
 	if excludes, ok := sql.Excludes["site"]; ok && len(excludes) > 0 {
 		q += " AND x_site.id is null"
+	}
+	for tablename, _ := range sql.Excludes {
+		res := CharacRootID.FindStringSubmatch(tablename)
+		if len(res) == 2 {
+			q += " AND " + tablename + ".id is null"
+		}
 	}
 
 	// query end
@@ -300,34 +331,46 @@ func MapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	}
 
 	// characs filters
-	var includes []int
-	var excludes []int
-	q_exceptional := "1=1"
+	includes := make(map[int][]int, 0)
+	excludes := make(map[int][]int, 0)
+	exceptionals := make(map[int][]int, 0)
+
 	for characid, sel := range params.Characs {
 		if sel.Include && !sel.Exceptional {
-			includes = append(includes, characid)
+			if _, ok := includes[sel.RootId]; !ok {
+				includes[sel.RootId] = make([]int, 0)
+			}
+			includes[sel.RootId] = append(includes[sel.RootId], characid)
 		} else if sel.Include && sel.Exceptional {
-			q_exceptional += " OR site_range__charac.charac_id=" + strconv.Itoa(characid) + " AND site_range__charac.exceptional=true"
-			includes = append(excludes, characid)
+			if _, ok := includes[sel.RootId]; !ok {
+				includes[sel.RootId] = make([]int, 0)
+			}
+			includes[sel.RootId] = append(includes[sel.RootId], characid)
 		} else if !sel.Include {
-			excludes = append(excludes, characid)
+			if _, ok := excludes[sel.RootId]; !ok {
+				excludes[sel.RootId] = make([]int, 0)
+			}
+			excludes[sel.RootId] = append(excludes[sel.RootId], characid)
 		}
 	}
 
-	if len(includes) > 0 {
-		filters.AddTable("site_range__charac")
-		filters.AddFilter("charac", `site_range__charac.charac_id IN (`+model.IntJoin(includes, true)+`)`)
+	for rootid, characids := range includes {
+		filters.AddTable("site_range__charac_" + strconv.Itoa(rootid))
+		filters.AddFilter("charac", `site_range__charac_`+strconv.Itoa(rootid)+`.charac_id IN (`+model.IntJoin(characids, true)+`)`)
 	}
 
-	if q_exceptional != "1=1" {
-		filters.AddTable("site_range__charac")
-		filters.AddFilter("charac", q_exceptional)
+	for rootid, characids := range exceptionals {
+		filters.AddTable("site_range__charac_" + strconv.Itoa(rootid))
+		for _, characid := range characids {
+			filters.AddFilter("charac", `site_range__charac_`+strconv.Itoa(rootid)+`.charac_id=`+strconv.Itoa(characid)+` AND site_range__charac_`+strconv.Itoa(rootid)+`.exceptional=true`)
+		}
 	}
 
-	if len(excludes) > 0 {
-		filters.AddExclude("site_range__charac", "x_site_range__charac.charac_id IN ("+model.IntJoin(excludes, true)+")")
-	}
-
+	/*
+		if len(excludes) > 0 {
+			filters.AddExclude("site_range__charac", "x_site_range__charac.charac_id IN ("+model.IntJoin(excludes, true)+")")
+		}
+	*/
 	for _, chronology := range params.Chronologies {
 
 		q := "1=1"
