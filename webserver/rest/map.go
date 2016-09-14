@@ -302,7 +302,7 @@ func MapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 			includes = append(includes, characid)
 		} else if include == "!" {
 			q_exceptional += " OR site_range__charac.charac_id=" + strconv.Itoa(characid) + " AND site_range__charac.exceptional=true"
-			excludes = append(excludes, characid)
+			includes = append(excludes, characid)
 		} else if include == "-" {
 			excludes = append(excludes, characid)
 		}
