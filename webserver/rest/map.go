@@ -178,6 +178,12 @@ type MapSearchParamsArea struct {
 	Geojson MapSearchParamsAreaGeometry `json:"geojson"`
 }
 
+type MapSearchParamsCharac struct {
+	Include     bool `json:"include"`
+	Exceptional bool `json:"exceptional"`
+	RootId      int  `json:"root_id"`
+}
+
 type MapSearchParamsChronology struct {
 	StartDate                int    `json:"start_date"`
 	EndDate                  int    `json:"end_date"`
@@ -191,13 +197,13 @@ type MapSearchParamsChronology struct {
 
 // MapSearchParams is the query filter for searching sites
 type MapSearchParams struct {
-	Knowledge    map[string]bool             `json:"knowledge"`
-	Occupation   map[string]bool             `json:"occupation"`
-	Database     []int                       `json:"database"`
-	Chronologies []MapSearchParamsChronology `json:"chronologies"`
-	Characs      map[int]string              `json:"characs"`
-	Others       MapSearchParamsOthers       `json:"others"`
-	Area         MapSearchParamsArea         `json:"area"`
+	Knowledge    map[string]bool               `json:"knowledge"`
+	Occupation   map[string]bool               `json:"occupation"`
+	Database     []int                         `json:"database"`
+	Chronologies []MapSearchParamsChronology   `json:"chronologies"`
+	Characs      map[int]MapSearchParamsCharac `json:"characs"`
+	Others       MapSearchParamsOthers         `json:"others"`
+	Area         MapSearchParamsArea           `json:"area"`
 }
 
 // MapSearch search for sites using many filters
@@ -297,13 +303,13 @@ func MapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	var includes []int
 	var excludes []int
 	q_exceptional := "1=1"
-	for characid, include := range params.Characs {
-		if include == "+" {
+	for characid, sel := range params.Characs {
+		if sel.Include && !sel.Exceptional {
 			includes = append(includes, characid)
-		} else if include == "!" {
+		} else if sel.Include && sel.Exceptional {
 			q_exceptional += " OR site_range__charac.charac_id=" + strconv.Itoa(characid) + " AND site_range__charac.exceptional=true"
 			includes = append(excludes, characid)
-		} else if include == "-" {
+		} else if !sel.Include {
 			excludes = append(excludes, characid)
 		}
 	}
