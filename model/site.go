@@ -23,6 +23,7 @@ package model
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/croll/arkeogis-server/geo"
 	"github.com/jmoiron/sqlx"
@@ -37,7 +38,6 @@ type SiteInfos struct {
 	Point     *geo.Point
 	Latitude  string
 	Longitude string
-	Altitude  string
 	GeonameID string
 	Created   bool
 	EPSG      int
@@ -59,21 +59,18 @@ func (s *Site) Get(tx *sqlx.Tx) (err error) {
 
 func (s *SiteInfos) Create(tx *sqlx.Tx) (err error) {
 	var q string
+	fmt.Println("ALTITUDE:", s.Altitude)
 	if s.EPSG != 4326 {
-		q = "INSERT INTO \"site\" (\"code\", \"name\", \"city_name\", \"city_geonameid\", \"geom\", \"geom_3d\", \"centroid\", \"occupation\", \"database_id\", \"created_at\", \"updated_at\") VALUES (:code, :name, :city_name, :city_geonameid, ST_Transform(ST_GeometryFromText(:geom), 4326)::::geography, ST_Transform(ST_GeometryFromText(:geom_3d), 4326)::::geography, :centroid, :occupation, :database_id, now(), now()) RETURNING id"
+		q = "INSERT INTO \"site\" (\"code\", \"name\", \"city_name\", \"city_geonameid\", \"geom\", \"geom_3d\", \"altitude\", \"centroid\", \"occupation\", \"database_id\", \"created_at\", \"updated_at\") VALUES (:code, :name, :city_name, :city_geonameid, ST_Transform(ST_GeometryFromText(:geom), 4326)::::geography, ST_Transform(ST_GeometryFromText(:geom_3d), 4326)::::geography, :altitude, :centroid, :occupation, :database_id, now(), now()) RETURNING id"
 	} else {
-		q = "INSERT INTO \"site\" (\"code\", \"name\", \"city_name\", \"city_geonameid\", \"geom\", \"geom_3d\", \"centroid\", \"occupation\", \"database_id\", \"created_at\", \"updated_at\") VALUES (:code, :name, :city_name, :city_geonameid, ST_GeographyFromText(:geom), ST_GeographyFromText(:geom_3d), :centroid, :occupation, :database_id, now(), now()) RETURNING id"
+		q = "INSERT INTO \"site\" (\"code\", \"name\", \"city_name\", \"city_geonameid\", \"geom\", \"geom_3d\", \"altitude\", \"centroid\", \"occupation\", \"database_id\", \"created_at\", \"updated_at\") VALUES (:code, :name, :city_name, :city_geonameid, ST_GeographyFromText(:geom), ST_GeographyFromText(:geom_3d), :altitude, :centroid, :occupation, :database_id, now(), now()) RETURNING id"
 	}
 	stmt, err := tx.PrepareNamed(q)
 	if err != nil {
-		err = errors.New("SiteInfos::Create: " + err.Error())
 		return
 	}
 	defer stmt.Close()
 	err = stmt.Get(&s.Id, s)
-	if err != nil {
-		err = errors.New("SiteInfos::Create: " + err.Error())
-	}
 	return
 }
 
@@ -96,20 +93,16 @@ func (s *SiteInfos) CacheDates(tx *sqlx.Tx) (err error) {
 func (s *SiteInfos) Update(tx *sqlx.Tx) (err error) {
 	var q string
 	if s.EPSG != 4326 {
-		q = "UPDATE \"site\" SET \"code\" = :code, \"name\" = :name, \"city_name\" = :city_name, \"city_geonameid\" = :city_geonameid, geom = ST_Transform(ST_GeometryFromText(:geom), 4326)::geography, geom_3d = ST_Transform(ST_GeometryFromText(:geom_3d), 4326)::::geography, \"centroid\" = :centroid, \"occupation\" = :occupation, \"database_id\" = :database_id, \"updated_at\" = now() WHERE database_id = :id"
+		q = "UPDATE \"site\" SET \"code\" = :code, \"name\" = :name, \"city_name\" = :city_name, \"city_geonameid\" = :city_geonameid, geom = ST_Transform(ST_GeometryFromText(:geom), 4326)::geography, geom_3d = ST_Transform(ST_GeometryFromText(:geom_3d), 4326)::::geography, \"altitude\" = :altitude, \"centroid\" = :centroid, \"occupation\" = :occupation, \"database_id\" = :database_id, \"updated_at\" = now() WHERE database_id = :id"
 	} else {
-		q = "UPDATE \"site\" SET \"code\" = :code, \"name\" = :name, \"city_name\" = :city_name, \"city_geonameid\" = :city_geonameid, geom = ST_GeographyFromText(:geom), geom_3d = ST_GeographyFromText(:geom_3d), \"centroid\" = :centroid, \"occupation\" = :occupation, \"database_id\" = :database_id, \"updated_at\" = now() WHERE id = :id"
+		q = "UPDATE \"site\" SET \"code\" = :code, \"name\" = :name, \"city_name\" = :city_name, \"city_geonameid\" = :city_geonameid, geom = ST_GeographyFromText(:geom), geom_3d = ST_GeographyFromText(:geom_3d), \"altitude\" = :altitude, \"centroid\" = :centroid, \"occupation\" = :occupation, \"database_id\" = :database_id, \"updated_at\" = now() WHERE id = :id"
 	}
 	stmt, err := tx.PrepareNamed(q)
 	if err != nil {
-		err = errors.New("SiteInfos::Update: " + err.Error())
 		return
 	}
 	defer stmt.Close()
 	_, err = stmt.Exec(s)
-	if err != nil {
-		err = errors.New("SiteInfos::Update: " + err.Error())
-	}
 	return
 }
 

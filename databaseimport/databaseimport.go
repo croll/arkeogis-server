@@ -208,7 +208,6 @@ func (di *DatabaseImport) ProcessRecord(f *Fields) {
 	if f.SITE_SOURCE_ID != "" && f.SITE_SOURCE_ID != di.CurrentSite.Code {
 		// Cache dates if necessary
 		if di.CurrentSite.Code != "" {
-			fmt.Println(f.SITE_SOURCE_ID, di.CurrentSite.Code)
 			err = di.CurrentSite.CacheDates(di.Tx)
 			if err != nil {
 				di.AddError("", "IMPORT.SITE_CACHING_DATES.T_LABEL", "SITE_SOURCE_ID")
@@ -399,7 +398,14 @@ func (di *DatabaseImport) processSiteInfos(f *Fields) {
 				// Store lat and lon to check differences if site has multiple site ranges
 				di.CurrentSite.Latitude = f.LATITUDE
 				di.CurrentSite.Longitude = f.LONGITUDE
-				di.CurrentSite.Altitude = f.ALTITUDE
+				if f.ALTITUDE == "" {
+					di.CurrentSite.Altitude = -999999
+				} else {
+					di.CurrentSite.Altitude, err = strconv.Atoi(f.ALTITUDE)
+					if err != nil {
+						di.AddError(f.ALTITUDE, "IMPORT.CSVFIELD_ALTITUDE.T_WRONG_VALUE", "ALTITUDE")
+					}
+				}
 				if strings.Contains(f.LATITUDE, ",") {
 					di.AddError(f.LATITUDE, "IMPORT.CSVFIELD_GEOMETRY.T_COMMA_DETECTED", "LATITUDE")
 					skip = true
@@ -414,7 +420,7 @@ func (di *DatabaseImport) processSiteInfos(f *Fields) {
 				}
 				if !skip {
 					di.CurrentSite.Geom = di.CurrentSite.Point.ToEWKT_2d()
-					if di.CurrentSite.Altitude != "" {
+					if di.CurrentSite.Altitude != -999999 {
 						di.CurrentSite.Geom_3d = di.CurrentSite.Point.ToEWKT()
 					}
 				}
@@ -481,7 +487,8 @@ func (di *DatabaseImport) checkDifferences(f *Fields) {
 	}
 
 	// ALTITUDE
-	if f.ALTITUDE != "" && f.ALTITUDE != di.CurrentSite.Altitude {
+	tmpAlt, _ := strconv.Atoi(f.ALTITUDE)
+	if f.ALTITUDE != "" && tmpAlt != di.CurrentSite.Altitude {
 		di.AddError(f.LATITUDE, "IMPORT.CSVFIELD_ALL.T_CHECK_ALREADY_DEFINED_VALUE_DIFFERS", "ALTITUDE")
 	}
 
