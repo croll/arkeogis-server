@@ -526,19 +526,19 @@ func MapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		case "potentially":
 			q += " AND " + tblname + ".start_date1 <= " + end_date_str + " AND " + tblname + ".end_date2 >= " + start_date_str
 			if chronology.ExistenceInsidePart == "full" {
-				q += " AND " + tblname + ".start_date1 <= " + start_date_str + " AND " + tblname + ".end_date2 >= " + end_date_str
+				q += " AND " + tblname + ".start_date1 >= " + start_date_str + " AND " + tblname + ".end_date2 <= " + end_date_str
 			}
 		case "certainly":
 			q += " AND " + tblname + ".start_date2 <= " + end_date_str + " AND " + tblname + ".end_date1 >= " + start_date_str
 			if chronology.ExistenceInsidePart == "full" {
-				q += " AND " + tblname + ".start_date2 <= " + start_date_str + " AND " + tblname + ".end_date1 >= " + end_date_str
+				q += " AND " + tblname + ".start_date2 >= " + start_date_str + " AND " + tblname + ".end_date1 <= " + end_date_str
 			}
 		case "potentially-only":
 			q += " AND " + tblname + ".start_date1 <= " + end_date_str + " AND " + tblname + ".end_date2 >= " + start_date_str
 			q += " AND " + tblname + ".start_date2 > " + end_date_str + " AND " + tblname + ".end_date1 < " + start_date_str
 
 			if chronology.ExistenceInsidePart == "full" {
-				q += " AND " + tblname + ".start_date1 <= " + start_date_str + " AND " + tblname + ".end_date2 >= " + end_date_str
+				q += " AND " + tblname + ".start_date1 >= " + start_date_str + " AND " + tblname + ".end_date2 <= " + end_date_str
 			}
 		}
 
