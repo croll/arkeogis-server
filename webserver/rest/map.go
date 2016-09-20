@@ -45,6 +45,9 @@ func init() {
 			Func:        MapSearch,
 			Method:      "POST",
 			Json:        reflect.TypeOf(MapSearchParams{}),
+			Permissions: []string{
+				"request map",
+			},
 		},
 	}
 	routes.RegisterMultiple(Routes)
