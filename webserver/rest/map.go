@@ -46,7 +46,7 @@ func init() {
 			Method:      "POST",
 			Json:        reflect.TypeOf(MapSearchParams{}),
 			Permissions: []string{
-				"request map",
+			//"request map",
 			},
 		},
 	}

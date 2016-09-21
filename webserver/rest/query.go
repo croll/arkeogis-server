@@ -42,7 +42,7 @@ func init() {
 			Method:      "POST",
 			Json:        reflect.TypeOf(QuerySaveParams{}),
 			Permissions: []string{
-				"request map",
+			//"request map",
 			},
 		},
 		&routes.Route{
@@ -52,7 +52,7 @@ func init() {
 			Method:      "GET",
 			Params:      reflect.TypeOf(QueryGetParams{}),
 			Permissions: []string{
-				"request map",
+			//"request map",
 			},
 		},
 	}
