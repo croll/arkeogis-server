@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- SQL XML created by WWW SQL Designer, https://github.com/ondras/wwwsqldesigner/ -->
-<!-- Active URL: https://www.croll.fr/sqldesigner/ -->
+<!-- Active URL: https://croll.fr/sqldesigner/ -->
 <sql>
 <datatypes db="postgresql">
 	<group label="Numeric" color="rgb(238,238,170)">
@@ -1305,6 +1305,23 @@
 <key type="PRIMARY" name="">
 <part>project_id</part>
 <part>root_charac_id</part>
+</key>
+</table>
+<table x="1272" y="66" name="saved_query">
+<row name="project_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="project" row="id" />
+</row>
+<row name="name" null="0" autoincrement="0">
+<datatype>VARCHAR(255)</datatype>
+<comment>min:"1"</comment>
+</row>
+<row name="params" null="0" autoincrement="0">
+<datatype>TEXT</datatype>
+</row>
+<key type="PRIMARY" name="">
+<part>project_id</part>
+<part>name</part>
 </key>
 </table>
 </sql>

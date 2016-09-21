@@ -355,6 +355,13 @@ type Project_hidden_characs struct {
 }
 
 
+type Saved_query struct {
+	Project_id	int	`db:"project_id" json:"project_id"`	// Project.Id
+	Name	string	`db:"name" json:"name" min:"1"`
+	Params	string	`db:"params" json:"params"`
+}
+
+
 type Session struct {
 	Token	string	`db:"token" json:"token"`
 	Value	string	`db:"value" json:"value"`
@@ -649,3 +656,6 @@ const Map_layer__authors_UpdateStr = ""
 const Project__charac_InsertStr = ""
 const Project__charac_InsertValuesStr = ""
 const Project__charac_UpdateStr = ""
+const Saved_query_InsertStr = "\"params\""
+const Saved_query_InsertValuesStr = ":params"
+const Saved_query_UpdateStr = "\"params\" = :params"
