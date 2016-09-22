@@ -355,8 +355,8 @@ func MapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	}
 
 	// add knowledge filter
+	str := ""
 	for _, knowledge := range params.Others.Knowledges {
-		str := ""
 		switch knowledge {
 		case "literature", "surveyed", "dig", "not_documented", "prospected_aerial", "prospected_pedestrian":
 			if str == "" {
@@ -365,16 +365,16 @@ func MapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 				str += ",'" + knowledge + "'"
 			}
 		}
-		if str != "" {
-			filters.AddTable(&MapSqlDefSiteRange, `site_range`, false)
-			filters.AddTable(&MapSqlDefSiteRangeCharac, `site_range__charac`, false)
-			filters.AddFilter("site_range__charac", `"site_range__charac".knowledge_type IN (`+str+`)`)
-		}
+	}
+	if str != "" {
+		filters.AddTable(&MapSqlDefSiteRange, `site_range`, false)
+		filters.AddTable(&MapSqlDefSiteRangeCharac, `site_range__charac`, false)
+		filters.AddFilter("site_range__charac", `"site_range__charac".knowledge_type IN (`+str+`)`)
 	}
 
 	// add occupation filter
+	str = ""
 	for _, occupation := range params.Others.Knowledges {
-		str := ""
 		switch occupation {
 		case "not_documented", "single", "continuous", "multiple":
 			if str == "" {
@@ -383,9 +383,9 @@ func MapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 				str += ",'" + occupation + "'"
 			}
 		}
-		if str != "" {
-			filters.AddFilter("site", `"site".occupation IN (`+str+`)`)
-		}
+	}
+	if str != "" {
+		filters.AddFilter("site", `"site".occupation IN (`+str+`)`)
 	}
 
 	// text filter
