@@ -304,8 +304,6 @@ type MapSearchParams struct {
 
 // MapSearch search for sites using many filters
 func MapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
-	q_args := []interface{}{}
-
 	// for measuring execution time
 	start := time.Now()
 
@@ -339,7 +337,6 @@ func MapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		filters.AddFilter("site", `ST_DWithin("site".geom, Geography(ST_MakePoint($$, $$)), $$)`,
 			params.Area.Lng, params.Area.Lat, params.Area.Radius)
 	} else {
-		q_args = append(q_args, params.Area.Geojson.Geometry)
 		filters.AddFilter("site", `ST_Within("site".geom::geometry, ST_SetSRID(ST_GeomFromGeoJSON($$),4326))`,
 			params.Area.Geojson.Geometry)
 	}
@@ -390,25 +387,32 @@ func MapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	// text filter
 	if params.Others.TextSearch != "" {
+		str = "1=0"
+		args := []interface{}{}
 		for _, textSearchIn := range params.Others.TextSearchIn {
 			switch textSearchIn {
 			case "site_name":
-				q_args = append(q_args, "%"+params.Others.TextSearch+"%")
-				filters.AddFilter("site", `"site".name ILIKE $$`, "%"+params.Others.TextSearch+"%")
+				args = append(args, "%"+params.Others.TextSearch+"%")
+				str += ` OR "site".name ILIKE $$`
 			case "city_name":
-				q_args = append(q_args, "%"+params.Others.TextSearch+"%")
-				filters.AddFilter("site", `"site".city_name ILIKE $$`, "%"+params.Others.TextSearch+"%")
+				args = append(args, "%"+params.Others.TextSearch+"%")
+				str += ` OR "site".city_name ILIKE $$`
 			case "bibliography":
+				args = append(args, "%"+params.Others.TextSearch+"%")
 				filters.AddTable(&MapSqlDefSiteRange, `site_range`, false)
 				filters.AddTable(&MapSqlDefSiteRangeCharac, `site_range__charac`, false)
 				filters.AddTable(&MapSqlDefSiteRangeCharacTr, `site_range__charac_tr`, false)
-				filters.AddFilter("site_range__charac_tr", `"site_range__charac_tr".bibliography ILIKE $$`, "%"+params.Others.TextSearch+"%")
+				str += ` OR "site_range__charac_tr".bibliography ILIKE $$`
 			case "comment":
+				args = append(args, "%"+params.Others.TextSearch+"%")
 				filters.AddTable(&MapSqlDefSiteRange, `site_range`, false)
 				filters.AddTable(&MapSqlDefSiteRangeCharac, `site_range__charac`, false)
 				filters.AddTable(&MapSqlDefSiteRangeCharacTr, `site_range__charac_tr`, false)
-				filters.AddFilter("site_range__charac_tr", `"site_range__charac_tr".comment ILIKE $$`, "%"+params.Others.TextSearch+"%")
+				str += ` OR "site_range__charac_tr".comment ILIKE $$`
 			}
+		}
+		if str != "1=0" {
+			filters.AddFilter("site", str, args...)
 		}
 	}
 
