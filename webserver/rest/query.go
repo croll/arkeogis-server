@@ -55,6 +55,16 @@ func init() {
 			//"request map",
 			},
 		},
+		&routes.Route{
+			Path:        "/api/query",
+			Func:        QueryDelete,
+			Description: "Delete a queries from a project id",
+			Method:      "DELETE",
+			Params:      reflect.TypeOf(QueryDeleteParams{}),
+			Permissions: []string{
+			//"request map",
+			},
+		},
 	}
 	routes.RegisterMultiple(Routes)
 }
@@ -67,6 +77,11 @@ type QuerySaveParams struct {
 	ProjectId int    `json:"project_id" min:"1"`
 	Name      string `json:"name" min:"1"`
 	Params    string `json:"params" min:"1"`
+}
+
+type QueryDeleteParams struct {
+	Project_id int    `json:"project_id" min:"1"`
+	Name       string `json:"name" min:"1"`
 }
 
 // QuerySave save the query
@@ -142,7 +157,7 @@ func QuerySave(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 }
 
-// QuerySave save the query
+// QueryGet get the query
 func QueryGet(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	params := proute.Params.(*QueryGetParams)
 
@@ -172,6 +187,72 @@ func QueryGet(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		routes.FieldError(w, "name", "name", "QUERY.SAVE.T_ERROR_PROJECT_NOT_FOUND")
 		fmt.Println("project not found : ", params)
 		tx.Rollback()
+		return
+	}
+
+	res := []model.Saved_query{}
+	err = tx.Select(&res, `SELECT * FROM "saved_query" WHERE "project_id"=$1`, params.Project_id)
+	if err != nil {
+		fmt.Println("search project saved queries failed : ", err)
+		userSqlError(w, err)
+		_ = tx.Rollback()
+		return
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		log.Println("can't commit")
+		userSqlError(w, err)
+		return
+	}
+
+	j, err := json.Marshal(res)
+	if err != nil {
+		log.Println("marshal failed: ", err)
+		return
+	}
+	w.Write(j)
+
+}
+
+// QueryDelete delete the query
+func QueryDelete(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+	params := proute.Params.(*QueryDeleteParams)
+
+	fmt.Println("params: ", params)
+
+	// get the user
+	_user, _ := proute.Session.Get("user")
+	user := _user.(model.User)
+
+	tx, err := db.DB.Beginx()
+	if err != nil {
+		log.Println("can't start transaction")
+		userSqlError(w, err)
+		return
+	}
+
+	// check if project exists and is owned by the current user
+	c := 0
+	err = tx.Get(&c, `SELECT count(*) FROM "project" WHERE "id"=$1 AND "user_id"=$2`, params.Project_id, user.Id)
+	if err != nil {
+		fmt.Println("search project query failed : ", err)
+		userSqlError(w, err)
+		_ = tx.Rollback()
+		return
+	}
+	if c != 1 {
+		routes.FieldError(w, "name", "name", "QUERY.SAVE.T_ERROR_PROJECT_NOT_FOUND")
+		fmt.Println("project not found : ", params)
+		tx.Rollback()
+		return
+	}
+
+	_, err = tx.Exec(`DELETE FROM "saved_query" WHERE "project_id"=$1 AND "name"=$2`, params.Project_id, params.Name)
+	if err != nil {
+		fmt.Println("delete saved queries failed : ", err)
+		userSqlError(w, err)
+		_ = tx.Rollback()
 		return
 	}
 
