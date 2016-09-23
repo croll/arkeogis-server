@@ -300,6 +300,9 @@ func UserList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	if order == "u.lastname" {
 		order = "u.lastname " + orderdir + ", u.firstname"
 	}
+	if order == "u.created_at" {
+		order = "u.created_at " + orderdir + ", u.username"
+	}
 	/////
 
 	offset := (params.Page - 1) * params.Limit
