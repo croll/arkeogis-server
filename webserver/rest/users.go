@@ -333,7 +333,7 @@ func UserList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	//log.Println("result: ", answer.Data)
 
-	err = db.DB.Get(&answer.Count, "SELECT count(*) FROM \"user\"")
+	err = db.DB.Get(&answer.Count, "SELECT count(*) FROM \"user\" WHERE id > 0")
 	if err != nil {
 		log.Println("err: ", err)
 		return
