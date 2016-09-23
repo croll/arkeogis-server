@@ -171,7 +171,7 @@ func GroupList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	}
 
 	// get total count
-	err = db.DB.Get(&answer.Count, "SELECT count(g.*) FROM \"group\" g LEFT JOIN \"group_tr\" g_tr ON g.id = g_tr.group_id WHERE g_tr.name ILIKE $1 AND g.type=$2", "%"+params.Filter+"%", params.Type)
+	err = db.DB.Get(&answer.Count, "SELECT count(g.*) FROM \"group\" g LEFT JOIN \"group_tr\" g_tr ON g.id = g_tr.group_id WHERE g_tr.name ILIKE $1 AND g.type=$2 AND g.id > 0 AND g_tr.lang_isocode=$3", "%"+params.Filter+"%", params.Type, proute.Lang1.Isocode)
 	if err != nil {
 		log.Println("get total count failed", err)
 		routes.ServerError(w, 500, "INTERNAL ERROR")
