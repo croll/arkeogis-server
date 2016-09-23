@@ -56,7 +56,7 @@ type Company struct {
 
 // UserListParams is params struct for UserList query
 type UserListParams struct {
-	Limit  int    `default:"10" min:"1" max:"100" error:"limit over boundaries"`
+	Limit  int    `default:"10" min:"1" max:"10000" error:"limit over boundaries"`
 	Page   int    `default:"1" min:"1" error:"page over boundaries"`
 	Order  string `default:"u.created_at" enum:"u.created_at,-u.created_at,u.updated_at,-u.updated_at,u.username,-u.username,u.firstname,-u.firstname,u.lastname,-u.lastname,u.email,-u.email" error:"bad order"`
 	Filter string `default:""`
