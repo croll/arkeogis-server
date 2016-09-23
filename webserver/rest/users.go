@@ -242,7 +242,7 @@ func selectGroupAsJsonNotNull(group_type string, langisocode string) string {
 	return "COALESCE((" + selectGroupAsJson(group_type, langisocode) + "), '[]'::json)"
 }
 
-func selectCompany(user_id string) string {
+func selectCompanies(user_id string) string {
 	return "" +
 		"SELECT " +
 		" array_agg(c.*) " +
@@ -251,9 +251,20 @@ func selectCompany(user_id string) string {
 		" WHERE u_c.user_id = " + user_id
 }
 
-func selectCompanyAsJson(user_id string) string {
-	//return "COALESCE((select row_to_json(t) from(" + selectCompany(user_id) + ") t), '[]'::json)"
-	return "COALESCE(array_to_json((" + selectCompany(user_id) + ")), '[]'::json)"
+func selectCompaniesAsJson(user_id string) string {
+	return "COALESCE(array_to_json((" + selectCompanies(user_id) + ")), '[]'::json)"
+}
+
+func selectDatabases(user_id string) string {
+	return "" +
+		"SELECT " +
+		" array_agg(ROW(id, name)) " +
+		" FROM database db " +
+		" WHERE db.owner = " + user_id
+}
+
+func selectDatabasesAsJson(user_id string) string {
+	return "COALESCE(array_to_json((" + selectDatabases(user_id) + ")), '[]'::json)"
 }
 
 // UserList List of users. no filets, no args actually...
@@ -265,6 +276,7 @@ func UserList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		Groups_charac     sqlx_types.JSONText `json:"groups_charac"`
 		CountryAndCity    sqlx_types.JSONText `json:"country_and_city"`
 		Companies         sqlx_types.JSONText `json:"companies"`
+		Databases         sqlx_types.JSONText `json:"databases"`
 
 		// overrides
 		Password string `json:"-"`
@@ -301,7 +313,8 @@ func UserList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 			" "+selectGroupAsJsonNotNull("chronology", proute.Lang1.Isocode)+" as groups_chronology, "+
 			" "+selectGroupAsJsonNotNull("charac", proute.Lang1.Isocode)+" as groups_charac, "+
 			" "+selectCityAndCountryAsJson("u.city_geonameid", proute.Lang1.Isocode)+" as countryandcity, "+
-			" "+selectCompanyAsJson("u.id")+" as companies "+
+			" "+selectCompaniesAsJson("u.id")+" as companies, "+
+			" "+selectDatabasesAsJson("u.id")+" as databases "+
 			" FROM \"user\" u "+
 			" WHERE (u.username ILIKE $1 OR u.firstname ILIKE $1 OR u.lastname ILIKE $1 OR u.email ILIKE $1) "+
 			"  AND u.id > 0"+ // don't list anonymous
@@ -317,7 +330,8 @@ func UserList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		" "+selectGroupAsJsonNotNull("chronology", proute.Lang1.Isocode)+" as groups_chronology, "+
 		" "+selectGroupAsJsonNotNull("charac", proute.Lang1.Isocode)+" as groups_charac, "+
 		" "+selectCityAndCountryAsJson("u.city_geonameid", proute.Lang1.Isocode)+" as countryandcity, "+
-		" "+selectCompanyAsJson("u.id")+" as companies "+
+		" "+selectCompaniesAsJson("u.id")+" as companies, "+
+		" "+selectDatabasesAsJson("u.id")+" as databases "+
 		" FROM \"user\" u "+
 		" WHERE (u.username ILIKE $1 OR u.firstname ILIKE $1 OR u.lastname ILIKE $1 OR u.email ILIKE $1) "+
 		"  AND u.id > 0"+ // don't list anonymous
