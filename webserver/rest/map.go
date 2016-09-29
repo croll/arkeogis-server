@@ -428,8 +428,8 @@ func MapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 			}
 			includes[sel.RootId] = append(includes[sel.RootId], characid)
 		} else if sel.Include && sel.Exceptional {
-			if _, ok := includes[sel.RootId]; !ok {
-				includes[sel.RootId] = make([]int, 0)
+			if _, ok := exceptionals[sel.RootId]; !ok {
+				exceptionals[sel.RootId] = make([]int, 0)
 			}
 			includes[sel.RootId] = append(includes[sel.RootId], characid)
 		} else if !sel.Include {
