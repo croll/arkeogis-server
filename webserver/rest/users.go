@@ -698,7 +698,6 @@ func loginAnswer(w http.ResponseWriter, tx *sqlx.Tx, user model.User, token stri
 
 	permissions, err := user.GetPermissions(tx)
 	if err != nil {
-		tx.Rollback()
 		log.Fatal("can't get permissions!")
 		return LoginAnswer{}, err
 	}
@@ -707,7 +706,6 @@ func loginAnswer(w http.ResponseWriter, tx *sqlx.Tx, user model.User, token stri
 	projectID, err := user.GetProjectId(tx)
 
 	if err != nil {
-		tx.Rollback()
 		log.Fatal("can't get project!")
 		return LoginAnswer{}, err
 	}
@@ -717,7 +715,6 @@ func loginAnswer(w http.ResponseWriter, tx *sqlx.Tx, user model.User, token stri
 		project.Id = projectID
 		err = project.Get(tx)
 		if err != nil {
-			tx.Rollback()
 			log.Fatal("can't get project informations!")
 			return LoginAnswer{}, err
 		}
