@@ -65,6 +65,8 @@ func GetProject(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	params := proute.Json.(*GetProjectParams)
 
+	var projectID int
+
 	_user, _ := proute.Session.Get("user")
 	user := _user.(model.User)
 
@@ -81,13 +83,17 @@ func GetProject(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		return
 	}
 
-	projectID, err := user.GetProjectId(tx)
+	if params.User_id != 0 {
+		projectID, err = user.GetProjectId(tx)
 
-	if err != nil {
-		tx.Rollback()
-		log.Fatal("can't get project!")
-		userSqlError(w, err)
-		return
+		if err != nil {
+			tx.Rollback()
+			log.Fatal("can't get project!")
+			userSqlError(w, err)
+			return
+		}
+	} else {
+		projectID = params.Id
 	}
 
 	if projectID > 0 {
