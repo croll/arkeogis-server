@@ -24,7 +24,6 @@ package geo
 import (
 	"database/sql"
 	"errors"
-	"fmt"
 	"strconv"
 
 	db "github.com/croll/arkeogis-server/db"
@@ -81,8 +80,6 @@ func NewPointByGeonameID(geonameID int) (*Point, error) {
 		X float64
 		Y float64
 	}{}
-
-	fmt.Println(geonameID)
 
 	err := db.DB.Get(&coords, "SELECT ST_X(geom_centroid::geometry) AS x, ST_Y(geom_centroid::geometry) AS y FROM city WHERE geonameid = $1", geonameID)
 
