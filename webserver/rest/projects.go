@@ -114,7 +114,6 @@ func GetProject(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	if err != nil {
 		log.Println("commit failed")
 		userSqlError(w, err)
-		_ = tx.Rollback()
 		return
 	}
 
@@ -334,7 +333,6 @@ func SaveProject(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	if err != nil {
 		log.Println("commit failed")
 		userSqlError(w, err)
-		_ = tx.Rollback()
 		return
 	}
 
