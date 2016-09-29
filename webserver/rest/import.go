@@ -224,8 +224,6 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		err = dbImport.Tx.Rollback()
 	}
 
-	// Cache database enveloppe
-
 	// Prepare response
 
 	var sitesWithError []string
@@ -454,9 +452,7 @@ func ImportStep3(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	}
 
 	// If published link database to user project
-	fmt.Println("PUBLISHED: ", d.Published)
-	if d.Published {
-		fmt.Println("DATABASE AND PROJECT ID", d.Id, params.Project_ID)
+	if params.Published {
 		linked, _ := d.IsLinkedToProject(tx, params.Project_ID)
 		if err != nil {
 			log.Println("Error checking if database is linked to project: ", err)
@@ -464,7 +460,6 @@ func ImportStep3(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 			return
 		}
 		if !linked {
-			fmt.Println("LINK DATABASE TO PROJECT")
 			err = d.LinkToUserProject(tx, params.Project_ID)
 		}
 		if err != nil {
