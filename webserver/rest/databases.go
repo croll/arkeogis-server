@@ -27,6 +27,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math"
 	"net/http"
 	"reflect"
 	"strconv"
@@ -155,7 +156,7 @@ func DatabaseList(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 	}
 
 	if params.Check_dates {
-		q += " AND d.start_date >= :start_date AND d.end_date <= :end_date"
+		q += " AND ((d.start_date = " + strconv.Itoa(math.MinInt32) + " OR d.start_date >= :start_date) AND (d.end_date = " + strconv.Itoa(math.MaxInt32) + " OR d.end_date <= :end_date))"
 	}
 
 	databases := []dbInfos{}

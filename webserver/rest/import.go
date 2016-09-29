@@ -453,21 +453,25 @@ func ImportStep3(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		return
 	}
 
-	// Link database to user project
-	fmt.Println(d.Id, params.Project_ID)
-	linked, _ := d.IsLinkedToProject(tx, params.Project_ID)
-	if err != nil {
-		log.Println("Error checking if database is linked to project: ", err)
-		userSqlError(w, err)
-		return
-	}
-	if !linked {
-		err = d.LinkToUserProject(tx, params.Project_ID)
-	}
-	if err != nil {
-		log.Println("Error auto linking database to user project: ", err)
-		userSqlError(w, err)
-		return
+	// If published link database to user project
+	fmt.Println("PUBLISHED: ", d.Published)
+	if d.Published {
+		fmt.Println("DATABASE AND PROJECT ID", d.Id, params.Project_ID)
+		linked, _ := d.IsLinkedToProject(tx, params.Project_ID)
+		if err != nil {
+			log.Println("Error checking if database is linked to project: ", err)
+			userSqlError(w, err)
+			return
+		}
+		if !linked {
+			fmt.Println("LINK DATABASE TO PROJECT")
+			err = d.LinkToUserProject(tx, params.Project_ID)
+		}
+		if err != nil {
+			log.Println("Error auto linking database to user project: ", err)
+			userSqlError(w, err)
+			return
+		}
 	}
 
 	err = tx.Commit()
