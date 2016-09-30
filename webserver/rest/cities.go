@@ -117,6 +117,7 @@ func CityGet(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	if err != nil {
 		log.Println("err while getting city and country: ", err)
 		routes.ServerError(w, 500, "INTERNAL ERROR")
+		_ = tx.Rollback()
 		return
 	}
 

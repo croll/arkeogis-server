@@ -555,6 +555,7 @@ func UserDelete(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	if err != nil {
 		log.Println("can't get user")
 		userSqlError(w, err)
+		_ = tx.Rollback()
 		return
 	}
 
@@ -562,6 +563,7 @@ func UserDelete(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	if err != nil {
 		log.Println("can't remove user from groups")
 		userSqlError(w, err)
+		_ = tx.Rollback()
 		return
 	}
 
@@ -569,6 +571,7 @@ func UserDelete(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	if err != nil {
 		log.Println("can't remove user from companies")
 		userSqlError(w, err)
+		_ = tx.Rollback()
 		return
 	}
 
@@ -576,6 +579,7 @@ func UserDelete(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	if err != nil {
 		log.Println("can't delete user")
 		userSqlError(w, err)
+		_ = tx.Rollback()
 		return
 	}
 
@@ -606,6 +610,7 @@ func UserInfos(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	if err != nil {
 		log.Println("can't get user")
 		userSqlError(w, err)
+		_ = tx.Rollback()
 		return
 	}
 
@@ -621,6 +626,7 @@ func UserInfos(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	if err != nil {
 		log.Println("can't get user companies")
 		userSqlError(w, err)
+		_ = tx.Rollback()
 		return
 	}
 	for _, company := range companies {
@@ -641,6 +647,7 @@ func UserInfos(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	if err != nil {
 		log.Println("can't get user groups")
 		userSqlError(w, err)
+		_ = tx.Rollback()
 		return
 	}
 

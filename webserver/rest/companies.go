@@ -115,6 +115,7 @@ func CompanyGet(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	if err != nil {
 		log.Println("err on get", err)
 		routes.ServerError(w, 500, "INTERNAL ERROR")
+		_ = tx.Rollback()
 		return
 	}
 
@@ -123,12 +124,14 @@ func CompanyGet(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		log.Println("err on get", err)
 		//routes.ServerError(w, 500, "INTERNAL ERROR")
 		//return
+		_ = tx.Rollback()
 	}
 
 	err = tx.Commit()
 	if err != nil {
 		log.Println("err on commit", err)
 		routes.ServerError(w, 500, "INTERNAL ERROR")
+		_ = tx.Rollback()
 		return
 	}
 

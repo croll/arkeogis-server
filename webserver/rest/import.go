@@ -405,30 +405,35 @@ func ImportStep3(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	if err != nil {
 		log.Println("Error updating database fields: ", err)
 		userSqlError(w, err)
+		_ = tx.Rollback()
 		return
 	}
 	err = d.DeleteAuthors(tx)
 	if err != nil {
 		log.Println("Error deleting database authors: ", err)
 		userSqlError(w, err)
+		_ = tx.Rollback()
 		return
 	}
 	err = d.SetAuthors(tx, params.Authors)
 	if err != nil {
 		log.Println("Error setting database authors: ", err)
 		userSqlError(w, err)
+		_ = tx.Rollback()
 		return
 	}
 	err = d.DeleteContexts(tx)
 	if err != nil {
 		log.Println("Error deleting database contexts: ", err)
 		userSqlError(w, err)
+		_ = tx.Rollback()
 		return
 	}
 	err = d.SetContexts(tx, params.Contexts)
 	if err != nil {
 		log.Println("Error setting database contexts: ", err)
 		userSqlError(w, err)
+		_ = tx.Rollback()
 		return
 	}
 
@@ -443,6 +448,7 @@ func ImportStep3(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	if err != nil {
 		log.Println("Error setting subject: ", err)
 		userSqlError(w, err)
+		_ = tx.Rollback()
 		return
 	}
 
@@ -450,6 +456,7 @@ func ImportStep3(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	if err != nil {
 		log.Println("Error setting database description: ", err)
 		userSqlError(w, err)
+		_ = tx.Rollback()
 		return
 	}
 
@@ -461,6 +468,7 @@ func ImportStep3(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		if err != nil {
 			log.Println("Error checking if database is linked to project: ", err)
 			userSqlError(w, err)
+			_ = tx.Rollback()
 			return
 		}
 		if !linked {
@@ -470,6 +478,7 @@ func ImportStep3(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		if err != nil {
 			log.Println("Error auto linking database to user project: ", err)
 			userSqlError(w, err)
+			_ = tx.Rollback()
 			return
 		}
 	}
@@ -520,6 +529,7 @@ func ImportStep4(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	if err != nil {
 		log.Println("Error updating database fields: ", err)
 		userSqlError(w, err)
+		_ = tx.Rollback()
 		return
 	}
 
@@ -534,6 +544,7 @@ func ImportStep4(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	if err != nil {
 		log.Println("Error setting source description: ", err)
 		userSqlError(w, err)
+		_ = tx.Rollback()
 		return
 	}
 
@@ -548,6 +559,7 @@ func ImportStep4(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	if err != nil {
 		log.Println("Error setting source relation: ", err)
 		userSqlError(w, err)
+		_ = tx.Rollback()
 		return
 	}
 
@@ -562,6 +574,7 @@ func ImportStep4(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	if err != nil {
 		log.Println("Error setting context description: ", err)
 		userSqlError(w, err)
+		_ = tx.Rollback()
 		return
 	}
 
@@ -569,6 +582,7 @@ func ImportStep4(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	if err != nil {
 		log.Println("Error setting geographical limit: ", err)
 		userSqlError(w, err)
+		_ = tx.Rollback()
 		return
 	}
 
@@ -576,6 +590,7 @@ func ImportStep4(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	if err != nil {
 		log.Println("Error setting bibliography: ", err)
 		userSqlError(w, err)
+		_ = tx.Rollback()
 		return
 	}
 
@@ -586,6 +601,7 @@ func ImportStep4(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	if err != nil && err != sql.ErrNoRows {
 		log.Println("Error getting last handle: ", err)
 		userSqlError(w, err)
+		_ = tx.Rollback()
 		return
 	}
 
@@ -608,6 +624,7 @@ func ImportStep4(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	if err != nil {
 		log.Println("Error setting handle informations: ", err)
 		userSqlError(w, err)
+		_ = tx.Rollback()
 		return
 	}
 

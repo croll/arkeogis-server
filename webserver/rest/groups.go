@@ -232,6 +232,7 @@ func GroupSet(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	if err != nil {
 		log.Println("can't update group", err)
 		routes.ServerError(w, 500, "INTERNAL ERROR")
+		_ = tx.Rollback()
 		return
 	}
 
@@ -239,6 +240,7 @@ func GroupSet(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	if err != nil {
 		log.Println("can't set group users", err)
 		routes.ServerError(w, 500, "INTERNAL ERROR")
+		_ = tx.Rollback()
 		return
 	}
 
@@ -246,6 +248,7 @@ func GroupSet(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	if err != nil {
 		log.Println("can't commit", err)
 		routes.ServerError(w, 500, "INTERNAL ERROR")
+		_ = tx.Rollback()
 		return
 	}
 
