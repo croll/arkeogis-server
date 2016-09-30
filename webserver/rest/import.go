@@ -224,8 +224,6 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		err = dbImport.Tx.Rollback()
 	}
 
-	// Cache database enveloppe
-
 	// Prepare response
 
 	var sitesWithError []string
@@ -399,6 +397,7 @@ func ImportStep3(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	}
 
 	d := &model.Database{Id: params.Id}
+	d.Get(tx)
 
 	err = d.UpdateFields(tx, params, "type", "declared_creation_date", "license_id", "scale_resolution", "state", "published")
 
@@ -438,11 +437,12 @@ func ImportStep3(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	}
 
 	// For now subject is not translatable but store it in database_tr anyway
+	fmt.Println("DATABASE DEFAULT LANGUAGE " + d.Default_language)
 	var subject = []struct {
 		Lang_Isocode string
 		Text         string
 	}{
-		{proute.Lang1.Isocode, params.Subject},
+		{d.Default_language, params.Subject},
 	}
 	err = d.SetTranslations(tx, "subject", subject)
 	if err != nil {
@@ -461,9 +461,7 @@ func ImportStep3(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	}
 
 	// If published link database to user project
-	fmt.Println("PUBLISHED: ", d.Published)
-	if d.Published {
-		fmt.Println("DATABASE AND PROJECT ID", d.Id, params.Project_ID)
+	if params.Published {
 		linked, _ := d.IsLinkedToProject(tx, params.Project_ID)
 		if err != nil {
 			log.Println("Error checking if database is linked to project: ", err)
@@ -472,7 +470,6 @@ func ImportStep3(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 			return
 		}
 		if !linked {
-			fmt.Println("LINK DATABASE TO PROJECT")
 			err = d.LinkToUserProject(tx, params.Project_ID)
 		}
 		if err != nil {
@@ -524,6 +521,7 @@ func ImportStep4(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	}
 
 	d := &model.Database{Id: params.Id}
+	d.Get(tx)
 
 	err = d.UpdateFields(tx, params, "editor", "contributor")
 	if err != nil {
@@ -538,7 +536,7 @@ func ImportStep4(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		Lang_Isocode string
 		Text         string
 	}{
-		{proute.Lang1.Isocode, params.Source_description},
+		{d.Default_language, params.Source_description},
 	}
 	err = d.SetTranslations(tx, "source_description", source_desc)
 	if err != nil {
@@ -553,7 +551,7 @@ func ImportStep4(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		Lang_Isocode string
 		Text         string
 	}{
-		{proute.Lang1.Isocode, params.Source_relation},
+		{d.Default_language, params.Source_relation},
 	}
 	err = d.SetTranslations(tx, "source_relation", source_relation)
 	if err != nil {
@@ -568,7 +566,7 @@ func ImportStep4(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		Lang_Isocode string
 		Text         string
 	}{
-		{proute.Lang1.Isocode, params.Context_description},
+		{d.Default_language, params.Context_description},
 	}
 	err = d.SetTranslations(tx, "context_description", context_desc)
 	if err != nil {
