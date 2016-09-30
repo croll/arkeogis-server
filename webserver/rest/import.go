@@ -161,6 +161,7 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	if err != nil {
 		parser.AddError(err.Error())
 		sendError(w, parser.Errors)
+		dbImport.Tx.Rollback()
 		return
 	}
 
@@ -168,6 +169,7 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	if err = parser.CheckHeader(); err != nil {
 		if err != nil {
 			sendError(w, parser.Errors)
+			dbImport.Tx.Rollback()
 			return
 		}
 	}
@@ -185,6 +187,7 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	if err != nil {
 		parser.AddError("Import: error processing essential infos " + err.Error())
 		sendError(w, parser.Errors)
+		dbImport.Tx.Rollback()
 		return
 	}
 	parser.Parse(dbImport.ProcessRecord)
