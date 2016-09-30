@@ -159,6 +159,8 @@ func DatabaseList(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 		q += " AND ((d.start_date = " + strconv.Itoa(math.MinInt32) + " OR d.start_date >= :start_date) AND (d.end_date = " + strconv.Itoa(math.MaxInt32) + " OR d.end_date <= :end_date))"
 	}
 
+	q += " ORDER BY d.Id DESC"
+
 	databases := []dbInfos{}
 
 	nstmt, err := tx.PrepareNamed(q)
@@ -243,8 +245,11 @@ func DatabaseList(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 		return
 	}
 
+	returnedDatabases := []dbInfos{}
+
 	for _, database := range databases {
 		tr := []model.Database_tr{}
+		fmt.Println("ICI")
 		err = tx.Select(&tr, "SELECT * FROM database_tr WHERE database_id = "+strconv.Itoa(database.Id))
 		if err != nil {
 			log.Println(err)
@@ -260,6 +265,7 @@ func DatabaseList(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 		database.Source_relation = model.MapSqlTranslations(tr, "Lang_isocode", "Source_relation")
 		database.Copyright = model.MapSqlTranslations(tr, "Lang_isocode", "Copyright")
 		database.Subject = model.MapSqlTranslations(tr, "Lang_isocode", "Subject")
+		returnedDatabases = append(returnedDatabases, database)
 	}
 
 	err = tx.Commit()
@@ -269,7 +275,7 @@ func DatabaseList(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 		return
 	}
 
-	l, _ := json.Marshal(databases)
+	l, _ := json.Marshal(returnedDatabases)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(l)
 }
