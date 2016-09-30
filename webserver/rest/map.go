@@ -70,6 +70,18 @@ var MapSqlDefSite = MapSqlTableDef{
 	Joins:     []MapSqlJoin{},
 }
 
+var MapSqlDefXSite = MapSqlTableDef{
+	TableName: "site",
+	Joins: []MapSqlJoin{
+		{
+			JoinLeftTable:  "site",
+			JoinLeftKey:    "id",
+			JoinRightTable: "site",
+			JoinRightKey:   "id",
+		},
+	},
+}
+
 var MapSqlDefDatabase = MapSqlTableDef{
 	TableName: "database",
 	Joins: []MapSqlJoin{
@@ -200,7 +212,7 @@ func (sql *MapSqlQuery) BuildQuery() (string, []interface{}) {
 			q += `SELECT "` + table.As + `"."id" FROM "` + table.TableDef.TableName + `" AS "` + table.As + `" `
 		}
 		for i, join := range table.TableDef.Joins {
-			lefttable, _ := sql.FindTable(join.JoinLeftTable, table)
+			lefttable, _ := sql.FindTable(join.JoinLeftTable, nil)
 			righttable, _ := sql.FindTable(join.JoinRightTable, table)
 			if righttable == nil {
 				fmt.Println("BAD: right table not found : ", join.JoinRightTable)
@@ -579,7 +591,7 @@ func MapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 			if chronology.ExistenceInsideInclude == "+" {
 				filters.AddFilter("site", q)
 			} else if chronology.ExistenceInsideInclude == "-" {
-				filters.AddTable(&MapSqlDefSite, "x_site", true)
+				filters.AddTable(&MapSqlDefXSite, "x_site", true)
 				filters.AddFilter("x_site", q)
 			}
 		}
