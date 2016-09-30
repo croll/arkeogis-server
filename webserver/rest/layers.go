@@ -189,6 +189,7 @@ func SaveShpLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 
 		outfile, err := os.Create(filepath)
 		if err != nil {
+			_ = tx.Rollback()
 			http.Error(w, "Error saving file: "+err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -196,6 +197,7 @@ func SaveShpLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 		// Save the file on filesystem
 		_, err = io.WriteString(outfile, string(params.File.Content))
 		if err != nil {
+			_ = tx.Rollback()
 			http.Error(w, "Error saving file: "+err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -724,6 +726,7 @@ func DeleteLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	if err != nil {
 		log.Println("Unable to delete layer:", err)
+		_ = tx.Rollback()
 		userSqlError(w, err)
 		return
 	}
@@ -753,6 +756,15 @@ func GetShpGeojson(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 	err = tx.Get(&geoJSON, "SELECT geojson FROM shapefile WHERE id = $1", params.Id)
 	if err != nil {
 		log.Println("can't get geojson")
+		_ = tx.Rollback()
+		userSqlError(w, err)
+		return
+	}
+
+	err = tx.Commit()
+
+	if err != nil {
+		log.Println("GetShpGeojson commit failed:", err)
 		userSqlError(w, err)
 		return
 	}
