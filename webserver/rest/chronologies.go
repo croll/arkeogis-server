@@ -216,6 +216,14 @@ func ChronologiesRoots(w http.ResponseWriter, r *http.Request, proute routes.Pro
 		}
 	}
 
+	// commit...
+	err = tx.Commit()
+	if err != nil {
+		log.Println("commit failed")
+		_ = tx.Rollback()
+		return
+	}
+
 	j, _ := json.Marshal(returnedChronologies)
 	w.Write(j)
 }
