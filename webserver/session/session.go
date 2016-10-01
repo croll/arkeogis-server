@@ -28,6 +28,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math/rand"
+	"sync"
 	"time"
 
 	"github.com/croll/arkeogis-server/model"
@@ -39,16 +40,21 @@ var sessionDuration time.Duration
 type Session struct {
 	LastAccess time.Time
 	Values     map[string]interface{}
+	mutex      sync.Mutex
 }
 
 // Get return a value of any type. ok is false if no value was found
 func (session *Session) Get(key string) (value interface{}, ok bool) {
+	session.mutex.Lock()
+	defer session.mutex.Unlock()
 	val, ok := session.Values[key]
 	return val, ok
 }
 
 // GetDef return a value of any type. return the "def" parameter if no value was found
 func (session *Session) GetDef(key string, def interface{}) interface{} {
+	session.mutex.Lock()
+	defer session.mutex.Unlock()
 	val, ok := session.Values[key]
 	if !ok {
 		return def
@@ -58,6 +64,8 @@ func (session *Session) GetDef(key string, def interface{}) interface{} {
 
 // GetString return a value of string type. ok is false if no value was found
 func (session *Session) GetString(key string) (value string, ok bool) {
+	session.mutex.Lock()
+	defer session.mutex.Unlock()
 	val, ok := session.Values[key]
 	if ok {
 		if v, castok := val.(string); castok {
@@ -70,6 +78,8 @@ func (session *Session) GetString(key string) (value string, ok bool) {
 
 // GetStringDef return a value of string type. return the "def" parameter if no value was found
 func (session *Session) GetStringDef(key string, def string) string {
+	session.mutex.Lock()
+	defer session.mutex.Unlock()
 	val, ok := session.Values[key]
 	if ok {
 		if v, castok := val.(string); castok {
@@ -82,6 +92,8 @@ func (session *Session) GetStringDef(key string, def string) string {
 
 // GetInt return a value of integer type. ok is false if no value was found
 func (session *Session) GetInt(key string) (value int, ok bool) {
+	session.mutex.Lock()
+	defer session.mutex.Unlock()
 	val, ok := session.Values[key]
 	if ok {
 		if v, castok := val.(int); castok {
@@ -94,6 +106,8 @@ func (session *Session) GetInt(key string) (value int, ok bool) {
 
 // GetIntDef return a value of integer type. return the "def" parameter if no value was found
 func (session *Session) GetIntDef(key string, def int) int {
+	session.mutex.Lock()
+	defer session.mutex.Unlock()
 	val, ok := session.Values[key]
 	if ok {
 		if v, castok := val.(int); castok {
@@ -106,11 +120,14 @@ func (session *Session) GetIntDef(key string, def int) int {
 
 // Set any value to a key string.
 func (session *Session) Set(key string, value interface{}) {
+	session.mutex.Lock()
+	defer session.mutex.Unlock()
 	session.Values[key] = value
 	SaveSessions()
 }
 
 var sessions map[string]*Session
+var GeneralMutex sync.Mutex
 
 func init() {
 	sessionDuration = 7 * 24 * time.Hour // 7 days
@@ -123,6 +140,8 @@ func init() {
 
 // GetSession return the Session instance of the given token. if no session was found for this token, a transient session will be given
 func GetSession(token string) *Session {
+	GeneralMutex.Lock()
+	defer GeneralMutex.Unlock()
 	cleanup()
 	if s, ok := sessions[token]; ok {
 		s.LastAccess = time.Now()
@@ -140,6 +159,8 @@ func GetSession(token string) *Session {
 
 // DestroySession destroy a session by token
 func DestroySession(token string) {
+	GeneralMutex.Lock()
+	defer GeneralMutex.Unlock()
 	if _, ok := sessions[token]; ok {
 		delete(sessions, token)
 	}
@@ -147,6 +168,8 @@ func DestroySession(token string) {
 
 // NewSession return a new Session instance, with a new token.
 func NewSession() (token string, s *Session) {
+	GeneralMutex.Lock()
+	defer GeneralMutex.Unlock()
 	token = BuildRandomToken()
 	s = &Session{
 		LastAccess: time.Now(),
@@ -179,6 +202,8 @@ func BuildRandomToken() string {
 }
 
 func SaveSessions() {
+	GeneralMutex.Lock()
+	defer GeneralMutex.Unlock()
 	cleanup()
 
 	b := bytes.Buffer{}
@@ -199,6 +224,8 @@ func SaveSessions() {
 
 // go binary decoder
 func LoadSessions() {
+	GeneralMutex.Lock()
+	defer GeneralMutex.Unlock()
 	in, err := ioutil.ReadFile("/tmp/arkeogis-sessions.gob.b64")
 	if err != nil {
 		fmt.Println(`failed to open session file`, err)
