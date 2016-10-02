@@ -250,6 +250,12 @@ func CharacsRoots(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
                                           WHERE c2.parent_id = sc.id
                                          )
                                          SELECT count(*) FROM subcharac WHERE project_id=$2`, charac.Id, params.Project_id)
+			if err != nil {
+				log.Println(err)
+				userSqlError(w, err)
+				_ = tx.Rollback()
+				return
+			}
 			charac.HiddensCount = hidden_count
 		}
 	}
