@@ -27,6 +27,7 @@ import (
 	"log"
 	"reflect"
 	"strconv"
+	"strings"
 
 	"net/http"
 
@@ -41,6 +42,12 @@ import (
 type ChronologyGetParams struct {
 	Id     int `min:"1" error:"Chronology Id is mandatory"`
 	Active bool
+}
+
+type ChronologyListCsvParams struct {
+	Isocode string `json:"isocode"`
+	Name    string `json:"name"`
+	Dl      string `json:"dl"`
 }
 
 func init() {
@@ -84,6 +91,14 @@ func init() {
 				"adminusers",
 			},
 			Params: reflect.TypeOf(ChronologyGetParams{}),
+		},
+		&routes.Route{
+			Path:        "/api/chronologies/csv",
+			Func:        ChronologiesListCsv,
+			Description: "Get a chronologie as csv",
+			Params:      reflect.TypeOf(ChronologyListCsvParams{}),
+			Method:      "GET",
+			Permissions: []string{},
 		},
 	}
 	routes.RegisterMultiple(Routes)
@@ -766,4 +781,61 @@ func ChronologiesDelete(w http.ResponseWriter, r *http.Request, proute routes.Pr
 		_ = tx.Rollback()
 		return
 	}
+}
+
+func ChronologiesListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+	params := proute.Params.(*ChronologyListCsvParams)
+	q := `WITH RECURSIVE nodes_cte(id, path) AS (
+		   SELECT id, chrono_tr.name::::TEXT AS path FROM chronology AS chrono
+		   LEFT JOIN chronology_tr chrono_tr ON chrono.id = chrono_tr.chronology_id
+		   LEFT JOIN lang ON chrono_tr.lang_isocode = lang.isocode
+		   WHERE lang.isocode = :isocode AND chrono.id = (
+			SELECT chrono.id FROM chronology chrono
+			LEFT JOIN chronology_tr chrono_tr ON chrono.id = chrono_tr.chronology_id
+			LEFT JOIN lang ON lang.isocode = chrono_tr.lang_isocode
+			WHERE lang.isocode = :isocode AND lower(chrono_tr.name) = lower(:name) AND chrono.parent_id = 0
+		   )
+		   UNION ALL
+		   SELECT chrono.id, (p.path || ';' || chrono_tr.name)
+		   FROM nodes_cte AS p, chronology AS chrono
+		   LEFT JOIN chronology_tr chrono_tr ON chrono.id = chrono_tr.chronology_id
+		   LEFT JOIN lang ON chrono_tr.lang_isocode = lang.isocode
+		   WHERE lang.isocode = :isocode AND chrono.parent_id = p.id
+		  )
+		  SELECT * FROM nodes_cte AS n ORDER BY n.id ASC;`
+	if params.Name == "" {
+		http.Error(w, "Please provide a chronology name in url", 500)
+		return
+	}
+	if params.Isocode == "" {
+		http.Error(w, "Please provide an isocode in url", 500)
+		return
+	}
+	list := []struct {
+		Id   int
+		Path string
+	}{}
+	stmt, err := db.DB.PrepareNamed(q)
+	outp := ""
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "INTERNAL SERVER ERROR", 500)
+	}
+	err = stmt.Select(&list, params)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "INTERNAL SERVER ERROR", 500)
+	}
+	for _, chronology := range list {
+		num := 4 - strings.Count(chronology.Path, ";")
+		if num < 4 {
+			outp += chronology.Path + strings.Repeat(";", num) + "\n"
+		}
+	}
+
+	if params.Dl != "" {
+		w.Header().Set("Content-Type", "text/csv")
+	}
+
+	w.Write([]byte(outp))
 }
