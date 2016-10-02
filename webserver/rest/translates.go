@@ -78,7 +78,7 @@ func TranslatesList(w http.ResponseWriter, r *http.Request, proute routes.Proute
 
 	trans, err := translate.ReadTranslation(params.Lang, params.Side)
 	if err != nil {
-		ArkeoError(w, "404", err.Error())
+		ArkeoError(w, 404, err.Error())
 		return
 	}
 
@@ -123,7 +123,7 @@ func TranslatesSave(w http.ResponseWriter, r *http.Request, proute routes.Proute
 
 	trans, err := translate.ReadTranslation(params.Lang, params.Side)
 	if err != nil {
-		ArkeoError(w, "404", err.Error())
+		ArkeoError(w, 404, err.Error())
 		return
 	}
 

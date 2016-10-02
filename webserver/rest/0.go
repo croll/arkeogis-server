@@ -43,9 +43,9 @@ ArkkeoErrors := map[string]ArkeoError {
 }
 */
 
-func ArkeoError(w http.ResponseWriter, code string, description string) {
+func ArkeoError(w http.ResponseWriter, code int, description string) {
 	type ArkeoError struct {
-		Code        string
+		Code        int
 		Description string
 	}
 	aerr := ArkeoError{code, description}
@@ -53,5 +53,5 @@ func ArkeoError(w http.ResponseWriter, code string, description string) {
 	if err != nil {
 		log.Panicln("err in error, marshaling failed: ", err)
 	}
-	http.Error(w, (string)(j), 409)
+	http.Error(w, (string)(j), code)
 }

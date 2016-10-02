@@ -773,7 +773,7 @@ func UserLogin(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	if !ok {
 		log.Println("Login failed for user ", l.Username)
 		tx.Rollback()
-		ArkeoError(w, "401", "Bad Username/Password")
+		ArkeoError(w, 401, "Bad Username/Password")
 		return
 	}
 
@@ -874,7 +874,7 @@ func UserLogout(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	if err != nil {
 		log.Println("Failed to load anonymous user ")
 		tx.Rollback()
-		ArkeoError(w, "401", "Bad thing appned")
+		ArkeoError(w, 401, "Bad thing appned")
 		return
 	}
 
