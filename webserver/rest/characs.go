@@ -44,6 +44,10 @@ type CharacGetParams struct {
 	Project_id int
 }
 
+type CharacRootsParams struct {
+	Project_id int
+}
+
 type CharacListCsvParams struct {
 	Isocode string `json:"isocode"`
 	Name    string `json:"name"`
@@ -68,6 +72,7 @@ func init() {
 			Func:        CharacsRoots,
 			Description: "Get all root characs in all languages",
 			Method:      "GET",
+			Params:      reflect.TypeOf(CharacRootsParams{}),
 		},
 		&routes.Route{
 			Path:        "/api/characs/csv",
@@ -144,11 +149,14 @@ func CharacsRoots(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 	type row struct {
 		model.Charac_root
 		model.Charac
-		Name        map[string]string `json:"name"`
-		Description map[string]string `json:"description"`
+		Name         map[string]string `json:"name"`
+		Description  map[string]string `json:"description"`
+		HiddensCount int               `json:"hiddens_count"`
 		//UsersInGroup []model.User      `json:"users_in_group" ignore:"true"` // read-only, used to display users of the group
-		Author model.User `json:"author" ignore:"true"` // read-only, used to display users of the group
+		//Author model.User `json:"author" ignore:"true"` // read-only, used to display users of the group
 	}
+
+	params := proute.Params.(*CharacRootsParams)
 
 	characs := []*row{}
 
@@ -158,6 +166,33 @@ func CharacsRoots(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 		log.Println(err)
 		userSqlError(w, err)
 		return
+	}
+
+	// if Project_id is specified, verify that we are the owner of the project
+	if params.Project_id != 0 {
+		// get the user
+		_user, ok := proute.Session.Get("user")
+		if !ok {
+			log.Println("CharacsUpdate: can't get user in session...", _user)
+			_ = tx.Rollback()
+			return
+		}
+
+		user, ok := _user.(model.User)
+		if !ok {
+			log.Println("CharacsUpdate: can't cast user...", _user)
+			_ = tx.Rollback()
+			return
+		}
+
+		// check if the user is the owner of the project
+		count := 0
+		tx.Get(&count, "SELECT count(*) FROM project WHERE id = "+strconv.Itoa(params.Project_id)+" AND user_id = "+strconv.Itoa(user.Id))
+		if count != 1 {
+			log.Println("CharacSetHiddens: user is not the owner...", user, params.Project_id)
+			_ = tx.Rollback()
+			return
+		}
 	}
 
 	// load all roots
@@ -192,6 +227,8 @@ func CharacsRoots(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 		charac.Name = model.MapSqlTranslations(tr, "Lang_isocode", "Name")
 		charac.Description = model.MapSqlTranslations(tr, "Lang_isocode", "Description")
 
+		// load custom modified characs
+
 		// get the author user
 		/*		charac.Author.Id = charac.Charac_root.Author_user_id
 				err = charac.Author.Get(tx)
@@ -201,6 +238,20 @@ func CharacsRoots(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 					_ = tx.Rollback()
 					return
 				}*/ // no author user in characs vs chrono
+
+		if params.Project_id > 0 {
+			hidden_count := 0
+			err = tx.Get(&hidden_count, `WITH RECURSIVE subcharac(id, parent_id, charac_id, project_id) AS (
+                                          SELECT id, parent_id, phc.charac_id, phc.project_id
+                                          FROM charac LEFT JOIN project_hidden_characs phc ON phc.charac_id = charac.id WHERE id = $1
+                                         UNION ALL
+                                          SELECT c2.id, c2.parent_id, phc2.charac_id, phc2.project_id
+                                          FROM subcharac AS sc, charac AS c2 LEFT JOIN project_hidden_characs phc2 ON phc2.charac_id = c2.id
+                                          WHERE c2.parent_id = sc.id
+                                         )
+                                         SELECT count(*) FROM subcharac WHERE project_id=$2`, charac.Id, params.Project_id)
+			charac.HiddensCount = hidden_count
+		}
 	}
 
 	// commit...
