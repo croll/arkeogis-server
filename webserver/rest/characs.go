@@ -875,7 +875,22 @@ func CharacSetHiddens(w http.ResponseWriter, r *http.Request, proute routes.Prou
 	}
 
 	// delete previous settings
-	tx.Exec("DELETE FROM project_hidden_characs WHERE project_id = " + strconv.Itoa(params.Project_id))
+	_, err = tx.Exec(`DELETE FROM project_hidden_characs WHERE charac_id in (
+		               WITH RECURSIVE subcharac(id, parent_id, charac_id, project_id) AS (
+					    SELECT id, parent_id, phc.charac_id, phc.project_id
+						FROM charac LEFT JOIN project_hidden_characs phc ON phc.charac_id = charac.id WHERE id = $1
+					   UNION ALL
+						SELECT c2.id, c2.parent_id, phc2.charac_id, phc2.project_id
+						FROM subcharac AS sc, charac AS c2 LEFT JOIN project_hidden_characs phc2 ON phc2.charac_id = c2.id
+						WHERE c2.parent_id = sc.id
+					   )
+					   SELECT id FROM subcharac WHERE project_id=$2)`, params.Id, params.Project_id)
+	if err != nil {
+		log.Println(err)
+		userSqlError(w, err)
+		_ = tx.Rollback()
+		return
+	}
 
 	for _, id := range c.HiddenIds {
 		log.Println("deleting: ", id)
