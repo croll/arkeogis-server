@@ -72,7 +72,7 @@ func init() {
 			Method:      "POST",
 			Json:        reflect.TypeOf(ChronologiesUpdateStruct{}),
 			Permissions: []string{
-				"adminusers",
+				"user can edit some chronology",
 			},
 		},
 		&routes.Route{
@@ -88,7 +88,7 @@ func init() {
 			Func:        ChronologiesDelete,
 			Method:      "DELETE",
 			Permissions: []string{
-				"adminusers",
+				"user can edit some chronology",
 			},
 			Params: reflect.TypeOf(ChronologyGetParams{}),
 		},
