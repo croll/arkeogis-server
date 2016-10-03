@@ -153,7 +153,7 @@ func CharacsRoots(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 		Description  map[string]string `json:"description"`
 		HiddensCount int               `json:"hiddens_count"`
 		//UsersInGroup []model.User      `json:"users_in_group" ignore:"true"` // read-only, used to display users of the group
-		Author model.User `json:"author" ignore:"true"` // read-only, used to display users of the group
+		//Author model.User `json:"author" ignore:"true"` // read-only, used to display users of the group
 	}
 
 	params := proute.Params.(*CharacRootsParams)
@@ -230,14 +230,14 @@ func CharacsRoots(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 		// load custom modified characs
 
 		// get the author user
-		err = charac.Author.Get(tx)
-		charac.Author.Password = ""
-		if err != nil {
-			userSqlError(w, err)
-			_ = tx.Rollback()
-			return
-		}
-
+		/*		err = charac.Author.Get(tx)
+				charac.Author.Password = ""
+				if err != nil {
+					userSqlError(w, err)
+					_ = tx.Rollback()
+					return
+				}
+		*/
 		if params.Project_id > 0 {
 			hidden_count := 0
 			err = tx.Get(&hidden_count, `WITH RECURSIVE subcharac(id, parent_id, charac_id, project_id) AS (
