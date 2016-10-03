@@ -196,7 +196,7 @@ func CharacsRoots(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 	}
 
 	// load all roots
-	err = db.DB.Select(&characs, "SELECT * FROM charac_root")
+	err = db.DB.Select(&characs, "SELECT charac_root.* FROM charac_root LEFT JOIN charac on charac_root.root_charac_id = charac.id ORDER BY charac.order")
 	if err != nil {
 		log.Println(err)
 		userSqlError(w, err)

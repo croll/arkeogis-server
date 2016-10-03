@@ -71,7 +71,7 @@ func (pfi *ProjectFullInfos) Get(tx *sqlx.Tx) (err error) {
 	}
 
 	// Characs
-	err = tx.Select(&pfi.Characs, "SELECT root_charac_id from project__charac WHERE project_id = $1", pfi.Id)
+	err = tx.Select(&pfi.Characs, "SELECT project__charac.root_charac_id from project__charac LEFT JOIN charac ON charac.id = project__charac.root_charac_id WHERE project_id = $1 ORDER BY charac.order", pfi.Id)
 	if err != nil {
 		log.Println(err)
 		return
