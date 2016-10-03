@@ -285,9 +285,9 @@ func handledRoute(myroute *Route, rw http.ResponseWriter, r *http.Request) {
 
 	// Check global permsissions
 	permok := true
-	ok, err := user.HavePermissions(tx, myroute.Permissions...)
+	ok, err := user.HaveAtLeastOnePermission(tx, myroute.Permissions...)
 	if err != nil {
-		log.Println("user.HavePermissions failed : ", err)
+		log.Println("user.HaveAtLeastOnePermission failed : ", err)
 		permok = false
 	} else if ok == false {
 		log.Println("user has no permissions : ", myroute.Permissions)
