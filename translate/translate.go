@@ -41,6 +41,10 @@ func init() {
 	translations = make(map[string]map[string]string)
 }
 
+func Reinit() {
+	translations = make(map[string]map[string]string)
+}
+
 // parse one level of the json translation file, this func will also parse sublevels by calling
 func readLevel(jspath string, dec *json.Decoder, tr map[string]string) {
 	if jspath == "" {

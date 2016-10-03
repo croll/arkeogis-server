@@ -138,5 +138,7 @@ func TranslatesSave(w http.ResponseWriter, r *http.Request, proute routes.Proute
 		return
 	}
 
+	translate.Reinit()
+
 	log.Println("theoriquement saved")
 }
