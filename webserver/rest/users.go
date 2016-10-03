@@ -118,7 +118,7 @@ func init() {
 			Func:        UserList,
 			Method:      "GET",
 			Permissions: []string{
-				"adminusers",
+				"adminusers", "request map",
 			},
 			Params: reflect.TypeOf(UserListParams{}),
 		},
