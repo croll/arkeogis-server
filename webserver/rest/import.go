@@ -204,7 +204,7 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		parser.AddError("Error saving import " + err.Error())
 	}
 
-	if len(dbImport.SitesWithError) < dbImport.NumberOfSites {
+	if len(dbImport.SitesWithError) < dbImport.NumberOfSites-1 {
 		// Cache geom
 		err = dbImport.Database.CacheGeom(dbImport.Tx)
 		if err != nil {
