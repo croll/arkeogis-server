@@ -544,6 +544,13 @@ func (di *DatabaseImport) processGeoDatas(f *Fields) (*geo.Point, error) {
 			hasError = true
 		}
 	}
+	// Test if EPSG is exists
+	var SRIDExists int
+	err = di.Tx.Get(&SRIDExists, "select count(*) from spatial_ref_sys where srid = $1", epsg)
+	if err != nil || SRIDExists != 1 {
+		di.AddError(f.PROJECTION_SYSTEM, "IMPORT.CSVFIELD_PROJECTION_SYSTEM.T_CHECK_NOT_EXISTS", "PROJECTION_SYSTEM")
+		hasError = true
+	}
 	di.CurrentSite.EPSG = epsg
 
 	// Parse LONGITUDE
