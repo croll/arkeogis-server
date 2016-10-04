@@ -175,10 +175,12 @@
 <table x="1341" y="894" name="chronology">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
+<comment>xmltopsql:"ondelete:cascade"</comment>
 </row>
 <row name="parent_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="chronology" row="id" />
+<comment>xmltopsql:"ondelete:cascade"</comment>
 </row>
 <row name="start_date" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
@@ -207,9 +209,11 @@
 <row name="chronology_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="chronology" row="id" />
+<comment>xmltopsql:"ondelete:cascade"</comment>
 </row>
 <row name="name" null="0" autoincrement="0">
 <datatype>VARCHAR(255)</datatype>
+<comment>xmltopsql:"ondelete:cascade"</comment>
 </row>
 <row name="description" null="0" autoincrement="0">
 <datatype>TEXT</datatype>
@@ -223,6 +227,7 @@
 <row name="project_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="project" row="id" />
+<comment>xmltopsql:"ondelete:cascade"</comment>
 </row>
 <row name="root_chronology_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
@@ -547,6 +552,7 @@
 <row name="charac_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="charac" row="id" />
+<comment>xmltopsql:"ondelete:cascade"</comment>
 </row>
 <row name="name" null="0" autoincrement="0">
 <datatype>VARCHAR(255)</datatype>
@@ -562,10 +568,12 @@
 <table x="1366" y="524" name="charac">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
+<comment>xmltopsql:"ondelete:cascade"</comment>
 </row>
 <row name="parent_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="charac" row="id" />
+<comment>xmltopsql:"ondelete:cascade"</comment>
 </row>
 <row name="order" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
@@ -755,6 +763,7 @@
 <row name="project_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="project" row="id" />
+<comment>xmltopsql:"ondelete:cascade"</comment>
 </row>
 <row name="database_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
@@ -769,6 +778,7 @@
 <row name="project_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="project" row="id" />
+<comment>xmltopsql:"ondelete:cascade"</comment>
 </row>
 <row name="map_layer_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
@@ -821,10 +831,12 @@
 <row name="project_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="project" row="id" />
+<comment>xmltopsql:"ondelete:cascade"</comment>
 </row>
 <row name="charac_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="charac" row="id" />
+<comment>xmltopsql:"ondelete:cascade"</comment>
 </row>
 <key type="PRIMARY" name="">
 <part>charac_id</part>
@@ -869,6 +881,7 @@
 <row name="group_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="group" row="id" />
+<comment>xmltopsql:"ondelete:cascade"</comment>
 </row>
 <row name="lang_isocode" null="0" autoincrement="0">
 <datatype>CHAR(2)</datatype>
@@ -923,6 +936,7 @@
 <row name="group_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="group" row="id" />
+<comment>xmltopsql:"ondelete:cascade"</comment>
 </row>
 <row name="permission_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
@@ -1240,6 +1254,7 @@
 <row name="root_charac_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="charac" row="id" />
+<comment>xmltopsql:"ondelete:cascade"</comment>
 </row>
 <row name="admin_group_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
@@ -1256,6 +1271,7 @@
 <row name="root_chronology_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="chronology" row="id" />
+<comment>xmltopsql:"ondelete:cascade"</comment>
 </row>
 <row name="admin_group_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
@@ -1297,7 +1313,8 @@
 <table x="1079" y="1190" name="project__charac">
 <row name="project_id" null="1" autoincrement="1">
 <datatype>INTEGER</datatype>
-<default>NULL</default></row>
+<default>NULL</default><comment>xmltopsql:"ondelete:cascade"</comment>
+</row>
 <row name="root_charac_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="charac" row="id" />
@@ -1311,6 +1328,7 @@
 <row name="project_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="project" row="id" />
+<comment>xmltopsql:"ondelete:cascade"</comment>
 </row>
 <row name="name" null="0" autoincrement="0">
 <datatype>VARCHAR(255)</datatype>

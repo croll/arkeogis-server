@@ -6,8 +6,8 @@ import (
 )
 
 type Charac struct {
-	Id	int	`db:"id" json:"id"`
-	Parent_id	int	`db:"parent_id" json:"parent_id"`	// Charac.Id
+	Id	int	`db:"id" json:"id" xmltopsql:"ondelete:cascade"`
+	Parent_id	int	`db:"parent_id" json:"parent_id" xmltopsql:"ondelete:cascade"`	// Charac.Id
 	Order	int	`db:"order" json:"order"`
 	Author_user_id	int	`db:"author_user_id" json:"author_user_id"`	// User.Id
 	Created_at	time.Time	`db:"created_at" json:"created_at"`
@@ -16,7 +16,7 @@ type Charac struct {
 
 
 type Charac_root struct {
-	Root_charac_id	int	`db:"root_charac_id" json:"root_charac_id"`	// Charac.Id
+	Root_charac_id	int	`db:"root_charac_id" json:"root_charac_id" xmltopsql:"ondelete:cascade"`	// Charac.Id
 	Admin_group_id	int	`db:"admin_group_id" json:"admin_group_id"`	// Group.Id
 	Cached_langs	string	`db:"cached_langs" json:"cached_langs"`
 }
@@ -24,15 +24,15 @@ type Charac_root struct {
 
 type Charac_tr struct {
 	Lang_isocode	string	`db:"lang_isocode" json:"lang_isocode"`	// Lang.Isocode
-	Charac_id	int	`db:"charac_id" json:"charac_id"`	// Charac.Id
+	Charac_id	int	`db:"charac_id" json:"charac_id" xmltopsql:"ondelete:cascade"`	// Charac.Id
 	Name	string	`db:"name" json:"name"`
 	Description	string	`db:"description" json:"description"`
 }
 
 
 type Chronology struct {
-	Id	int	`db:"id" json:"id"`
-	Parent_id	int	`db:"parent_id" json:"parent_id"`	// Chronology.Id
+	Id	int	`db:"id" json:"id" xmltopsql:"ondelete:cascade"`
+	Parent_id	int	`db:"parent_id" json:"parent_id" xmltopsql:"ondelete:cascade"`	// Chronology.Id
 	Start_date	int	`db:"start_date" json:"start_date"`
 	End_date	int	`db:"end_date" json:"end_date"`
 	Color	string	`db:"color" json:"color"`
@@ -42,7 +42,7 @@ type Chronology struct {
 
 
 type Chronology_root struct {
-	Root_chronology_id	int	`db:"root_chronology_id" json:"root_chronology_id"`	// Chronology.Id
+	Root_chronology_id	int	`db:"root_chronology_id" json:"root_chronology_id" xmltopsql:"ondelete:cascade"`	// Chronology.Id
 	Admin_group_id	int	`db:"admin_group_id" json:"admin_group_id"`	// Group.Id
 	Author_user_id	int	`db:"author_user_id" json:"author_user_id"`	// User.Id
 	Credits	string	`db:"credits" json:"credits"`
@@ -54,8 +54,8 @@ type Chronology_root struct {
 
 type Chronology_tr struct {
 	Lang_isocode	string	`db:"lang_isocode" json:"lang_isocode"`	// Lang.Isocode
-	Chronology_id	int	`db:"chronology_id" json:"chronology_id"`	// Chronology.Id
-	Name	string	`db:"name" json:"name"`
+	Chronology_id	int	`db:"chronology_id" json:"chronology_id" xmltopsql:"ondelete:cascade"`	// Chronology.Id
+	Name	string	`db:"name" json:"name" xmltopsql:"ondelete:cascade"`
 	Description	string	`db:"description" json:"description"`
 }
 
@@ -201,7 +201,7 @@ type Group struct {
 
 
 type Group__permission struct {
-	Group_id	int	`db:"group_id" json:"group_id"`	// Group.Id
+	Group_id	int	`db:"group_id" json:"group_id" xmltopsql:"ondelete:cascade"`	// Group.Id
 	Permission_id	int	`db:"permission_id" json:"permission_id"`	// Permission.Id
 	Created_at	time.Time	`db:"created_at" json:"created_at"`
 	Updated_at	time.Time	`db:"updated_at" json:"updated_at"`
@@ -209,7 +209,7 @@ type Group__permission struct {
 
 
 type Group_tr struct {
-	Group_id	int	`db:"group_id" json:"group_id"`	// Group.Id
+	Group_id	int	`db:"group_id" json:"group_id" xmltopsql:"ondelete:cascade"`	// Group.Id
 	Lang_isocode	string	`db:"lang_isocode" json:"lang_isocode"`	// Lang.Isocode
 	Name	string	`db:"name" json:"name"`
 	Description	string	`db:"description" json:"description"`
@@ -320,25 +320,25 @@ type Project struct {
 
 
 type Project__charac struct {
-	Project_id	int	`db:"project_id" json:"project_id"`
+	Project_id	int	`db:"project_id" json:"project_id" xmltopsql:"ondelete:cascade"`
 	Root_charac_id	int	`db:"root_charac_id" json:"root_charac_id"`	// Charac.Id
 }
 
 
 type Project__chronology struct {
-	Project_id	int	`db:"project_id" json:"project_id"`	// Project.Id
+	Project_id	int	`db:"project_id" json:"project_id" xmltopsql:"ondelete:cascade"`	// Project.Id
 	Root_chronology_id	int	`db:"root_chronology_id" json:"root_chronology_id"`	// Chronology.Id
 }
 
 
 type Project__database struct {
-	Project_id	int	`db:"project_id" json:"project_id"`	// Project.Id
+	Project_id	int	`db:"project_id" json:"project_id" xmltopsql:"ondelete:cascade"`	// Project.Id
 	Database_id	int	`db:"database_id" json:"database_id"`	// Database.Id
 }
 
 
 type Project__map_layer struct {
-	Project_id	int	`db:"project_id" json:"project_id"`	// Project.Id
+	Project_id	int	`db:"project_id" json:"project_id" xmltopsql:"ondelete:cascade"`	// Project.Id
 	Map_layer_id	int	`db:"map_layer_id" json:"map_layer_id"`	// Map_layer.Id
 }
 
@@ -350,13 +350,13 @@ type Project__shapefile struct {
 
 
 type Project_hidden_characs struct {
-	Project_id	int	`db:"project_id" json:"project_id"`	// Project.Id
-	Charac_id	int	`db:"charac_id" json:"charac_id"`	// Charac.Id
+	Project_id	int	`db:"project_id" json:"project_id" xmltopsql:"ondelete:cascade"`	// Project.Id
+	Charac_id	int	`db:"charac_id" json:"charac_id" xmltopsql:"ondelete:cascade"`	// Charac.Id
 }
 
 
 type Saved_query struct {
-	Project_id	int	`db:"project_id" json:"project_id"`	// Project.Id
+	Project_id	int	`db:"project_id" json:"project_id" xmltopsql:"ondelete:cascade"`	// Project.Id
 	Name	string	`db:"name" json:"name" min:"1"`
 	Params	string	`db:"params" json:"params"`
 }
