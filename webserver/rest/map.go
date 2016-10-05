@@ -274,17 +274,16 @@ type MapSearchParamsOthers struct {
 	TextSearchIn  []string `json:"text_search_in"`
 }
 
-//type MapSearchParamsAreaGeometry struct {
-//	Geometry sqlx_types.JSONText `json:"geometry"`
-//}
+type MapSearchParamsAreaGeometry struct {
+	Geometry sqlx_types.JSONText `json:"geometry"`
+}
 
 type MapSearchParamsArea struct {
-	Type   string  `json:"type"`
-	Lat    float32 `json:"lat"`
-	Lng    float32 `json:"lng"`
-	Radius float32 `json:"radius"`
-	//Geojson MapSearchParamsAreaGeometry `json:"geojson"`
-	Geojson sqlx_types.JSONText `json:"geojson"`
+	Type    string                      `json:"type"`
+	Lat     float32                     `json:"lat"`
+	Lng     float32                     `json:"lng"`
+	Radius  float32                     `json:"radius"`
+	Geojson MapSearchParamsAreaGeometry `json:"geojson"`
 }
 
 type MapSearchParamsCharac struct {
@@ -351,8 +350,7 @@ func MapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 			params.Area.Lng, params.Area.Lat, params.Area.Radius)
 	} else {
 		filters.AddFilter("site", `ST_Within("site".geom::geometry, ST_SetSRID(ST_GeomFromGeoJSON($$),4326))`,
-			//params.Area.Geojson.Geometry)
-			params.Area.Geojson)
+			params.Area.Geojson.Geometry)
 	}
 
 	// add centroid filter
