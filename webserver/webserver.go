@@ -48,7 +48,7 @@ func StartServer() {
 	Negroni := negroni.New(
 		negroni.NewRecovery(),
 		negroni.HandlerFunc(crossDomainMiddleware),
-		negroni.NewLogger(),
+		NewLogger(),
 		negroni.NewStatic(http.Dir(config.WebPath)),
 	)
 	Negroni.UseHandler(routes.MuxRouter)
