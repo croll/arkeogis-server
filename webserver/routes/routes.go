@@ -28,14 +28,17 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"reflect"
 	"strconv"
+	"time"
 	//"strconv"
 	"strings"
 
 	"mime"
 	"mime/multipart"
 
+	config "github.com/croll/arkeogis-server/config"
 	db "github.com/croll/arkeogis-server/db"
 	"github.com/croll/arkeogis-server/model"
 	"github.com/croll/arkeogis-server/webserver/sanitizer"
@@ -74,10 +77,19 @@ var Routes []*Route = []*Route{}
 
 // MuxRouter is the gorilla mux router initialized here for Arkeogis
 var MuxRouter *mux.Router
+var restlog *os.File
 
 func init() {
 	// router
 	MuxRouter = mux.NewRouter()
+
+	var err error
+
+	restlog, err = os.OpenFile(config.DistPath+"/logs/rest.log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0660)
+	if err != nil {
+		log.Fatalf("Error opening access log file: %v", err)
+	}
+
 }
 
 func decodeContent(myroute *Route, rw http.ResponseWriter, r *http.Request, s *session.Session) interface{} {
@@ -213,6 +225,8 @@ func decodeParams(myroute *Route, rw http.ResponseWriter, r *http.Request) inter
 
 func handledRoute(myroute *Route, rw http.ResponseWriter, r *http.Request) {
 
+	start := time.Now()
+
 	// debug transactions count
 	count_before := 0
 	db.DB.Get(&count_before, "SELECT count(*) from pg_stat_activity where state = 'idle in transaction'")
@@ -283,6 +297,8 @@ func handledRoute(myroute *Route, rw http.ResponseWriter, r *http.Request) {
 	log.Println("user is : ", user.Username)
 	s.Set("user", user)
 
+	restlog.WriteString(fmt.Sprintf(`[%s][%s] %s %s %s %s`+"\n", start.Format(time.RFC3339), user.Username, r.RemoteAddr, r.Method, r.URL.Path, myroute.Method))
+
 	// Check global permsissions
 	permok := true
 	ok, err := user.HaveAtLeastOnePermission(tx, myroute.Permissions...)
@@ -342,6 +358,7 @@ func handledRoute(myroute *Route, rw http.ResponseWriter, r *http.Request) {
 	}
 
 	myroute.Func(rw, r, proute)
+
 }
 
 func ServerError(w http.ResponseWriter, code int, message string) {
