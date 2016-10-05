@@ -23,6 +23,7 @@ package arkeogis
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -81,10 +82,14 @@ func init() {
 	//fmt.Println("launch args: ", os.Args)
 
 	if len(os.Args) > 1 && os.Args[1] == "dev" {
+		fmt.Println("ArkeoGIS launched in DEV mode")
+		log.Println("ArkeoGIS launched in DEV mode")
 		DevMode = true
 		CurDistPath = DevDistPath
 		CurWebPath = DevWebPath
 	} else {
+		fmt.Println("ArkeoGIS launched in PROD mode")
+		log.Println("ArkeoGIS launched in PROD mode")
 		DevMode = false
 		CurDistPath = DistPath
 		CurWebPath = WebPath
