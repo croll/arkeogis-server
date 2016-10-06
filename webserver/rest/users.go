@@ -427,6 +427,35 @@ func userSet(w http.ResponseWriter, r *http.Request, proute routes.Proute, creat
 		return
 	}
 
+	_me, ok := proute.Session.Get("user")
+	if !ok {
+		log.Println("userSet: can't get user in session...", _me)
+		_ = tx.Rollback()
+		return
+	}
+
+	me, ok := _me.(model.User)
+	if !ok {
+		log.Println("userSet: can't cast user...", _me)
+		_ = tx.Rollback()
+		return
+	}
+
+	permAdminUsers, err := me.HavePermissions(tx, "adminusers")
+	if err != nil {
+		tx.Rollback()
+		userSqlError(w, err)
+		return
+	}
+
+	if create || u.User.Id != me.Id {
+		if !permAdminUsers {
+			tx.Rollback()
+			routes.ServerError(w, 403, "unauthorized")
+			return
+		}
+	}
+
 	// photo...
 	if u.File != nil {
 		photo := model.Photo{
@@ -457,13 +486,30 @@ func userSet(w http.ResponseWriter, r *http.Request, proute routes.Proute, creat
 			return
 		}
 
-		// if we don't set a new password, we take it back from the db
-		if len(u.User.Password) == 0 {
-			u.User.Password = tmpuser.Password
-		}
+		if !permAdminUsers { // in this case, we update tmpuser with only authorized fields
+			// if we set a new password
+			if len(u.User.Password) != 0 {
+				tmpuser.Password = u.User.Password
+			}
 
-		log.Println("updating user id : ", u.Id, u)
-		err = u.Update(tx)
+			// authorized self modified user field
+			tmpuser.Username = u.User.Username
+			tmpuser.Firstname = u.User.Firstname
+			tmpuser.Lastname = u.User.Lastname
+			tmpuser.First_lang_isocode = u.User.First_lang_isocode
+			tmpuser.Second_lang_isocode = u.User.Second_lang_isocode
+			tmpuser.Description = u.User.Description
+			tmpuser.Email = u.User.Email
+			tmpuser.City_geonameid = u.User.City_geonameid
+		} else {
+			// if we don't set a new password, we take it back from the db
+			if len(u.User.Password) == 0 {
+				u.User.Password = tmpuser.Password
+			}
+
+			log.Println("updating user id : ", u.Id, u)
+			err = u.Update(tx)
+		}
 	}
 	if err != nil {
 		log.Println("2")
@@ -508,13 +554,15 @@ func userSet(w http.ResponseWriter, r *http.Request, proute routes.Proute, creat
 		return
 	}
 
-	// save the groups
-	err = u.SetGroups(tx, u.Groups)
-	if err != nil {
-		log.Println("set groups")
-		tx.Rollback()
-		userSqlError(w, err)
-		return
+	if permAdminUsers {
+		// save the groups
+		err = u.SetGroups(tx, u.Groups)
+		if err != nil {
+			log.Println("set groups")
+			tx.Rollback()
+			userSqlError(w, err)
+			return
+		}
 	}
 
 	err = tx.Commit()
