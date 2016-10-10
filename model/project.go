@@ -25,27 +25,26 @@ import (
 	"log"
 
 	"github.com/jmoiron/sqlx"
-	sqlx_types "github.com/jmoiron/sqlx/types"
 )
 
-type ProjectLayerInfos struct {
-	Id                       int                 `json:"id"`
-	Type                     string              `json:"type"`
-	Uniq_code                string              `json:"uniq_code"`
-	Geographical_extent_geom string              `json:"geom"`
-	Min_scale                int                 `json:"min_scale"`
-	Max_scale                int                 `json:"max_scale"`
-	Translations             sqlx_types.JSONText `db:"translations" json:"translations"`
-	Url                      string              `json:"url"`
-	Identifier               string              `json:"identifier"`
-}
+// type ProjectLayerInfos struct {
+// 	Id                       int                 `json:"id"`
+// 	Type                     string              `json:"type"`
+// 	Uniq_code                string              `json:"uniq_code"`
+// 	Geographical_extent_geom string              `json:"geom"`
+// 	Min_scale                int                 `json:"min_scale"`
+// 	Max_scale                int                 `json:"max_scale"`
+// 	Translations             sqlx_types.JSONText `db:"translations" json:"translations"`
+// 	Url                      string              `json:"url"`
+// 	Identifier               string              `json:"identifier"`
+// }
 
 type ProjectFullInfos struct {
 	Project
 	Chronologies []struct {
 		Root_chronology_id int `json:"id"`
 	} `json:"chronologies"`
-	Layers  []ProjectLayerInfos `json:"layers"`
+	Layers  []LayerFullInfos `json:"layers"`
 	Characs []struct {
 		Root_charac_id int `json:"id"`
 	} `json:"characs"`
@@ -85,16 +84,18 @@ func (pfi *ProjectFullInfos) Get(tx *sqlx.Tx) (err error) {
 	}
 
 	// Layers WMS
-	transquery := GetQueryTranslationsAsJSONObject("map_layer_tr", "tbl.map_layer_id = ml.id", "", false, "name", "attribution", "copyright")
-	err = tx.Select(&pfi.Layers, "SELECT ml.id, ST_AsGeojson(ml.geographical_extent_geom) as geographical_extent_geom, url, identifier, ("+transquery+") as translations, ml.min_scale, ml.max_scale, ml.type, 'wms' || ml.id AS uniq_code FROM project__map_layer pml LEFT JOIN map_layer ml ON pml.map_layer_id = ml.id WHERE pml.project_id = $1", pfi.Id)
+	// transquery := GetQueryTranslationsAsJSONObject("map_layer_tr", "tbl.map_layer_id = ml.id", "", false, "name", "attribution", "copyright")
+	// err = tx.Select(&pfi.Layers, "SELECT ml.id, ST_AsGeojson(ml.geographical_extent_geom) as geographical_extent_geom, url, identifier, ("+transquery+") as translations, ml.min_scale, ml.max_scale, ml.type, 'wms' || ml.id AS uniq_code FROM project__map_layer pml LEFT JOIN map_layer ml ON pml.map_layer_id = ml.id WHERE pml.project_id = $1", pfi.Id)
+	err = tx.Select(&pfi.Layers, "SELECT ml.id, ml.type, 'wms' || ml.id AS uniq_code FROM project__map_layer pml LEFT JOIN map_layer ml ON pml.map_layer_id = ml.id WHERE pml.project_id = $1", pfi.Id)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
 	// Layers Shapefile
-	transquery = GetQueryTranslationsAsJSONObject("shapefile_tr", "tbl.shapefile_id = s.id", "", false, "name", "attribution", "copyright")
-	err = tx.Select(&pfi.Layers, "SELECT s.id, ST_AsGeojson(s.geographical_extent_geom) as geographical_extent_geom, ("+transquery+") as translations, 'shp' as type, 'shp' || s.id AS uniq_code from project__shapefile ps LEFT JOIN shapefile s ON ps.shapefile_id = s.id WHERE ps.project_id = $1", pfi.Id)
+	// transquery = GetQueryTranslationsAsJSONObject("shapefile_tr", "tbl.shapefile_id = s.id", "", false, "name", "attribution", "copyright")
+	// err = tx.Select(&pfi.Layers, "SELECT s.id, ST_AsGeojson(s.geographical_extent_geom) as geographical_extent_geom, ("+transquery+") as translations, 'shp' as type, 'shp' || s.id AS uniq_code from project__shapefile ps LEFT JOIN shapefile s ON ps.shapefile_id = s.id WHERE ps.project_id = $1", pfi.Id)
+	err = tx.Select(&pfi.Layers, "SELECT s.id, 'shp' as type, 'shp' || s.id AS uniq_code from project__shapefile ps LEFT JOIN shapefile s ON ps.shapefile_id = s.id WHERE ps.project_id = $1", pfi.Id)
 	if err != nil {
 		log.Println(err)
 		return

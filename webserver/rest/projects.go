@@ -123,16 +123,16 @@ func GetProject(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 }
 
 type SaveProjectParams struct {
-	Name         string                    `json:"name"`
-	Id           int                       `default:"0" json:"id"`
-	User_id      int                       `json:"-"`
-	Start_date   int                       `json:"start_date"`
-	End_date     int                       `json:"end_date"`
-	Geom         string                    `json:"geom"`
-	Chronologies []int                     `json:"chronologies"`
-	Layers       []model.ProjectLayerInfos `json:"layers"`
-	Databases    []int                     `json:"databases"`
-	Characs      []int                     `json:"characs"`
+	Name         string                 `json:"name"`
+	Id           int                    `default:"0" json:"id"`
+	User_id      int                    `json:"-"`
+	Start_date   int                    `json:"start_date"`
+	End_date     int                    `json:"end_date"`
+	Geom         string                 `json:"geom"`
+	Chronologies []int                  `json:"chronologies"`
+	Layers       []model.LayerFullInfos `json:"layers"`
+	Databases    []int                  `json:"databases"`
+	Characs      []int                  `json:"characs"`
 }
 
 func SaveProject(w http.ResponseWriter, r *http.Request, proute routes.Proute) {

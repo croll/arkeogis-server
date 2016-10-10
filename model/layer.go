@@ -21,7 +21,30 @@
 
 package model
 
-import "github.com/jmoiron/sqlx"
+import (
+	"time"
+
+	"github.com/jmoiron/sqlx"
+)
+
+type LayerFullInfos struct {
+	Id                       int               `json:"id"`
+	Geographical_extent_geom string            `json:"geographical_extent_geom"`
+	Creator_user_id          int               `json:"creator_user_id"`
+	Published                bool              `json:"published"`
+	Created_at               time.Time         `json:"created_at"`
+	Author                   string            `json:"author"`
+	Type                     string            `json:"type"`
+	Start_date               int               `json:"start_date"`
+	End_date                 int               `json:"end_date"`
+	Min_scale                int               `json:"min_scale"`
+	Max_scale                int               `json:"max_scale"`
+	Uniq_code                string            `json:"uniq_code"`
+	Name                     map[string]string `json:"name"`
+	Attribution              map[string]string `json:"attribution"`
+	Copyright                map[string]string `json:"copyright"`
+	Description              map[string]string `json:"description"`
+}
 
 // Get the map layer from the database
 func (u *Map_layer) Get(tx *sqlx.Tx) error {
