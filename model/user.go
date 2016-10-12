@@ -28,6 +28,8 @@ import (
 	"strconv"
 	"strings"
 
+	"golang.org/x/crypto/bcrypt"
+
 	db "github.com/croll/arkeogis-server/db"
 
 	"github.com/jmoiron/sqlx"
@@ -300,6 +302,7 @@ func (g *Group) SetUsers(tx *sqlx.Tx, users []User) error {
 }
 
 // Login test the username/password couple, and return true if it is ok, false if not
+/*
 func (u *User) Login(tx *sqlx.Tx) (ok bool, err error) {
 	var q = "SELECT count(*) FROM \"user\" WHERE password=:password AND "
 	if len(u.Username) > 0 {
@@ -319,6 +322,28 @@ func (u *User) Login(tx *sqlx.Tx) (ok bool, err error) {
 		return true, err
 	}
 	return false, err
+}
+*/
+
+// Login test the username/password couple, and return true if it is ok, false if not
+func (u *User) Login(password string) (ok bool) {
+	err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(password))
+
+	if err == nil {
+		return true
+	} else {
+		log.Println("err: ", err, "|", u.Password, password)
+		return false
+	}
+}
+
+// MakeNewPassword
+func (u *User) MakeNewPassword(password string) (err error) {
+	pass, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err == nil {
+		u.Password = string(pass)
+	}
+	return err
 }
 
 // GetPermissions return an array of Permissions that the user have

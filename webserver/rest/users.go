@@ -414,7 +414,7 @@ func userSet(w http.ResponseWriter, r *http.Request, proute routes.Proute, creat
 	u := proute.Json.(*Usercreate)
 
 	// hack overrides
-	u.User.Password = u.Password
+	//u.User.Password = u.Password
 
 	// hack for city
 	u.City_geonameid = u.CityAndCountry.City.Geonameid
@@ -452,6 +452,17 @@ func userSet(w http.ResponseWriter, r *http.Request, proute routes.Proute, creat
 		if !permAdminUsers {
 			tx.Rollback()
 			routes.ServerError(w, 403, "unauthorized")
+			return
+		}
+	}
+
+	// password
+	if len(u.Password) > 0 {
+		err = u.User.MakeNewPassword(u.Password)
+		if err != nil {
+			fmt.Println("password generate failed")
+			tx.Rollback()
+			userSqlError(w, err)
 			return
 		}
 	}
@@ -797,12 +808,6 @@ func UserLogin(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	time.Sleep(1 * time.Second) // limit rate
 
 	l := proute.Json.(*Userlogin)
-	user := model.User{
-		Username: l.Username,
-		Password: l.Password,
-	}
-
-	log.Println("sploarf : ", user)
 
 	tx, err := db.DB.Beginx()
 	if err != nil {
@@ -810,22 +815,27 @@ func UserLogin(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		return
 	}
 
-	// test login
-	ok, err := user.Login(tx)
-	if err != nil {
-		log.Println("Login Failed with error : ", err)
-		tx.Rollback()
-		return
+	user := model.User{
+		Username: l.Username,
 	}
 
-	if !ok {
-		log.Println("Login failed for user ", l.Username)
+	err = user.Get(tx)
+	if err != nil {
+		log.Println("Login failed for user :", l.Username, "(can't find this username)")
 		tx.Rollback()
 		ArkeoError(w, 401, "Bad Username/Password")
 		return
 	}
 
-	user.Get(tx)       // retrieve the user
+	// test login
+	ok := user.Login(l.Password)
+	if !ok {
+		log.Println("Login failed for user :", l.Username, "(password mismatch)")
+		tx.Rollback()
+		ArkeoError(w, 401, "Bad Username/Password")
+		return
+	}
+
 	user.Password = "" // immediatly erase password field
 
 	log.Println("Login ", user.Username, " => ", ok)
