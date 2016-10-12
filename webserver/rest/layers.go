@@ -55,25 +55,6 @@ type LayerParams struct {
 	Type string `json:"type" min:"3" max:"3"`
 }
 
-type LayerInfos struct {
-	Id                       int               `json:"id"`
-	Geographical_extent_geom string            `json:"geographical_extent_geom"`
-	Creator_user_id          int               `json:"creator_user_id"`
-	Published                bool              `json:"published"`
-	Created_at               time.Time         `json:"created_at"`
-	Author                   string            `json:"author"`
-	Type                     string            `json:"type"`
-	Start_date               int               `json:"start_date"`
-	End_date                 int               `json:"end_date"`
-	Min_scale                int               `json:"min_scale"`
-	Max_scale                int               `json:"max_scale"`
-	Uniq_code                string            `json:"uniq_code"`
-	Name                     map[string]string `json:"name"`
-	Attribution              map[string]string `json:"attribution"`
-	Copyright                map[string]string `json:"copyright"`
-	Description              map[string]string `json:"description"`
-}
-
 func init() {
 	Routes := []*routes.Route{
 		&routes.Route{
@@ -499,10 +480,10 @@ func GetLayers(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	// user.First_lang_isocode
 
-	var result = []*LayerInfos{}
+	var result = []*model.LayerFullInfos{}
 
 	if params.Type == "" || params.Type == "shp" {
-		infos := []*LayerInfos{}
+		infos := []*model.LayerFullInfos{}
 		infos, err = getShpLayers(params)
 		if err != nil {
 			log.Println(err)
@@ -513,7 +494,7 @@ func GetLayers(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	}
 
 	if params.Type == "" || params.Type != "shp" {
-		infos := []*LayerInfos{}
+		infos := []*model.LayerFullInfos{}
 		infos, err = getWmLayers(params)
 		if err != nil {
 			log.Println(err)
@@ -530,9 +511,9 @@ func GetLayers(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 }
 
-func getShpLayers(params *LayersParams) (layers []*LayerInfos, err error) {
+func getShpLayers(params *LayersParams) (layers []*model.LayerFullInfos, err error) {
 
-	layers = []*LayerInfos{}
+	layers = []*model.LayerFullInfos{}
 
 	tx, err := db.DB.Beginx()
 	if err != nil {
@@ -598,9 +579,9 @@ func getShpLayers(params *LayersParams) (layers []*LayerInfos, err error) {
 	return
 }
 
-func getWmLayers(params *LayersParams) (layers []*LayerInfos, err error) {
+func getWmLayers(params *LayersParams) (layers []*model.LayerFullInfos, err error) {
 
-	layers = []*LayerInfos{}
+	layers = []*model.LayerFullInfos{}
 
 	tx, err := db.DB.Beginx()
 	if err != nil {
