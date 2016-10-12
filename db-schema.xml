@@ -61,7 +61,7 @@
 <comment>email:"1" error:"USER.FIELD_EMAIL.T_CHECK_INCORRECT"</comment>
 </row>
 <row name="password" null="0" autoincrement="0">
-<datatype>VARCHAR(32)</datatype>
+<datatype>VARCHAR(256)</datatype>
 <comment>min:"6" max:"32" error:"USER.FIELD_PASSWORD.T_CHECK_INCORRECT"</comment>
 </row>
 <row name="description" null="0" autoincrement="0">
