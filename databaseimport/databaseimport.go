@@ -335,9 +335,9 @@ func (di *DatabaseImport) ProcessEssentialDatabaseInfos(name string, geographica
 		if err != nil {
 			return err
 		}
-		di.Database.DeleteAuthors(di.Tx)
-		a := []int{di.Uid}
-		err = di.Database.SetAuthors(di.Tx, a)
+		// di.Database.DeleteAuthors(di.Tx)
+		// a := []int{di.Uid}
+		// err = di.Database.SetAuthors(di.Tx, a)
 	} else {
 		// Create record
 		err = di.Database.Create(di.Tx)

@@ -138,16 +138,16 @@ func DatabaseList(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 		License             string            `json:"license"`
 		Contexts            []string          `json:"context"`
 		Countries           []struct {
-			Id   int
-			Name string
+			Id   int    `json:"id"`
+			Name string `json:"name"`
 		} `json:"countries"`
 		Continents []struct {
-			Id   int
-			Name string
+			Id   int    `json:"id"`
+			Name string `json:"name"`
 		} `json:"continents"`
 		Authors []struct {
-			Id       int
-			Fullname string
+			Id       int    `json:"id"`
+			Fullname string `json:"fullname"`
 		} `json:"authors"`
 	}
 
@@ -180,12 +180,14 @@ func DatabaseList(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 		return
 	}
 
+	returnedDatabases := []dbInfos{}
+
 	for _, database := range databases {
 
 		// Authors
-		astmt, err := tx.PrepareNamed("SELECT id, firstname || ' ' || lastname  as fullname FROM \"user\" u LEFT JOIN database__authors da ON u.id = da.user_id WHERE da.database_id = :id")
-		if err != nil {
-			err = errors.New("rest.databases::DatabaseList (authors) : " + err.Error())
+		astmt, err2 := tx.PrepareNamed("SELECT id, firstname || ' ' || lastname  as fullname FROM \"user\" u LEFT JOIN database__authors da ON u.id = da.user_id WHERE da.database_id = :id")
+		if err2 != nil {
+			err = errors.New("rest.databases::DatabaseList (authors) : " + err2.Error())
 			log.Println(err)
 			userSqlError(w, err)
 			tx.Rollback()
@@ -201,21 +203,21 @@ func DatabaseList(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 		}
 
 		// Contexts
-		cstmt, err := tx.PrepareNamed("SELECT context FROM database_context WHERE database_id = :id")
-		if err != nil {
-			err = errors.New("rest.databases::DatabaseList (contexts) : " + err.Error())
+		cstmt, err3 := tx.PrepareNamed("SELECT context FROM database_context WHERE database_id = :id")
+		if err3 != nil {
+			err = errors.New("rest.databases::DatabaseList (contexts) : " + err3.Error())
 			log.Println(err)
 			userSqlError(w, err)
 			tx.Rollback()
 			return
 		}
-		err = cstmt.Select(&database.Authors, database)
+		err = cstmt.Select(&database.Contexts, database)
 
 		// Countries
 		if database.Geographical_extent == "country" {
-			coustmt, err := tx.Preparex("SELECT ctr.name FROM country_tr ctr LEFT JOIN country c ON ctr.country_geonameid = c.geonameid LEFT JOIN database__country dc ON c.geonameid = dc.country_geonameid WHERE dc.database_id = $1 AND ctr.lang_isocode = $2")
-			if err != nil {
-				err = errors.New("rest.databases::DatabaseList (countries) : " + err.Error())
+			coustmt, err4 := tx.Preparex("SELECT ctr.name FROM country_tr ctr LEFT JOIN country c ON ctr.country_geonameid = c.geonameid LEFT JOIN database__country dc ON c.geonameid = dc.country_geonameid WHERE dc.database_id = $1 AND ctr.lang_isocode = $2")
+			if err4 != nil {
+				err = errors.New("rest.databases::DatabaseList (countries) : " + err4.Error())
 				log.Println(err)
 				userSqlError(w, err)
 				tx.Rollback()
@@ -226,9 +228,9 @@ func DatabaseList(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 
 		// Continents
 		if database.Geographical_extent == "continent" {
-			constmt, err := tx.Preparex("SELECT ctr.name FROM continent_tr ctr LEFT JOIN continent c ON ctr.continent_geonameid = c.geonameid LEFT JOIN database__continent dc ON c.geonameid = dc.continent_geonameid WHERE dc.database_id = $1 AND ctr.lang_isocode = $2")
-			if err != nil {
-				err = errors.New("rest.databases::DatabaseList : (continents) " + err.Error())
+			constmt, err5 := tx.Preparex("SELECT ctr.name FROM continent_tr ctr LEFT JOIN continent c ON ctr.continent_geonameid = c.geonameid LEFT JOIN database__continent dc ON c.geonameid = dc.continent_geonameid WHERE dc.database_id = $1 AND ctr.lang_isocode = $2")
+			if err5 != nil {
+				err = errors.New("rest.databases::DatabaseList : (continents) " + err5.Error())
 				log.Println(err)
 				userSqlError(w, err)
 				tx.Rollback()
@@ -236,20 +238,8 @@ func DatabaseList(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 			}
 			err = constmt.Select(&database.Continents, database.Id, user.First_lang_isocode)
 		}
-	}
 
-	if err != nil {
-		log.Println(err)
-		tx.Rollback()
-		userSqlError(w, err)
-		return
-	}
-
-	returnedDatabases := []dbInfos{}
-
-	for _, database := range databases {
 		tr := []model.Database_tr{}
-		fmt.Println("ICI")
 		err = tx.Select(&tr, "SELECT * FROM database_tr WHERE database_id = "+strconv.Itoa(database.Id))
 		if err != nil {
 			log.Println(err)
@@ -266,6 +256,13 @@ func DatabaseList(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 		database.Copyright = model.MapSqlTranslations(tr, "Lang_isocode", "Copyright")
 		database.Subject = model.MapSqlTranslations(tr, "Lang_isocode", "Subject")
 		returnedDatabases = append(returnedDatabases, database)
+	}
+
+	if err != nil {
+		log.Println(err)
+		tx.Rollback()
+		userSqlError(w, err)
+		return
 	}
 
 	err = tx.Commit()
