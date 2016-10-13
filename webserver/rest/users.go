@@ -79,6 +79,9 @@ type Userinfos struct {
 
 	// overrides
 	Password string `json:"-"`
+
+	// databases
+	Databases []model.Database `json:"databases"`
 }
 
 // Userlogin structure (json)
@@ -709,6 +712,8 @@ func UserInfos(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		_ = tx.Rollback()
 		return
 	}
+
+	tx.Select(&u.Databases, `select id,name from "database" where owner=$1`, u.Id)
 
 	//log.Println("user id : ", params.Id, "user : ", u)
 	err = tx.Commit()
