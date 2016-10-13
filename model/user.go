@@ -332,7 +332,7 @@ func (u *User) Login(password string) (ok bool) {
 	if err == nil {
 		return true
 	} else {
-		log.Println("err: ", err, "|", u.Password, password)
+		log.Println("Login err: ", err)
 		return false
 	}
 }
