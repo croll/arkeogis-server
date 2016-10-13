@@ -51,40 +51,50 @@ func init() {
 			Description: "Get list of all databases in arkeogis",
 			Func:        DatabaseList,
 			Method:      "GET",
-			Permissions: []string{},
-			Params:      reflect.TypeOf(DatabaseListParams{}),
+			Permissions: []string{
+				"request map",
+			},
+			Params: reflect.TypeOf(DatabaseListParams{}),
 		},
 		&routes.Route{
 			Path:        "/api/database/{id:[0-9]+}",
 			Description: "Get infos on an arkeogis database",
 			Func:        DatabaseInfos,
 			Method:      "GET",
-			Permissions: []string{},
-			Params:      reflect.TypeOf(DatabaseInfosParams{}),
+			Permissions: []string{
+				"request map",
+			},
+			Params: reflect.TypeOf(DatabaseInfosParams{}),
 		},
 		&routes.Route{
 			Path:        "/api/database/{id:[0-9]+}/export",
 			Description: "Export database as csv",
 			Func:        DatabaseExportCSV,
 			Method:      "GET",
-			Permissions: []string{},
-			Params:      reflect.TypeOf(DatabaseInfosParams{}),
+			Permissions: []string{
+				"import",
+			},
+			Params: reflect.TypeOf(DatabaseInfosParams{}),
 		},
 		&routes.Route{
 			Path:        "/api/database/{id:[0-9]+}/csv/{importid:[0-9]{0,}}",
 			Description: "Get the csv used at import",
 			Func:        DatabaseGetImportedCSV,
 			Method:      "GET",
-			Permissions: []string{},
-			Params:      reflect.TypeOf(DatabaseInfosParams{}),
+			Permissions: []string{
+				"import",
+			},
+			Params: reflect.TypeOf(DatabaseInfosParams{}),
 		},
 		&routes.Route{
 			Path:        "/api/database/delete",
 			Description: "Delete database",
 			Func:        DatabaseDelete,
 			Method:      "POST",
-			Permissions: []string{},
-			Json:        reflect.TypeOf(DatabaseInfosParams{}),
+			Permissions: []string{
+				"import",
+			},
+			Json: reflect.TypeOf(DatabaseInfosParams{}),
 		},
 		&routes.Route{
 			Path:        "/api/licences",
@@ -92,7 +102,7 @@ func init() {
 			Func:        LicensesList,
 			Method:      "GET",
 			Permissions: []string{
-			//"AdminUsers",
+				"request map",
 			},
 		},
 	}
