@@ -46,7 +46,17 @@ func init() {
 			Method:      "POST",
 			Json:        reflect.TypeOf(MapSearchParams{}),
 			Permissions: []string{
-			//"request map",
+				"request map",
+			},
+		},
+		&routes.Route{
+			Path:        "/api/map/searchtocsv",
+			Description: "Main map search function",
+			Func:        MapSearchToCSV,
+			Method:      "POST",
+			Json:        reflect.TypeOf(MapSearchParams{}),
+			Permissions: []string{
+				"request map",
 			},
 		},
 	}
