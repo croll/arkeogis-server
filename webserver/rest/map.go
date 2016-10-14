@@ -31,6 +31,7 @@ import (
 	"time"
 
 	db "github.com/croll/arkeogis-server/db"
+	export "github.com/croll/arkeogis-server/export"
 	"github.com/croll/arkeogis-server/model"
 	routes "github.com/croll/arkeogis-server/webserver/routes"
 	"github.com/jmoiron/sqlx"
@@ -348,6 +349,9 @@ func mapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute, toc
 		return
 	}
 
+	_user, _ := proute.Session.Get("user")
+	user := _user.(model.User)
+
 	//q := `SELECT site.id FROM site`
 
 	filters := MapSqlQuery{}
@@ -633,8 +637,17 @@ func mapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute, toc
 
 	res := ""
 	if tocsv {
+		fmt.Println("ICI")
 		w.Header().Set("Content-Type", "text/csv")
-		res = mapGetSitesAsJson(site_ids, tx) // replace here by the csv export function
+		csvContent, err := export.SitesAsCSV(site_ids, user.First_lang_isocode, tx)
+		if err != nil {
+			log.Println("can't export query as csv")
+			userSqlError(w, err)
+			return
+		}
+		w.Header().Set("Content-Type", "text/csv")
+		w.Header().Set("Content-Disposition", "attachment; filename=export.csv")
+		w.Write([]byte(csvContent))
 	} else {
 		w.Header().Set("Content-Type", "application/json")
 		res = mapGetSitesAsJson(site_ids, tx)
