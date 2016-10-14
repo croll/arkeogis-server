@@ -55,6 +55,22 @@ func (u *User) Get(tx *sqlx.Tx) error {
 	return stmt.Get(u, u)
 }
 
+// Get the user from the database
+func (u *User) GetLimited(tx *sqlx.Tx) error {
+	var q = "SELECT id,username,firstname,lastname,email,first_lang_isocode,second_lang_isocode,city_geonameid,photo_id FROM \"user\" WHERE "
+	if len(u.Username) > 0 {
+		q += "username=:username"
+	} else {
+		q += "id=:id"
+	}
+	stmt, err := tx.PrepareNamed(q)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	return stmt.Get(u, u)
+}
+
 // Create the user by inserting it in the database
 func (u *User) Create(tx *sqlx.Tx) error {
 	//stmt, err := tx.PrepareNamed("INSERT INTO \"user\" (username, firstname, lastname, email, password, description, active, city_geonameid, first_lang_id, second_lang_id, created_at, updated_at) VALUES (:username, :firstname, :lastname, :email, :password, :description, :active, :city_geonameid, 1, 1, now(), now()) RETURNING id")

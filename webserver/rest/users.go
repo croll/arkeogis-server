@@ -121,7 +121,8 @@ func init() {
 			Func:        UserList,
 			Method:      "GET",
 			Permissions: []string{
-				"adminusers", "request map",
+				"adminusers",
+				"request map", // logged at least
 			},
 			Params: reflect.TypeOf(UserListParams{}),
 		},
@@ -132,6 +133,7 @@ func init() {
 			Method:      "GET",
 			Permissions: []string{
 				"adminusers",
+				"request map", // logged at least
 			},
 			Params: reflect.TypeOf(UserGetParams{}),
 		},
@@ -151,6 +153,7 @@ func init() {
 			Json:        reflect.TypeOf(Usercreate{}),
 			Permissions: []string{
 				"adminusers",
+				"request map", // logged at least
 			},
 		},
 		&routes.Route{
@@ -312,50 +315,82 @@ func UserList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	log.Println("yo")
 
-	err := db.DB.Select(&answer.Data,
-		"SELECT "+
-			" u.id, u.username, u.created_at, u.updated_at, u.firstname, u.lastname, u.active, u.email, u.photo_id, "+
-			" "+selectGroupAsJsonNotNull("user", proute.Lang1.Isocode)+" as groups_user, "+
-			" "+selectGroupAsJsonNotNull("chronology", proute.Lang1.Isocode)+" as groups_chronology, "+
-			" "+selectGroupAsJsonNotNull("charac", proute.Lang1.Isocode)+" as groups_charac, "+
-			" "+selectCityAndCountryAsJson("u.city_geonameid", proute.Lang1.Isocode)+" as countryandcity, "+
-			" "+selectCompaniesAsJson("u.id")+" as companies, "+
-			" "+selectDatabasesAsJson("u.id")+" as databases "+
-			" FROM \"user\" u "+
-			" WHERE (u.username ILIKE $1 OR u.firstname ILIKE $1 OR u.lastname ILIKE $1 OR u.email ILIKE $1) "+
-			"  AND u.id > 0"+ // don't list anonymous
-			" GROUP BY u.id "+
-			" ORDER BY "+order+" "+orderdir+
-			" OFFSET $2 "+
-			" LIMIT $3",
-		"%"+params.Filter+"%", offset, params.Limit)
-
-	log.Println("SELECT "+
-		" u.id, u.username, u.created_at, u.updated_at, u.firstname, u.lastname, u.active, u.email, u.photo_id, "+
-		" "+selectGroupAsJsonNotNull("user", proute.Lang1.Isocode)+" as groups_user, "+
-		" "+selectGroupAsJsonNotNull("chronology", proute.Lang1.Isocode)+" as groups_chronology, "+
-		" "+selectGroupAsJsonNotNull("charac", proute.Lang1.Isocode)+" as groups_charac, "+
-		" "+selectCityAndCountryAsJson("u.city_geonameid", proute.Lang1.Isocode)+" as countryandcity, "+
-		" "+selectCompaniesAsJson("u.id")+" as companies, "+
-		" "+selectDatabasesAsJson("u.id")+" as databases "+
-		" FROM \"user\" u "+
-		" WHERE (u.username ILIKE $1 OR u.firstname ILIKE $1 OR u.lastname ILIKE $1 OR u.email ILIKE $1) "+
-		"  AND u.id > 0"+ // don't list anonymous
-		" GROUP BY u.id "+
-		" ORDER BY "+order+" "+orderdir+
-		" OFFSET $2 "+
-		" LIMIT $3",
-		"%"+params.Filter+"%", offset, params.Limit)
+	tx, err := db.DB.Beginx()
 	if err != nil {
+		log.Println("1")
+		userSqlError(w, err)
+		return
+	}
+
+	_me, ok := proute.Session.Get("user")
+	if !ok {
+		log.Println("userSet: can't get user in session...", _me)
+		_ = tx.Rollback()
+		return
+	}
+
+	me, ok := _me.(model.User)
+	if !ok {
+		log.Println("userSet: can't cast user...", _me)
+		_ = tx.Rollback()
+		return
+	}
+
+	permAdminUsers, err := me.HavePermissions(tx, "adminusers")
+	if err != nil {
+		tx.Rollback()
+		userSqlError(w, err)
+		return
+	}
+
+	filterActive := ""
+	if !permAdminUsers {
+		filterActive = " AND u.active=true"
+	}
+
+	q := "SELECT u.id, u.firstname, u.lastname, u.email, u.photo_id, "
+	if permAdminUsers {
+		q += "u.username, u.created_at, u.updated_at, u.active, "
+	} else {
+	}
+	q += " " + selectGroupAsJsonNotNull("user", proute.Lang1.Isocode) + " as groups_user, "
+	q += " " + selectGroupAsJsonNotNull("chronology", proute.Lang1.Isocode) + " as groups_chronology, "
+	q += " " + selectGroupAsJsonNotNull("charac", proute.Lang1.Isocode) + " as groups_charac, "
+	q += " " + selectCityAndCountryAsJson("u.city_geonameid", proute.Lang1.Isocode) + " as countryandcity, "
+	q += " " + selectCompaniesAsJson("u.id") + " as companies, "
+	q += " " + selectDatabasesAsJson("u.id") + " as databases "
+
+	q += " FROM \"user\" u " +
+		" WHERE (u.username ILIKE $1 OR u.firstname ILIKE $1 OR u.lastname ILIKE $1 OR u.email ILIKE $1) " +
+		"  AND u.id > 0" + // don't list anonymous
+		filterActive +
+		" GROUP BY u.id " +
+		" ORDER BY " + order + " " + orderdir +
+		" OFFSET $2 " +
+		" LIMIT $3"
+
+	//log.Println(q, "%"+params.Filter+"%", offset, params.Limit)
+	err = tx.Select(&answer.Data, q, "%"+params.Filter+"%", offset, params.Limit)
+
+	if err != nil {
+		_ = tx.Rollback()
 		userSqlError(w, err)
 		return
 	}
 
 	//log.Println("result: ", answer.Data)
 
-	err = db.DB.Get(&answer.Count, "SELECT count(*) FROM \"user\" WHERE id > 0")
+	err = tx.Get(&answer.Count, `SELECT count(*) FROM "user" "u" WHERE "u".id > 0 `+filterActive)
 	if err != nil {
+		_ = tx.Rollback()
 		log.Println("err: ", err)
+		return
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		log.Println("can't commit")
+		userSqlError(w, err)
 		return
 	}
 
@@ -515,6 +550,8 @@ func userSet(w http.ResponseWriter, r *http.Request, proute routes.Proute, creat
 			tmpuser.Description = u.User.Description
 			tmpuser.Email = u.User.Email
 			tmpuser.City_geonameid = u.User.City_geonameid
+
+			err = tmpuser.Update(tx)
 		} else {
 			// if we don't set a new password, we take it back from the db
 			if len(u.User.Password) == 0 {
@@ -668,7 +705,32 @@ func UserInfos(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	u := Userinfos{}
 	u.Id = params.Id
 
-	err = u.Get(tx)
+	_me, ok := proute.Session.Get("user")
+	if !ok {
+		log.Println("userSet: can't get user in session...", _me)
+		_ = tx.Rollback()
+		return
+	}
+
+	me, ok := _me.(model.User)
+	if !ok {
+		log.Println("userSet: can't cast user...", _me)
+		_ = tx.Rollback()
+		return
+	}
+
+	permAdminUsers, err := me.HavePermissions(tx, "adminusers")
+	if err != nil {
+		tx.Rollback()
+		userSqlError(w, err)
+		return
+	}
+
+	if permAdminUsers || params.Id == me.Id {
+		err = u.Get(tx)
+	} else {
+		err = u.GetLimited(tx)
+	}
 	if err != nil {
 		log.Println("can't get user")
 		userSqlError(w, err)
