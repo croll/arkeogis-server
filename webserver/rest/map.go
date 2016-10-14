@@ -316,6 +316,14 @@ type MapSearchParams struct {
 
 // MapSearch search for sites using many filters
 func MapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+	mapSearch(w, r, proute, false)
+}
+
+func MapSearchToCSV(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+	mapSearch(w, r, proute, true)
+}
+
+func mapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute, tocsv bool) {
 	// for measuring execution time
 	start := time.Now()
 
@@ -613,8 +621,15 @@ func MapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	elapsed := time.Since(start)
 	fmt.Printf("Search took %s", elapsed)
 
-	jsonString := mapGetSitesAsJson(site_ids, tx)
-	mapDebug(site_ids, tx)
+	res := ""
+	if tocsv {
+		w.Header().Set("Content-Type", "text/csv")
+		res = mapGetSitesAsJson(site_ids, tx) // replace here by the csv export function
+	} else {
+		w.Header().Set("Content-Type", "application/json")
+		res = mapGetSitesAsJson(site_ids, tx)
+	}
+	//mapDebug(site_ids, tx)
 
 	err = tx.Commit()
 	if err != nil {
@@ -623,8 +638,7 @@ func MapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte(jsonString))
+	w.Write([]byte(res))
 	return
 }
 
