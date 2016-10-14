@@ -70,7 +70,7 @@ func init() {
 			Func:        GroupList,
 			Method:      "GET",
 			Permissions: []string{
-				"adminusers",
+				"request map", // logged at least
 			},
 			Params: reflect.TypeOf(GroupListParams{}),
 		},
