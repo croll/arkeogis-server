@@ -34,6 +34,7 @@ import (
 	"time"
 
 	db "github.com/croll/arkeogis-server/db"
+	export "github.com/croll/arkeogis-server/export"
 	"github.com/croll/arkeogis-server/model"
 	routes "github.com/croll/arkeogis-server/webserver/routes"
 )
@@ -71,10 +72,8 @@ func init() {
 			Description: "Export database as csv",
 			Func:        DatabaseExportCSV,
 			Method:      "GET",
-			Permissions: []string{
-				"import",
-			},
-			Params: reflect.TypeOf(DatabaseInfosParams{}),
+			Permissions: []string{},
+			Params:      reflect.TypeOf(DatabaseInfosParams{}),
 		},
 		&routes.Route{
 			Path:        "/api/database/{id:[0-9]+}/csv/{importid:[0-9]{0,}}",
@@ -361,16 +360,42 @@ func DatabaseExportCSV(w http.ResponseWriter, r *http.Request, proute routes.Pro
 		userSqlError(w, err)
 		return
 	}
-	d := model.DatabaseFullInfos{}
-	d.Id = params.Id
 
-	csvContent, err := d.ExportCSV(tx)
+	// Datatabase isocode
+
+	_user, _ := proute.Session.Get("user")
+	user := _user.(model.User)
+
+	dbName := ""
+
+	err = tx.Get(&dbName, "SELECT name FROM \"database\" WHERE id = $1", params.Id)
+
 	if err != nil {
 		log.Println("Unable to export database")
 		userSqlError(w, err)
 		tx.Rollback()
 		return
 	}
+
+	var sites []int
+
+	err = tx.Select(&sites, "SELECT id FROM site where database_id = $1", params.Id)
+	if err != nil {
+		log.Println("Unable to export database")
+		userSqlError(w, err)
+		tx.Rollback()
+		return
+	}
+
+	csvContent, err := export.SitesAsCSV(sites, user.First_lang_isocode, tx)
+
+	if err != nil {
+		log.Println("Unable to export database")
+		userSqlError(w, err)
+		tx.Rollback()
+		return
+	}
+
 	err = tx.Commit()
 	if err != nil {
 		log.Println("Unable to export database")
@@ -378,7 +403,7 @@ func DatabaseExportCSV(w http.ResponseWriter, r *http.Request, proute routes.Pro
 		return
 	}
 	t := time.Now()
-	filename := d.Name + "-" + fmt.Sprintf("%d-%d-%d %d:%d:%d",
+	filename := dbName + "-" + fmt.Sprintf("%d-%d-%d %d:%d:%d",
 		t.Year(), t.Month(), t.Day(),
 		t.Hour(), t.Minute(), t.Second()) + ".csv"
 	w.Header().Set("Content-Type", "text/csv")
