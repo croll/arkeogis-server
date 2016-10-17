@@ -36,7 +36,7 @@ import (
 )
 
 // ExportCSV exports database and sites as as csv file
-func SitesAsCSV(siteIDs []int, isoCode string, tx *sqlx.Tx) (outp string, err error) {
+func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) (outp string, err error) {
 
 	var buff bytes.Buffer
 
@@ -44,7 +44,11 @@ func SitesAsCSV(siteIDs []int, isoCode string, tx *sqlx.Tx) (outp string, err er
 	w.Comma = ';'
 	w.UseCRLF = true
 
-	err = w.Write([]string{"SITE_SOURCE_ID", "SITE_NAME", "MAIN_CITY_NAME", "GEONAME_ID", "PROJECTION_SYSTEM", "LONGITUDE", "LATITUDE", "ALTITUDE", "CITY_CENTROID", "STATE_OF_KNOWLEDGE", "OCCUPATION", "STARTING_PERIOD", "ENDING_PERIOD", "CARAC_NAME", "CARAC_LVL1", "CARAC_LVL2", "CARAC_LVL3", "CARAC_LVL4", "CARAC_EXP", "BIBLIOGRAPHY", "COMMENTS"})
+	if (includeDbName) {
+		err = w.Write([]string{"DATABASE_NAME", "SITE_SOURCE_ID", "SITE_NAME", "MAIN_CITY_NAME", "GEONAME_ID", "PROJECTION_SYSTEM", "LONGITUDE", "LATITUDE", "ALTITUDE", "CITY_CENTROID", "STATE_OF_KNOWLEDGE", "OCCUPATION", "STARTING_PERIOD", "ENDING_PERIOD", "CARAC_NAME", "CARAC_LVL1", "CARAC_LVL2", "CARAC_LVL3", "CARAC_LVL4", "CARAC_EXP", "BIBLIOGRAPHY", "COMMENTS"})
+	} else {
+		err = w.Write([]string{"SITE_SOURCE_ID", "SITE_NAME", "MAIN_CITY_NAME", "GEONAME_ID", "PROJECTION_SYSTEM", "LONGITUDE", "LATITUDE", "ALTITUDE", "CITY_CENTROID", "STATE_OF_KNOWLEDGE", "OCCUPATION", "STARTING_PERIOD", "ENDING_PERIOD", "CARAC_NAME", "CARAC_LVL1", "CARAC_LVL2", "CARAC_LVL3", "CARAC_LVL4", "CARAC_EXP", "BIBLIOGRAPHY", "COMMENTS"})
+	}
 	if err != nil {
 		log.Println("database::ExportCSV : ", err.Error())
 	}
@@ -73,7 +77,7 @@ func SitesAsCSV(siteIDs []int, isoCode string, tx *sqlx.Tx) (outp string, err er
 		characs[id] = path
 	}
 
-	q = "SELECT s.code, s.name, s.city_name, s.city_geonameid, ST_X(s.geom::geometry) as longitude, ST_Y(s.geom::geometry) as latitude, ST_X(s.geom_3d::geometry) as longitude_3d, ST_Y(s.geom_3d::geometry) as latitude3d, ST_Z(s.geom_3d::geometry) as altitude, s.centroid, s.occupation, sr.start_date1, sr.start_date2, sr.end_date1, sr.end_date2, src.exceptional, src.knowledge_type, srctr.bibliography, srctr.comment, c.id as charac_id FROM site s LEFT JOIN database db ON s.database_id = db.id LEFT JOIN site_range sr ON s.id = sr.site_id LEFT JOIN site_tr str ON s.id = str.site_id LEFT JOIN site_range__charac src ON sr.id = src.site_range_id LEFT JOIN site_range__charac_tr srctr ON src.id = srctr.site_range__charac_id LEFT JOIN charac c ON src.charac_id = c.id WHERE s.id in (" + model.IntJoin(siteIDs, true) + ") AND str.lang_isocode IS NULL OR str.lang_isocode = db.default_language ORDER BY s.id, sr.id"
+	q = "SELECT db.name as dbname, s.code, s.name, s.city_name, s.city_geonameid, ST_X(s.geom::geometry) as longitude, ST_Y(s.geom::geometry) as latitude, ST_X(s.geom_3d::geometry) as longitude_3d, ST_Y(s.geom_3d::geometry) as latitude3d, ST_Z(s.geom_3d::geometry) as altitude, s.centroid, s.occupation, sr.start_date1, sr.start_date2, sr.end_date1, sr.end_date2, src.exceptional, src.knowledge_type, srctr.bibliography, srctr.comment, c.id as charac_id FROM site s LEFT JOIN database db ON s.database_id = db.id LEFT JOIN site_range sr ON s.id = sr.site_id LEFT JOIN site_tr str ON s.id = str.site_id LEFT JOIN site_range__charac src ON sr.id = src.site_range_id LEFT JOIN site_range__charac_tr srctr ON src.id = srctr.site_range__charac_id LEFT JOIN charac c ON src.charac_id = c.id WHERE s.id in (" + model.IntJoin(siteIDs, true) + ") AND str.lang_isocode IS NULL OR str.lang_isocode = db.default_language ORDER BY s.id, sr.id"
 
 	rows2, err := tx.Query(q)
 	if err != nil {
@@ -82,6 +86,7 @@ func SitesAsCSV(siteIDs []int, isoCode string, tx *sqlx.Tx) (outp string, err er
 	}
 	for rows2.Next() {
 		var (
+			dbname         string
 			code           string
 			name           string
 			city_name      string
@@ -116,7 +121,7 @@ func SitesAsCSV(siteIDs []int, isoCode string, tx *sqlx.Tx) (outp string, err er
 			sexceptional   string
 			// description    string
 		)
-		if err = rows2.Scan(&code, &name, &city_name, &city_geonameid, &longitude, &latitude, &longitude3d, &latitude3d, &altitude3d, &centroid, &occupation, &start_date1, &start_date2, &end_date1, &end_date2, &exceptional, &knowledge_type, &bibliography, &comment, &charac_id); err != nil {
+		if err = rows2.Scan(&dbname, &code, &name, &city_name, &city_geonameid, &longitude, &latitude, &longitude3d, &latitude3d, &altitude3d, &centroid, &occupation, &start_date1, &start_date2, &end_date1, &end_date2, &exceptional, &knowledge_type, &bibliography, &comment, &charac_id); err != nil {
 			log.Println(err)
 			rows2.Close()
 			return
@@ -246,7 +251,13 @@ func SitesAsCSV(siteIDs []int, isoCode string, tx *sqlx.Tx) (outp string, err er
 			sexceptional = translate.T(isoCode, "IMPORT.CSVFIELD_ALL.T_LABEL_NO")
 		}
 
-		line := []string{code, name, city_name, cgeonameid, "4326", slongitude, slatitude, saltitude, scentroid, knowledge_type, soccupation, startingPeriod, endingPeriod, scharac_name, scharac_lvl1, scharac_lvl2, scharac_lvl3, scharac_lvl4, sexceptional, bibliography, comment}
+		var line []string
+
+		if (includeDbName) {
+			line = []string{dbname, code, name, city_name, cgeonameid, "4326", slongitude, slatitude, saltitude, scentroid, knowledge_type, soccupation, startingPeriod, endingPeriod, scharac_name, scharac_lvl1, scharac_lvl2, scharac_lvl3, scharac_lvl4, sexceptional, bibliography, comment}
+		} else {
+			line = []string{code, name, city_name, cgeonameid, "4326", slongitude, slatitude, saltitude, scentroid, knowledge_type, soccupation, startingPeriod, endingPeriod, scharac_name, scharac_lvl1, scharac_lvl2, scharac_lvl3, scharac_lvl4, sexceptional, bibliography, comment}
+		}
 
 		err := w.Write(line)
 		w.Flush()

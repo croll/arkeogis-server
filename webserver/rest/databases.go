@@ -387,7 +387,7 @@ func DatabaseExportCSV(w http.ResponseWriter, r *http.Request, proute routes.Pro
 		return
 	}
 
-	csvContent, err := export.SitesAsCSV(sites, user.First_lang_isocode, tx)
+	csvContent, err := export.SitesAsCSV(sites, user.First_lang_isocode, false, tx)
 
 	if err != nil {
 		log.Println("Unable to export database")
