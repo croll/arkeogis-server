@@ -58,7 +58,7 @@ type Company struct {
 type UserListParams struct {
 	Limit  int    `default:"10" min:"1" max:"10000" error:"limit over boundaries"`
 	Page   int    `default:"1" min:"1" error:"page over boundaries"`
-	Order  string `default:"u.created_at" enum:"u.created_at,-u.created_at,u.updated_at,-u.updated_at,u.username,-u.username,u.firstname,-u.firstname,u.lastname,-u.lastname,u.email,-u.email,u.active,-u.active" error:"bad order"`
+	Order  string `default:"u.created_at" enum:"u.created_at,-u.created_at,u.updated_at,-u.updated_at,u.username,-u.username,u.firstname,-u.firstname,u.lastname,-u.lastname,u.email,-u.email,u.active,-u.active,country,-country" error:"bad order"`
 	Filter string `default:""`
 }
 
@@ -303,13 +303,21 @@ func UserList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		order = order[1:]
 		orderdir = "DESC"
 	}
-	if order == "u.lastname" {
+	superorder := false
+	switch order {
+	case "u.lastname":
 		order = "u.lastname " + orderdir + ", u.firstname"
-	}
-	if order == "u.created_at" {
+	case "u.created_at":
 		order = "u.created_at " + orderdir + ", u.username"
+	case "country":
+		superorder = true
+		order = "countryandcity->>'country_name' " + orderdir + ", countryandcity->>'city_name'"
 	}
 	/////
+
+	// hack test
+	//order = "countryandcity->>'country_name'"
+	//
 
 	offset := (params.Page - 1) * params.Limit
 
@@ -364,12 +372,15 @@ func UserList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		" WHERE (u.username ILIKE $1 OR u.firstname ILIKE $1 OR u.lastname ILIKE $1 OR u.email ILIKE $1) " +
 		"  AND u.id > 0" + // don't list anonymous
 		filterActive +
-		" GROUP BY u.id " +
-		" ORDER BY " + order + " " + orderdir +
-		" OFFSET $2 " +
-		" LIMIT $3"
+		" GROUP BY u.id "
 
-	//log.Println(q, "%"+params.Filter+"%", offset, params.Limit)
+	if superorder {
+		q = "SELECT * FROM (" + q + ") AS u ORDER BY " + order + " " + orderdir + " OFFSET $2 " + " LIMIT $3"
+	} else {
+		q += " ORDER BY " + order + " " + orderdir + " OFFSET $2 " + " LIMIT $3"
+	}
+
+	log.Println(q, "%"+params.Filter+"%", offset, params.Limit)
 	err = tx.Select(&answer.Data, q, "%"+params.Filter+"%", offset, params.Limit)
 
 	if err != nil {
