@@ -58,7 +58,7 @@ type Company struct {
 type UserListParams struct {
 	Limit  int    `default:"10" min:"1" max:"10000" error:"limit over boundaries"`
 	Page   int    `default:"1" min:"1" error:"page over boundaries"`
-	Order  string `default:"u.created_at" enum:"u.created_at,-u.created_at,u.updated_at,-u.updated_at,u.username,-u.username,u.firstname,-u.firstname,u.lastname,-u.lastname,u.email,-u.email,u.active,-u.active,country,-country" error:"bad order"`
+	Order  string `default:"u.created_at" enum:"u.created_at,-u.created_at,u.updated_at,-u.updated_at,u.username,-u.username,u.firstname,-u.firstname,u.lastname,-u.lastname,u.email,-u.email,u.active,-u.active,country,-country,companies,-companies,databases,-databases" error:"bad order"`
 	Filter string `default:""`
 }
 
@@ -312,6 +312,12 @@ func UserList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	case "country":
 		superorder = true
 		order = "countryandcity->>'country_name' " + orderdir + ", countryandcity->>'city_name'"
+	case "companies":
+		superorder = true
+		order = "users.companies->0->>'name' " + orderdir + ",users.companies->1->>'name'"
+	case "databases":
+		superorder = true
+		order = "users.databases->0->>'f2' " + orderdir + ", users.databases->1->>'f2' " + orderdir + ", users.databases->2->>'f2' " + orderdir + ", users.databases->3->>'f2' " + orderdir + ", users.databases->4->>'f2'"
 	}
 	/////
 
@@ -375,7 +381,7 @@ func UserList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		" GROUP BY u.id "
 
 	if superorder {
-		q = "SELECT * FROM (" + q + ") AS u ORDER BY " + order + " " + orderdir + " OFFSET $2 " + " LIMIT $3"
+		q = "SELECT * FROM (" + q + ") AS users ORDER BY " + order + " " + orderdir + " OFFSET $2 " + " LIMIT $3"
 	} else {
 		q += " ORDER BY " + order + " " + orderdir + " OFFSET $2 " + " LIMIT $3"
 	}
