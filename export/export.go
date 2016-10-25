@@ -174,36 +174,28 @@ func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) 
 			knowledge_type = translate.T(isoCode, "IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_DIG")
 		}
 		// Revert hack on dates
-		if start_date1 < 0 && start_date1 > math.MinInt32 {
+		if start_date1 < 1 && start_date1 > math.MinInt32 {
 			start_date1--
 		}
-		if start_date2 < 0 && start_date2 > math.MinInt32 {
+		if start_date2 < 1 && start_date2 > math.MinInt32 {
 			start_date2--
 		}
-		if end_date1 < 0 && end_date1 > math.MinInt32 {
+		if end_date1 < 1 && end_date1 > math.MinInt32 {
 			end_date1--
 		}
-		if end_date2 < 0 && end_date2 > math.MinInt32 {
+		if end_date2 < 1 && end_date2 > math.MinInt32 {
 			end_date2--
 		}
 		// Starting period
 		startingPeriod := ""
 		if start_date1 != math.MinInt32 {
-			if start_date1 < 1 {
-				start_date1--
-			}
 			startingPeriod += strconv.Itoa(start_date1)
 		}
 		if start_date1 != math.MinInt32 && start_date2 != math.MaxInt32 && start_date1 != start_date2 {
 			startingPeriod += ":"
 		}
 		if start_date2 != math.MaxInt32 && start_date1 != start_date2 {
-			if start_date2 < 1 {
-				start_date2--
-			}
-			if start_date1 != start_date2 {
-				startingPeriod += strconv.Itoa(start_date2)
-			}
+			startingPeriod += strconv.Itoa(start_date2)
 		}
 		if startingPeriod == "" {
 			startingPeriod = translate.T(isoCode, "IMPORT.CSVFIELD_ALL.T_CHECK_UNDETERMINED")
@@ -211,21 +203,13 @@ func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) 
 		// Ending period
 		endingPeriod := ""
 		if end_date1 != math.MinInt32 {
-			if end_date1 < 1 {
-				end_date1--
-			}
 			endingPeriod += strconv.Itoa(end_date1)
 		}
 		if end_date1 != math.MinInt32 && end_date2 != math.MaxInt32 && end_date1 != end_date2 {
 			endingPeriod += ":"
 		}
 		if end_date2 != math.MaxInt32 && end_date1 != end_date2 {
-			if end_date2 < 1 {
-				end_date2--
-			}
-			if end_date1 != end_date2 {
-				endingPeriod += strconv.Itoa(end_date2)
-			}
+			endingPeriod += strconv.Itoa(end_date2)
 		}
 		if endingPeriod == "" {
 			endingPeriod = translate.T(isoCode, "IMPORT.CSVFIELD_ALL.T_CHECK_UNDETERMINED")
