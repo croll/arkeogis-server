@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- SQL XML created by WWW SQL Designer, https://github.com/ondras/wwwsqldesigner/ -->
-<!-- Active URL: https://croll.fr/sqldesigner/ -->
+<!-- Active URL: https://www.croll.fr/sqldesigner/ -->
 <sql>
 <datatypes db="postgresql">
 	<group label="Numeric" color="rgb(238,238,170)">
@@ -351,7 +351,7 @@
 <datatype>TIMESTAMP</datatype>
 </row>
 <row name="altitude" null="0" autoincrement="0">
-<datatype>INTEGER</datatype>
+<datatype>DOUBLE</datatype>
 <default>-999999</default></row>
 <row name="start_date1" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
@@ -466,7 +466,7 @@
 <part>lang_isocode</part>
 </key>
 </table>
-<table x="910" y="413" name="site_range">
+<table x="910" y="458" name="site_range">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
