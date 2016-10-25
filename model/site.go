@@ -23,7 +23,6 @@ package model
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/croll/arkeogis-server/geo"
 	"github.com/jmoiron/sqlx"
@@ -59,7 +58,6 @@ func (s *Site) Get(tx *sqlx.Tx) (err error) {
 
 func (s *SiteInfos) Create(tx *sqlx.Tx) (err error) {
 	var q string
-	fmt.Println("ALTITUDE:", s.Altitude)
 	if s.EPSG != 4326 {
 		q = "INSERT INTO \"site\" (\"code\", \"name\", \"city_name\", \"city_geonameid\", \"geom\", \"geom_3d\", \"altitude\", \"centroid\", \"occupation\", \"database_id\", \"created_at\", \"updated_at\") VALUES (:code, :name, :city_name, :city_geonameid, ST_Transform(ST_GeometryFromText(:geom), 4326)::::geography, ST_Transform(ST_GeometryFromText(:geom_3d), 4326)::::geography, :altitude, :centroid, :occupation, :database_id, now(), now()) RETURNING id"
 	} else {

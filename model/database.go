@@ -26,7 +26,6 @@ import (
 	"database/sql"
 	"encoding/csv"
 	"errors"
-	"fmt"
 	"log"
 	"math"
 	"strconv"
@@ -579,7 +578,6 @@ func (d *Database) CacheGeom(tx *sqlx.Tx) (err error) {
 	// Extent
 	//_, err = tx.NamedExec("SELECT ST_Envelope(sites.geom::::geometry) FROM (SELECT geom FROM site WHERE database_id = :id) as sites", d)
 	// Envelope
-	fmt.Println("CACHE GEOM", d.Id)
 	_, err = tx.NamedExec("UPDATE database SET geographical_extent_geom = (SELECT (ST_Envelope((SELECT ST_Multi(ST_Collect(f.geom)) as singlegeom FROM (SELECT (ST_Dump(geom::::geometry)).geom As geom FROM site WHERE database_id = :id) As f)))) WHERE id = :id", d)
 	if err != nil {
 		err = errors.New("database::CacheGeom: " + err.Error())
@@ -614,7 +612,7 @@ func (d *Database) LinkToUserProject(tx *sqlx.Tx, project_ID int) (err error) {
 }
 
 // ExportCSV exports database and sites as as csv file
-func (d *Database) ExportCSV(tx *sqlx.Tx) (outp string, err error) {
+func (d *Database) ExportCSV(tx *sqlx.Tx, siteIDs ...[]int) (outp string, err error) {
 
 	var buff bytes.Buffer
 

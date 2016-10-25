@@ -399,7 +399,7 @@ func (di *DatabaseImport) processSiteInfos(f *Fields) {
 				if f.ALTITUDE == "" {
 					di.CurrentSite.Altitude = -999999
 				} else {
-					di.CurrentSite.Altitude, err = strconv.Atoi(f.ALTITUDE)
+					di.CurrentSite.Altitude, err = strconv.ParseFloat(f.ALTITUDE, 64)
 					if err != nil {
 						di.AddError(f.ALTITUDE, "IMPORT.CSVFIELD_ALTITUDE.T_WRONG_VALUE", "ALTITUDE")
 					}
@@ -412,12 +412,11 @@ func (di *DatabaseImport) processSiteInfos(f *Fields) {
 					di.AddError(f.LONGITUDE, "IMPORT.CSVFIELD_GEOMETRY.T_COMMA_DETECTED", "LONGITUDE")
 					skip = true
 				}
-				if strings.Contains(f.ALTITUDE, ",") {
-					di.AddError(f.ALTITUDE, "IMPORT.CSVFIELD_GEOMETRY.T_COMMA_DETECTED", "ALTITUDE")
-					skip = true
-				}
+				// if strings.Contains(f.ALTITUDE, ",") {
+				// 	di.AddError(f.ALTITUDE, "IMPORT.CSVFIELD_GEOMETRY.T_COMMA_DETECTED", "ALTITUDE")
+				// 	skip = true
+				// }
 				if !skip {
-					fmt.Println(di.CurrentSite.Point)
 					di.CurrentSite.Geom = di.CurrentSite.Point.ToEWKT_2d()
 					if di.CurrentSite.Altitude != -999999 {
 						di.CurrentSite.Geom_3d = di.CurrentSite.Point.ToEWKT()
@@ -486,9 +485,9 @@ func (di *DatabaseImport) checkDifferences(f *Fields) {
 	}
 
 	// ALTITUDE
-	tmpAlt, _ := strconv.Atoi(f.ALTITUDE)
+	tmpAlt, _ := strconv.ParseFloat(strings.Replace(f.ALTITUDE, ",", ".", 1), 64)
 	if f.ALTITUDE != "" && tmpAlt != di.CurrentSite.Altitude {
-		di.AddError(f.LATITUDE, "IMPORT.CSVFIELD_ALL.T_CHECK_ALREADY_DEFINED_VALUE_DIFFERS", "ALTITUDE")
+		di.AddError(f.ALTITUDE, "IMPORT.CSVFIELD_ALL.T_CHECK_ALREADY_DEFINED_VALUE_DIFFERS", "ALTITUDE")
 	}
 
 	// GEONAME ID
@@ -548,7 +547,6 @@ func (di *DatabaseImport) processGeoDatas(f *Fields) (*geo.Point, error) {
 	// Test if EPSG is exists
 	var SRIDExists int
 	err = di.Tx.Get(&SRIDExists, "select count(*) from spatial_ref_sys where srid = $1", epsg)
-	fmt.Println("EPSG :", epsg, SRIDExists)
 	if err != nil || SRIDExists != 1 {
 		di.AddError(f.PROJECTION_SYSTEM, "IMPORT.CSVFIELD_PROJECTION_SYSTEM.T_CHECK_NOT_EXISTS", "PROJECTION_SYSTEM")
 		hasError = true
