@@ -201,7 +201,9 @@ func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) 
 			if start_date2 < 1 {
 				start_date2--
 			}
-			startingPeriod += strconv.Itoa(start_date2)
+			if start_date1 != start_date2 {
+				startingPeriod += strconv.Itoa(start_date2)
+			}
 		}
 		if startingPeriod == "" {
 			startingPeriod = translate.T(isoCode, "IMPORT.CSVFIELD_ALL.T_CHECK_UNDETERMINED")
@@ -221,7 +223,9 @@ func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) 
 			if end_date2 < 1 {
 				end_date2--
 			}
-			endingPeriod += strconv.Itoa(end_date2)
+			if end_date1 != end_date2 {
+				endingPeriod += strconv.Itoa(end_date2)
+			}
 		}
 		if endingPeriod == "" {
 			endingPeriod = translate.T(isoCode, "IMPORT.CSVFIELD_ALL.T_CHECK_UNDETERMINED")
