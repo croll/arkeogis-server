@@ -99,6 +99,10 @@ func mysqlToPsqlType(row Row) string {
 		return "int"
 	}
 
+	if row.Datatype == "DOUBLE" {
+		return "float64"
+	}
+
 	if row.Datatype == "BOOLEAN" {
 		return "bool"
 	}
