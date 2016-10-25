@@ -213,7 +213,7 @@ func (di *DatabaseImport) ProcessRecord(f *Fields) {
 		di.CurrentSite.Name = f.SITE_NAME
 		di.CurrentSite.Database_id = di.Database.Id
 		di.CurrentSite.Lang_isocode = di.Database.Default_language
-		di.CurrentSite.Geom_3d = "POINT(0 0 0)"
+		di.CurrentSite.Geom_3d = "SRID=4326;POINT(0 0 0)"
 		di.NumberOfSites++
 		// Process site info
 		di.processSiteInfos(f)
@@ -417,6 +417,7 @@ func (di *DatabaseImport) processSiteInfos(f *Fields) {
 					skip = true
 				}
 				if !skip {
+					fmt.Println(di.CurrentSite.Point)
 					di.CurrentSite.Geom = di.CurrentSite.Point.ToEWKT_2d()
 					if di.CurrentSite.Altitude != -999999 {
 						di.CurrentSite.Geom_3d = di.CurrentSite.Point.ToEWKT()
@@ -547,6 +548,7 @@ func (di *DatabaseImport) processGeoDatas(f *Fields) (*geo.Point, error) {
 	// Test if EPSG is exists
 	var SRIDExists int
 	err = di.Tx.Get(&SRIDExists, "select count(*) from spatial_ref_sys where srid = $1", epsg)
+	fmt.Println("EPSG :", epsg, SRIDExists)
 	if err != nil || SRIDExists != 1 {
 		di.AddError(f.PROJECTION_SYSTEM, "IMPORT.CSVFIELD_PROJECTION_SYSTEM.T_CHECK_NOT_EXISTS", "PROJECTION_SYSTEM")
 		hasError = true
