@@ -44,7 +44,7 @@ func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) 
 	w.Comma = ';'
 	w.UseCRLF = true
 
-	if (includeDbName) {
+	if includeDbName {
 		err = w.Write([]string{"DATABASE_NAME", "SITE_SOURCE_ID", "SITE_NAME", "MAIN_CITY_NAME", "GEONAME_ID", "PROJECTION_SYSTEM", "LONGITUDE", "LATITUDE", "ALTITUDE", "CITY_CENTROID", "STATE_OF_KNOWLEDGE", "OCCUPATION", "STARTING_PERIOD", "ENDING_PERIOD", "CARAC_NAME", "CARAC_LVL1", "CARAC_LVL2", "CARAC_LVL3", "CARAC_LVL4", "CARAC_EXP", "BIBLIOGRAPHY", "COMMENTS"})
 	} else {
 		err = w.Write([]string{"SITE_SOURCE_ID", "SITE_NAME", "MAIN_CITY_NAME", "GEONAME_ID", "PROJECTION_SYSTEM", "LONGITUDE", "LATITUDE", "ALTITUDE", "CITY_CENTROID", "STATE_OF_KNOWLEDGE", "OCCUPATION", "STARTING_PERIOD", "ENDING_PERIOD", "CARAC_NAME", "CARAC_LVL1", "CARAC_LVL2", "CARAC_LVL3", "CARAC_LVL4", "CARAC_EXP", "BIBLIOGRAPHY", "COMMENTS"})
@@ -189,12 +189,18 @@ func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) 
 		// Starting period
 		startingPeriod := ""
 		if start_date1 != math.MinInt32 {
+			if start_date1 < 1 {
+				start_date1--
+			}
 			startingPeriod += strconv.Itoa(start_date1)
 		}
 		if start_date1 != math.MinInt32 && start_date2 != math.MaxInt32 && start_date1 != start_date2 {
 			startingPeriod += ":"
 		}
 		if start_date2 != math.MaxInt32 && start_date1 != start_date2 {
+			if start_date2 < 1 {
+				start_date2--
+			}
 			startingPeriod += strconv.Itoa(start_date2)
 		}
 		if startingPeriod == "" {
@@ -203,12 +209,18 @@ func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) 
 		// Ending period
 		endingPeriod := ""
 		if end_date1 != math.MinInt32 {
+			if end_date1 < 1 {
+				end_date1--
+			}
 			endingPeriod += strconv.Itoa(end_date1)
 		}
 		if end_date1 != math.MinInt32 && end_date2 != math.MaxInt32 && end_date1 != end_date2 {
 			endingPeriod += ":"
 		}
 		if end_date2 != math.MaxInt32 && end_date1 != end_date2 {
+			if end_date2 < 1 {
+				end_date2--
+			}
 			endingPeriod += strconv.Itoa(end_date2)
 		}
 		if endingPeriod == "" {
@@ -253,7 +265,7 @@ func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) 
 
 		var line []string
 
-		if (includeDbName) {
+		if includeDbName {
 			line = []string{dbname, code, name, city_name, cgeonameid, "4326", slongitude, slatitude, saltitude, scentroid, knowledge_type, soccupation, startingPeriod, endingPeriod, scharac_name, scharac_lvl1, scharac_lvl2, scharac_lvl3, scharac_lvl4, sexceptional, bibliography, comment}
 		} else {
 			line = []string{code, name, city_name, cgeonameid, "4326", slongitude, slatitude, saltitude, scentroid, knowledge_type, soccupation, startingPeriod, endingPeriod, scharac_name, scharac_lvl1, scharac_lvl2, scharac_lvl3, scharac_lvl4, sexceptional, bibliography, comment}
