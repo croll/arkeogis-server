@@ -513,6 +513,13 @@ func userSet(w http.ResponseWriter, r *http.Request, proute routes.Proute, creat
 
 	// password
 	if len(u.Password) > 0 {
+
+		if len(u.Password) < 7 {
+			tx.Rollback()
+			routes.FieldError(w, "json.password", "password", "USER.FIELD_PASSWORD.T_CHECK_LENGTH")
+			return
+		}
+
 		err = u.User.MakeNewPassword(u.Password)
 		if err != nil {
 			fmt.Println("password generate failed")
