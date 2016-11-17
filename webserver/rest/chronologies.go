@@ -841,7 +841,6 @@ func ChronologiesListCsv(w http.ResponseWriter, r *http.Request, proute routes.P
 	row := make([]string, 12)
 	recurseprint(&answer.ChronologyTreeStruct, csvwriter, &row, params.Isocode, 0, 0)
 	csvwriter.Write(row)
-	fmt.Println("write : ", row)
 
 	csvwriter.Write([]string{
 		translate.T(params.Isocode, "CHRONODITOR.CSVEXPORT.T_NAME") + ": " + answer.Name[params.Isocode],
@@ -871,7 +870,6 @@ func dateToHuman(date int) int {
 func recurseprint(elem *ChronologyTreeStruct, csvwriter *csv.Writer, row *[]string, isocode string, level int, index int) {
 	if index > 0 {
 		csvwriter.Write(*row)
-		fmt.Println("write : ", *row)
 		*row = make([]string, 12)
 	}
 	if level > 0 {
