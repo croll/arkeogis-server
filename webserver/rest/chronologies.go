@@ -27,12 +27,13 @@ import (
 	"log"
 	"reflect"
 	"strconv"
-	"strings"
 
+	"encoding/csv"
 	"net/http"
 
 	db "github.com/croll/arkeogis-server/db"
 	"github.com/croll/arkeogis-server/model"
+	"github.com/croll/arkeogis-server/translate"
 
 	routes "github.com/croll/arkeogis-server/webserver/routes"
 	"github.com/jmoiron/sqlx"
@@ -46,7 +47,7 @@ type ChronologyGetParams struct {
 
 type ChronologyListCsvParams struct {
 	Isocode string `json:"isocode"`
-	Name    string `json:"name"`
+	Id      int    `json:"id"`
 	Dl      string `json:"dl"`
 }
 
@@ -785,6 +786,107 @@ func ChronologiesDelete(w http.ResponseWriter, r *http.Request, proute routes.Pr
 
 func ChronologiesListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	params := proute.Params.(*ChronologyListCsvParams)
+
+	fmt.Println("params : ", params)
+
+	// transaction begin...
+	tx, err := db.DB.Beginx()
+	if err != nil {
+		userSqlError(w, err)
+		return
+	}
+
+	// get the user
+	_user, _ := proute.Session.Get("user")
+	user := _user.(model.User)
+
+	answer, err := chronologiesGetTree(tx, params.Id, user)
+	if err != nil {
+		_ = tx.Rollback()
+		userSqlError(w, err)
+		return
+	}
+
+	fmt.Println("answer: ", answer)
+
+	// commit...
+	err = tx.Commit()
+	if err != nil {
+		log.Println("commit failed")
+		userSqlError(w, err)
+		_ = tx.Rollback()
+		return
+	}
+
+	if params.Dl != "" {
+		w.Header().Set("Content-Type", "text/csv")
+	}
+
+	csvwriter := csv.NewWriter(w)
+	csvwriter.Comma = ';'
+	csvwriter.Write([]string{
+		translate.T(params.Isocode, "CHRONODITOR.CSVEXPORT.T_PERIOD_NAME_L1"),
+		translate.T(params.Isocode, "CHRONODITOR.CSVEXPORT.T_PERIOD_START_L1"),
+		translate.T(params.Isocode, "CHRONODITOR.CSVEXPORT.T_PERIOD_END_L1"),
+		translate.T(params.Isocode, "CHRONODITOR.CSVEXPORT.T_PERIOD_NAME_L2"),
+		translate.T(params.Isocode, "CHRONODITOR.CSVEXPORT.T_PERIOD_START_L2"),
+		translate.T(params.Isocode, "CHRONODITOR.CSVEXPORT.T_PERIOD_END_L2"),
+		translate.T(params.Isocode, "CHRONODITOR.CSVEXPORT.T_PERIOD_NAME_L3"),
+		translate.T(params.Isocode, "CHRONODITOR.CSVEXPORT.T_PERIOD_START_L3"),
+		translate.T(params.Isocode, "CHRONODITOR.CSVEXPORT.T_PERIOD_END_L3"),
+		translate.T(params.Isocode, "CHRONODITOR.CSVEXPORT.T_PERIOD_NAME_L4"),
+		translate.T(params.Isocode, "CHRONODITOR.CSVEXPORT.T_PERIOD_START_L4"),
+		translate.T(params.Isocode, "CHRONODITOR.CSVEXPORT.T_PERIOD_END_L4"),
+	})
+	row := make([]string, 12)
+	recurseprint(&answer.ChronologyTreeStruct, csvwriter, &row, params.Isocode, 0, 0)
+	csvwriter.Write(row)
+	fmt.Println("write : ", row)
+
+	csvwriter.Write([]string{
+		translate.T(params.Isocode, "CHRONODITOR.CSVEXPORT.T_NAME") + ": " + answer.Name[params.Isocode],
+	})
+
+	csvwriter.Write([]string{
+		translate.T(params.Isocode, "CHRONODITOR.CSVEXPORT.T_DESCRIPTION") + ": " + answer.Description[params.Isocode],
+	})
+
+	csvwriter.Write([]string{
+		translate.T(params.Isocode, "CHRONODITOR.CSVEXPORT.T_CREDITS"),
+	})
+
+	csvwriter.Flush()
+
+	//w.Write([]byte(outp))
+}
+
+func dateToHuman(date int) int {
+	if date <= 0 {
+		return date - 1
+	} else {
+		return date
+	}
+}
+
+func recurseprint(elem *ChronologyTreeStruct, csvwriter *csv.Writer, row *[]string, isocode string, level int, index int) {
+	if index > 0 {
+		csvwriter.Write(*row)
+		fmt.Println("write : ", *row)
+		*row = make([]string, 12)
+	}
+	if level > 0 {
+		(*row)[(level-1)*3+0] = elem.Name[isocode]
+		(*row)[(level-1)*3+1] = strconv.Itoa(dateToHuman(elem.Start_date))
+		(*row)[(level-1)*3+2] = strconv.Itoa(dateToHuman(elem.End_date))
+	}
+	for i, e := range elem.Content {
+		recurseprint(&e, csvwriter, row, isocode, level+1, i)
+	}
+}
+
+/*
+func ChronologiesListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+	params := proute.Params.(*ChronologyListCsvParams)
 	q := `WITH RECURSIVE nodes_cte(id, path) AS (
 		   SELECT id, chrono_tr.name::::TEXT AS path FROM chronology AS chrono
 		   LEFT JOIN chronology_tr chrono_tr ON chrono.id = chrono_tr.chronology_id
@@ -839,3 +941,4 @@ func ChronologiesListCsv(w http.ResponseWriter, r *http.Request, proute routes.P
 
 	w.Write([]byte(outp))
 }
+*/
