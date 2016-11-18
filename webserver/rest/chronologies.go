@@ -851,7 +851,7 @@ func ChronologiesListCsv(w http.ResponseWriter, r *http.Request, proute routes.P
 	})
 
 	csvwriter.Write([]string{
-		translate.T(params.Isocode, "CHRONODITOR.CSVEXPORT.T_CREDITS"+": "+answer.Credits),
+		translate.T(params.Isocode, "CHRONODITOR.CSVEXPORT.T_CREDITS") + ": " + answer.Credits,
 	})
 
 	csvwriter.Flush()
