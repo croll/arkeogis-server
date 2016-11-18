@@ -31,6 +31,7 @@ import (
 	"path"
 	"sort"
 	"strings"
+	"time"
 
 	config "github.com/croll/arkeogis-server/config"
 )
@@ -42,6 +43,7 @@ func init() {
 }
 
 func Reinit() {
+	time.Sleep(2000 * time.Millisecond) // wait to be sure that gulp has worked
 	translations = make(map[string]map[string]string)
 }
 
@@ -257,6 +259,8 @@ func WriteJSON(trans map[string]interface{}, lang string, side string) (err erro
 	if err != nil {
 		return
 	}
+
+	//fmt.Println("WriteJson("+lang+", "+side+") : ", filename)
 
 	j, err := json.MarshalIndent(trans, "", "\t")
 	if err != nil {
