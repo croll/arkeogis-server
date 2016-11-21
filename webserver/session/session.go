@@ -130,7 +130,8 @@ var sessions map[string]*Session
 var GeneralMutex sync.Mutex
 
 func init() {
-	sessionDuration = 7 * 24 * time.Hour // 7 days
+	//sessionDuration = 7 * 24 * time.Hour // 7 days
+	sessionDuration = 20 * time.Minute // 20 minutes
 	sessions = make(map[string]*Session, 0)
 	rand.Seed(time.Now().UnixNano())
 	gob.Register(map[string]*Session{})
@@ -178,6 +179,8 @@ func NewSession() (token string, s *Session) {
 	// save it
 	sessions[token] = s
 
+	//fmt.Println(token, " => session created")
+
 	return token, s
 }
 
@@ -185,6 +188,7 @@ func cleanup() {
 	expire := time.Now().Add(-sessionDuration)
 	for token, session := range sessions {
 		if session.LastAccess.Before(expire) {
+			//fmt.Println(token, " => session DELETED")
 			delete(sessions, token)
 		}
 	}
