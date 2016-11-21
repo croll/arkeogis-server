@@ -670,10 +670,8 @@ func GetLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	if params.Type == "shp" {
 		q = make([]string, 3)
 		if params.GeoJson {
-			fmt.Println("GET")
 			q[0] = db.AsJSON("SELECT s.id, s.creator_user_id, 'shp' AS type, s.filename, s.md5sum,  s.geojson, s.start_date, s.end_date, ST_AsGeoJSON(s.geographical_extent_geom) as geographical_extent_geom, s.published, s.license_id, s.license, s.declared_creation_date, s.created_at, s.updated_at, u.firstname || ' ' || u.lastname as author FROM shapefile s LEFT JOIN \"user\" u ON s.creator_user_id = u.id WHERE s.id = sl.id", false, "infos", true)
 		} else {
-			fmt.Println("GET2")
 			q[0] = db.AsJSON("SELECT s.id, s.creator_user_id, 'shp' AS type, s.filename, s.md5sum, s.start_date, s.end_date, ST_AsGeoJSON(s.geographical_extent_geom) as geographical_extent_geom, s.published, s.license_id, s.license, s.declared_creation_date, s.created_at, s.updated_at, u.firstname || ' ' || u.lastname as author FROM shapefile s LEFT JOIN \"user\" u ON s.creator_user_id = u.id WHERE s.id = sl.id", false, "infos", true)
 		}
 		q[1] = db.AsJSON("SELECT u.id, u.firstname, u.lastname FROM \"user\" u LEFT JOIN shapefile__authors sa ON u.id = sa.user_id WHERE sa.shapefile_id = sl.id", true, "authors", true)
