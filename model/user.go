@@ -57,7 +57,7 @@ func (u *User) Get(tx *sqlx.Tx) error {
 
 // Get the user from the database
 func (u *User) GetLimited(tx *sqlx.Tx) error {
-	var q = "SELECT id,username,firstname,lastname,email,first_lang_isocode,second_lang_isocode,city_geonameid,photo_id FROM \"user\" WHERE "
+	var q = "SELECT id,username,firstname,lastname,email,first_lang_isocode,second_lang_isocode,city_geonameid,photo_id,description FROM \"user\" WHERE "
 	if len(u.Username) > 0 {
 		q += "username=:username"
 	} else {
