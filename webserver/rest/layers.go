@@ -51,8 +51,9 @@ type LayersParams struct {
 }
 
 type LayerParams struct {
-	Id   int    `json:"id" min:"1"`
-	Type string `json:"type" min:"3" max:"3"`
+	Id      int    `json:"id" min:"1"`
+	Type    string `json:"type" min:"3" max:"3"`
+	GeoJson bool   `json:"geojson"`
 }
 
 func init() {
@@ -664,9 +665,15 @@ func GetLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	var query string
 	var jsonString string
 
+	fmt.Println("GET LAYER", params)
+
 	if params.Type == "shp" {
 		q = make([]string, 3)
-		q[0] = db.AsJSON("SELECT s.id, s.creator_user_id, 'shp' AS type, s.filename, s.md5sum,  s.geojson, s.start_date, s.end_date, s.geojson, ST_AsGeoJSON(s.geographical_extent_geom) as geographical_extent_geom, s.published, s.license_id, s.license, s.declared_creation_date, s.created_at, s.updated_at, u.firstname || ' ' || u.lastname as author FROM shapefile s LEFT JOIN \"user\" u ON s.creator_user_id = u.id WHERE s.id = sl.id", false, "infos", true)
+		if params.GeoJson {
+			q[0] = db.AsJSON("SELECT s.id, s.creator_user_id, 'shp' AS type, s.filename, s.md5sum,  s.geojson, s.start_date, s.end_date, ST_AsGeoJSON(s.geographical_extent_geom) as geographical_extent_geom, s.published, s.license_id, s.license, s.declared_creation_date, s.created_at, s.updated_at, u.firstname || ' ' || u.lastname as author FROM shapefile s LEFT JOIN \"user\" u ON s.creator_user_id = u.id WHERE s.id = sl.id", false, "infos", true)
+		} else {
+			q[0] = db.AsJSON("SELECT s.id, s.creator_user_id, 'shp' AS type, s.filename, s.md5sum, s.start_date, s.end_date, ST_AsGeoJSON(s.geographical_extent_geom) as geographical_extent_geom, s.published, s.license_id, s.license, s.declared_creation_date, s.created_at, s.updated_at, u.firstname || ' ' || u.lastname as author FROM shapefile s LEFT JOIN \"user\" u ON s.creator_user_id = u.id WHERE s.id = sl.id", false, "infos", true)
+		}
 		q[1] = db.AsJSON("SELECT u.id, u.firstname, u.lastname FROM \"user\" u LEFT JOIN shapefile__authors sa ON u.id = sa.user_id WHERE sa.shapefile_id = sl.id", true, "authors", true)
 		q[2] = model.GetQueryTranslationsAsJSONObject("shapefile_tr", "shapefile_id = sl.id", "translations", true, "name", "attribution", "copyright", "description")
 		query = db.JSONQueryBuilder(q, "shapefile sl", "sl.id = "+strconv.Itoa(params.Id))
