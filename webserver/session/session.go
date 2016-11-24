@@ -31,6 +31,7 @@ import (
 	"sync"
 	"time"
 
+	config "github.com/croll/arkeogis-server/config"
 	"github.com/croll/arkeogis-server/model"
 )
 
@@ -123,7 +124,9 @@ func (session *Session) Set(key string, value interface{}) {
 	session.mutex.Lock()
 	defer session.mutex.Unlock()
 	session.Values[key] = value
-	SaveSessions()
+	if config.DevMode {
+		SaveSessions()
+	}
 }
 
 var sessions map[string]*Session
@@ -136,7 +139,9 @@ func init() {
 	rand.Seed(time.Now().UnixNano())
 	gob.Register(map[string]*Session{})
 	gob.Register(model.User{})
-	LoadSessions()
+	if config.DevMode {
+		LoadSessions()
+	}
 }
 
 // GetSession return the Session instance of the given token. if no session was found for this token, a transient session will be given
