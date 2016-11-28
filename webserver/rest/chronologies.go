@@ -119,9 +119,9 @@ func ChronologiesAll(w http.ResponseWriter, r *http.Request, proute routes.Prout
 	//err := db.DB.Select(&chronologies, "select parent_id, id, to_json((select array_agg(chronology_tr.*) from chronology_tr where chronology_tr.chronology_id = chronology.id)) as tr FROM chronology order by parent_id, \"order\", id")
 	transquery := model.GetQueryTranslationsAsJSONObject("chronology_tr", "tbl.chronology_id = chronology.id", "", false, "name")
 	q := "select parent_id, id, (" + transquery + ") as tr FROM chronology order by parent_id, \"start_date\", id"
-	fmt.Println("q: ", q)
+	// fmt.Println("q: ", q)
 	err := db.DB.Select(&chronologies, q)
-	fmt.Println("chronologies: ", chronologies)
+	// fmt.Println("chronologies: ", chronologies)
 	if err != nil {
 		fmt.Println("err: ", err)
 		return
@@ -154,6 +154,10 @@ func ChronologiesRoots(w http.ResponseWriter, r *http.Request, proute routes.Pro
 	// get the params
 	params := proute.Params.(*ChronologiesRootsParams)
 
+	// get the user logged
+	_user, _ := proute.Session.Get("user")
+	user := _user.(model.User)
+
 	chronologies := []*row{}
 	returnedChronologies := []*row{}
 
@@ -171,7 +175,13 @@ func ChronologiesRoots(w http.ResponseWriter, r *http.Request, proute routes.Pro
 		q += " AND (ST_Contains(ST_GeomFromGeoJSON(:bounding_box), geom::::geometry) OR ST_Contains(geom::::geometry, ST_GeomFromGeoJSON(:bounding_box)) OR ST_Overlaps(ST_GeomFromGeoJSON(:bounding_box), geom::::geometry))"
 	}
 
-	if params.Active {
+	viewUnpublished, err := user.HavePermissions(tx, "manage all databases")
+	if err != nil {
+		userSqlError(w, err)
+		return
+	}
+
+	if params.Active || !viewUnpublished {
 		q += " AND active = 't'"
 	}
 
@@ -624,8 +634,6 @@ func chronologiesGetTree(tx *sqlx.Tx, id int, user model.User) (answer *Chronolo
 func ChronologiesGetTree(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	params := proute.Params.(*ChronologyGetParams)
 
-	fmt.Println("params : ", params)
-
 	// transaction begin...
 	tx, err := db.DB.Beginx()
 	if err != nil {
@@ -787,7 +795,7 @@ func ChronologiesDelete(w http.ResponseWriter, r *http.Request, proute routes.Pr
 func ChronologiesListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	params := proute.Params.(*ChronologyListCsvParams)
 
-	fmt.Println("params : ", params)
+	// fmt.Println("params : ", params)
 
 	// transaction begin...
 	tx, err := db.DB.Beginx()
@@ -807,7 +815,7 @@ func ChronologiesListCsv(w http.ResponseWriter, r *http.Request, proute routes.P
 		return
 	}
 
-	fmt.Println("answer: ", answer)
+	// fmt.Println("answer: ", answer)
 
 	// commit...
 	err = tx.Commit()
