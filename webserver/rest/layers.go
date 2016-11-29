@@ -609,7 +609,7 @@ func getWmLayers(params *LayersParams, viewUnpublished bool, tx *sqlx.Tx) (layer
 	}
 
 	if params.Published || !viewUnpublished {
-		q += " AND m.published = :published"
+		q += " AND u.published = :published"
 	}
 
 	if params.Type != "" {
