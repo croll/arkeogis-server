@@ -175,7 +175,7 @@ func DatabaseList(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 	}
 
 	if !viewUnpublished {
-		q += " AND published = 't'"
+		q += " AND published = 't' OR d.owner = " + strconv.Itoa(user.Id)
 	}
 
 	q += " ORDER BY d.Id DESC"
