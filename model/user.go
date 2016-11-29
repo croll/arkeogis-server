@@ -343,6 +343,9 @@ func (u *User) Login(tx *sqlx.Tx) (ok bool, err error) {
 
 // Login test the username/password couple, and return true if it is ok, false if not
 func (u *User) Login(password string) (ok bool) {
+	if !u.Active {
+		return false
+	}
 	err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(password))
 
 	if err == nil {
