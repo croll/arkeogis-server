@@ -53,8 +53,10 @@ func (u *Shapefile) Create(tx *sqlx.Tx) error {
 // Update the shapefile in the shapefile
 func (u *Shapefile) Update(tx *sqlx.Tx) error {
 	fmt.Println("UPDATE \"shapefile\" SET " + Shapefile_UpdateStr + " WHERE id=:id")
-	return nil
-	_, err := tx.NamedExec("UPDATE \"shapefile\" SET "+Shapefile_UpdateStr+" WHERE id=:id", u)
+	//q := "UPDATE \"shapefile\" SET \"creator_user_id\" = :creator_user_id, \"filename\" = :filename, \"md5sum\" = :md5sum, \"geojson_with_data\" = :geojson_with_data, \"geojson\" = :geojson, \"start_date\" = :start_date, \"end_date\" = :end_date, \"geographical_extent_geom\" = ST_GeomFromGeoJSON(:geographical_extent_geom), \"published\" = :published, \"license\" = :license, \"license_id\" = :license_id, \"declared_creation_date\" = :declared_creation_date, \"updated_at\" = now() WHERE id=:id"
+	// Do not update geojson datas
+	q := "UPDATE \"shapefile\" SET \"creator_user_id\" = :creator_user_id, \"filename\" = :filename, \"md5sum\" = :md5sum, \"start_date\" = :start_date, \"end_date\" = :end_date, \"geographical_extent_geom\" = ST_GeomFromGeoJSON(:geographical_extent_geom), \"published\" = :published, \"license\" = :license, \"license_id\" = :license_id, \"declared_creation_date\" = :declared_creation_date, \"updated_at\" = now() WHERE id=:id"
+	_, err := tx.NamedExec(q, u)
 	return err
 }
 

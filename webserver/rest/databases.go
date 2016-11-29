@@ -168,7 +168,19 @@ func DatabaseList(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 		q += " AND ((d.start_date = " + strconv.Itoa(math.MinInt32) + " OR d.start_date >= :start_date) AND (d.end_date = " + strconv.Itoa(math.MaxInt32) + " OR d.end_date <= :end_date))"
 	}
 
+	viewUnpublished, err := user.HavePermissions(tx, "manage all databases")
+	if err != nil {
+		userSqlError(w, err)
+		return
+	}
+
+	if !viewUnpublished {
+		q += " AND published = 't' OR d.owner = " + strconv.Itoa(user.Id)
+	}
+
 	q += " ORDER BY d.Id DESC"
+
+	// fmt.Println(q)
 
 	databases := []dbInfos{}
 
@@ -330,7 +342,6 @@ func DatabaseInfos(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 	d := model.DatabaseFullInfos{}
 	d.Id = params.Id
 
-	// dbInfos, err := d.GetFullInfosAsJSON(tx, proute.Lang1.Isocode)
 	dbInfos, err := d.GetFullInfos(tx, proute.Lang1.Isocode)
 
 	if err != nil {

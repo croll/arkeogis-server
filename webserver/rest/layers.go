@@ -33,6 +33,7 @@ import (
 	"time"
 
 	db "github.com/croll/arkeogis-server/db"
+	"github.com/jmoiron/sqlx"
 
 	"github.com/croll/arkeogis-server/model"
 	routes "github.com/croll/arkeogis-server/webserver/routes"
@@ -485,13 +486,25 @@ func GetLayers(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	params.Iso_code = user.First_lang_isocode
 
-	// user.First_lang_isocode
+	// transaction begin...
+	tx, err := db.DB.Beginx()
+	if err != nil {
+		userSqlError(w, err)
+		return
+	}
+
+	viewUnpublished, err := user.HavePermissions(tx, "manage all databases")
+	if err != nil {
+		userSqlError(w, err)
+		tx.Rollback()
+		return
+	}
 
 	var result = []*model.LayerFullInfos{}
 
 	if params.Type == "" || params.Type == "shp" {
 		infos := []*model.LayerFullInfos{}
-		infos, err = getShpLayers(params)
+		infos, err = getShpLayers(params, viewUnpublished, tx)
 		if err != nil {
 			log.Println(err)
 			userSqlError(w, err)
@@ -502,13 +515,21 @@ func GetLayers(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	if params.Type == "" || params.Type != "shp" {
 		infos := []*model.LayerFullInfos{}
-		infos, err = getWmLayers(params)
+		infos, err = getWmLayers(params, viewUnpublished, tx)
 		if err != nil {
 			log.Println(err)
 			userSqlError(w, err)
 			return
 		}
 		result = append(result, infos...)
+	}
+
+	// commit...
+	err = tx.Commit()
+	if err != nil {
+		log.Println("commit failed")
+		_ = tx.Rollback()
+		return
 	}
 
 	l, _ := json.Marshal(result)
@@ -518,15 +539,9 @@ func GetLayers(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 }
 
-func getShpLayers(params *LayersParams) (layers []*model.LayerFullInfos, err error) {
+func getShpLayers(params *LayersParams, viewUnpublished bool, tx *sqlx.Tx) (layers []*model.LayerFullInfos, err error) {
 
 	layers = []*model.LayerFullInfos{}
-
-	tx, err := db.DB.Beginx()
-	if err != nil {
-		log.Println(err)
-		return
-	}
 
 	q := "SELECT m.id, m.start_date, m.end_date, ST_AsGeoJSON(m.geographical_extent_geom) as geographical_extent_geom, m.published, m.created_at, m.creator_user_id, u.firstname || ' ' || u.lastname as author, 'shp' AS type FROM shapefile m LEFT JOIN \"user\" u ON m.creator_user_id = u.id WHERE m.id > 0"
 
@@ -534,8 +549,8 @@ func getShpLayers(params *LayersParams) (layers []*model.LayerFullInfos, err err
 		q += " AND u.id = :author"
 	}
 
-	if params.Published {
-		q += " AND u.published = :published"
+	if params.Published || !viewUnpublished {
+		q += " AND m.published = 't'"
 	}
 
 	if params.Bounding_box != "" {
@@ -578,23 +593,12 @@ func getShpLayers(params *LayersParams) (layers []*model.LayerFullInfos, err err
 		layer.Copyright = model.MapSqlTranslations(tr, "Lang_isocode", "Copyright")
 		layer.Description = model.MapSqlTranslations(tr, "Lang_isocode", "Description")
 	}
-
-	err = tx.Commit()
-	if err != nil {
-		log.Println(err)
-	}
 	return
 }
 
-func getWmLayers(params *LayersParams) (layers []*model.LayerFullInfos, err error) {
+func getWmLayers(params *LayersParams, viewUnpublished bool, tx *sqlx.Tx) (layers []*model.LayerFullInfos, err error) {
 
 	layers = []*model.LayerFullInfos{}
-
-	tx, err := db.DB.Beginx()
-	if err != nil {
-		log.Println("Error setting transaction", err)
-		return
-	}
 
 	q := "SELECT m.id, m.type, m.start_date, m.end_date, m.min_scale, m.max_scale, ST_AsGeoJSON(m.geographical_extent_geom) as geographical_extent_geom, m.published, m.created_at, m.creator_user_id, u.firstname || ' ' || u.lastname as author FROM map_layer m LEFT JOIN \"user\" u ON m.creator_user_id = u.id WHERE m.id > 0"
 
@@ -602,12 +606,12 @@ func getWmLayers(params *LayersParams) (layers []*model.LayerFullInfos, err erro
 		q += " AND u.id = :author"
 	}
 
-	if params.Published {
-		q += " AND u.published = :published"
+	if params.Published || !viewUnpublished {
+		q += " AND m.published = 't'"
 	}
 
 	if params.Type != "" {
-		q += " AND u.type= :type"
+		q += " AND m.type= :type"
 	}
 
 	if params.Bounding_box != "" {
@@ -648,11 +652,6 @@ func getWmLayers(params *LayersParams) (layers []*model.LayerFullInfos, err erro
 		layer.Description = model.MapSqlTranslations(tr, "Lang_isocode", "Description")
 	}
 
-	err = tx.Commit()
-	if err != nil {
-		log.Println(err)
-	}
-
 	return
 }
 
@@ -664,8 +663,6 @@ func GetLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	var q []string
 	var query string
 	var jsonString string
-
-	fmt.Println("GET LAYER", params)
 
 	if params.Type == "shp" {
 		q = make([]string, 3)

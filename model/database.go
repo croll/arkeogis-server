@@ -32,7 +32,6 @@ import (
 	"strings"
 	"time"
 
-	db "github.com/croll/arkeogis-server/db"
 	"github.com/croll/arkeogis-server/translate"
 	"github.com/jmoiron/sqlx"
 )
@@ -179,48 +178,6 @@ func (d *Database) GetFullInfos(tx *sqlx.Tx, langIsocode string) (db DatabaseFul
 	}
 	err = db.GetTranslations(tx)
 	return
-}
-
-// GetFullInfosAsJSON returns all infos about a database
-func (d *Database) GetFullInfosAsJSON(tx *sqlx.Tx, langIsocode string) (jsonString string, err error) {
-
-	var q = make([]string, 7)
-
-	q[0] = db.AsJSON("SELECT db.*, ST_AsGeoJSON(db.geographical_extent_geom) as geographical_extent_geom, firstname || ' ' || lastname as owner_name, l.name AS license FROM \"database\" db LEFT JOIN \"user\" u ON db.owner = u.id LEFT JOIN \"license\" l ON d.license_id = l.id WHERE db.id = d.id", false, "infos", true)
-
-	q[1] = db.AsJSON("SELECT u.id, u.firstname, u.lastname FROM \"user\" u LEFT JOIN database__authors da ON u.id = da.user_id WHERE da.database_id = d.id", true, "authors", true)
-
-	q[2] = db.AsJSON("SELECT ct.name, c.geonameid, c.iso_code, c.geom FROM country c LEFT JOIN database__country dc ON c.geonameid = dc.country_geonameid LEFT JOIN country_tr ct ON c.geonameid = ct.country_geonameid WHERE dc.database_id = d.id and ct.lang_isocode = '"+langIsocode+"'", true, "countries", true)
-
-	q[3] = db.AsJSON("SELECT ct.name, c.geonameid, c.iso_code, c.geom FROM continent c LEFT JOIN database__continent dc ON c.geonameid = dc.continent_geonameid LEFT JOIN continent_tr ct ON c.geonameid = ct.continent_geonameid WHERE dc.database_id = d.id AND ct.lang_isocode = '"+langIsocode+"'", true, "continents", true)
-
-	q[4] = db.AsJSON("SELECT i.*, u.firstname, u.lastname FROM import i LEFT JOIN \"user\" u ON i.user_id = u.id WHERE database_id = d.id ORDER BY i.id DESC", true, "imports", true)
-
-	q[5] = db.AsJSON("SELECT context FROM database_context WHERE database_id = d.id", true, "contexts", true)
-
-	q[6] = GetQueryTranslationsAsJSONObject("database_tr", "database_id = d.id", "translations", true, "description", "bibliography", "geographical_limit", "context_description")
-
-	// fmt.Println(q[0])
-	// fmt.Println(q[1])
-	// fmt.Println(q[2])
-	// fmt.Println(q[3])
-	// fmt.Println(q[4])
-	// fmt.Println(q[5])
-
-	// fmt.Println(db.JSONQueryBuilder(q, "database d", "d.id = "+strconv.Itoa(d.Id)))
-
-	err = tx.Get(&jsonString, db.JSONQueryBuilder(q, "database d", "d.id = "+strconv.Itoa(d.Id)))
-
-	if err != nil {
-		err = errors.New("database::GetFullInfosAsJSON: " + err.Error())
-	}
-
-	if jsonString == "" {
-		jsonString = "null"
-	}
-
-	return
-
 }
 
 // Create insert the database into arkeogis db
