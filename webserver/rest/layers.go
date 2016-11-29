@@ -567,8 +567,6 @@ func getShpLayers(params *LayersParams, viewUnpublished bool, tx *sqlx.Tx) (laye
 		q += " AND m.id IN (" + in + ")"
 	}
 
-	fmt.Println(q)
-
 	nstmt, err := tx.PrepareNamed(q)
 	if err != nil {
 		_ = tx.Rollback()
@@ -665,8 +663,6 @@ func GetLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	var q []string
 	var query string
 	var jsonString string
-
-	fmt.Println("GET LAYER", params)
 
 	if params.Type == "shp" {
 		q = make([]string, 3)
