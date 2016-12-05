@@ -291,7 +291,7 @@ func SaveProject(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 				Id         int
 				Project_id int
 			}{Id: layer.Id, Project_id: params.Id})
-		} else if layer.Type == "wms" {
+		} else if layer.Type == "wms" || layer.Type == "wmts" {
 			_, err = stmtLayersWMS.Exec(struct {
 				Id         int
 				Project_id int
