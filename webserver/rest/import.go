@@ -190,7 +190,18 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		dbImport.Tx.Rollback()
 		return
 	}
+	ticker := time.NewTicker(time.Second * 10)
+	w.Header().Set("Content-Type", "application/json")
+	go func() {
+		for range ticker.C {
+			w.Write([]byte(" "))
+			if f, ok := w.(http.Flusher); ok {
+				f.Flush()
+			}
+		}
+	}()
 	parser.Parse(dbImport.ProcessRecord)
+	ticker.Stop()
 	/*
 		if err != nil {
 			for siteCode, e := range dbImport.Errors {
@@ -400,6 +411,7 @@ func ImportStep3(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	}
 
 	d := &model.Database{Id: params.Id}
+	fmt.Println("DATABASE", d)
 	d.Get(tx)
 
 	err = d.UpdateFields(tx, params, "type", "declared_creation_date", "license_id", "scale_resolution", "state", "published")
