@@ -27,6 +27,7 @@ import (
 	"reflect"
 	"regexp"
 	"strings"
+	"time"
 
 	config "github.com/croll/arkeogis-server/config"
 	"github.com/jmoiron/sqlx"
@@ -44,6 +45,7 @@ func init() {
 	if err = DB.Ping(); err != nil {
 		log.Fatal(err)
 	}
+	DB.SetConnMaxLifetime(290 * time.Second)
 }
 
 func formatConnexionString() string {
