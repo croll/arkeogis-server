@@ -705,13 +705,34 @@ func DeleteLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		return
 	}
 
+	fmt.Println("TYPE DE LAYER A DEL", params.Type)
 	if params.Type == "shp" {
-		tx.Exec("DELETE FROM shapefile_tr WHERE shapefile_id = $1", params.Id)
-		tx.Exec("DELETE FROM shapefile__authors WHERE shapefile_id = $1", params.Id)
+		_, err = tx.Exec("DELETE FROM project__shapefile WHERE shapefile_id = $1", params.Id)
+		if err != nil {
+			log.Println("Unable to delete project map layer link:", err)
+		}
+		_, err = tx.Exec("DELETE FROM shapefile_tr WHERE shapefile_id = $1", params.Id)
+		if err != nil {
+			log.Println("Unable to delete layer translation:", err)
+		}
+		_, err = tx.Exec("DELETE FROM shapefile__authors WHERE shapefile_id = $1", params.Id)
+		if err != nil {
+			log.Println("Unable to delete layer author:", err)
+		}
 		_, err = tx.Exec("DELETE FROM shapefile WHERE id = $1", params.Id)
 	} else {
-		tx.Exec("DELETE FROM map_layer WHERE map_layer_id = $1", params.Id)
-		tx.Exec("DELETE FROM map_layer__authors WHERE shapefile_id = $1", params.Id)
+		_, err = tx.Exec("DELETE FROM project__map_layer WHERE map_layer_id = $1", params.Id)
+		if err != nil {
+			log.Println("Unable to delete project map layer link:", err)
+		}
+		_, err = tx.Exec("DELETE FROM map_layer_tr WHERE map_layer_id = $1", params.Id)
+		if err != nil {
+			log.Println("Unable to delete layer translation:", err)
+		}
+		_, err = tx.Exec("DELETE FROM map_layer__authors WHERE map_layer_id = $1", params.Id)
+		if err != nil {
+			log.Println("Unable to delete layer author:", err)
+		}
 		_, err = tx.Exec("DELETE FROM map_layer WHERE id = $1", params.Id)
 	}
 
