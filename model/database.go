@@ -532,12 +532,19 @@ func (d *Database) UpdateFields(tx *sqlx.Tx, params interface{}, fields ...strin
 
 // CacheGeom get database sites extend and cache enveloppe
 func (d *Database) CacheGeom(tx *sqlx.Tx) (err error) {
-	// Extent
-	//_, err = tx.NamedExec("SELECT ST_Envelope(sites.geom::::geometry) FROM (SELECT geom FROM site WHERE database_id = :id) as sites", d)
+	var c int
+	err = tx.Get(&c, "SELECT COUNT(*) FROM (SELECT DISTINCT geom FROM site WHERE database_id = $1) AS temp", d.Id)
 	// Envelope
-	_, err = tx.NamedExec("UPDATE database SET geographical_extent_geom = (SELECT (ST_Envelope((SELECT ST_Multi(ST_Collect(f.geom)) as singlegeom FROM (SELECT (ST_Dump(geom::::geometry)).geom As geom FROM site WHERE database_id = :id) As f)))) WHERE id = :id", d)
-	if err != nil {
-		err = errors.New("database::CacheGeom: " + err.Error())
+	if c > 2 {
+		_, err = tx.NamedExec("UPDATE database SET geographical_extent_geom = (SELECT (ST_Envelope((SELECT ST_Multi(ST_Collect(f.geom)) as singlegeom FROM (SELECT (ST_Dump(geom::::geometry)).geom As geom FROM site WHERE database_id = :id) As f)))) WHERE id = :id", d)
+		if err != nil {
+			err = errors.New("database::CacheGeom: " + err.Error())
+		}
+	} else {
+		_, err = tx.NamedExec("UPDATE database SET geographical_extent_geom = (SELECT ST_Buffer((SELECT geom FROM site WHERE database_id = :id AND geom IS NOT NULL LIMIT 1), 1)) WHERE id = :id", d)
+		if err != nil {
+			err = errors.New("database::CacheGeom: " + err.Error())
+		}
 	}
 	return
 }
