@@ -52,6 +52,9 @@ func StartServer() {
 		negroni.NewStatic(http.Dir(config.WebPath)),
 	)
 	Negroni.UseHandler(routes.MuxRouter)
+
+	initproxy(routes.MuxRouter)
+
 	/* DEBUG SENDING MAIL
 	fmt.Println("SENDING MAIL")
 	errrr := mail.Send([]string{"beve@croll.fr"}, "pouet", "poeut", "fr")
@@ -60,6 +63,7 @@ func StartServer() {
 	}
 	fmt.Println("starting web server...")
 	*/
+
 	Negroni.Run(":" + strconv.Itoa(config.Main.Server.Port))
 }
 
