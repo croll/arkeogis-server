@@ -27,6 +27,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"strings"
 
 	db "github.com/croll/arkeogis-server/db"
 	"github.com/croll/arkeogis-server/model"
@@ -63,15 +64,17 @@ func InitProxies() {
 func initproxy(router *mux.Router) {
 	InitProxies()
 	router.HandleFunc("/proxy/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("request: ", *r)
-		fmt.Println("uri: ", r.RequestURI[8:])
+		url := r.RequestURI[8:] // parsed url, we remove /proxy/? from the beggining
+		fmt.Println("uri: ")
+
+		// search the good proxy
 		for _, proxy := range *proxies {
-			//url := mux.Vars(r)["url"]
-			//url = strings.Replace(url, "http:/", "http://")
-			//url = strings.Replace(url, "https:/", "https://")
-			//fmt.Println("url: ", url)
 			fmt.Println("proxy: ", proxy)
+			if strings.HasPrefix(url, proxy.Layer.Url) {
+				proxy.Proxy.ServeHTTP(w, r)
+				return
+			}
 		}
-		fmt.Fprint(w, "proxy")
+		fmt.Fprint(w, "proxy not found")
 	})
 }
