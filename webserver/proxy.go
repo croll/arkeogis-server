@@ -34,12 +34,37 @@ import (
 	"github.com/gorilla/mux"
 )
 
+const arkeoproxyheaderurl = "arkeoproxyurl"
+
 type ArkProxy struct {
 	Layer model.Map_layer
 	Proxy *httputil.ReverseProxy
 }
 
 var proxies *[]ArkProxy
+var anyproxy *httputil.ReverseProxy
+
+func newAnyHostReverseProxy() *httputil.ReverseProxy {
+	director := func(req *http.Request) {
+		newurlstr := req.Header.Get(arkeoproxyheaderurl)
+		req.Header.Del(arkeoproxyheaderurl)
+		newurl, err := url.Parse(newurlstr)
+		if err != nil {
+			fmt.Println("aie, newurlstr: ", newurlstr, err)
+			req.URL = nil
+		} else {
+			req.URL = newurl
+			req.Host = newurl.Host
+		}
+
+		if _, ok := req.Header["User-Agent"]; !ok {
+			// explicitly disable User-Agent so it's not set to default value
+			req.Header.Set("User-Agent", "")
+		}
+		fmt.Println("req: ", req)
+	}
+	return &httputil.ReverseProxy{Director: director}
+}
 
 func InitProxies() {
 	layers := []model.Map_layer{}
@@ -59,22 +84,31 @@ func InitProxies() {
 	}
 	proxies = &_proxies
 	fmt.Println("proxies inited.", proxies)
+
+	anyproxy = newAnyHostReverseProxy()
+	fmt.Println("any proxy inited.")
 }
 
 func initproxy(router *mux.Router) {
 	InitProxies()
 	router.HandleFunc("/proxy/", func(w http.ResponseWriter, r *http.Request) {
 		url := r.RequestURI[8:] // parsed url, we remove /proxy/? from the beggining
-		fmt.Println("uri: ")
+		fmt.Println("uri: ", url)
 
 		// search the good proxy
 		for _, proxy := range *proxies {
-			fmt.Println("proxy: ", proxy)
+			//fmt.Println("proxy: ", proxy)
 			if strings.HasPrefix(url, proxy.Layer.Url) {
+				fmt.Println("proxy match: ", proxy)
 				proxy.Proxy.ServeHTTP(w, r)
 				return
 			}
 		}
+
+		fmt.Println("proxy => anyproxy")
 		fmt.Fprint(w, "proxy not found")
+		r.Header.Add(arkeoproxyheaderurl, url)
+		anyproxy.ServeHTTP(w, r)
+		return
 	})
 }
