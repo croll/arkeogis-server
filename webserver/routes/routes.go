@@ -44,6 +44,7 @@ import (
 	"github.com/croll/arkeogis-server/webserver/sanitizer"
 	session "github.com/croll/arkeogis-server/webserver/session"
 	"github.com/gorilla/mux"
+	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 )
 
@@ -223,23 +224,7 @@ func decodeParams(myroute *Route, rw http.ResponseWriter, r *http.Request) inter
 	return params
 }
 
-func handledRoute(myroute *Route, rw http.ResponseWriter, r *http.Request) {
-
-	start := time.Now()
-
-	// debug transactions count
-	/*
-		count_before := 0
-		db.DB.Get(&count_before, "SELECT count(*) from pg_stat_activity where state = 'idle in transaction'")
-
-		defer func() {
-			count_end := 0
-			db.DB.Get(&count_end, "SELECT count(*) from pg_stat_activity where state = 'idle in transaction'")
-
-			log.Println("idle in transaction : ", count_before, " => ", count_end)
-		}()
-	*/
-
+func loadSessionFromRequest(tx *sqlx.Tx, r *http.Request) *session.Session {
 	// session
 	token := r.Header.Get("Authorization")
 	log.Println("token ", token)
@@ -250,14 +235,6 @@ func handledRoute(myroute *Route, rw http.ResponseWriter, r *http.Request) {
 	// Retrieve user id from session
 	user := model.User{}
 	user.Id = s.GetIntDef("user_id", 0)
-
-	// Open a transaction to load the user from db
-	tx, err := db.DB.Beginx()
-	if err != nil {
-		log.Panicln("Can't start transaction for loading user")
-		ServerError(rw, 500, "Can't start transaction for loading user")
-		return
-	}
 
 	// get langs
 	lang1 := model.Lang{
@@ -274,7 +251,7 @@ func handledRoute(myroute *Route, rw http.ResponseWriter, r *http.Request) {
 		lang2.Isocode = _lang2.Value
 	}
 
-	err = lang1.Get(tx)
+	err := lang1.Get(tx)
 	if err != nil {
 		lang1.Isocode = "en"
 		err = lang1.Get(tx)
@@ -292,12 +269,50 @@ func handledRoute(myroute *Route, rw http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	fmt.Println("langs: ", lang1, lang2)
+	//fmt.Println("langs: ", lang1, lang2)
 
 	// Retrieve the user from db
 	user.Get(tx)
-	log.Println("user is : ", user.Username)
+	//log.Println("user is : ", user.Username)
 	s.Set("user", user)
+	s.Set("lang1", lang1)
+	s.Set("lang2", lang2)
+
+	return s
+}
+
+func handledRoute(myroute *Route, rw http.ResponseWriter, r *http.Request) {
+
+	start := time.Now()
+
+	// debug transactions count
+	/*
+		count_before := 0
+		db.DB.Get(&count_before, "SELECT count(*) from pg_stat_activity where state = 'idle in transaction'")
+
+		defer func() {
+			count_end := 0
+			db.DB.Get(&count_end, "SELECT count(*) from pg_stat_activity where state = 'idle in transaction'")
+
+			log.Println("idle in transaction : ", count_before, " => ", count_end)
+		}()
+	*/
+
+	// Open a transaction to load the user from db
+	tx, err := db.DB.Beginx()
+	if err != nil {
+		log.Panicln("Can't start transaction for loading user")
+		ServerError(rw, 500, "Can't start transaction for loading user")
+		return
+	}
+
+	s := loadSessionFromRequest(tx, r)
+	_p, _ := s.Get("user")
+	user := _p.(model.User)
+	_p, _ = s.Get("lang1")
+	lang1 := _p.(model.Lang)
+	_p, _ = s.Get("lang2")
+	lang2 := _p.(model.Lang)
 
 	restlog.WriteString(fmt.Sprintf(`[%s][%s] %s %s %s %s`+"\n", start.Format(time.RFC3339), user.Username, r.RemoteAddr, r.Method, r.URL.Path, myroute.Method))
 
