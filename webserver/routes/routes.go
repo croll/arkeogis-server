@@ -236,47 +236,10 @@ func loadSessionFromRequest(tx *sqlx.Tx, r *http.Request) *session.Session {
 	user := model.User{}
 	user.Id = s.GetIntDef("user_id", 0)
 
-	// get langs
-	lang1 := model.Lang{
-		Isocode: "en",
-	}
-	lang2 := model.Lang{
-		Isocode: "fr",
-	}
-
-	if _lang1, err := r.Cookie("arkeogis_user_lang_1"); err == nil {
-		lang1.Isocode = _lang1.Value
-	}
-	if _lang2, err := r.Cookie("arkeogis_user_lang_2"); err == nil {
-		lang2.Isocode = _lang2.Value
-	}
-
-	err := lang1.Get(tx)
-	if err != nil {
-		lang1.Isocode = "en"
-		err = lang1.Get(tx)
-		if err != nil {
-			fmt.Println("can't load lang1 !")
-		}
-	}
-
-	err = lang2.Get(tx)
-	if err != nil {
-		lang2.Isocode = "fr"
-		err = lang2.Get(tx)
-		if err != nil {
-			fmt.Println("can't load lang2 !")
-		}
-	}
-
-	//fmt.Println("langs: ", lang1, lang2)
-
 	// Retrieve the user from db
 	user.Get(tx)
 	//log.Println("user is : ", user.Username)
 	s.Set("user", user)
-	s.Set("lang1", lang1)
-	s.Set("lang2", lang2)
 
 	return s
 }
@@ -309,10 +272,41 @@ func handledRoute(myroute *Route, rw http.ResponseWriter, r *http.Request) {
 	s := loadSessionFromRequest(tx, r)
 	_p, _ := s.Get("user")
 	user := _p.(model.User)
-	_p, _ = s.Get("lang1")
-	lang1 := _p.(model.Lang)
-	_p, _ = s.Get("lang2")
-	lang2 := _p.(model.Lang)
+
+	// get langs
+	lang1 := model.Lang{
+		Isocode: "en",
+	}
+	lang2 := model.Lang{
+		Isocode: "fr",
+	}
+
+	if _lang1, err := r.Cookie("arkeogis_user_lang_1"); err == nil {
+		lang1.Isocode = _lang1.Value
+	}
+	if _lang2, err := r.Cookie("arkeogis_user_lang_2"); err == nil {
+		lang2.Isocode = _lang2.Value
+	}
+
+	err = lang1.Get(tx)
+	if err != nil {
+		lang1.Isocode = "en"
+		err = lang1.Get(tx)
+		if err != nil {
+			fmt.Println("can't load lang1 !")
+		}
+	}
+
+	err = lang2.Get(tx)
+	if err != nil {
+		lang2.Isocode = "fr"
+		err = lang2.Get(tx)
+		if err != nil {
+			fmt.Println("can't load lang2 !")
+		}
+	}
+
+	//fmt.Println("langs: ", lang1, lang2)
 
 	restlog.WriteString(fmt.Sprintf(`[%s][%s] %s %s %s %s`+"\n", start.Format(time.RFC3339), user.Username, r.RemoteAddr, r.Method, r.URL.Path, myroute.Method))
 
