@@ -38,12 +38,6 @@ import (
 
 const arkeoproxyheaderurl = "arkeoproxyurl"
 
-type ArkProxy struct {
-	Layer model.Map_layer
-	Proxy *httputil.ReverseProxy
-}
-
-var proxies *[]ArkProxy
 var anyproxy *httputil.ReverseProxy
 
 func newAnyHostReverseProxy() *httputil.ReverseProxy {
@@ -68,31 +62,7 @@ func newAnyHostReverseProxy() *httputil.ReverseProxy {
 	return &httputil.ReverseProxy{Director: director}
 }
 
-func InitProxies() {
-	layers := []model.Map_layer{}
-	err := db.DB.Select(&layers, "SELECT * FROM map_layer WHERE published='t'")
-	if err != nil {
-		log.Println("Can't init proxy with layers : ", err)
-		return
-	}
-	_proxies := make([]ArkProxy, len(layers))
-	for i, layer := range layers {
-		u, _ := url.Parse(layer.Url)
-		p := httputil.NewSingleHostReverseProxy(u)
-		_proxies[i] = ArkProxy{
-			Layer: layer,
-			Proxy: p,
-		}
-	}
-	proxies = &_proxies
-	fmt.Println("proxies inited.", proxies)
-
-	anyproxy = newAnyHostReverseProxy()
-	fmt.Println("any proxy inited.")
-}
-
 func initproxy(router *mux.Router) {
-	InitProxies()
 	router.HandleFunc("/proxy/", func(w http.ResponseWriter, r *http.Request) {
 		url := r.RequestURI[8:] // parsed url, we remove /proxy/? from the beggining
 		fmt.Println("uri: ", url)
