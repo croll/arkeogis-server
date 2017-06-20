@@ -228,15 +228,17 @@ func handledRoute(myroute *Route, rw http.ResponseWriter, r *http.Request) {
 	start := time.Now()
 
 	// debug transactions count
-	count_before := 0
-	db.DB.Get(&count_before, "SELECT count(*) from pg_stat_activity where state = 'idle in transaction'")
+	/*
+		count_before := 0
+		db.DB.Get(&count_before, "SELECT count(*) from pg_stat_activity where state = 'idle in transaction'")
 
-	defer func() {
-		count_end := 0
-		db.DB.Get(&count_end, "SELECT count(*) from pg_stat_activity where state = 'idle in transaction'")
+		defer func() {
+			count_end := 0
+			db.DB.Get(&count_end, "SELECT count(*) from pg_stat_activity where state = 'idle in transaction'")
 
-		log.Println("idle in transaction : ", count_before, " => ", count_end)
-	}()
+			log.Println("idle in transaction : ", count_before, " => ", count_end)
+		}()
+	*/
 
 	// session
 	token := r.Header.Get("Authorization")
