@@ -110,8 +110,8 @@ func initproxy(router *mux.Router) {
 		user := _p.(model.User)
 
 		// Check global permsissions
-		perm_fullproxy, _ := user.HavePermissions(tx, "manage all wms/wmts")
 		perm_proxy, _ := user.HavePermissions(tx, "request map")
+		perm_fullproxy, _ := user.HavePermissions(tx, "manage all wms/wmts")
 		log.Println(perm_fullproxy, perm_proxy)
 
 		err = tx.Commit()
@@ -125,20 +125,34 @@ func initproxy(router *mux.Router) {
 			return
 		}
 
+		if !perm_proxy {
+			routes.ServerError(w, 403, "No permission to use proxy")
+			return
+		}
+
 		// search the good proxy
-		for _, proxy := range *proxies {
-			//fmt.Println("proxy: ", proxy)
-			if strings.HasPrefix(url, proxy.Layer.Url) {
-				fmt.Println("proxy match: ", proxy)
-				proxy.Proxy.ServeHTTP(w, r)
-				return
+		layers := []model.Map_layer{}
+		err = db.DB.Select(&layers, "SELECT * FROM map_layer WHERE published='t'")
+		if err != nil {
+			log.Println("Can't find layers : ", err)
+			return
+		}
+
+		layerfound := false
+		for _, layer := range layers {
+			if strings.HasPrefix(url, layer.Url) {
+				fmt.Println("layer match: ", layer)
+				layerfound = true
 			}
 		}
 
-		fmt.Println("proxy => anyproxy")
-		fmt.Fprint(w, "proxy not found")
-		r.Header.Add(arkeoproxyheaderurl, url)
-		anyproxy.ServeHTTP(w, r)
-		return
+		if layerfound || perm_fullproxy {
+			r.Header.Add(arkeoproxyheaderurl, url)
+			anyproxy.ServeHTTP(w, r)
+		} else {
+			routes.ServerError(w, 403, "No permission to use proxy")
+			return
+		}
+
 	})
 }
