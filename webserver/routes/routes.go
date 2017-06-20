@@ -224,7 +224,7 @@ func decodeParams(myroute *Route, rw http.ResponseWriter, r *http.Request) inter
 	return params
 }
 
-func loadSessionFromRequest(tx *sqlx.Tx, r *http.Request) *session.Session {
+func LoadSessionFromRequest(tx *sqlx.Tx, r *http.Request) *session.Session {
 	// session
 	token := r.Header.Get("Authorization")
 	log.Println("token ", token)
@@ -269,7 +269,7 @@ func handledRoute(myroute *Route, rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s := loadSessionFromRequest(tx, r)
+	s := LoadSessionFromRequest(tx, r)
 	_p, _ := s.Get("user")
 	user := _p.(model.User)
 
