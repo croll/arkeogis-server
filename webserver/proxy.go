@@ -31,7 +31,9 @@ import (
 
 	db "github.com/croll/arkeogis-server/db"
 	"github.com/croll/arkeogis-server/model"
+	"github.com/croll/arkeogis-server/webserver/routes"
 	"github.com/gorilla/mux"
+	"github.com/lib/pq"
 )
 
 const arkeoproxyheaderurl = "arkeoproxyurl"
@@ -94,6 +96,34 @@ func initproxy(router *mux.Router) {
 	router.HandleFunc("/proxy/", func(w http.ResponseWriter, r *http.Request) {
 		url := r.RequestURI[8:] // parsed url, we remove /proxy/? from the beggining
 		fmt.Println("uri: ", url)
+
+		// Open a transaction to load the user from db
+		tx, err := db.DB.Beginx()
+		if err != nil {
+			log.Panicln("Can't start transaction for loading user")
+			routes.ServerError(w, 500, "Can't start transaction for loading user")
+			return
+		}
+
+		s := routes.LoadSessionFromRequest(tx, r)
+		_p, _ := s.Get("user")
+		user := _p.(model.User)
+
+		// Check global permsissions
+		perm_fullproxy, _ := user.HavePermissions(tx, "manage all wms/wmts")
+		perm_proxy, _ := user.HavePermissions(tx, "request map")
+		log.Println(perm_fullproxy, perm_proxy)
+
+		err = tx.Commit()
+		if err != nil {
+			if err, ok := err.(*pq.Error); ok {
+				log.Println("commit while getting session user failed, pq error:", err.Code.Name())
+			} else {
+				log.Println("commit while getting session user failed !", err)
+			}
+			routes.ServerError(w, 500, "Can't commit transaction")
+			return
+		}
 
 		// search the good proxy
 		for _, proxy := range *proxies {
