@@ -229,7 +229,7 @@ func LoadSessionFromRequest(tx *sqlx.Tx, r *http.Request) *session.Session {
 	token := r.Header.Get("Authorization")
 	if len(token) == 0 {
 		cook, err := r.Cookie("arkeogis_session_token")
-		if err != nil {
+		if err == nil {
 			token = cook.Value
 		}
 	}
