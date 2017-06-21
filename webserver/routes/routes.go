@@ -227,10 +227,17 @@ func decodeParams(myroute *Route, rw http.ResponseWriter, r *http.Request) inter
 func LoadSessionFromRequest(tx *sqlx.Tx, r *http.Request) *session.Session {
 	// session
 	token := r.Header.Get("Authorization")
-	log.Println("token ", token)
+	if len(token) == 0 {
+		cook, err := r.Cookie("arkeogis_session_token")
+		if err != nil {
+			token = cook.Value
+		}
+	}
+	//log.Println("token ", token)
 	s := session.GetSession(token)
 
-	log.Print("user id from session : ", s.GetIntDef("user_id", -1))
+	//fmt.Println("session: ", s)
+	//log.Print("user id from session : ", s.GetIntDef("user_id", -1))
 
 	// Retrieve user id from session
 	user := model.User{}
