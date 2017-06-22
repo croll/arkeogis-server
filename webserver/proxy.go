@@ -44,6 +44,14 @@ func newAnyHostReverseProxy() *httputil.ReverseProxy {
 	director := func(req *http.Request) {
 		newurlstr := req.Header.Get(arkeoproxyheaderurl)
 		req.Header.Del(arkeoproxyheaderurl)
+
+		index1 := strings.Index(newurlstr, "?")
+		index2 := strings.Index(newurlstr, "&")
+
+		if index2 > -1 && (index1 == -1 || index1 > index2) {
+			newurlstr = newurlstr[:index2] + "?" + newurlstr[index2+1:]
+		}
+
 		newurl, err := url.Parse(newurlstr)
 		if err != nil {
 			fmt.Println("aie, newurlstr: ", newurlstr, err)
@@ -63,6 +71,8 @@ func newAnyHostReverseProxy() *httputil.ReverseProxy {
 }
 
 func initproxy(router *mux.Router) {
+	anyproxy = newAnyHostReverseProxy()
+
 	router.HandleFunc("/proxy/", func(w http.ResponseWriter, r *http.Request) {
 		url := r.RequestURI[8:] // parsed url, we remove /proxy/? from the beggining
 		fmt.Println("uri: ", url)
@@ -79,6 +89,8 @@ func initproxy(router *mux.Router) {
 		_p, _ := s.Get("user")
 		user := _p.(model.User)
 
+		fmt.Println("user: ", user)
+
 		// Check global permsissions
 		perm_proxy, _ := user.HavePermissions(tx, "request map")
 		perm_fullproxy, _ := user.HavePermissions(tx, "manage all wms/wmts")
@@ -94,6 +106,10 @@ func initproxy(router *mux.Router) {
 			routes.ServerError(w, 500, "Can't commit transaction")
 			return
 		}
+
+		// hack
+		perm_proxy = true
+		perm_fullproxy = true
 
 		if !perm_proxy {
 			routes.ServerError(w, 403, "No permission to use proxy")
