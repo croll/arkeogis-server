@@ -239,6 +239,9 @@ type Map_layer struct {
 	Max_usage_date           time.Time `db:"max_usage_date" json:"max_usage_date"`
 	Created_at               time.Time `db:"created_at" json:"created_at"`
 	Updated_at               time.Time `db:"updated_at" json:"updated_at"`
+	Tile_matrix_set          string    `db:"tile_matrix_set" json:"tile_matrix_set"`
+	Tile_matrix_string       string    `db:"tile_matrix_string" json:"tile_matrix_string"`
+	Use_proxy                bool      `db:"use_proxy" json:"use_proxy"`
 }
 
 type Map_layer__authors struct {
@@ -497,9 +500,9 @@ const Charac_tr_UpdateStr = "\"name\" = :name, \"description\" = :description"
 const Charac_InsertStr = "\"parent_id\", \"order\", \"author_user_id\", \"created_at\", \"updated_at\""
 const Charac_InsertValuesStr = ":parent_id, :order, :author_user_id, now(), now()"
 const Charac_UpdateStr = "\"parent_id\" = :parent_id, \"order\" = :order, \"author_user_id\" = :author_user_id, \"updated_at\" = now()"
-const Map_layer_InsertStr = "\"creator_user_id\", \"type\", \"url\", \"identifier\", \"min_scale\", \"max_scale\", \"start_date\", \"end_date\", \"image_format\", \"geographical_extent_geom\", \"published\", \"license\", \"license_id\", \"max_usage_date\", \"created_at\", \"updated_at\""
-const Map_layer_InsertValuesStr = ":creator_user_id, :type, :url, :identifier, :min_scale, :max_scale, :start_date, :end_date, :image_format, :geographical_extent_geom, :published, :license, :license_id, :max_usage_date, now(), now()"
-const Map_layer_UpdateStr = "\"creator_user_id\" = :creator_user_id, \"type\" = :type, \"url\" = :url, \"identifier\" = :identifier, \"min_scale\" = :min_scale, \"max_scale\" = :max_scale, \"start_date\" = :start_date, \"end_date\" = :end_date, \"image_format\" = :image_format, \"geographical_extent_geom\" = :geographical_extent_geom, \"published\" = :published, \"license\" = :license, \"license_id\" = :license_id, \"max_usage_date\" = :max_usage_date, \"updated_at\" = now()"
+const Map_layer_InsertStr = "\"creator_user_id\", \"type\", \"url\", \"identifier\", \"min_scale\", \"max_scale\", \"start_date\", \"end_date\", \"image_format\", \"geographical_extent_geom\", \"published\", \"license\", \"license_id\", \"max_usage_date\", \"created_at\", \"updated_at\", \"tile_matrix_set\", \"tile_matrix_string\", \"use_proxy\""
+const Map_layer_InsertValuesStr = ":creator_user_id, :type, :url, :identifier, :min_scale, :max_scale, :start_date, :end_date, :image_format, :geographical_extent_geom, :published, :license, :license_id, :max_usage_date, now(), now(), :tile_matrix_set, :tile_matrix_string, :use_proxy"
+const Map_layer_UpdateStr = "\"creator_user_id\" = :creator_user_id, \"type\" = :type, \"url\" = :url, \"identifier\" = :identifier, \"min_scale\" = :min_scale, \"max_scale\" = :max_scale, \"start_date\" = :start_date, \"end_date\" = :end_date, \"image_format\" = :image_format, \"geographical_extent_geom\" = :geographical_extent_geom, \"published\" = :published, \"license\" = :license, \"license_id\" = :license_id, \"max_usage_date\" = :max_usage_date, \"updated_at\" = now(), \"tile_matrix_set\" = :tile_matrix_set, \"tile_matrix_string\" = :tile_matrix_string, \"use_proxy\" = :use_proxy"
 const Map_layer_tr_InsertStr = "\"name\", \"attribution\", \"copyright\", \"description\""
 const Map_layer_tr_InsertValuesStr = ":name, :attribution, :copyright, :description"
 const Map_layer_tr_UpdateStr = "\"name\" = :name, \"attribution\" = :attribution, \"copyright\" = :copyright, \"description\" = :description"

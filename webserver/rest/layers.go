@@ -324,6 +324,9 @@ type SaveWmLayerParams struct {
 	License_id               int
 	Attribution              string
 	Copyright                string
+	Tile_matrix_set          string
+	Tile_matrix_string       string
+	Use_proxy                bool
 	Max_usage_date           time.Time
 	Name                     []struct {
 		Lang_Isocode string
@@ -373,6 +376,9 @@ func SaveWmLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		License:                  params.License,
 		License_id:               params.License_id,
 		Max_usage_date:           params.Max_usage_date,
+		Tile_matrix_set:          params.Tile_matrix_set,
+		Tile_matrix_string:       params.Tile_matrix_string,
+		Use_proxy:                params.Use_proxy,
 	}
 
 	if params.Id > 0 {
@@ -600,7 +606,7 @@ func getWmLayers(params *LayersParams, viewUnpublished bool, tx *sqlx.Tx) (layer
 
 	layers = []*model.LayerFullInfos{}
 
-	q := "SELECT m.id, m.type, m.start_date, m.end_date, m.min_scale, m.max_scale, ST_AsGeoJSON(m.geographical_extent_geom) as geographical_extent_geom, m.published, m.created_at, m.creator_user_id, u.firstname || ' ' || u.lastname as author FROM map_layer m LEFT JOIN \"user\" u ON m.creator_user_id = u.id WHERE m.id > 0"
+	q := "SELECT m.id, m.type, m.start_date, m.end_date, m.min_scale, m.max_scale, m.tile_matrix_set, m.tile_matrix_string, m.use_proxy, ST_AsGeoJSON(m.geographical_extent_geom) as geographical_extent_geom, m.published, m.created_at, m.creator_user_id, u.firstname || ' ' || u.lastname as author FROM map_layer m LEFT JOIN \"user\" u ON m.creator_user_id = u.id WHERE m.id > 0"
 
 	if params.Author > 0 {
 		q += " AND u.id = :author"

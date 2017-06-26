@@ -40,6 +40,9 @@ type LayerFullInfos struct {
 	Min_scale                int               `json:"min_scale"`
 	Max_scale                int               `json:"max_scale"`
 	Uniq_code                string            `json:"uniq_code"`
+	Tile_matrix_set          string            `json:"tile_matrix_set"`
+	Tile_matrix_string       string            `json:"tile_matrix_string"`
+	Use_proxy                bool              `json:"use_proxy"`
 	Name                     map[string]string `json:"name"`
 	Attribution              map[string]string `json:"attribution"`
 	Copyright                map[string]string `json:"copyright"`
@@ -59,7 +62,7 @@ func (u *Map_layer) Get(tx *sqlx.Tx) error {
 
 // Create a map layer by inserting it in the database
 func (u *Map_layer) Create(tx *sqlx.Tx) error {
-	q := "INSERT INTO \"map_layer\" (\"creator_user_id\", \"type\", \"url\", \"identifier\", \"min_scale\", \"max_scale\", \"start_date\", \"end_date\", \"image_format\", \"geographical_extent_geom\", \"published\", \"license\", \"license_id\", \"max_usage_date\", \"created_at\", \"updated_at\") VALUES (:creator_user_id, :type, :url, :identifier, :min_scale, :max_scale, :start_date, :end_date, :image_format,  ST_GeomFromGeoJSON(:geographical_extent_geom), :published, :license, :license_id, :max_usage_date, now(), now()) RETURNING id"
+	q := "INSERT INTO \"map_layer\" (\"creator_user_id\", \"type\", \"url\", \"identifier\", \"min_scale\", \"max_scale\", \"start_date\", \"end_date\", \"image_format\", \"geographical_extent_geom\", \"published\", \"license\", \"license_id\", \"tile_matrix_set\", \"tile_matrix_string\", \"use_proxy\", \"max_usage_date\", \"created_at\", \"updated_at\") VALUES (:creator_user_id, :type, :url, :identifier, :min_scale, :max_scale, :start_date, :end_date, :image_format,  ST_GeomFromGeoJSON(:geographical_extent_geom), :published, :license, :license_id, :tile_matrix_set, :tile_matrix_string, :use_proxy, :max_usage_date, now(), now()) RETURNING id"
 
 	stmt, err := tx.PrepareNamed(q)
 	if err != nil {
@@ -71,7 +74,7 @@ func (u *Map_layer) Create(tx *sqlx.Tx) error {
 
 // Update the map layer in the database
 func (u *Map_layer) Update(tx *sqlx.Tx) error {
-	q := "UPDATE \"map_layer\" SET \"creator_user_id\" = :creator_user_id, \"type\" = :type, \"url\" = :url, \"identifier\" = :identifier, \"min_scale\" = :min_scale, \"max_scale\" = :max_scale, \"start_date\" = :start_date, \"end_date\" = :end_date, \"image_format\" = :image_format, \"geographical_extent_geom\" = ST_GeomFromGeoJSON(:geographical_extent_geom), \"published\" = :published, \"license\" = :license, \"license_id\" = :license_id, \"max_usage_date\" = :max_usage_date, \"updated_at\" = now() WHERE id=:id"
+	q := "UPDATE \"map_layer\" SET \"creator_user_id\" = :creator_user_id, \"type\" = :type, \"url\" = :url, \"identifier\" = :identifier, \"min_scale\" = :min_scale, \"max_scale\" = :max_scale, \"start_date\" = :start_date, \"end_date\" = :end_date, \"image_format\" = :image_format, \"geographical_extent_geom\" = ST_GeomFromGeoJSON(:geographical_extent_geom), \"published\" = :published, \"license\" = :license, \"license_id\" = :license_id, \"tile_matrix_set\" = :tile_matrix_set, \"tile_matrix_string\" = :tile_matrix_string, \"use_proxy\" = :use_proxy, \"max_usage_date\" = :max_usage_date, \"updated_at\" = now() WHERE id=:id"
 	_, err := tx.NamedExec(q, u)
 	return err
 }
