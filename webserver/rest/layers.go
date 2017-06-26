@@ -682,7 +682,7 @@ func GetLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		query = db.JSONQueryBuilder(q, "shapefile sl", "sl.id = "+strconv.Itoa(params.Id))
 	} else {
 		q = make([]string, 3)
-		q[0] = db.AsJSON("SELECT m.id, m.creator_user_id, m.type, m.url, m.identifier, m.min_scale, m.max_scale, m.start_date, m.end_date, m.image_format, ST_AsGeoJSON(m.geographical_extent_geom) as geographical_extent_geom, m.published, m.license_id, m.license, m.max_usage_date, m.created_at, m.updated_at, u.firstname || ' ' || u.lastname as author FROM map_layer m LEFT JOIN \"user\" u ON m.creator_user_id = u.id WHERE m.id = ml.id", false, "infos", true)
+		q[0] = db.AsJSON("SELECT m.id, m.creator_user_id, m.type, m.url, m.identifier, m.min_scale, m.max_scale, m.start_date, m.end_date, m.image_format, ST_AsGeoJSON(m.geographical_extent_geom) as geographical_extent_geom, m.published, m.license_id, m.license, m.tile_matrix_set, m.tile_matrix_string, m.use_proxy, m.max_usage_date, m.created_at, m.updated_at, u.firstname || ' ' || u.lastname as author FROM map_layer m LEFT JOIN \"user\" u ON m.creator_user_id = u.id WHERE m.id = ml.id", false, "infos", true)
 		q[1] = db.AsJSON("SELECT u.id, u.firstname, u.lastname FROM \"user\" u LEFT JOIN map_layer__authors ma ON u.id = ma.user_id WHERE ma.map_layer_id = ml.id", true, "authors", true)
 		q[2] = model.GetQueryTranslationsAsJSONObject("map_layer_tr", "map_layer_id = ml.id", "translations", true, "name", "attribution", "copyright", "description")
 		query = db.JSONQueryBuilder(q, "map_layer ml", "ml.id = "+strconv.Itoa(params.Id))
