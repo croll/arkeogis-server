@@ -298,3 +298,23 @@ func WriteJSON(trans map[string]interface{}, lang string, side string) (err erro
 
 	return
 }
+
+// GetTranslated is a helper, get a translation from a map[string][string], with fallback
+func GetTranslated(src map[string]string, wantedlang string) string {
+	if translated, ok := src[wantedlang]; ok {
+		if len(translated) > 0 {
+			return translated
+		}
+	}
+	if translated, ok := src["en"]; ok {
+		if len(translated) > 0 {
+			return translated
+		}
+	}
+	for _, translated := range src {
+		if len(translated) > 0 {
+			return translated
+		}
+	}
+	return ""
+}
