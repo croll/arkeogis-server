@@ -53,7 +53,7 @@ func init() {
 			Func:        DatabaseList,
 			Method:      "GET",
 			Permissions: []string{
-				"request map",
+			//"request map",
 			},
 			Params: reflect.TypeOf(DatabaseListParams{}),
 		},
@@ -72,8 +72,10 @@ func init() {
 			Description: "Export database as csv",
 			Func:        DatabaseExportCSV,
 			Method:      "GET",
-			Permissions: []string{},
-			Params:      reflect.TypeOf(DatabaseInfosParams{}),
+			Permissions: []string{
+				"request map",
+			},
+			Params: reflect.TypeOf(DatabaseInfosParams{}),
 		},
 		&routes.Route{
 			Path:        "/api/database/{id:[0-9]+}/csv/{importid:[0-9]{0,}}",
