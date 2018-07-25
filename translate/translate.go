@@ -174,9 +174,34 @@ func loadServerTranslation(lang string) (res map[string]string, err error) {
 	return
 }
 
+// load web translations to be useable in web context
+func loadWebTranslation(lang string) (res map[string]string, err error) {
+	var ok bool
+	if res, ok = translations["web"+lang]; !ok {
+		res, err = ReadTranslation(lang, "web")
+		translations["web"+lang] = res
+	}
+	return
+}
+
 // T will return the translation represented by the key string and the wanted language. Translation can use fmt formats
 func T(lang string, key string, a ...interface{}) string {
 	trans, err := loadServerTranslation(lang)
+	if err != nil {
+		return key
+	}
+
+	// take the translatiion if it exists and apply fmt
+	if r, ok := trans[key]; ok {
+		return fmt.Sprintf(r, a...)
+	} else {
+		return key
+	}
+}
+
+// TWeb will return the translation represented by the key string and the wanted language. Translation can use fmt formats
+func TWeb(lang string, key string, a ...interface{}) string {
+	trans, err := loadWebTranslation(lang)
 	if err != nil {
 		return key
 	}
