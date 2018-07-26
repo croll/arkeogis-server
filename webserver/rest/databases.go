@@ -22,6 +22,7 @@
 package rest
 
 import (
+	"encoding/csv"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -31,11 +32,13 @@ import (
 	"net/http"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 
 	db "github.com/croll/arkeogis-server/db"
 	export "github.com/croll/arkeogis-server/export"
 	"github.com/croll/arkeogis-server/model"
+	translate "github.com/croll/arkeogis-server/translate"
 	routes "github.com/croll/arkeogis-server/webserver/routes"
 )
 
@@ -53,9 +56,17 @@ func init() {
 			Func:        DatabaseList,
 			Method:      "GET",
 			Permissions: []string{
-			//"request map",
+				"request map",
 			},
 			Params: reflect.TypeOf(DatabaseListParams{}),
+		},
+		&routes.Route{
+			Path:        "/api/database/export",
+			Description: "Get list of all databases export",
+			Func:        DatabaseExportList,
+			Method:      "GET",
+			Permissions: []string{},
+			Params:      reflect.TypeOf(DatabaseListExportParams{}),
 		},
 		&routes.Route{
 			Path:        "/api/database/{id:[0-9]+}",
@@ -298,6 +309,247 @@ func DatabaseList(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 	l, _ := json.Marshal(returnedDatabases)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(l)
+}
+
+/**
+ *
+ * Export Database List CSV
+ *
+**/
+
+type DatabaseListExportParams struct {
+	Lang string
+}
+
+// DatabaseExportList returns the list of databases as csv
+func DatabaseExportList(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+
+	params := proute.Params.(*DatabaseListExportParams)
+
+	tx, err := db.DB.Beginx()
+	if err != nil {
+		userSqlError(w, err)
+		return
+	}
+
+	_user, _ := proute.Session.Get("user")
+	user := _user.(model.User)
+
+	if len(params.Lang) == 0 {
+		params.Lang = user.First_lang_isocode
+	}
+
+	q := "SELECT d.*, ST_AsGeoJSON(d.geographical_extent_geom) as geographical_extent_geom, l.name as license, (SELECT count(*) from site WHERE database_id = d.id) AS number_of_sites, (SELECT number_of_lines FROM import WHERE database_id = d.id ORDER BY id DESC LIMIT 1) AS number_of_lines, u.firstname || ' ' || u.lastname as author FROM \"database\" d LEFT JOIN \"user\" u ON d.owner = u.id LEFT JOIN license l ON l.id = d.license_id WHERE 1 = 1"
+
+	type dbInfos struct {
+		model.Database
+		Author              string            `json:"author"`
+		Description         map[string]string `json:"description"`
+		Geographical_limit  map[string]string `json:"geographical_limit"`
+		Bibliography        map[string]string `json:"bibliography"`
+		Context_description map[string]string `json:"context_description"`
+		Source_description  map[string]string `json:"source_description"`
+		Source_relation     map[string]string `json:"source_relation"`
+		Copyright           map[string]string `json:"copyright"`
+		Subject             map[string]string `json:"subject"`
+		Number_of_lines     int               `json:"number_of_lines"`
+		Number_of_sites     int               `json:"number_of_sites"`
+		License             string            `json:"license"`
+		//Contexts            []string          `json:"context"`
+		Countries []struct {
+			Id   int    `json:"id"`
+			Name string `json:"name"`
+		} `json:"countries"`
+		Continents []struct {
+			Id   int    `json:"id"`
+			Name string `json:"name"`
+		} `json:"continents"`
+		Authors []struct {
+			Id       int    `json:"id"`
+			Fullname string `json:"fullname"`
+		} `json:"authors"`
+	}
+
+	// do not show unpublished
+	q += " AND published = 't'"
+
+	q += " ORDER BY d.Id DESC"
+
+	// fmt.Println(q)
+
+	databases := []dbInfos{}
+
+	nstmt, err := tx.PrepareNamed(q)
+	if err != nil {
+		err = errors.New("rest.databases::DatabaseList : (infos) " + err.Error())
+		log.Println(err)
+		userSqlError(w, err)
+		tx.Rollback()
+		return
+	}
+	err = nstmt.Select(&databases, params)
+	if err != nil {
+		err = errors.New("rest.databases::DatabaseList : (infos) " + err.Error())
+		log.Println(err)
+		userSqlError(w, err)
+		tx.Rollback()
+		return
+	}
+
+	returnedDatabases := []dbInfos{}
+
+	for _, database := range databases {
+
+		// Authors
+		astmt, err2 := tx.PrepareNamed("SELECT id, firstname || ' ' || lastname  as fullname FROM \"user\" u LEFT JOIN database__authors da ON u.id = da.user_id WHERE da.database_id = :id")
+		if err2 != nil {
+			err = errors.New("rest.databases::DatabaseList (authors) : " + err2.Error())
+			log.Println(err)
+			userSqlError(w, err)
+			tx.Rollback()
+			return
+		}
+		err = astmt.Select(&database.Authors, database)
+		if err != nil {
+			err = errors.New("rest.databases::DatabaseList (authors) : " + err.Error())
+			log.Println(err)
+			userSqlError(w, err)
+			tx.Rollback()
+			return
+		}
+
+		// Contexts
+		/*
+			cstmt, err3 := tx.PrepareNamed("SELECT context FROM database_context WHERE database_id = :id")
+			if err3 != nil {
+				err = errors.New("rest.databases::DatabaseList (contexts) : " + err3.Error())
+				log.Println(err)
+				userSqlError(w, err)
+				tx.Rollback()
+				return
+			}
+			err = cstmt.Select(&database.Contexts, database)
+		*/
+
+		// Countries
+		if database.Geographical_extent == "country" {
+			coustmt, err4 := tx.Preparex("SELECT ctr.name FROM country_tr ctr LEFT JOIN country c ON ctr.country_geonameid = c.geonameid LEFT JOIN database__country dc ON c.geonameid = dc.country_geonameid WHERE dc.database_id = $1 AND ctr.lang_isocode = $2")
+			if err4 != nil {
+				err = errors.New("rest.databases::DatabaseList (countries) : " + err4.Error())
+				log.Println(err)
+				userSqlError(w, err)
+				tx.Rollback()
+				return
+			}
+			err = coustmt.Select(&database.Countries, database.Id, params.Lang)
+		}
+
+		// Continents
+		if database.Geographical_extent == "continent" {
+			constmt, err5 := tx.Preparex("SELECT ctr.name FROM continent_tr ctr LEFT JOIN continent c ON ctr.continent_geonameid = c.geonameid LEFT JOIN database__continent dc ON c.geonameid = dc.continent_geonameid WHERE dc.database_id = $1 AND ctr.lang_isocode = $2")
+			if err5 != nil {
+				err = errors.New("rest.databases::DatabaseList : (continents) " + err5.Error())
+				log.Println(err)
+				userSqlError(w, err)
+				tx.Rollback()
+				return
+			}
+			err = constmt.Select(&database.Continents, database.Id, params.Lang)
+		}
+
+		tr := []model.Database_tr{}
+		err = tx.Select(&tr, "SELECT * FROM database_tr WHERE database_id = "+strconv.Itoa(database.Id))
+		if err != nil {
+			log.Println(err)
+			_ = tx.Rollback()
+			userSqlError(w, err)
+			return
+		}
+		database.Description = model.MapSqlTranslations(tr, "Lang_isocode", "Description")
+		database.Geographical_limit = model.MapSqlTranslations(tr, "Lang_isocode", "Geographical_limit")
+		database.Bibliography = model.MapSqlTranslations(tr, "Lang_isocode", "Bibliography")
+		database.Context_description = model.MapSqlTranslations(tr, "Lang_isocode", "Context_description")
+		database.Source_description = model.MapSqlTranslations(tr, "Lang_isocode", "Source_description")
+		database.Source_relation = model.MapSqlTranslations(tr, "Lang_isocode", "Source_relation")
+		database.Copyright = model.MapSqlTranslations(tr, "Lang_isocode", "Copyright")
+		database.Subject = model.MapSqlTranslations(tr, "Lang_isocode", "Subject")
+		returnedDatabases = append(returnedDatabases, database)
+	}
+
+	if err != nil {
+		log.Println(err)
+		tx.Rollback()
+		userSqlError(w, err)
+		return
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		log.Println(err)
+		userSqlError(w, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+	var csvW = csv.NewWriter(w)
+
+	// LANG;NAME;AUTHORS;SUBJET;TYPE;LINES;SITES;SCALE;START_DATE;END_DATE;STATE;GEOGRAPHICAL_EXTENT;LICENSE;DESCRIPTION
+
+	csvW.Write([]string{
+		"LANG",
+		"NAME",
+		"AUTHORS",
+		"SUBJECT",
+		"TYPE",
+		"LINES",
+		"SITES",
+		"SCALE",
+		"START_DATE",
+		"END_DATE",
+		"STATE",
+		"GEOGRAPHICAL_EXTENT",
+		"LICENSE",
+		"DESCRIPTION",
+	})
+
+	for _, line := range returnedDatabases {
+		// element is the element from someSlice for where we are
+		var authors []string
+		for _, author := range line.Authors {
+			authors = append(authors, author.Fullname)
+		}
+
+		csvW.Write([]string{
+			line.Default_language,
+			line.Name,
+			strings.Join(authors, " - "),
+			translate.GetTranslated(line.Subject, params.Lang),
+			translate.TWeb(params.Lang, "DATABASE.TYPE_"+strings.ToUpper(strings.Replace(line.Type, "-", "", 1))+".T_TITLE"),
+			strconv.Itoa(line.Number_of_lines),
+			strconv.Itoa(line.Number_of_sites),
+			translate.TWeb(params.Lang, "DATABASE.SCALE_RESOLUTION_"+strings.ToUpper(strings.Replace(line.Scale_resolution, "-", "", 1))+".T_TITLE"),
+			dateToDate(params.Lang, line.Start_date),
+			dateToDate(params.Lang, line.End_date),
+			translate.TWeb(params.Lang, "DATABASE.STATE_"+strings.ToUpper(strings.Replace(line.State, "-", "", 1))+".T_TITLE"),
+			translate.TWeb(params.Lang, "DATABASE.GEOGRAPHICAL_EXTENT_"+strings.ToUpper(strings.Replace(line.Geographical_extent, "-", "", 1))+".T_TITLE"),
+			line.License,
+			translate.GetTranslated(line.Description, params.Lang),
+		})
+	}
+
+	csvW.Flush()
+}
+
+func dateToDate(lang string, date int) string {
+	if date == -2147483648 {
+		return translate.TWeb(lang, "MAIN.LABEL.T_UNDETERMINED")
+	} else if date == 2147483647 {
+		return translate.TWeb(lang, "MAIN.LABEL.T_UNDETERMINED")
+	} else if date <= 0 {
+		return strconv.Itoa(date - 1)
+	} else {
+		return strconv.Itoa(date)
+	}
 }
 
 // LicensesList returns the list of licenses which can be assigned to databases
