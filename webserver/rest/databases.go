@@ -496,20 +496,20 @@ func DatabaseExportList(w http.ResponseWriter, r *http.Request, proute routes.Pr
 	// LANG;NAME;AUTHORS;SUBJET;TYPE;LINES;SITES;SCALE;START_DATE;END_DATE;STATE;GEOGRAPHICAL_EXTENT;LICENSE;DESCRIPTION
 
 	csvW.Write([]string{
-		"LANG",
-		"NAME",
-		"AUTHORS",
-		"SUBJECT",
-		"TYPE",
-		"LINES",
-		"SITES",
-		"SCALE",
-		"START_DATE",
-		"END_DATE",
-		"STATE",
-		"GEOGRAPHICAL_EXTENT",
-		"LICENSE",
-		"DESCRIPTION",
+		translate.TWeb(params.Lang, "DATABASE.EXPORT_LANG.T_HEADER"),
+		translate.TWeb(params.Lang, "DATABASE.EXPORT_NAME.T_HEADER"),
+		translate.TWeb(params.Lang, "DATABASE.EXPORT_AUTHORS.T_HEADER"),
+		translate.TWeb(params.Lang, "DATABASE.EXPORT_SUBJECT.T_HEADER"),
+		translate.TWeb(params.Lang, "DATABASE.EXPORT_TYPE.T_HEADER"),
+		translate.TWeb(params.Lang, "DATABASE.EXPORT_LINES.T_HEADER"),
+		translate.TWeb(params.Lang, "DATABASE.EXPORT_SITES.T_HEADER"),
+		translate.TWeb(params.Lang, "DATABASE.EXPORT_SCALE.T_HEADER"),
+		translate.TWeb(params.Lang, "DATABASE.EXPORT_START_DATE.T_HEADER"),
+		translate.TWeb(params.Lang, "DATABASE.EXPORT_END_DATE.T_HEADER"),
+		translate.TWeb(params.Lang, "DATABASE.EXPORT_STATE.T_HEADER"),
+		translate.TWeb(params.Lang, "DATABASE.EXPORT_GEOGRAPHICAL_EXTENT.T_HEADER"),
+		translate.TWeb(params.Lang, "DATABASE.EXPORT_LICENSE.T_HEADER"),
+		translate.TWeb(params.Lang, "DATABASE.EXPORT_DESCRIPTION.T_HEADER"),
 	})
 
 	for _, line := range returnedDatabases {
