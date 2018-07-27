@@ -22,6 +22,7 @@ package rest
 
 import (
 	"crypto/md5"
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -30,9 +31,11 @@ import (
 	"os"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 
 	db "github.com/croll/arkeogis-server/db"
+	"github.com/croll/arkeogis-server/translate"
 	"github.com/jmoiron/sqlx"
 
 	"github.com/croll/arkeogis-server/model"
@@ -49,6 +52,11 @@ type LayersParams struct {
 	Start_date   int  `json:"start_date"`
 	End_date     int  `json:"end_date"`
 	Check_dates  bool `json:"check_dates"`
+}
+
+type LayersExportParams struct {
+	LayersParams
+	Lang string `json:"lang" min:"0" max:"2"`
 }
 
 type LayerParams struct {
@@ -84,6 +92,14 @@ func init() {
 			},
 			Params: reflect.TypeOf(LayersParams{}),
 			Method: "GET",
+		},
+		&routes.Route{
+			Path:        "/api/layers/export",
+			Description: "Get wms, wmts and shapefiles that are published, as csv",
+			Func:        GetExportLayers,
+			Permissions: []string{},
+			Params:      reflect.TypeOf(LayersExportParams{}),
+			Method:      "GET",
 		},
 		&routes.Route{
 			Path:        "/api/layer",
@@ -469,11 +485,7 @@ func SaveWmLayer(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	}
 }
 
-// GetLayers returns layers list
-func GetLayers(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
-
-	params := proute.Params.(*LayersParams)
-
+func getLayers(w http.ResponseWriter, r *http.Request, proute routes.Proute, params *LayersParams) []*model.LayerFullInfos {
 	var err error
 
 	// get the user
@@ -481,13 +493,13 @@ func GetLayers(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	if !ok {
 		log.Println("GetLayers: can't get user in session.", _user)
 		userSqlError(w, err)
-		return
+		return nil
 	}
 	user, ok := _user.(model.User)
 	if !ok {
 		log.Println("GetLayers: can't cast user.", _user)
 		userSqlError(w, err)
-		return
+		return nil
 	}
 
 	params.Iso_code = user.First_lang_isocode
@@ -496,14 +508,14 @@ func GetLayers(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	tx, err := db.DB.Beginx()
 	if err != nil {
 		userSqlError(w, err)
-		return
+		return nil
 	}
 
 	viewUnpublished, err := user.HavePermissions(tx, "manage all databases")
 	if err != nil {
 		userSqlError(w, err)
 		tx.Rollback()
-		return
+		return nil
 	}
 
 	var result = []*model.LayerFullInfos{}
@@ -514,7 +526,7 @@ func GetLayers(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		if err != nil {
 			log.Println(err)
 			userSqlError(w, err)
-			return
+			return nil
 		}
 		result = append(result, infos...)
 	}
@@ -525,7 +537,7 @@ func GetLayers(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 		if err != nil {
 			log.Println(err)
 			userSqlError(w, err)
-			return
+			return nil
 		}
 		result = append(result, infos...)
 	}
@@ -535,13 +547,62 @@ func GetLayers(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	if err != nil {
 		log.Println("commit failed")
 		_ = tx.Rollback()
-		return
+		return nil
 	}
+
+	return result
+}
+
+// GetLayers returns layers list
+func GetLayers(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+
+	params := proute.Params.(*LayersParams)
+
+	var result = getLayers(w, r, proute, params)
 
 	l, _ := json.Marshal(result)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(l)
-	return
+}
+
+// GetLayers returns layers list
+func GetExportLayers(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+
+	paramsExport := proute.Params.(*LayersExportParams)
+	params := paramsExport.LayersParams
+
+	params.Published = true // force published
+
+	var result = getLayers(w, r, proute, &params)
+
+	w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+	var csvW = csv.NewWriter(w)
+
+	csvW.Write([]string{
+		translate.TWeb(paramsExport.Lang, "MAP.EXPORT_NAME.T_HEADER"),
+		translate.TWeb(paramsExport.Lang, "MAP.EXPORT_LICENSE.T_HEADER"),
+		translate.TWeb(paramsExport.Lang, "MAP.EXPORT_START_DATE.T_HEADER"),
+		translate.TWeb(paramsExport.Lang, "MAP.EXPORT_END_DATE.T_HEADER"),
+		translate.TWeb(paramsExport.Lang, "MAP.EXPORT_SCALE.T_HEADER"),
+		translate.TWeb(paramsExport.Lang, "MAP.EXPORT_TYPE.T_HEADER"),
+		translate.TWeb(paramsExport.Lang, "MAP.EXPORT_DESCRIPTION.T_HEADER"),
+	})
+
+	for _, line := range result {
+		csvW.Write([]string{
+			translate.GetTranslated(line.Name, paramsExport.Lang),
+			translate.GetTranslated(line.Copyright, paramsExport.Lang),
+			dateToDate(paramsExport.Lang, line.Start_date),
+			dateToDate(paramsExport.Lang, line.End_date),
+			strconv.Itoa(line.Min_scale) + "/" + strconv.Itoa(line.Max_scale),
+			translate.TWeb(paramsExport.Lang, "DATABASE"+"."+"TYPE_"+strings.ToUpper(strings.Replace(line.Type, "-", "", 1))+"."+"T"+"_TITLE"),
+			translate.GetTranslated(line.Description, paramsExport.Lang),
+		})
+	}
+
+	csvW.Flush()
+
+	fmt.Println("result : ", result)
 
 }
 
