@@ -39,6 +39,8 @@ import (
 
 	"github.com/croll/arkeogis-server/model"
 	routes "github.com/croll/arkeogis-server/webserver/routes"
+
+	"github.com/bradfitz/slice"
 )
 
 type LayersParams struct {
@@ -573,6 +575,10 @@ func GetExportLayers(w http.ResponseWriter, r *http.Request, proute routes.Prout
 	params.Published = true // force published
 
 	var result = getLayers(w, r, proute, &params)
+
+	slice.Sort(result[:], func(i, j int) bool {
+		return result[i].Id < result[j].Id
+	})
 
 	w.Header().Set("Content-Type", "text/csv; charset=utf-8")
 	var csvW = csv.NewWriter(w)
