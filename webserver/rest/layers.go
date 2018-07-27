@@ -579,13 +579,13 @@ func GetExportLayers(w http.ResponseWriter, r *http.Request, proute routes.Prout
 	var csvW = csv.NewWriter(w)
 
 	csvW.Write([]string{
-		translate.TWeb(paramsExport.Lang, "MAP.EXPORT_NAME.T_HEADER"),
-		translate.TWeb(paramsExport.Lang, "MAP.EXPORT_LICENSE.T_HEADER"),
-		translate.TWeb(paramsExport.Lang, "MAP.EXPORT_START_DATE.T_HEADER"),
-		translate.TWeb(paramsExport.Lang, "MAP.EXPORT_END_DATE.T_HEADER"),
-		translate.TWeb(paramsExport.Lang, "MAP.EXPORT_SCALE.T_HEADER"),
-		translate.TWeb(paramsExport.Lang, "MAP.EXPORT_TYPE.T_HEADER"),
-		translate.TWeb(paramsExport.Lang, "MAP.EXPORT_DESCRIPTION.T_HEADER"),
+		translate.T(paramsExport.Lang, "MAP.EXPORT_NAME.T_HEADER"),
+		translate.T(paramsExport.Lang, "MAP.EXPORT_LICENSE.T_HEADER"),
+		translate.T(paramsExport.Lang, "MAP.EXPORT_START_DATE.T_HEADER"),
+		translate.T(paramsExport.Lang, "MAP.EXPORT_END_DATE.T_HEADER"),
+		translate.T(paramsExport.Lang, "MAP.EXPORT_SCALE.T_HEADER"),
+		translate.T(paramsExport.Lang, "MAP.EXPORT_TYPE.T_HEADER"),
+		translate.T(paramsExport.Lang, "MAP.EXPORT_DESCRIPTION.T_HEADER"),
 	})
 
 	for _, line := range result {
