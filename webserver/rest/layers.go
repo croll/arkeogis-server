@@ -577,7 +577,7 @@ func GetExportLayers(w http.ResponseWriter, r *http.Request, proute routes.Prout
 	var result = getLayers(w, r, proute, &params)
 
 	slice.Sort(result[:], func(i, j int) bool {
-		return result[i].Id < result[j].Id
+		return result[i].Created_at.After(result[j].Created_at)
 	})
 
 	w.Header().Set("Content-Type", "text/csv; charset=utf-8")
