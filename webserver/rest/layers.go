@@ -31,7 +31,6 @@ import (
 	"os"
 	"reflect"
 	"strconv"
-	"strings"
 	"time"
 
 	db "github.com/croll/arkeogis-server/db"
@@ -595,7 +594,7 @@ func GetExportLayers(w http.ResponseWriter, r *http.Request, proute routes.Prout
 			dateToDate(paramsExport.Lang, line.Start_date),
 			dateToDate(paramsExport.Lang, line.End_date),
 			strconv.Itoa(line.Min_scale) + "/" + strconv.Itoa(line.Max_scale),
-			translate.TWeb(paramsExport.Lang, "DATABASE"+"."+"TYPE_"+strings.ToUpper(strings.Replace(line.Type, "-", "", 1))+"."+"T"+"_TITLE"),
+			line.Type,
 			translate.GetTranslated(line.Description, paramsExport.Lang),
 		})
 	}
