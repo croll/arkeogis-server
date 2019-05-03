@@ -81,7 +81,7 @@ func mysqlToPsqlType(row Row) string {
 	}
 
 	if row.Datatype == "DATETIME" {
-		return "timestamp"
+		return "timestamp with time zone"
 	}
 
 	if row.Datatype == "MEDIUMTEXT" {
@@ -108,6 +108,10 @@ func mysqlToPsqlType(row Row) string {
 		return "geography(MULTIPOLYGON,4326)"
 	}
 
+	if row.Datatype == "TIMESTAMP" {
+		return "timestamp with time zone"
+	}
+
 	return row.Datatype
 }
 
@@ -118,6 +122,7 @@ func printPsql(sql Sql) {
 	geoms := ""
 	constraints := ""
 	indexes := ""
+	times := "set timezone TO 'GMT';\n"
 
 	var constraintRegexp = regexp.MustCompile(`xmltopsql:"([a-z]+)\:{1}([a-z]+)"`)
 
@@ -131,6 +136,10 @@ func printPsql(sql Sql) {
 				nullstr = " NOT NULL"
 			}
 			row.PsqlType = mysqlToPsqlType(*row)
+
+			if row.PsqlType == "timestamp with time zone" {
+				times += fmt.Sprintf("alter table \"%s\" alter column \"%s\" type timestamp with time zone;\n", table.Name, row.Name)
+			}
 
 			// use comment to define constraint params
 			constraintFromComment := ""
@@ -208,6 +217,7 @@ func printPsql(sql Sql) {
 	fmt.Println(geoms)
 	fmt.Println(constraints)
 	fmt.Println(indexes)
+	fmt.Println(times)
 }
 
 func main() {
