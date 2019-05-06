@@ -67,6 +67,7 @@ func prettyPrint(i interface{}) string {
 		model.Database
 		Sites []MySite                          `json:"sites"`
 		Database_trs []model.Database_tr        `json:"database_trs"`
+		OwnerUser    model.User                 `json:"owneruser"`
 	}
 
 
@@ -127,7 +128,57 @@ func prettyPrint(i interface{}) string {
 	}
 	w.Flush()
 
-	q := `SELECT row_to_json(items) AS database  FROM (    SELECT *, (  SELECT json_agg(items)  FROM (    SELECT s.*, (  SELECT json_agg(items)  FROM (    SELECT sr.*, (  SELECT json_agg(items)  FROM (    SELECT src.*, ( SELECT row_to_json(items)  FROM (    SELECT c.* FROM charac c WHERE c.id = src.charac_id  ) as items) AS charac , (  SELECT json_agg(items)  FROM (    SELECT ctr.*    FROM charac_tr ctr WHERE ctr.charac_id = src.charac_id  ) items) AS charac_trs     FROM site_range__charac src WHERE src.site_range_id = sr.id  ) items) AS site_range__characs     FROM site_range sr WHERE sr.site_id = s.id  ) items) AS site_ranges     FROM site s WHERE s.database_id = db.id  ) items) AS sites , (  SELECT json_agg(items)  FROM (    SELECT dtr.*    FROM database_tr dtr WHERE dtr.database_id = db.id  ) items) AS database_trs  FROM database db WHERE db.id=284  ) as items`
+	q := `
+	SELECT row_to_json(items) AS database
+	FROM (
+	  SELECT *, 
+	  (
+		SELECT json_agg(items)
+		FROM (
+		  SELECT s.*, 
+		(
+		  SELECT json_agg(items)
+		  FROM (
+			SELECT sr.*, 
+		  (
+			SELECT json_agg(items)
+			FROM (
+			  SELECT src.*, 
+			( SELECT row_to_json(items)
+			  FROM (
+				SELECT c.* FROM "charac" "c" WHERE c.id = src.charac_id
+			  ) as items
+			) AS charac, 
+			(
+			  SELECT json_agg(items)
+			  FROM (
+				SELECT ctr.*
+				FROM "charac_tr" "ctr" WHERE ctr.charac_id = src.charac_id
+			  ) items
+			) AS charac_trs
+			  FROM "site_range__charac" "src" WHERE src.site_range_id = sr.id
+			) items
+		  ) AS site_range__characs
+			FROM "site_range" "sr" WHERE sr.site_id = s.id
+		  ) items
+		) AS site_ranges
+		  FROM "site" "s" WHERE s.database_id = db.id
+		) items
+	  ) AS sites, 
+	  (
+		SELECT json_agg(items)
+		FROM (
+		  SELECT dtr.*
+		  FROM "database_tr" "dtr" WHERE dtr.database_id = db.id
+		) items
+	  ) AS database_trs, 
+	  ( SELECT row_to_json(items)
+		FROM (
+		  SELECT u.* FROM "user" "u" WHERE u.id = db.owner
+		) as items
+	  ) AS owneruser FROM "database" "db" WHERE db.id=284
+	) as items
+	`
 
 	fmt.Println("query: "+q)
 	rows2, err := tx.Query(q)
@@ -198,7 +249,7 @@ func prettyPrint(i interface{}) string {
 				// Tous les auteurs de la base de données déclarés dans ArkeoGIS.
 				// Il peut donc être multiple
 				// séparateur entre les auteurs : #
-				"",
+				database.OwnerUser.Firstname+" "+database.OwnerUser.Lastname,
 	
 				// Dublin Core:Subject
 				// champs : CARAC_NAME, CARAC_LVL1, CARAC_LVL2, CARAC_LVL3, CARAC_LVL4
