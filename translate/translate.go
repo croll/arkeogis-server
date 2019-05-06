@@ -318,3 +318,28 @@ func GetTranslated(src map[string]string, wantedlang string) string {
 	}
 	return ""
 }
+
+type Table_tr struct {
+	Lang_isocode string
+}
+
+func GetTranslatedFromTr(trs []Table_tr, wantedlang string) Table_tr {
+	// search wanted
+	for tr, _ := range trs {
+		if tr.Lang_isocode == wantedlang {
+			return tr
+		}
+	}
+	// search english
+	for tr, _ := range trs {
+		if tr.Lang_isocode == "en" {
+			return tr
+		}
+	}
+	// return the first one
+	for tr, _ := range trs {
+		return tr
+	}
+	// no translation found
+	return ""
+}
