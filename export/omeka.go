@@ -29,7 +29,7 @@ import (
 	"encoding/json"
 	"log"
 	//"math"
-	//"strconv"
+	"strconv"
 	//"strings"
  	model "github.com/croll/arkeogis-server/model"
 	//"github.com/croll/arkeogis-server/translate"
@@ -127,12 +127,7 @@ func prettyPrint(i interface{}) string {
 	}
 	w.Flush()
 
-	q := `SELECT  db.id,  db.name, (  SELECT json_agg(items)  FROM (    SELECT s.*, (  SELECT json_agg(items)  FROM (    SELECT sr.*, (  SELECT json_agg(items)  FROM (    SELECT src.*, ( SELECT row_to_json(items)  FROM (    SELECT c.* FROM charac c WHERE c.id = src.charac_id  ) as items) AS charac     FROM site_range__charac src WHERE src.site_range_id = sr.id  ) items) AS site_range__characs     FROM site_range sr WHERE sr.site_id = s.id  ) items) AS site_ranges     FROM site s WHERE s.database_id = db.id  ) items) AS sites , (  SELECT json_agg(items)  FROM (    SELECT dtr.*    FROM database_tr dtr WHERE dtr.database_id = db.id  ) items) AS database_trs  FROM database db`
-	q += ` WHERE db.id = 284`
-
-
-	q = `SELECT row_to_json(items) AS database  FROM (    SELECT *, (  SELECT json_agg(items)  FROM (    SELECT s.*, (  SELECT json_agg(items)  FROM (    SELECT sr.*, (  SELECT json_agg(items)  FROM (    SELECT src.*, ( SELECT row_to_json(items)  FROM (    SELECT c.* FROM charac c WHERE c.id = src.charac_id  ) as items) AS charac     FROM site_range__charac src WHERE src.site_range_id = sr.id  ) items) AS site_range__characs     FROM site_range sr WHERE sr.site_id = s.id  ) items) AS site_ranges     FROM site s WHERE s.database_id = db.id  ) items) AS sites , (  SELECT json_agg(items)  FROM (    SELECT dtr.*    FROM database_tr dtr WHERE dtr.database_id = db.id  ) items) AS database_trs  FROM database db WHERE db.id=284  ) as items`
-	q = `SELECT row_to_json(items) AS database  FROM (    SELECT *, (  SELECT json_agg(items)  FROM (    SELECT s.*, (  SELECT json_agg(items)  FROM (    SELECT sr.*, (  SELECT json_agg(items)  FROM (    SELECT src.*, ( SELECT row_to_json(items)  FROM (    SELECT c.* FROM charac c WHERE c.id = src.charac_id  ) as items) AS charac , (  SELECT json_agg(items)  FROM (    SELECT ctr.*    FROM charac_tr ctr WHERE ctr.charac_id = src.charac_id  ) items) AS charac_trs     FROM site_range__charac src WHERE src.site_range_id = sr.id  ) items) AS site_range__characs     FROM site_range sr WHERE sr.site_id = s.id  ) items) AS site_ranges     FROM site s WHERE s.database_id = db.id  ) items) AS sites , (  SELECT json_agg(items)  FROM (    SELECT dtr.*    FROM database_tr dtr WHERE dtr.database_id = db.id  ) items) AS database_trs  FROM database db WHERE db.id=284  ) as items`
+	q := `SELECT row_to_json(items) AS database  FROM (    SELECT *, (  SELECT json_agg(items)  FROM (    SELECT s.*, (  SELECT json_agg(items)  FROM (    SELECT sr.*, (  SELECT json_agg(items)  FROM (    SELECT src.*, ( SELECT row_to_json(items)  FROM (    SELECT c.* FROM charac c WHERE c.id = src.charac_id  ) as items) AS charac , (  SELECT json_agg(items)  FROM (    SELECT ctr.*    FROM charac_tr ctr WHERE ctr.charac_id = src.charac_id  ) items) AS charac_trs     FROM site_range__charac src WHERE src.site_range_id = sr.id  ) items) AS site_range__characs     FROM site_range sr WHERE sr.site_id = s.id  ) items) AS site_ranges     FROM site s WHERE s.database_id = db.id  ) items) AS sites , (  SELECT json_agg(items)  FROM (    SELECT dtr.*    FROM database_tr dtr WHERE dtr.database_id = db.id  ) items) AS database_trs  FROM database db WHERE db.id=284  ) as items`
 
 	fmt.Println("query: "+q)
 	rows2, err := tx.Query(q)
@@ -169,130 +164,119 @@ func prettyPrint(i interface{}) string {
 		//fmt.Printf("%+v\n", database.Sites[0])
 		prettyPrint(database.Sites[0])
 
-		/*
-		var line []string
+
+		for _, site := range database.Sites {
+
+			// count caracs
+			var caracsCount = 0
+			for _, sr := range site.Site_ranges {
+				caracsCount += len(sr.SiteRangeCharacs)
+			}
+
+			var line []string
  
-		line = []string{
-			// Type Données
-			// Pour les sites toujours mettre la valeur : site
-			"site",
+			line = []string{
+				// Type Données
+				// Pour les sites toujours mettre la valeur : site
+				"site",
+	
+				// Nombre Caracterisations
+				// le nombre de caractérisation ayant le même SITE_SOURCE_ID
+				// à usage affichage cluster thématique geolocation.
+				strconv.Itoa(caracsCount),
+	
+				// Dublin Core:Title
+				// champs : SITE_NAME, MAIN_CITY_NAME
+				// type : concaténation 
+				// séparateur entre champs  : ,
+				site.Name+","+site.City_name,
+	
+				// Dublin Core:Creator
+				// champs : Prénom Nom
+				// type : concaténation 
+				// séparateur entre champs  : rien
+				// Tous les auteurs de la base de données déclarés dans ArkeoGIS.
+				// Il peut donc être multiple
+				// séparateur entre les auteurs : #
+				"",
+	
+				// Dublin Core:Subject
+				// champs : CARAC_NAME, CARAC_LVL1, CARAC_LVL2, CARAC_LVL3, CARAC_LVL4
+				// type : concaténation 
+				// séparateur visuel entre champs  : ,
+				// séparateur informatique à la fin du dernier champs non vide : #
+				// La liste de toutes les caractérisations ayant le même SITE_SOURCE_ID
+				// Il peut donc être multiple, elles sont listées dans l'ordre de l'importation de la base source ArkeoGIS
+				// séparateur entre les caractérisations : #
+				"",
+	
+				// Dublin Core:Date
+				// champs : Date de réalisation
+				// type : extrait
+				// La date de réalisation de la base de données déclarés dans ArkeoGIS.
+				// A partir de la date compléte dans ArkeoGIS, uniquement l'année est exportée.
+				"",
+	
+				// Dublin Core:Language
+				// champs : Langue de la base de données
+				// type : individuel
+				// Langue de la base de données déclarée dans ArkeoGIS lors de l'importation.
+				"",
+	
+				// Dublin Core:Description
+				// "champs : COMMENTS
+				// type : extrait 
+				// Uniquement celui de la ligne 1 du site si plusieurs lignes ayant le même SITE_SOURCE_ID
+				// champs : Description
+				// type : individuel
+				// Description de la base de données dans ArkeoGIS.
+				// Les deux informations sont présentées séparées par un : #
+				"",
+	
+				// Dublin Core:Source
+				// champs : Source de la base
+				// type : individuel
+				// Source de la base de donnée déclarée dans ArkeoGIS.
+				"",
+	
+				// Dublin core:Coverage
+				// champs : Site Name # Main City Name # STARTING_PERIOD # ENDING_PERIOD # Debut Periode # Fin Periode
+				// type : concaténation 
+				// séparateur entre champs  : #
+				"",
+	
+				// Dublin Core:Rights
+				// champs : Licence de la base
+				// type : individuel
+				// Licence de la base de données déclarée dans ArkeoGIS.
+				"",
+	
+				// URI Site
+				// champs : url fiche base de données
+				// type : adresse url
+				// De la fiche base de données dans ArkeoGIS.
+				"",
+	
+				// ID-site
+				// champs : ID unique du site dans ArkeoGIS
+				// type : individuel
+				"",
+	
+				// source_id
+				// ID unique du site bdd origine : SITE_SOURCE_ID
+				// type : individuel
+				"",
+	
+			}
+	 
+			err := w.Write(line)
+			w.Flush()
+			if err != nil {
+				log.Println("database::ExportCSV : ", err.Error())
+			}
 
-			// Nombre Caracterisations
-			// le nombre de caractérisation ayant le même SITE_SOURCE_ID
-			// à usage affichage cluster thématique geolocation.
-			"0",
-
-			// Dublin Core:Title
-			// champs : SITE_NAME, MAIN_CITY_NAME
-			// type : concaténation 
-			// séparateur entre champs  : ,
-			name+","+city_name,
-
-			// Dublin Core:Creator
-			// champs : Prénom Nom
-			// type : concaténation 
-			// séparateur entre champs  : rien
-			// Tous les auteurs de la base de données déclarés dans ArkeoGIS.
-			// Il peut donc être multiple
-			// séparateur entre les auteurs : #
-			"",
-
-			// Dublin Core:Subject
-			// champs : CARAC_NAME, CARAC_LVL1, CARAC_LVL2, CARAC_LVL3, CARAC_LVL4
-			// type : concaténation 
-			// séparateur visuel entre champs  : ,
-			// séparateur informatique à la fin du dernier champs non vide : #
-			// La liste de toutes les caractérisations ayant le même SITE_SOURCE_ID
-			// Il peut donc être multiple, elles sont listées dans l'ordre de l'importation de la base source ArkeoGIS
-			// séparateur entre les caractérisations : #
-			"",
-
-			// Dublin Core:Date
-			// champs : Date de réalisation
-			// type : extrait
-			// La date de réalisation de la base de données déclarés dans ArkeoGIS.
-			// A partir de la date compléte dans ArkeoGIS, uniquement l'année est exportée.
-			"",
-
-			// Dublin Core:Language
-			// champs : Langue de la base de données
-			// type : individuel
-			// Langue de la base de données déclarée dans ArkeoGIS lors de l'importation.
-			"",
-
-			// Dublin Core:Description
-			// "champs : COMMENTS
-			// type : extrait 
-			// Uniquement celui de la ligne 1 du site si plusieurs lignes ayant le même SITE_SOURCE_ID
-			// champs : Description
-			// type : individuel
-			// Description de la base de données dans ArkeoGIS.
-			// Les deux informations sont présentées séparées par un : #
-			"",
-
-			// Dublin Core:Source
-			// champs : Source de la base
-			// type : individuel
-			// Source de la base de donnée déclarée dans ArkeoGIS.
-			"",
-
-			// Dublin core:Coverage
-			// champs : Site Name # Main City Name # STARTING_PERIOD # ENDING_PERIOD # Debut Periode # Fin Periode
-			// type : concaténation 
-			// séparateur entre champs  : #
-			"",
-
-			// Dublin Core:Rights
-			// champs : Licence de la base
-			// type : individuel
-			// Licence de la base de données déclarée dans ArkeoGIS.
-			"",
-
-			// URI Site
-			// champs : url fiche base de données
-			// type : adresse url
-			// De la fiche base de données dans ArkeoGIS.
-			"",
-
-			// ID-site
-			// champs : ID unique du site dans ArkeoGIS
-			// type : individuel
-			"",
-
-			// source_id
-			// ID unique du site bdd origine : SITE_SOURCE_ID
-			// type : individuel
-			"",
-
-			code,
-			name,
-			city_name,
-			cgeonameid,
-			"4326",
-			slongitude,
-			slatitude,
-			saltitude,
-			scentroid,
-			knowledge_type,
-			soccupation,
-			startingPeriod,
-			endingPeriod,
-			scharac_name,
-			scharac_lvl1,
-			scharac_lvl2,
-			scharac_lvl3,
-			scharac_lvl4,
-			sexceptional,
-			bibliography,
-			comment,
 		}
- 
-		err := w.Write(line)
-		w.Flush()
-		if err != nil {
-			log.Println("database::ExportCSV : ", err.Error())
-		}
-		*/
+
 	}
  
 	return buff.String(), nil
