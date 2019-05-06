@@ -68,6 +68,7 @@ func prettyPrint(i interface{}) string {
 		Sites []MySite                          `json:"sites"`
 		Database_trs []model.Database_tr        `json:"database_trs"`
 		OwnerUser    model.User                 `json:"owneruser"`
+		Authors      []model.User               `json:"authors"`
 	}
 
 
@@ -176,9 +177,25 @@ func prettyPrint(i interface{}) string {
 		FROM (
 		  SELECT u.* FROM "user" "u" WHERE u.id = db.owner
 		) as items
-	  ) AS owneruser FROM "database" "db" WHERE db.id=284
+	  ) AS owneruser, 
+	  (
+		SELECT json_agg(items)
+		FROM (
+		  SELECT u.*
+		  FROM "user" "u"
+		  LEFT JOIN "database__authors" ON database__authors.user_id = u.id
+		  WHERE db.id = database__authors.database_id
+		) items
+	  ) AS authors, 
+	  (
+		SELECT json_agg(items)
+		FROM (
+		  SELECT dtr.*
+		  FROM "database_tr" "dtr" WHERE dtr.database_id = db.id
+		) items
+	  ) AS database_trs FROM "database" "db" WHERE db.id=284
 	) as items
-	`
+		`
 
 	fmt.Println("query: "+q)
 	rows2, err := tx.Query(q)
