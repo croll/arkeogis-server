@@ -32,7 +32,8 @@ import (
 	"sort"
 	"strings"
 	"time"
-
+	"reflect"
+	
 	config "github.com/croll/arkeogis-server/config"
 )
 
@@ -323,22 +324,28 @@ type Table_tr struct {
 	Lang_isocode string
 }
 
-func GetTranslatedFromTr(trs []Table_tr, wantedlang string) Table_tr {
+func getFieldString(e *Table_tr, field string) string {
+	r := reflect.ValueOf(e)
+	f := reflect.Indirect(r).FieldByName(field)
+	return f.String()
+}
+
+func GetTranslatedFromTr(trs []Table_tr, wantedlang string, fieldname string) string {
 	// search wanted
-	for tr, _ := range trs {
+	for _, tr := range trs {
 		if tr.Lang_isocode == wantedlang {
-			return tr
+			return getFieldString(&tr, fieldname)
 		}
 	}
 	// search english
-	for tr, _ := range trs {
+	for _, tr := range trs {
 		if tr.Lang_isocode == "en" {
-			return tr
+			return getFieldString(&tr, fieldname)
 		}
 	}
 	// return the first one
-	for tr, _ := range trs {
-		return tr
+	for _, tr := range trs {
+		return getFieldString(&tr, fieldname)
 	}
 	// no translation found
 	return ""
