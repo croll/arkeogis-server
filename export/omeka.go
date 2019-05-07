@@ -43,6 +43,17 @@ func prettyPrint(i interface{}) string {
 	return ""
 }
 
+func joinusers(objs []model.User) string {
+	var r=""
+	for i, obj := range objs {
+		if i > 0 {
+			r += "#"
+		}
+		r += obj.Firstname + " " + obj.Lastname
+	}
+	return r
+}
+
  // SitesAsOmeka exports database and sites as as csv file for omeka
  func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) (outp string, err error) {
 
@@ -266,7 +277,8 @@ func prettyPrint(i interface{}) string {
 				// Tous les auteurs de la base de données déclarés dans ArkeoGIS.
 				// Il peut donc être multiple
 				// séparateur entre les auteurs : #
-				database.OwnerUser.Firstname+" "+database.OwnerUser.Lastname,
+				//database.OwnerUser.Firstname+" "+database.OwnerUser.Lastname,
+				joinusers(database.Authors),
 	
 				// Dublin Core:Subject
 				// champs : CARAC_NAME, CARAC_LVL1, CARAC_LVL2, CARAC_LVL3, CARAC_LVL4
