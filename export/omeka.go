@@ -24,7 +24,7 @@ package export
 import (
 	"fmt"
 	"bytes"
-	//"database/sql"
+	"database/sql"
 	"encoding/csv"
 	"encoding/json"
 	"log"
@@ -54,8 +54,52 @@ func joinusers(objs []model.User) string {
 	return r
 }
 
- // SitesAsOmeka exports database and sites as as csv file for omeka
- func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) (outp string, err error) {
+func joinCharacs(cachedCharacs map[int]string, characIds []int) string {
+	var r=""
+	for i, characId := range characIds {
+		if i > 0 {
+			r += "#"
+		}
+		fmt.Println("charac i: "+strconv.Itoa(i)+", id: "+strconv.Itoa(characId)+", s: "+cachedCharacs[characId])
+		r += cachedCharacs[characId]
+	}
+	return r
+}
+
+func getCachedCharacs(isoCode string, separator string, tx *sqlx.Tx) map[int]string {
+	// Cache characs
+	characs := make(map[int]string)
+
+	q := "WITH RECURSIVE nodes_cte(id, path) AS (SELECT ca.id, cat.name::TEXT AS path FROM charac AS ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON cat.lang_isocode = lang.isocode WHERE lang.isocode = $1 AND ca.parent_id = 0 UNION ALL SELECT ca.id, (p.path || '"+separator+"' || cat.name) FROM nodes_cte AS p, charac AS ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON cat.lang_isocode = lang.isocode WHERE lang.isocode = $1 AND ca.parent_id = p.id) SELECT * FROM nodes_cte AS n ORDER BY n.id ASC"
+
+	rows, err := tx.Query(q, isoCode)
+	switch {
+	case err == sql.ErrNoRows:
+		rows.Close()
+		return nil
+	case err != nil:
+		rows.Close()
+		return nil
+	}
+	for rows.Next() {
+		var id int
+		var path string
+		if err = rows.Scan(&id, &path); err != nil {
+			return nil
+		}
+		characs[id] = path
+	}
+
+	return characs
+}
+
+
+// SitesAsOmeka exports database and sites as as csv file for omeka
+func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) (outp string, err error) {
+
+	var cachedCharacs = getCachedCharacs("fr", ",", tx)
+	fmt.Println("cachedCharaécs: ")
+	fmt.Println(cachedCharacs)
 
 	type MySiteRangeCharac struct {
 		model.Site_range__charac
@@ -246,10 +290,14 @@ func joinusers(objs []model.User) string {
 
 		for _, site := range database.Sites {
 
-			// count caracs
+			// count caracs and build caracs array
 			var caracsCount = 0
+			var caracsIds []int
 			for _, sr := range site.Site_ranges {
 				caracsCount += len(sr.SiteRangeCharacs)
+				for _, charac := range sr.SiteRangeCharacs {
+					caracsIds = append(caracsIds, charac.Charac_id)
+				}
 			}
 
 			var line []string
@@ -288,7 +336,7 @@ func joinusers(objs []model.User) string {
 				// La liste de toutes les caractérisations ayant le même SITE_SOURCE_ID
 				// Il peut donc être multiple, elles sont listées dans l'ordre de l'importation de la base source ArkeoGIS
 				// séparateur entre les caractérisations : #
-				"",
+				joinCharacs(cachedCharacs, caracsIds),
 	
 				// Dublin Core:Date
 				// champs : Date de réalisation
