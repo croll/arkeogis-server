@@ -33,7 +33,7 @@ import (
 	"strings"
 	"time"
 	"reflect"
-	
+
 	config "github.com/croll/arkeogis-server/config"
 )
 
@@ -320,33 +320,36 @@ func GetTranslated(src map[string]string, wantedlang string) string {
 	return ""
 }
 
-type Table_tr struct {
-	Lang_isocode string
-}
+// GetTranslatedFromTr return the translation of a []Table_tr object style
+func GetTranslatedFromTr(trs interface{}, wantedlang string, fieldname string) string {
+	items := reflect.ValueOf(trs)
+	if items.Kind() != reflect.Slice {
+		return "bug"
+	}
 
-func getFieldString(e *Table_tr, field string) string {
-	r := reflect.ValueOf(e)
-	f := reflect.Indirect(r).FieldByName(field)
-	return f.String()
-}
-
-func GetTranslatedFromTr(trs []Table_tr, wantedlang string, fieldname string) string {
 	// search wanted
-	for _, tr := range trs {
-		if tr.Lang_isocode == wantedlang {
-			return getFieldString(&tr, fieldname)
+	for i := 0; i < items.Len(); i++ {
+		item := items.Index(i)
+		isocode := item.FieldByName("Lang_isocode").String()
+		if isocode == wantedlang {
+			return item.FieldByName(fieldname).String()
 		}
 	}
+
 	// search english
-	for _, tr := range trs {
-		if tr.Lang_isocode == "en" {
-			return getFieldString(&tr, fieldname)
+	for i := 0; i < items.Len(); i++ {
+		item := items.Index(i)
+		isocode := item.FieldByName("Lang_isocode").String()
+		if isocode == "en" {
+			return item.FieldByName(fieldname).String()
 		}
 	}
-	// return the first one
-	for _, tr := range trs {
-		return getFieldString(&tr, fieldname)
-	}
-	// no translation found
+
+	// take first
+	for i := 0; i < items.Len(); i++ {
+		item := items.Index(i)
+		return item.FieldByName(fieldname).String()
+	}	
 	return ""
 }
+
