@@ -124,6 +124,7 @@ func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) 
 		Database_trs []model.Database_tr        `json:"database_trs"`
 		OwnerUser    model.User                 `json:"owneruser"`
 		Authors      []model.User               `json:"authors"`
+		Default_language_tr model.Lang_tr			`json:"default_language_tr"`
 	}
 
 
@@ -248,9 +249,14 @@ func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) 
 		  SELECT dtr.*
 		  FROM "database_tr" "dtr" WHERE dtr.database_id = db.id
 		) items
-	  ) AS database_trs FROM "database" "db" WHERE db.id=284
+	  ) AS database_trs, 
+	  ( SELECT row_to_json(items)
+		FROM (
+		  SELECT l.* FROM "lang_tr" "l" WHERE l.lang_isocode = db.Default_language AND l.lang_isocode_tr='fr'
+		) as items
+	  ) AS default_language_tr FROM "database" "db" WHERE db.id=284
 	) as items
-		`
+			`
 
 	fmt.Println("query: "+q)
 	rows2, err := tx.Query(q)
@@ -349,7 +355,7 @@ func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) 
 				// champs : Langue de la base de données
 				// type : individuel
 				// Langue de la base de données déclarée dans ArkeoGIS lors de l'importation.
-				"",
+				database.Default_language_tr.Name,
 	
 				// Dublin Core:Description
 				// "champs : COMMENTS
