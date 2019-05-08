@@ -343,7 +343,7 @@ func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) 
 				// type : extrait
 				// La date de réalisation de la base de données déclarés dans ArkeoGIS.
 				// A partir de la date compléte dans ArkeoGIS, uniquement l'année est exportée.
-				"",
+				database.Declared_creation_date.Format("2006"),
 	
 				// Dublin Core:Language
 				// champs : Langue de la base de données
