@@ -32,7 +32,7 @@ import (
 	"strconv"
 	//"strings"
  	model "github.com/croll/arkeogis-server/model"
-	//"github.com/croll/arkeogis-server/translate"
+	"github.com/croll/arkeogis-server/translate"
 	"github.com/jmoiron/sqlx"
 )
  
@@ -365,7 +365,7 @@ func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) 
 				// type : individuel
 				// Description de la base de données dans ArkeoGIS.
 				// Les deux informations sont présentées séparées par un : #
-				"",
+				translate.GetTranslatedFromTr(database.Database_trs, "fr", "Description"),
 	
 				// Dublin Core:Source
 				// champs : Source de la base
