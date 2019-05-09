@@ -347,13 +347,26 @@ func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) 
 
 		for _, site := range database.Sites {
 
-			// count caracs and build caracs array
+			// count caracs and build caracs array, and search chronos bounds
 			var caracsCount = 0
 			var caracsIds []int
+			leftPeriodStart := 2147483647;
+			leftPeriodEnd := 2147483647;
+			rightPeriodStart := -2147483648;
+			rightPeriodEnd := -2147483648;
+			
 			for _, sr := range site.Site_ranges {
 				caracsCount += len(sr.SiteRangeCharacs)
 				for _, charac := range sr.SiteRangeCharacs {
 					caracsIds = append(caracsIds, charac.Charac_id)
+				}
+				if sr.Start_date1 <= leftPeriodStart {
+					leftPeriodStart = sr.Start_date1
+					leftPeriodEnd = sr.End_date1
+				}
+				if sr.End_date2 >= rightPeriodEnd {
+					rightPeriodStart = sr.Start_date2
+					rightPeriodEnd = sr.End_date2
 				}
 			}
 
@@ -430,8 +443,10 @@ func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) 
 				// séparateur entre champs  : #
 				site.Name+
 					" # "+site.City_name+
-					" # "+humanYear(database.Start_date)+" : "+humanYear(database.End_date)+
-					" # "+getChronoName(&cachedChronology, database.Start_date, database.End_date),
+					" # "+getChronoName(&cachedChronology, leftPeriodStart, leftPeriodEnd)+
+					" # "+getChronoName(&cachedChronology, rightPeriodStart, rightPeriodEnd)+
+					" # "+humanYear(leftPeriodStart)+" : "+humanYear(leftPeriodEnd)+
+					" # "+humanYear(rightPeriodStart)+" : "+humanYear(rightPeriodEnd),
 	
 				// Dublin Core:Rights
 				// champs : Licence de la base
