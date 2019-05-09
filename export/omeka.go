@@ -30,12 +30,47 @@ import (
 	"log"
 	//"math"
 	"strconv"
-	//"strings"
+	"strings"
  	model "github.com/croll/arkeogis-server/model"
 	"github.com/croll/arkeogis-server/translate"
 	"github.com/jmoiron/sqlx"
+	"bufio"
 )
- 
+
+type MyUser struct {
+	model.User
+	Companies []model.Company `json:"companies"`
+}
+
+type MySiteRangeCharac struct {
+	model.Site_range__charac
+	Charac model.Charac               `json:"charac"`
+	Charac_trs []model.Charac_tr		  `json:"charac_trs"`
+	Site_range__charac_trs []model.Site_range__charac_tr `json:"srcharactrs"`
+}
+
+type MySite_range struct {
+	model.Site_range
+	SiteRangeCharacs []MySiteRangeCharac              `json:"site_range__characs"`
+}
+
+type MySite struct {
+	model.Site
+	Site_ranges []MySite_range              `json:"site_ranges"`
+	Site_trs []model.Site_tr                `json:"site_trs"`
+}
+
+type MyDatabase struct {
+	model.Database
+	Sites []MySite                          `json:"sites"`
+	Database_trs []model.Database_tr        `json:"database_trs"`
+	OwnerUser    model.User                 `json:"owneruser"`
+	Authors      []MyUser               	`json:"authors"`
+	Default_language_tr model.Lang_tr			`json:"default_language_tr"`
+	License		model.License				`json:"license"`
+}
+
+
 func prettyPrint(i interface{}) string {
     s, _ := json.MarshalIndent(i, "", "\t")
 	//return string(s)
@@ -43,22 +78,44 @@ func prettyPrint(i interface{}) string {
 	return ""
 }
 
-func joinusers(objs []model.User) string {
+func joinusers(objs []MyUser) string {
 	var r=""
 	for i, obj := range objs {
 		if i > 0 {
-			r += "#"
+			r += " # "
 		}
 		r += obj.Firstname + " " + obj.Lastname
 	}
 	return r
 }
 
+func joinuserscompanies(users []MyUser) string {
+	var r=""
+	for _, u := range users {
+		for _, c := range u.Companies {
+			if r != "" {
+				r += " # "
+			}
+			r += c.Name
+		}
+	}
+	return r
+}
+
+func getFirstLine(x string) string {
+	scanner := bufio.NewScanner(strings.NewReader(x))
+	for scanner.Scan() {
+		return scanner.Text()
+	}
+	return ""
+}
+
+
 func joinCharacs(cachedCharacs *map[int]string, characIds []int) string {
 	var r=""
 	for i, characId := range characIds {
 		if i > 0 {
-			r += "#"
+			r += " # "
 		}
 		fmt.Println("charac i: "+strconv.Itoa(i)+", id: "+strconv.Itoa(characId)+", s: "+(*cachedCharacs)[characId])
 		r += (*cachedCharacs)[characId]
@@ -152,34 +209,6 @@ func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) 
 	var cachedCharacs = getCachedCharacs("fr", ",", tx)
 	var cachedChronology = getCachedChronology(37, "fr", ",", tx)
 
-	type MySiteRangeCharac struct {
-		model.Site_range__charac
-		Charac model.Charac               `json:"charac"`
-		Charac_trs []model.Charac_tr		  `json:"charac_trs"`
-	}
-
-	type MySite_range struct {
-		model.Site_range
-		SiteRangeCharacs []MySiteRangeCharac              `json:"site_range__characs"`
-	}
-
-	type MySite struct {
-		model.Site
-		Site_ranges []MySite_range              `json:"site_ranges"`
-		Site_trs []model.Site_tr                `json:"site_trs"`
-	}
- 
-	type MyDatabase struct {
-		model.Database
-		Sites []MySite                          `json:"sites"`
-		Database_trs []model.Database_tr        `json:"database_trs"`
-		OwnerUser    model.User                 `json:"owneruser"`
-		Authors      []model.User               `json:"authors"`
-		Default_language_tr model.Lang_tr			`json:"default_language_tr"`
-		License		model.License				`json:"license"`
-	}
-
-
 	 var buff bytes.Buffer
  
 	 w := csv.NewWriter(&buff)
@@ -264,7 +293,14 @@ func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) 
 				SELECT ctr.*
 				FROM "charac_tr" "ctr" WHERE ctr.charac_id = src.charac_id
 			  ) items
-			) AS charac_trs
+			) AS charac_trs, 
+			(
+			  SELECT json_agg(items)
+			  FROM (
+				SELECT srcharactr.*
+				FROM "site_range__charac_tr" "srcharactr" WHERE srcharactr.site_range__charac_id = src.Id
+			  ) items
+			) AS srcharactrs
 			  FROM "site_range__charac" "src" WHERE src.site_range_id = sr.id
 			) items
 		  ) AS site_range__characs
@@ -289,7 +325,16 @@ func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) 
 	  (
 		SELECT json_agg(items)
 		FROM (
-		  SELECT u.*
+		  SELECT u.*, 
+		(
+		  SELECT json_agg(items)
+		  FROM (
+			SELECT comp.*
+			FROM "company" "comp"
+			LEFT JOIN "user__company" ON user__company.company_id = comp.id
+			WHERE u.id = user__company.user_id
+		  ) items
+		) AS companies
 		  FROM "user" "u"
 		  LEFT JOIN "database__authors" ON database__authors.user_id = u.id
 		  WHERE db.id = database__authors.database_id
@@ -360,11 +405,15 @@ func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) 
 			leftPeriodEnd := 2147483647;
 			rightPeriodStart := -2147483648;
 			rightPeriodEnd := -2147483648;
+			firstSiteRangeCharacComment := ""
 			
-			for _, sr := range site.Site_ranges {
+			for i, sr := range site.Site_ranges {
 				caracsCount += len(sr.SiteRangeCharacs)
-				for _, charac := range sr.SiteRangeCharacs {
+				for j, charac := range sr.SiteRangeCharacs {
 					caracsIds = append(caracsIds, charac.Charac_id)
+					if i == 0 && j == 0 {
+						firstSiteRangeCharacComment = translate.GetTranslatedFromTr(charac.Site_range__charac_trs, "fr", "Comment")
+					}
 				}
 				if sr.Start_date1 <= leftPeriodStart {
 					leftPeriodStart = sr.Start_date1
@@ -392,7 +441,7 @@ func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) 
 				// champs : SITE_NAME, MAIN_CITY_NAME
 				// type : concaténation 
 				// séparateur entre champs  : ,
-				site.Name+","+site.City_name,
+				site.Name+", "+site.City_name,
 	
 				// Dublin Core:Creator
 				// champs : Prénom Nom
@@ -464,17 +513,113 @@ func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) 
 				// champs : url fiche base de données
 				// type : adresse url
 				// De la fiche base de données dans ArkeoGIS.
-				"",
+				"https://app.arkeogis.org/#/database/"+strconv.Itoa(database.Id),
 	
 				// ID-site
 				// champs : ID unique du site dans ArkeoGIS
 				// type : individuel
-				"",
+				strconv.Itoa(site.Id)+"_s",
 	
 				// source_id
 				// ID unique du site bdd origine : SITE_SOURCE_ID
 				// type : individuel
-				"",
+				strconv.Itoa(site.Id),
+
+				// Titre Site
+				// champs : SITE_NAME, MAIN_CITY_NAME
+				// type : concaténation 
+				// séparateur entre champs  : ,
+				site.Name+","+site.City_name,
+
+				// Auteur Base
+				// champs : Prénom Nom
+				//
+				// type : concaténation 
+				// séparateur entre champs  : rien
+				//
+				// Tous les auteurs de la base de données déclarés dans ArkeoGIS.
+				//
+				// Il peut donc être multiple
+				// séparateur entre les auteurs : #
+				joinusers(database.Authors),
+
+				// Structure Editrice Base
+				// champs : ""Structure éditrice'
+				//
+				// type : individuel
+				//
+				// De la base de données du site déclarée dans ArkeoGIS.
+				database.Editor,
+
+				// Sujet Base
+				// champs ""Sujet(s) / Mots-clés'
+				//
+				// type : individuel
+				//
+				// De la base de données du site déclarée dans ArkeoGIS.
+				translate.GetTranslatedFromTr(database.Database_trs, "fr", "Subject"),
+
+
+				// Date Realisation Base
+				// champs : Date de réalisation
+				//
+				// type : extrait
+				//
+				// La date de réalisation de la base de données déclarés dans ArkeoGIS.
+				//
+				// A partir de la date compléte dans ArkeoGIS, uniquement l'année est exportée.
+				database.Declared_creation_date.Format("2006"),
+
+				// Langue Base
+				// champs : Langue de la base de données
+				//
+				// type : individuel
+				//
+				// Langue de la base de données déclarée dans ArkeoGIS lors de l'importation.
+				database.Default_language_tr.Name,
+
+				// Description site et base
+				//
+				// champs : COMMENTS
+				//
+				// type : extrait 
+				// Uniquement celui de la ligne 1 du site si plusieurs lignes ayant le même SITE_SOURCE_ID
+				//
+				// champs : Description
+				//
+				// type : individuel
+				// Description de la base de données dans ArkeoGIS.
+				//
+				// Les deux informations sont présentées concaténées séparées par un : #
+				firstSiteRangeCharacComment + " # " + translate.GetTranslatedFromTr(database.Database_trs, "fr", "Description"),
+
+				// Source Base
+				// champs : Source de la base
+				//
+				// type : individuel
+				// Source de la base de données déclarée dans ArkeoGIS.
+
+				// Nom Site
+				// Nom Commune
+				// Sujets
+				// Bibliographie Site
+				// Bibliographie Base
+				// Commentaires
+				// Licence Base
+				// Periode Debut
+				// Debut Periode
+				// Periode Fin
+				// Fin Periode
+				// Occupation
+				// Etat Connaissances
+				// Altitude
+				// Latitude
+				// Longitude
+				// geolocation:latitude
+				// geolocation:longitude
+				// geolocation:zoom_level
+				// geolocation:map_type
+				// geolocation:address
 	
 			}
 	 
