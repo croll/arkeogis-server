@@ -598,12 +598,23 @@ func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) 
 				//
 				// type : individuel
 				// Source de la base de données déclarée dans ArkeoGIS.
+				"", //-TODO: not sure
 
 				// Nom Site
+				site.Name,
+
 				// Nom Commune
+				site.City_name,
+
 				// Sujets
+				joinCharacs(&cachedCharacs, caracsIds),
+
 				// Bibliographie Site
+				"",
+
 				// Bibliographie Base
+				translate.GetTranslatedFromTr(database.Database_trs, "fr", "Bibliography"),
+
 				// Commentaires
 				// Licence Base
 				// Periode Debut
