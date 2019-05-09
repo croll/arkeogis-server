@@ -371,7 +371,7 @@ func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) 
 				// champs : Source de la base
 				// type : individuel
 				// Source de la base de donnée déclarée dans ArkeoGIS.
-				"",
+				translate.GetTranslatedFromTr(database.Database_trs, "fr", "Source_relation"),
 	
 				// Dublin core:Coverage
 				// champs : Site Name # Main City Name # STARTING_PERIOD # ENDING_PERIOD # Debut Periode # Fin Periode
