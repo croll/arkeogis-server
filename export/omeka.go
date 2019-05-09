@@ -54,20 +54,19 @@ func joinusers(objs []model.User) string {
 	return r
 }
 
-func joinCharacs(cachedCharacs map[int]string, characIds []int) string {
+func joinCharacs(cachedCharacs *map[int]string, characIds []int) string {
 	var r=""
 	for i, characId := range characIds {
 		if i > 0 {
 			r += "#"
 		}
-		fmt.Println("charac i: "+strconv.Itoa(i)+", id: "+strconv.Itoa(characId)+", s: "+cachedCharacs[characId])
-		r += cachedCharacs[characId]
+		fmt.Println("charac i: "+strconv.Itoa(i)+", id: "+strconv.Itoa(characId)+", s: "+(*cachedCharacs)[characId])
+		r += (*cachedCharacs)[characId]
 	}
 	return r
 }
 
 func getCachedCharacs(isoCode string, separator string, tx *sqlx.Tx) map[int]string {
-	// Cache characs
 	characs := make(map[int]string)
 
 	q := "WITH RECURSIVE nodes_cte(id, path) AS (SELECT ca.id, cat.name::TEXT AS path FROM charac AS ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON cat.lang_isocode = lang.isocode WHERE lang.isocode = $1 AND ca.parent_id = 0 UNION ALL SELECT ca.id, (p.path || '"+separator+"' || cat.name) FROM nodes_cte AS p, charac AS ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON cat.lang_isocode = lang.isocode WHERE lang.isocode = $1 AND ca.parent_id = p.id) SELECT * FROM nodes_cte AS n ORDER BY n.id ASC"
@@ -93,6 +92,49 @@ func getCachedCharacs(isoCode string, separator string, tx *sqlx.Tx) map[int]str
 	return characs
 }
 
+type Chronocached struct {
+	Id int
+	ParentId int
+	Name string
+	Path string
+	Start_date int
+	End_date int
+}
+
+func getCachedChronology(chronoRootId int, isoCode string, separator string, tx *sqlx.Tx) map[int]Chronocached {
+	chronology := make(map[int]Chronocached)
+
+	q := "WITH RECURSIVE nodes_cte(parent_id, id, name, path, start_date, end_date) AS (SELECT c.parent_id, c.id, ctr.name, ctr.name::TEXT AS path, c.start_date, c.end_date FROM chronology AS c LEFT JOIN chronology_tr ctr ON c.id = ctr.chronology_id LEFT JOIN lang ON ctr.lang_isocode = lang.isocode WHERE lang.isocode = $1 AND c.parent_id = $2 UNION ALL SELECT c.parent_id, c.id, ctr.name, (p.path || '"+separator+"' || ctr.name), c.start_date, c.end_date FROM nodes_cte AS p, chronology AS c LEFT JOIN chronology_tr ctr ON c.id = ctr.chronology_id LEFT JOIN lang ON ctr.lang_isocode = lang.isocode WHERE lang.isocode = $1 AND c.parent_id = p.id) SELECT * FROM nodes_cte AS n ORDER BY n.id ASC"
+
+	rows, err := tx.Query(q, isoCode, chronoRootId)
+	switch {
+	case err == sql.ErrNoRows:
+		rows.Close()
+		return nil
+	case err != nil:
+		rows.Close()
+		return nil
+	}
+	for rows.Next() {
+		c := Chronocached{}
+		if err = rows.Scan(&c.ParentId, &c.Id, &c.Name, &c.Path, &c.Start_date, &c.End_date); err != nil {
+			return nil
+		}
+		chronology[c.Id] = c
+	}
+
+	return chronology
+}
+
+func getChronoName(chronocached *map[int]Chronocached, startDate int, endDate int) string {
+	for _, c := range *chronocached {
+		if c.Start_date == startDate && c.End_date == endDate {
+			return c.Name
+		}
+	}
+	return humanYear(startDate)+" : "+humanYear(endDate)
+}
+
 func humanYear(year int) string {
 	if year == -2147483648 || year == 2147483647 {
 		return "indeterminé"
@@ -108,8 +150,7 @@ func humanYear(year int) string {
 func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) (outp string, err error) {
 
 	var cachedCharacs = getCachedCharacs("fr", ",", tx)
-	fmt.Println("cachedCharaécs: ")
-	fmt.Println(cachedCharacs)
+	var cachedChronology = getCachedChronology(37, "fr", ",", tx)
 
 	type MySiteRangeCharac struct {
 		model.Site_range__charac
@@ -352,7 +393,7 @@ func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) 
 				// La liste de toutes les caractérisations ayant le même SITE_SOURCE_ID
 				// Il peut donc être multiple, elles sont listées dans l'ordre de l'importation de la base source ArkeoGIS
 				// séparateur entre les caractérisations : #
-				joinCharacs(cachedCharacs, caracsIds),
+				joinCharacs(&cachedCharacs, caracsIds),
 	
 				// Dublin Core:Date
 				// champs : Date de réalisation
@@ -387,7 +428,10 @@ func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) 
 				// champs : Site Name # Main City Name # STARTING_PERIOD # ENDING_PERIOD # Debut Periode # Fin Periode
 				// type : concaténation 
 				// séparateur entre champs  : #
-				site.Name+" # "+site.City_name+" # "+humanYear(database.Start_date)+" # "+humanYear(database.End_date),
+				site.Name+
+					" # "+site.City_name+
+					" # "+humanYear(database.Start_date)+" : "+humanYear(database.End_date)+
+					" # "+getChronoName(&cachedChronology, database.Start_date, database.End_date),
 	
 				// Dublin Core:Rights
 				// champs : Licence de la base
