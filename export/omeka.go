@@ -93,6 +93,16 @@ func getCachedCharacs(isoCode string, separator string, tx *sqlx.Tx) map[int]str
 	return characs
 }
 
+func humanYear(year int) string {
+	if year == -2147483648 || year == 2147483647 {
+		return "indeterminé"
+	}
+	if year <= 0 {
+		return strconv.Itoa(year - 1)
+	}
+	return strconv.Itoa(year)
+}
+
 
 // SitesAsOmeka exports database and sites as as csv file for omeka
 func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) (outp string, err error) {
@@ -377,7 +387,7 @@ func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) 
 				// champs : Site Name # Main City Name # STARTING_PERIOD # ENDING_PERIOD # Debut Periode # Fin Periode
 				// type : concaténation 
 				// séparateur entre champs  : #
-				"",
+				site.Name+" # "+site.City_name+" # "+humanYear(database.Start_date)+" # "+humanYear(database.End_date),
 	
 				// Dublin Core:Rights
 				// champs : Licence de la base
