@@ -662,14 +662,56 @@ func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) 
 				firstSiteRangeCharacBibliography,
 
 				// Bibliographie Base
+				// champs :  Bibliographie
+				// type : individuel
+				// Bibliographiede la base de données déclarés dans ArkeoGIS.
 				translate.GetTranslatedFromTr(database.Database_trs, "fr", "Bibliography"),
 
 				// Commentaires
+				// "hamps : COMMENTS
+				//
+				// type : extrait 
+				// celui de la ligne 1 du site si plusieurs lignes ayant le même SITE_SOURCE_ID
+				//
+				// Question on garde vraiment celle colonne cf ca fait bis avec la nouvelle colonne description ?
+				firstSiteRangeCharacComment,
+
 				// Licence Base
+				// champs : Licence de la base
+				//
+				// type : individuel
+				// Licence de la base de données déclarée dans ArkeoGIS.
+				database.License.Name,
+
 				// Periode Debut
+				// champs : STARTING_PERIOD
+				//
+				// type : extrait
+				// Les bornes la plus anciennes des périodes des carac du site (cf fiche site AKG)
+				humanYear(leftPeriodStart)+" : "+humanYear(leftPeriodEnd),
+
 				// Debut Periode
+				// Champs : chronologie
+				//
+				// type : équivalence
+				// Equivalent de la période dans la chronologie choisie par l'utilisateur. 
+				// Si pas d'equivalent reprise des bornes de la date ou du terme indéterminé indiqué par l'auteur.
+				getChronoName(&cachedChronology, leftPeriodStart, leftPeriodEnd),
+
 				// Periode Fin
+				// champs : ENDING_PERIOD
+				//
+				// type : extrait
+				// Les bornes les plus récentes des périodes des caract du site (cf fiche site AKG).
+				humanYear(rightPeriodStart)+" : "+humanYear(rightPeriodEnd),
+
 				// Fin Periode
+				// Champs : chronologie
+				// type :équivalence
+				// Equivalent de la période dans la chronologie choisie par l'utilisateur. 
+				// Si pas d'equivalent reprise des bornes de la date ou du terme indéterminé indiqué par l'auteur.
+				getChronoName(&cachedChronology, rightPeriodStart, rightPeriodEnd),
+
 				// Occupation
 				// Etat Connaissances
 				// Altitude
