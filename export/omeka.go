@@ -436,6 +436,7 @@ func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) 
 			rightPeriodEnd := -2147483648;
 			firstSiteRangeCharacComment := ""
 			firstSiteRangeCharacBibliography := ""
+			firstSiteRangeCharacKnowledgetype := ""
 			
 			for i, sr := range site.Site_ranges {
 				caracsCount += len(sr.SiteRangeCharacs)
@@ -444,6 +445,7 @@ func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) 
 					if i == 0 && j == 0 {
 						firstSiteRangeCharacComment = translate.GetTranslatedFromTr(charac.Site_range__charac_trs, "fr", "Comment")
 						firstSiteRangeCharacBibliography = translate.GetTranslatedFromTr(charac.Site_range__charac_trs, "fr", "Bibliography")
+						firstSiteRangeCharacKnowledgetype = charac.Knowledge_type
 					}
 				}
 				if sr.Start_date1 <= leftPeriodStart {
@@ -713,8 +715,25 @@ func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) 
 				getChronoName(&cachedChronology, rightPeriodStart, rightPeriodEnd),
 
 				// Occupation
+				// champs : OCCUPATION
+				//
+				// type : extrait 
+				// Celui de la ligne 1 du site si plusieurs lignes ayant le même SITE_SOURCE_ID
+				translate.T("fr", "IMPORT.CSVFIELD_OCCUPATION.T_LABEL_"+strings.ToUpper(site.Occupation)),
+
 				// Etat Connaissances
+				// champs : STATE_OF_KNOWLEDGE
+				//
+				// type : extrait 
+				// Celui de la ligne 1 du site si plusieurs lignes ayant le même SITE_SOURCE_ID
+				translate.T(isoCode, "IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_"+strings.ToUpper(firstSiteRangeCharacKnowledgetype)),
+
 				// Altitude
+				// champs : ALTITUDE
+				//
+				// type : individuel
+				// note : ne pas remplacer par 0 si absent.
+
 				// Latitude
 				// Longitude
 				// geolocation:latitude
