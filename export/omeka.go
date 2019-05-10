@@ -406,6 +406,7 @@ func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) 
 			rightPeriodStart := -2147483648;
 			rightPeriodEnd := -2147483648;
 			firstSiteRangeCharacComment := ""
+			firstSiteRangeCharacBibliography := ""
 			
 			for i, sr := range site.Site_ranges {
 				caracsCount += len(sr.SiteRangeCharacs)
@@ -413,6 +414,7 @@ func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) 
 					caracsIds = append(caracsIds, charac.Charac_id)
 					if i == 0 && j == 0 {
 						firstSiteRangeCharacComment = translate.GetTranslatedFromTr(charac.Site_range__charac_trs, "fr", "Comment")
+						firstSiteRangeCharacBibliography = translate.GetTranslatedFromTr(charac.Site_range__charac_trs, "fr", "Bibliography")
 					}
 				}
 				if sr.Start_date1 <= leftPeriodStart {
@@ -601,16 +603,34 @@ func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) 
 				"", //-TODO: not sure
 
 				// Nom Site
+				// champs : SITE_NAME
+				// type : individuel
 				site.Name,
 
 				// Nom Commune
+				// champs : MAIN_CITY_NAME
+				// type : individuel
 				site.City_name,
 
 				// Sujets
+				// champs : CARAC_NAME, CARAC_LVL1, CARAC_LVL2, CARAC_LVL3, CARAC_LVL4
+				//
+				// type : concaténation 
+				// séparateur visuel entre champs  : ,
+				// séparateur informatique à la fin du dernier champs non vide : #
+				//
+				// La liste de toutes les caractérisations ayant le même SITE_SOURCE_ID
+				//
+				// Il peut donc être multiple, elles sont listées dans l'ordre de l'importation de la base source ArkeoGIS
+				// séparateur entre les caractérisations : #
 				joinCharacs(&cachedCharacs, caracsIds),
 
 				// Bibliographie Site
-				"",
+				// champs : BIBLIOGRAPHY
+				//
+				// type : extrait 
+				// Celui de la ligne 1 du site si plusieurs lignes ayant le même SITE_SOURCE_ID
+				firstSiteRangeCharacBibliography,
 
 				// Bibliographie Base
 				translate.GetTranslatedFromTr(database.Database_trs, "fr", "Bibliography"),
