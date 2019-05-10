@@ -284,42 +284,59 @@ func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) 
 			  SELECT src.*, 
 			( SELECT row_to_json(items)
 			  FROM (
-				SELECT c.* FROM "charac" "c" WHERE c.id = src.charac_id
+				SELECT c.*
+				FROM "charac" "c"
+				WHERE c.id = src.charac_id
+				ORDER BY c.id
 			  ) as items
 			) AS charac, 
 			(
 			  SELECT json_agg(items)
 			  FROM (
 				SELECT ctr.*
-				FROM "charac_tr" "ctr" WHERE ctr.charac_id = src.charac_id
+				FROM "charac_tr" "ctr"
+				WHERE ctr.charac_id = src.charac_id
+				ORDER BY ctr.charac_id
 			  ) items
 			) AS charac_trs, 
 			(
 			  SELECT json_agg(items)
 			  FROM (
 				SELECT srcharactr.*
-				FROM "site_range__charac_tr" "srcharactr" WHERE srcharactr.site_range__charac_id = src.Id
+				FROM "site_range__charac_tr" "srcharactr"
+				WHERE srcharactr.site_range__charac_id = src.Id
+				ORDER BY srcharactr.site_range__charac_id
 			  ) items
 			) AS srcharactrs
-			  FROM "site_range__charac" "src" WHERE src.site_range_id = sr.id
+			  FROM "site_range__charac" "src"
+			  WHERE src.site_range_id = sr.id
+			  ORDER BY src.id
 			) items
 		  ) AS site_range__characs
-			FROM "site_range" "sr" WHERE sr.site_id = s.id
+			FROM "site_range" "sr"
+			WHERE sr.site_id = s.id
+			ORDER BY sr.id
 		  ) items
 		) AS site_ranges
-		  FROM "site" "s" WHERE s.database_id = db.id
+		  FROM "site" "s"
+		  WHERE s.database_id = db.id
+		  ORDER BY s.id
 		) items
 	  ) AS sites, 
 	  (
 		SELECT json_agg(items)
 		FROM (
 		  SELECT dtr.*
-		  FROM "database_tr" "dtr" WHERE dtr.database_id = db.id
+		  FROM "database_tr" "dtr"
+		  WHERE dtr.database_id = db.id
 		) items
 	  ) AS database_trs, 
 	  ( SELECT row_to_json(items)
 		FROM (
-		  SELECT u.* FROM "user" "u" WHERE u.id = db.owner
+		  SELECT u.*
+		  FROM "user" "u"
+		  WHERE u.id = db.owner
+		  ORDER BY u.id
 		) as items
 	  ) AS owneruser, 
 	  (
@@ -331,32 +348,44 @@ func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) 
 		  FROM (
 			SELECT comp.*
 			FROM "company" "comp"
-			LEFT JOIN "user__company" ON user__company.company_id = comp.id
+			LEFT JOIN "user__company"
+			ON user__company.company_id = comp.id
 			WHERE u.id = user__company.user_id
+			ORDER BY comp.id
 		  ) items
 		) AS companies
 		  FROM "user" "u"
-		  LEFT JOIN "database__authors" ON database__authors.user_id = u.id
+		  LEFT JOIN "database__authors"
+		  ON database__authors.user_id = u.id
 		  WHERE db.id = database__authors.database_id
+		  ORDER BY u.id
 		) items
 	  ) AS authors, 
 	  (
 		SELECT json_agg(items)
 		FROM (
 		  SELECT dtr.*
-		  FROM "database_tr" "dtr" WHERE dtr.database_id = db.id
+		  FROM "database_tr" "dtr"
+		  WHERE dtr.database_id = db.id
 		) items
 	  ) AS database_trs, 
 	  ( SELECT row_to_json(items)
 		FROM (
-		  SELECT l.* FROM "lang_tr" "l" WHERE l.lang_isocode = db.Default_language AND l.lang_isocode_tr='fr'
+		  SELECT l.*
+		  FROM "lang_tr" "l"
+		  WHERE l.lang_isocode = db.Default_language AND l.lang_isocode_tr='fr'
 		) as items
 	  ) AS default_language_tr, 
 	  ( SELECT row_to_json(items)
 		FROM (
-		  SELECT license.* FROM "license" "license" WHERE license.id = db.license_id
+		  SELECT license.*
+		  FROM "license" "license"
+		  WHERE license.id = db.license_id
 		) as items
-	  ) AS license FROM "database" "db" WHERE db.id=284
+	  ) AS license
+	  FROM "database" "db"
+	  WHERE db.id=284
+	  ORDER BY db.id
 	) as items
 	`
 
