@@ -58,6 +58,12 @@ type MySite struct {
 	model.Site
 	Site_ranges []MySite_range              `json:"site_ranges"`
 	Site_trs []model.Site_tr                `json:"site_trs"`
+	St_latitude    float64					`json:"st_latitude"`
+	St_latitude3d  float64					`json:"st_latitude3d"`
+	St_longitude   float64					`json:"st_longitude"`
+	St_longitude3d float64					`json:"st_longitude3d"`
+	St_altitude    float64					`json:"st_altitude"`
+	St_altitude3d  float64					`json:"st_altitude3d"`
 }
 
 type MyDatabase struct {
@@ -273,7 +279,7 @@ func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) 
 	  (
 		SELECT json_agg(items)
 		FROM (
-		  SELECT s.*, 
+		  SELECT s.*, ST_X(s.geom::geometry) as st_longitude, ST_Y(s.geom::geometry) as st_latitude, ST_X(s.geom_3d::geometry) as st_longitude3d, ST_Y(s.geom_3d::geometry) as st_latitude3d, ST_Z(s.geom_3d::geometry) as st_altitude3d, 
 		(
 		  SELECT json_agg(items)
 		  FROM (
@@ -458,6 +464,27 @@ func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) 
 				}
 			}
 
+			// Longitude
+			slongitude := strconv.FormatFloat(site.St_longitude, 'f', -1, 32)
+			// Latitude
+			slatitude := strconv.FormatFloat(site.St_latitude, 'f', -1, 32)
+			// Altitude
+			var saltitude string
+			if site.St_longitude3d == 0 && site.St_latitude3d == 0 && site.St_altitude3d == 0 {
+				saltitude = ""
+			} else {
+				saltitude = strconv.FormatFloat(site.St_altitude3d, 'f', -1, 32)
+			}
+			/*
+			// Centroid
+			var scentroid = ""
+			if site.Centroid {
+				scentroid = translate.T(isoCode, "IMPORT.CSVFIELD_ALL.T_LABEL_YES")
+			} else {
+				scentroid = translate.T(isoCode, "IMPORT.CSVFIELD_ALL.T_LABEL_NO")
+			}
+			*/
+			
 			var line []string
  
 			line = []string{
@@ -733,15 +760,45 @@ func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) 
 				//
 				// type : individuel
 				// note : ne pas remplacer par 0 si absent.
+				saltitude,
 
 				// Latitude
+				// "champs : LATITUDE
+				//
+				// type : individuel
+				// note : export WGS84
+				slatitude,
+
 				// Longitude
+				// champs : LONGITUDE
+				//
+				// type : individuel
+				// note : export WGS84
+				slongitude,
+
 				// geolocation:latitude
+				// champs : LATITUDE
+				//
+				// type : individuel
+				// note : export WGS84
+				slatitude,
+
 				// geolocation:longitude
+				// champs : LONGITUDE
+				// type : individuel
+				// note : export WGS84
+				slongitude,
+
 				// geolocation:zoom_level
+				"7",
+
 				// geolocation:map_type
+				// ne rien mettre. Créer ce champ vide
+				"",
+
 				// geolocation:address
-	
+				//à créer mais laisser vide cf geolocation	
+				"",
 			}
 	 
 			err := w.Write(line)
