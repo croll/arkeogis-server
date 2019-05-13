@@ -219,57 +219,94 @@ func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) 
 	var cachedCharacs = getCachedCharacs("fr", ",", tx)
 	var cachedChronology = getCachedChronology(37, "fr", ",", tx)
 
-	 var buff bytes.Buffer
+	var buff bytes.Buffer
  
-	 w := csv.NewWriter(&buff)
-	 w.Comma = ';'
-	 w.UseCRLF = true
+	w := csv.NewWriter(&buff)
+	w.Comma = ';'
+	w.UseCRLF = true
  
-	 err = w.Write([]string{
-		"Type Données",
-		"Nombre Caracterisations",
-		"Dublin Core:Title",
-		"Dublin Core:Creator",
-		"Dublin Core:Subject",
-		"Dublin Core:Date",
-		"Dublin Core:Language",
-		"Dublin Core:Description",
-		"Dublin Core:Source",
-		"Dublin core:Coverage",
-		"Dublin Core:Rights",
-		"URI Site",
-		"ID-site",
-		"source_id",
-		"Titre Site",
-		"Auteur Base",
-		"Structure Editrice Base",
-		"Sujet Base",
-		"Date Realisation Base",
-		"Langue Base",
-		"Description site et base",
-		"Source Base",
-		"Nom Site",
-		"Nom Commune",
-		"Sujets",
-		"Bibliographie Site",
-		"Bibliographie Base",
-		"Commentaires",
-		"Licence Base",
-		"Periode Debut",
-		"Debut Periode",
-		"Periode Fin",
-		"Fin Periode",
-		"Occupation",
-		"Etat Connaissances",
-		"Altitude",
-		"Latitude",
-		"Longitude",
-		"geolocation:latitude",
-		"geolocation:longitude",
-		"geolocation:zoom_level",
-		"geolocation:map_type",
-		"geolocation:address",
-	})
+	if exportOf == "sites" {
+		err = w.Write([]string{
+			"Type Données",
+			"Nombre Caracterisations",
+			"Dublin Core:Title",
+			"Dublin Core:Creator",
+			"Dublin Core:Subject",
+			"Dublin Core:Date",
+			"Dublin Core:Language",
+			"Dublin Core:Description",
+			"Dublin Core:Source",
+			"Dublin core:Coverage",
+			"Dublin Core:Rights",
+			"URI Site",
+			"ID-site",
+			"source_id",
+			"Titre Site",
+			"Auteur Base",
+			"Structure Editrice Base",
+			"Sujet Base",
+			"Date Realisation Base",
+			"Langue Base",
+			"Description site et base",
+			"Source Base",
+			"Nom Site",
+			"Nom Commune",
+			"Sujets",
+			"Bibliographie Site",
+			"Bibliographie Base",
+			"Commentaires",
+			"Licence Base",
+			"Periode Debut",
+			"Debut Periode",
+			"Periode Fin",
+			"Fin Periode",
+			"Occupation",
+			"Etat Connaissances",
+			"Altitude",
+			"Latitude",
+			"Longitude",
+			"geolocation:latitude",
+			"geolocation:longitude",
+			"geolocation:zoom_level",
+			"geolocation:map_type",
+			"geolocation:address",
+		})	
+	}
+
+	if exportOf == "Characs" {
+		err = w.Write([]string{
+			"Type Données",
+			"Dublin Core:Title",
+			"Dublin Core:Creator",
+			"Dublin core:Subject",
+			"Dublin Core:Description",
+			"Dublin Core:Rights",
+			"ID-site",
+			"ID-caracterisation",
+			"Titre Caracterisations",
+			"Bibliographie Caractérisation",
+			"Commentaires",
+			"Licence Caracterisation",
+			"Etat Connaissances",
+			"Periode Debut",
+			"Debut Periode",
+			"Periode Fin",
+			"Fin Periode",
+			"Nom Caracterisation",
+			"Caracterisation niveau 1",
+			"Caracterisation niveau 2",
+			"Caracterisation niveau 3",
+			"Caracterisation niveau 4",
+			"Altitude",
+			"Latitude",
+			"Longitude",
+			"geolocation:latitude",
+			"geolocation:longitude",
+			"geolocation:zoom_level",
+			"geolocation:map_type",
+			"geolocation:address",
+		})
+	}
 
 	if err != nil {
 		log.Println("database::ExportCSV : ", err.Error())
