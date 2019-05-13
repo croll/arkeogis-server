@@ -696,10 +696,10 @@ func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) 
 					firstSiteRangeCharacComment + " # " + translate.GetTranslatedFromTr(database.Database_trs, "fr", "Description"),
 	
 					// Source Base
-					// champs : Source de la base
-					//
-					// type : individuel
-					// Source de la base de données déclarée dans ArkeoGIS.
+					// champs : Cadre(s) de réalisation, Précision Cadre(s) de réalisation
+					// type : concatenation
+					// séparateur visuel entre champs  : ,
+					// nota il peut y avoir plusieurs cadre de réalisation si c'est le cas séparateur : ,
 					"", //-TODO: not sure
 	
 					// Nom Site
@@ -876,6 +876,7 @@ func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) 
 							// Il peut donc être multiple le séparateur est un #
 							joinusers(database.Authors),
 				
+							//-TODO: TOOODOOO
 							// Dublin Core:Subject
 							// champs : CARAC_NAME # CARAC_LVL1 # CARAC_LVL2 # CARAC_LVL3 # CARAC_LVL4
 							// Uniquement celui de la ligne de la caractérisation.
@@ -885,208 +886,46 @@ func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) 
 							// champs : COMMENTS
 							// Uniquement celui de la ligne de la caractérisation.
 							translate.GetTranslatedFromTr(srcharac.Charac_trs, "fr", "Comment"),
-				
-							// Dublin Core:Source
-							// champs : Source de la base
-							// type : individuel
-							// Source de la base de donnée déclarée dans ArkeoGIS.
-							translate.GetTranslatedFromTr(database.Database_trs, "fr", "Source_relation"),
-				
-							// Dublin core:Coverage
-							// champs : Site Name # Main City Name # STARTING_PERIOD # ENDING_PERIOD # Debut Periode # Fin Periode
-							// type : concaténation 
-							// séparateur entre champs  : #
-							site.Name+
-								" # "+site.City_name+
-								" # "+getChronoName(&cachedChronology, leftPeriodStart, leftPeriodEnd)+
-								" # "+getChronoName(&cachedChronology, rightPeriodStart, rightPeriodEnd)+
-								" # "+humanYear(leftPeriodStart)+" : "+humanYear(leftPeriodEnd)+
-								" # "+humanYear(rightPeriodStart)+" : "+humanYear(rightPeriodEnd),
-				
+								
 							// Dublin Core:Rights
 							// champs : Licence de la base
 							// type : individuel
 							// Licence de la base de données déclarée dans ArkeoGIS.
 							database.License.Name,
-				
-							// URI Site
-							// champs : url fiche base de données
-							// type : adresse url
-							// De la fiche base de données dans ArkeoGIS.
-							"https://app.arkeogis.org/#/database/"+strconv.Itoa(database.Id),
-				
+								
 							// ID-site
+							// Site ID unique ArkeoGIS du site source de la caractérisation
+							strconv.Itoa(site.Id)+"_s",
+				
+							// ID-caracterisation
 							// champs : ID unique du site dans ArkeoGIS
 							// type : individuel
-							strconv.Itoa(site.Id)+"_s",
+							strconv.Itoa(srcharac.Id)+"_c",
 				
 							// source_id
 							// ID unique du site bdd origine : SITE_SOURCE_ID
 							// type : individuel
 							strconv.Itoa(site.Id),
 			
-							// Titre Site
-							// champs : SITE_NAME, MAIN_CITY_NAME
-							// type : concaténation 
-							// séparateur entre champs  : ,
-							site.Name+","+site.City_name,
-			
-							// Auteur Base
-							// champs : Prénom Nom
-							//
-							// type : concaténation 
-							// séparateur entre champs  : rien
-							//
-							// Tous les auteurs de la base de données déclarés dans ArkeoGIS.
-							//
-							// Il peut donc être multiple
-							// séparateur entre les auteurs : #
-							joinusers(database.Authors),
-			
-							// Structure Editrice Base
-							// champs : ""Structure éditrice'
-							//
-							// type : individuel
-							//
-							// De la base de données du site déclarée dans ArkeoGIS.
-							database.Editor,
-			
-							// Sujet Base
-							// champs ""Sujet(s) / Mots-clés'
-							//
-							// type : individuel
-							//
-							// De la base de données du site déclarée dans ArkeoGIS.
-							translate.GetTranslatedFromTr(database.Database_trs, "fr", "Subject"),
-			
-			
-							// Date Realisation Base
-							// champs : Date de réalisation
-							//
-							// type : extrait
-							//
-							// La date de réalisation de la base de données déclarés dans ArkeoGIS.
-							//
-							// A partir de la date compléte dans ArkeoGIS, uniquement l'année est exportée.
-							database.Declared_creation_date.Format("2006"),
-			
-							// Langue Base
-							// champs : Langue de la base de données
-							//
-							// type : individuel
-							//
-							// Langue de la base de données déclarée dans ArkeoGIS lors de l'importation.
-							database.Default_language_tr.Name,
-			
-							// Description site et base
-							//
-							// champs : COMMENTS
-							//
-							// type : extrait 
-							// Uniquement celui de la ligne 1 du site si plusieurs lignes ayant le même SITE_SOURCE_ID
-							//
-							// champs : Description
-							//
-							// type : individuel
-							// Description de la base de données dans ArkeoGIS.
-							//
-							// Les deux informations sont présentées concaténées séparées par un : #
-							firstSiteRangeCharacComment + " # " + translate.GetTranslatedFromTr(database.Database_trs, "fr", "Description"),
-			
-							// Source Base
-							// champs : Source de la base
-							//
-							// type : individuel
-							// Source de la base de données déclarée dans ArkeoGIS.
-							"", //-TODO: not sure
-			
-							// Nom Site
-							// champs : SITE_NAME
-							// type : individuel
-							site.Name,
-			
-							// Nom Commune
-							// champs : MAIN_CITY_NAME
-							// type : individuel
-							site.City_name,
-			
-							// Sujets
-							// champs : CARAC_NAME, CARAC_LVL1, CARAC_LVL2, CARAC_LVL3, CARAC_LVL4
-							//
-							// type : concaténation 
-							// séparateur visuel entre champs  : ,
-							// séparateur informatique à la fin du dernier champs non vide : #
-							//
-							// La liste de toutes les caractérisations ayant le même SITE_SOURCE_ID
-							//
-							// Il peut donc être multiple, elles sont listées dans l'ordre de l'importation de la base source ArkeoGIS
-							// séparateur entre les caractérisations : #
-							joinCharacs(&cachedCharacs, caracsIds),
-			
-							// Bibliographie Site
-							// champs : BIBLIOGRAPHY
-							//
-							// type : extrait 
-							// Celui de la ligne 1 du site si plusieurs lignes ayant le même SITE_SOURCE_ID
-							firstSiteRangeCharacBibliography,
-			
-							// Bibliographie Base
-							// champs :  Bibliographie
-							// type : individuel
-							// Bibliographiede la base de données déclarés dans ArkeoGIS.
-							translate.GetTranslatedFromTr(database.Database_trs, "fr", "Bibliography"),
-			
+							// Titre Caracterisations
+							// SITE_NAME, MAIN_CITY_NAME, CARAC_NAME, CARAC_LVL1, CARAC_LVL2, CARAC_LVL3, CARAC_LVL4 
+							// de la ligne de la caractérisation
+							"",
+
+							// Bibliographie Caractérisation
+							// champs : BIBLIOGRAPHY 
+							// celui de la ligne de la caractérisation
+							"",
+						
 							// Commentaires
-							// "hamps : COMMENTS
-							//
-							// type : extrait 
-							// celui de la ligne 1 du site si plusieurs lignes ayant le même SITE_SOURCE_ID
-							//
-							// Question on garde vraiment celle colonne cf ca fait bis avec la nouvelle colonne description ?
-							firstSiteRangeCharacComment,
+							// champs : COMMENTS 
+							// Celui de la ligne de la caractérisation.
+							"",
 			
-							// Licence Base
-							// champs : Licence de la base
-							//
-							// type : individuel
-							// Licence de la base de données déclarée dans ArkeoGIS.
+							// Licence Caracterisation
+							// champs : 'Licence' 
+							// De la base de données du site.
 							database.License.Name,
-			
-							// Periode Debut
-							// champs : STARTING_PERIOD
-							//
-							// type : extrait
-							// Les bornes la plus anciennes des périodes des carac du site (cf fiche site AKG)
-							humanYear(leftPeriodStart)+" : "+humanYear(leftPeriodEnd),
-			
-							// Debut Periode
-							// Champs : chronologie
-							//
-							// type : équivalence
-							// Equivalent de la période dans la chronologie choisie par l'utilisateur. 
-							// Si pas d'equivalent reprise des bornes de la date ou du terme indéterminé indiqué par l'auteur.
-							getChronoName(&cachedChronology, leftPeriodStart, leftPeriodEnd),
-			
-							// Periode Fin
-							// champs : ENDING_PERIOD
-							//
-							// type : extrait
-							// Les bornes les plus récentes des périodes des caract du site (cf fiche site AKG).
-							humanYear(rightPeriodStart)+" : "+humanYear(rightPeriodEnd),
-			
-							// Fin Periode
-							// Champs : chronologie
-							// type :équivalence
-							// Equivalent de la période dans la chronologie choisie par l'utilisateur. 
-							// Si pas d'equivalent reprise des bornes de la date ou du terme indéterminé indiqué par l'auteur.
-							getChronoName(&cachedChronology, rightPeriodStart, rightPeriodEnd),
-			
-							// Occupation
-							// champs : OCCUPATION
-							//
-							// type : extrait 
-							// Celui de la ligne 1 du site si plusieurs lignes ayant le même SITE_SOURCE_ID
-							translate.T("fr", "IMPORT.CSVFIELD_OCCUPATION.T_LABEL_"+strings.ToUpper(site.Occupation)),
 			
 							// Etat Connaissances
 							// champs : STATE_OF_KNOWLEDGE
@@ -1095,6 +934,51 @@ func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) 
 							// Celui de la ligne 1 du site si plusieurs lignes ayant le même SITE_SOURCE_ID
 							translate.T(isoCode, "IMPORT.CSVFIELD_STATE_OF_KNOWLEDGE.T_LABEL_"+strings.ToUpper(firstSiteRangeCharacKnowledgetype)),
 			
+							// Periode Debut
+							// champs : STARTING_PERIOD
+							// Celui de la ligne de la caractérisation
+							humanYear(leftPeriodStart)+" : "+humanYear(leftPeriodEnd),
+			
+							// Debut Periode
+							// Equivalent de la période dans la chronologie choisie par l'utilisateur. 
+							// Si pas d'equivalent reprise des bornes définies par l'utilisateur, la date ou le terme indéterminé.
+							getChronoName(&cachedChronology, leftPeriodStart, leftPeriodEnd),
+			
+							// Periode Fin
+							// champs : ENDING_PERIOD
+							// Celui de la ligne de la caractérisation.
+							humanYear(rightPeriodStart)+" : "+humanYear(rightPeriodEnd),
+			
+							// Fin Periode
+							// Equivalent de la période dans la chronologie choisie par l'utilisateur. 
+							// Si pas d'equivalent reprise des bornes définies par l'utilisateur, la date ou le terme indéterminé.
+							getChronoName(&cachedChronology, rightPeriodStart, rightPeriodEnd),
+
+							// Nom Caracterisation
+							// champs : CARAC NAME
+							// Celui de la ligne de la caractérisation.
+							"",
+
+							// Caracterisation niveau 1
+							// champs : CARAC LVL1
+							// Celui de la ligne de la caractérisation.
+							"",
+
+							// Caracterisation niveau 2
+							// champs : CARAC LVL2
+							// Celui de la ligne de la caractérisation.
+							"",
+
+							// Caracterisation niveau 3
+							// champs : CARAC LVL3
+							// Celui de la ligne de la caractérisation.
+							"",
+
+							// Caracterisation niveau 4
+							// champs : CARAC LVL4
+							// Celui de la ligne de la caractérisation.
+							"",
+
 							// Altitude
 							// champs : ALTITUDE
 							//
