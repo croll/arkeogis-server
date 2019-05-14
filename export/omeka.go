@@ -123,7 +123,6 @@ func joinCharacs(cachedCharacs *map[int]string, characIds []int) string {
 		if i > 0 {
 			r += " # "
 		}
-		fmt.Println("charac i: "+strconv.Itoa(i)+", id: "+strconv.Itoa(characId)+", s: "+(*cachedCharacs)[characId])
 		r += (*cachedCharacs)[characId]
 	}
 	return r
@@ -212,8 +211,8 @@ func humanYear(year int) string {
 // SitesAsOmeka exports database and sites as as csv file for omeka
 func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) (outp string, err error) {
 
-	var exportOf = "sites";
-	//var exportOf = "characs";
+	//var exportOf = "sites";
+	var exportOf = "characs";
 	
 
 	var cachedCharacs = getCachedCharacs("fr", ",", tx)
@@ -857,6 +856,16 @@ func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) 
 
 				for _, sr := range site.Site_ranges {
 					for _, srcharac := range sr.SiteRangeCharacs {
+
+						caracStr := cachedCharacs[srcharac.Charac.Id]
+						var caracsStr []string
+						caracsStr = strings.Split(caracStr, ",")
+						for i:=0; i<5; i++ {
+							if i >= len(caracsStr) {
+								caracsStr = append(caracsStr, "")
+							}
+						}
+
 						var line []string
  
 						line = []string{
@@ -957,27 +966,27 @@ func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) 
 							// Nom Caracterisation
 							// champs : CARAC NAME
 							// Celui de la ligne de la caractérisation.
-							"",
+							caracsStr[0],
 
 							// Caracterisation niveau 1
 							// champs : CARAC LVL1
 							// Celui de la ligne de la caractérisation.
-							"",
+							caracsStr[1],
 
 							// Caracterisation niveau 2
 							// champs : CARAC LVL2
 							// Celui de la ligne de la caractérisation.
-							"",
+							caracsStr[2],
 
 							// Caracterisation niveau 3
 							// champs : CARAC LVL3
 							// Celui de la ligne de la caractérisation.
-							"",
+							caracsStr[3],
 
 							// Caracterisation niveau 4
 							// champs : CARAC LVL4
 							// Celui de la ligne de la caractérisation.
-							"",
+							caracsStr[4],
 
 							// Altitude
 							// champs : ALTITUDE
