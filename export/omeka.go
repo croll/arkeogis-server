@@ -272,7 +272,7 @@ func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) 
 		})	
 	}
 
-	if exportOf == "Characs" {
+	if exportOf == "characs" {
 		err = w.Write([]string{
 			"Type Données",
 			"Dublin Core:Title",
@@ -894,7 +894,7 @@ func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) 
 							// Dublin Core:Description
 							// champs : COMMENTS
 							// Uniquement celui de la ligne de la caractérisation.
-							translate.GetTranslatedFromTr(srcharac.Charac_trs, "fr", "Comment"),
+							translate.GetTranslatedFromTr(srcharac.Site_range__charac_trs, "fr", "Comment"),
 								
 							// Dublin Core:Rights
 							// champs : Licence de la base
@@ -911,11 +911,6 @@ func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) 
 							// type : individuel
 							strconv.Itoa(srcharac.Id)+"_c",
 				
-							// source_id
-							// ID unique du site bdd origine : SITE_SOURCE_ID
-							// type : individuel
-							strconv.Itoa(site.Id),
-			
 							// Titre Caracterisations
 							// SITE_NAME, MAIN_CITY_NAME, CARAC_NAME, CARAC_LVL1, CARAC_LVL2, CARAC_LVL3, CARAC_LVL4 
 							// de la ligne de la caractérisation
