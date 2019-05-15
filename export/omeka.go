@@ -209,10 +209,12 @@ func humanYear(year int) string {
 
 
 // SitesAsOmeka exports database and sites as as csv file for omeka
-func SitesAsOmeka(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) (outp string, err error) {
+func SitesAsOmeka(databaseId int, chronoId int, isoCode string, tx *sqlx.Tx) (sites string, caracs string, err error) {
+
+	isoCode = "fr" // only fr is supported actually
 
 	var cachedCharacs = getCachedCharacs("fr", ",", tx)
-	var cachedChronology = getCachedChronology(37, "fr", ",", tx)
+	var cachedChronology = getCachedChronology(chronoId, "fr", ",", tx)
 
 	var buffSites bytes.Buffer
  
@@ -1040,6 +1042,6 @@ func SitesAsOmeka(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx
 
 	}
  
-	return buffSites.String(), nil
+	return buffSites.String(), buffCaracs.String(), nil
  }
  

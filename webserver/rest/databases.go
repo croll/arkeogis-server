@@ -34,6 +34,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"bytes"
+	"archive/zip"
 
 	db "github.com/croll/arkeogis-server/db"
 	export "github.com/croll/arkeogis-server/export"
@@ -46,6 +48,11 @@ import (
 type DatabaseInfosParams struct {
 	Id       int `min:"0" error:"Database Id is mandatory"`
 	ImportID int
+}
+
+type DatabaseExportOmekaParams struct {
+	Id       int `min:"0" error:"Database Id is mandatory"`
+	ChronologyId int `min:"0" error:"chronology is mandatory"`
 }
 
 
@@ -91,13 +98,13 @@ func init() {
 		},
 		&routes.Route{
 			Path:        "/api/database/{id:[0-9]+}/exportOmeka",
-			Description: "Export database as csv",
+			Description: "Export database as csvs in a zip",
 			Func:        DatabaseExportZIPOmeka,
 			Method:      "GET",
 			Permissions: []string{
 				"request map",
 			},
-			Params: reflect.TypeOf(DatabaseInfosParams{}),
+			Params: reflect.TypeOf(DatabaseExportOmekaParams{}),
 		},
 		&routes.Route{
 			Path:        "/api/database/{id:[0-9]+}/csv/{importid:[0-9]{0,}}",
@@ -688,7 +695,7 @@ func DatabaseExportCSVArkeogis(w http.ResponseWriter, r *http.Request, proute ro
 }
 
 func DatabaseExportZIPOmeka(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
-	params := proute.Params.(*DatabaseInfosParams)
+	params := proute.Params.(*DatabaseExportOmekaParams)
 	tx, err := db.DB.Beginx()
 	if err != nil {
 		log.Println("can't start transaction")
@@ -706,26 +713,16 @@ func DatabaseExportZIPOmeka(w http.ResponseWriter, r *http.Request, proute route
 	err = tx.Get(&dbName, "SELECT name FROM \"database\" WHERE id = $1", params.Id)
 
 	if err != nil {
-		log.Println("Unable to export database")
+		log.Println("Unable to export database", err)
 		userSqlError(w, err)
 		tx.Rollback()
 		return
 	}
 
-	var sites []int
-
-	err = tx.Select(&sites, "SELECT id FROM site where database_id = $1", params.Id)
-	if err != nil {
-		log.Println("Unable to export database")
-		userSqlError(w, err)
-		tx.Rollback()
-		return
-	}
-
-	csvContent, err := export.SitesAsOmeka(sites, user.First_lang_isocode, false, tx)
+	csvSitesContent, csvCaracsContent, err := export.SitesAsOmeka(params.Id, params.ChronologyId, user.First_lang_isocode, tx)
 
 	if err != nil {
-		log.Println("Unable to export database")
+		log.Println("Unable to export database", err)
 		userSqlError(w, err)
 		tx.Rollback()
 		return
@@ -733,17 +730,71 @@ func DatabaseExportZIPOmeka(w http.ResponseWriter, r *http.Request, proute route
 
 	err = tx.Commit()
 	if err != nil {
-		log.Println("Unable to export database")
+		log.Println("Unable to export database", err)
 		userSqlError(w, err)
 		return
 	}
 	t := time.Now()
-	filename := dbName + "-" + fmt.Sprintf("%d-%d-%d %d:%d:%d",
+	filename := dbName + "-" + fmt.Sprintf("%.4d-%.2d-%.2d %.2d:%.2d:%.2d",
 		t.Year(), t.Month(), t.Day(),
-		t.Hour(), t.Minute(), t.Second()) + ".csv"
-	w.Header().Set("Content-Type", "text/csv")
+		t.Hour(), t.Minute(), t.Second()) + ".zip"
+
+
+			// Create a buffer to write our archive to.
+	buf := new(bytes.Buffer)
+
+	// Create a new zip archive.
+	wZip := zip.NewWriter(buf)
+
+	// Add some files to the archive.
+	var files = []struct {
+		Name, Body string
+	}{
+		{"sites.csv", csvSitesContent},
+		{"caracs.csv", csvCaracsContent},
+	}
+
+	log.Println("sites.csv size : ", len(csvSitesContent))
+	log.Println("caracs.csv size : ", len(csvCaracsContent))
+
+
+	for _, file := range files {
+		f, err := wZip.Create(file.Name)
+		if err != nil {
+			log.Fatal(err)
+		}
+		_, err = f.Write([]byte(file.Body))
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	err = wZip.Flush()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.Println("buf size : ", buf.Len())
+
+	// Make sure to check the error on Close.
+	err = wZip.Close()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+
+	w.Header().Set("Content-Type", "application/zip")
 	w.Header().Set("Content-Disposition", "attachment; filename="+filename)
-	w.Write([]byte(csvContent))
+	w.Header().Set("Content-Length", strconv.Itoa(buf.Len()))
+
+	hackb := make([]byte, buf.Len())
+	var readed int
+	readed, err = buf.Read(hackb)
+	log.Println("readed: ", readed, err)
+	w.Write(hackb)
+	err = ioutil.WriteFile("/tmp/dat1.zip", hackb, 0644)
+
+	//buf.WriteTo(w)
 }
 
 
