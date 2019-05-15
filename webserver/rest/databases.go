@@ -48,6 +48,7 @@ type DatabaseInfosParams struct {
 	ImportID int
 }
 
+
 func init() {
 	Routes := []*routes.Route{
 		&routes.Route{
@@ -81,7 +82,17 @@ func init() {
 		&routes.Route{
 			Path:        "/api/database/{id:[0-9]+}/export",
 			Description: "Export database as csv",
-			Func:        DatabaseExportCSV,
+			Func:        DatabaseExportCSVArkeogis,
+			Method:      "GET",
+			Permissions: []string{
+				"request map",
+			},
+			Params: reflect.TypeOf(DatabaseInfosParams{}),
+		},
+		&routes.Route{
+			Path:        "/api/database/{id:[0-9]+}/exportOmeka",
+			Description: "Export database as csv",
+			Func:        DatabaseExportZIPOmeka,
 			Method:      "GET",
 			Permissions: []string{
 				"request map",
@@ -617,7 +628,7 @@ func DatabaseInfos(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 	w.Write(l)
 }
 
-func DatabaseExportCSV(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+func DatabaseExportCSVArkeogis(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	params := proute.Params.(*DatabaseInfosParams)
 	tx, err := db.DB.Beginx()
 	if err != nil {
@@ -675,6 +686,66 @@ func DatabaseExportCSV(w http.ResponseWriter, r *http.Request, proute routes.Pro
 	w.Header().Set("Content-Disposition", "attachment; filename="+filename)
 	w.Write([]byte(csvContent))
 }
+
+func DatabaseExportZIPOmeka(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+	params := proute.Params.(*DatabaseInfosParams)
+	tx, err := db.DB.Beginx()
+	if err != nil {
+		log.Println("can't start transaction")
+		userSqlError(w, err)
+		return
+	}
+
+	// Datatabase isocode
+
+	_user, _ := proute.Session.Get("user")
+	user := _user.(model.User)
+
+	dbName := ""
+
+	err = tx.Get(&dbName, "SELECT name FROM \"database\" WHERE id = $1", params.Id)
+
+	if err != nil {
+		log.Println("Unable to export database")
+		userSqlError(w, err)
+		tx.Rollback()
+		return
+	}
+
+	var sites []int
+
+	err = tx.Select(&sites, "SELECT id FROM site where database_id = $1", params.Id)
+	if err != nil {
+		log.Println("Unable to export database")
+		userSqlError(w, err)
+		tx.Rollback()
+		return
+	}
+
+	csvContent, err := export.SitesAsOmeka(sites, user.First_lang_isocode, false, tx)
+
+	if err != nil {
+		log.Println("Unable to export database")
+		userSqlError(w, err)
+		tx.Rollback()
+		return
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		log.Println("Unable to export database")
+		userSqlError(w, err)
+		return
+	}
+	t := time.Now()
+	filename := dbName + "-" + fmt.Sprintf("%d-%d-%d %d:%d:%d",
+		t.Year(), t.Month(), t.Day(),
+		t.Hour(), t.Minute(), t.Second()) + ".csv"
+	w.Header().Set("Content-Type", "text/csv")
+	w.Header().Set("Content-Disposition", "attachment; filename="+filename)
+	w.Write([]byte(csvContent))
+}
+
 
 func DatabaseDelete(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	params := proute.Json.(*DatabaseInfosParams)

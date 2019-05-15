@@ -1,5 +1,5 @@
 /* ArkeoGIS - The Geographic Information System for Archaeologists
- * Copyright (C) 2015-2016 CROLL SAS
+ * Copyright (C) 2015-2019 CROLL SAS
  *
  * Authors :
  *  Christophe Beveraggi <beve@croll.fr>
@@ -35,7 +35,7 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// ExportCSV exports database and sites as as csv file
+// SitesAsCSV exports database and sites as as csv file
 func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, tx *sqlx.Tx) (outp string, err error) {
 
 	var buff bytes.Buffer
