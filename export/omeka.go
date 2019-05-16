@@ -132,13 +132,13 @@ func joinCharacs(cachedCharacs *map[int]string, characIds []int) string {
 func translateContext(code string) string {
 	switch {
 	case code == "other":
-		return translate.TWeb("fr", "CONTEXT_OTHER")
+		return translate.TWeb("fr", "DATABASE.CONTEXT_OTHER.T_TITLE")
 	case code == "academic-work":
-		return translate.TWeb("fr", "CONTEXT_ACADEMIC_WORK")
+		return translate.TWeb("fr", "DATABASE.CONTEXT_ACADEMIC_WORK.T_TITLE")
 	case code == "contract":
-		return translate.TWeb("fr", "CONTEXT_CONTRACT")
+		return translate.TWeb("fr", "DATABASE.CONTEXT_CONTRACT.T_TITLE")
 	case code == "research_team":
-		return translate.TWeb("fr", "CONTEXT_RESEARCH_TEAM")
+		return translate.TWeb("fr", "DATABASE.CONTEXT_RESEARCH_TEAM.T_TITLE")
 	}
 	return "undefined"
 }
