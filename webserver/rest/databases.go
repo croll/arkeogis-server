@@ -694,6 +694,7 @@ func DatabaseExportCSVArkeogis(w http.ResponseWriter, r *http.Request, proute ro
 	w.Write([]byte(csvContent))
 }
 
+
 func DatabaseExportZIPOmeka(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	params := proute.Params.(*DatabaseExportOmekaParams)
 	tx, err := db.DB.Beginx()
@@ -738,7 +739,7 @@ func DatabaseExportZIPOmeka(w http.ResponseWriter, r *http.Request, proute route
 	filename := dbName + "-" + fmt.Sprintf("%.4d-%.2d-%.2d %.2d:%.2d:%.2d",
 		t.Year(), t.Month(), t.Day(),
 		t.Hour(), t.Minute(), t.Second()) + ".zip"
-
+	filename = strings.ReplaceAll(filename, "\"", "_")
 
 			// Create a buffer to write our archive to.
 	buf := new(bytes.Buffer)
@@ -784,7 +785,7 @@ func DatabaseExportZIPOmeka(w http.ResponseWriter, r *http.Request, proute route
 
 
 	w.Header().Set("Content-Type", "application/zip")
-	w.Header().Set("Content-Disposition", "attachment; filename="+filename)
+	w.Header().Set("Content-Disposition", "attachment; filename=\""+filename+"\"")
 	w.Header().Set("Content-Length", strconv.Itoa(buf.Len()))
 
 	hackb := make([]byte, buf.Len())
