@@ -499,14 +499,17 @@ func SitesAsOmeka(databaseId int, chronoId int, isoCode string, tx *sqlx.Tx) (si
 
 		var database MyDatabase = MyDatabase{}
 		//database.Sites = make([]MySite, 12)
-		err := json.Unmarshal([]byte(dbjson), &database)
-		fmt.Println(err)
+		err = json.Unmarshal([]byte(dbjson), &database)
+		if err != nil {
+			log.Println("json.Unmarshal of sql query error", err)
+			return
+		}
 
 		//fmt.Println("database : ")
 		//fmt.Println(database)
 
 		//fmt.Printf("%+v\n", database.Sites[0])
-		prettyPrint(database.Sites[0])
+		//prettyPrint(database.Sites[0])
 
 
 		for _, site := range database.Sites {
