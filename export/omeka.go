@@ -232,6 +232,7 @@ func SitesAsOmeka(databaseId int, chronoId int, isoCode string, tx *sqlx.Tx) (si
 		"Type Données",
 		"Nombre Caracterisations",
 		"Dublin Core:Title",
+		"Dublin Core:Identifier",
 		"Dublin Core:Creator",
 		"Dublin Core:Subject",
 		"Dublin Core:Date",
@@ -252,6 +253,7 @@ func SitesAsOmeka(databaseId int, chronoId int, isoCode string, tx *sqlx.Tx) (si
 		"Description site et base",
 		"Source Base",
 		"Nom Site",
+		"Nom Base",
 		"Nom Commune",
 		"Sujets",
 		"Bibliographie Site",
@@ -544,6 +546,12 @@ func SitesAsOmeka(databaseId int, chronoId int, isoCode string, tx *sqlx.Tx) (si
 				// type : concaténation 
 				// séparateur entre champs  : ,
 				site.Name+", "+site.City_name,
+
+				// Dublin Core:Identifier
+				// champs : ""Nom de la base de données'
+				// type : individuel
+				// De la base de données du site déclarée dans ArkeoGIS.
+				database.Name,
 				
 				// Dublin Core:Creator
 				// champs : Prénom Nom
@@ -632,7 +640,13 @@ func SitesAsOmeka(databaseId int, chronoId int, isoCode string, tx *sqlx.Tx) (si
 				// type : concaténation 
 				// séparateur entre champs  : ,
 				site.Name+","+site.City_name,
-				
+
+				// Nom Base
+				// champs : ""Nom de la base de données'
+				// type : individuel
+				// De la base de données du site déclarée dans ArkeoGIS.
+				database.Name,
+
 				// Auteur Base
 				// champs : Prénom Nom
 				//
