@@ -70,6 +70,7 @@ type MyDatabase struct {
 	model.Database
 	Sites []MySite                          `json:"sites"`
 	Database_trs []model.Database_tr        `json:"database_trs"`
+	Database_contexts []model.Database_context  `json:"database_contexts"`
 	OwnerUser    model.User                 `json:"owneruser"`
 	Authors      []MyUser               	`json:"authors"`
 	Default_language_tr model.Lang_tr			`json:"default_language_tr"`
@@ -124,6 +125,31 @@ func joinCharacs(cachedCharacs *map[int]string, characIds []int) string {
 			r += " # "
 		}
 		r += (*cachedCharacs)[characId]
+	}
+	return r
+}
+
+func translateContext(code string) string {
+	switch {
+	case code == "other":
+		return translate.TWeb("fr", "CONTEXT_OTHER")
+	case code == "academic-work":
+		return translate.TWeb("fr", "CONTEXT_ACADEMIC_WORK")
+	case code == "contract":
+		return translate.TWeb("fr", "CONTEXT_CONTRACT")
+	case code == "research_team":
+		return translate.TWeb("fr", "CONTEXT_RESEARCH_TEAM")
+	}
+	return "undefined"
+}
+
+func joinContexts(contexts []model.Database_context) string {
+	var r=""
+	for _, context := range contexts {
+		if r != "" {
+			r += ", "
+		}
+		r += translateContext(context.Context)
 	}
 	return r
 }
@@ -423,6 +449,14 @@ func SitesAsOmeka(databaseId int, chronoId int, isoCode string, tx *sqlx.Tx) (si
 		  WHERE dtr.database_id = db.id
 		) items
 	  ) AS database_trs, 
+	  (
+		SELECT json_agg(items)
+		FROM (
+		  SELECT dc.*
+		  FROM "database_context" "dc"
+		  WHERE dc.database_id = db.id
+		) items
+	  ) AS database_contexts, 
 	  ( SELECT row_to_json(items)
 		FROM (
 		  SELECT l.*
@@ -438,12 +472,12 @@ func SitesAsOmeka(databaseId int, chronoId int, isoCode string, tx *sqlx.Tx) (si
 		) as items
 	  ) AS license
 	  FROM "database" "db"
-	  WHERE db.id=284
+	  WHERE db.id=$1
 	  ORDER BY db.id
 	) as items
 	`
 
-	rows2, err := tx.Query(q)
+	rows2, err := tx.Query(q, databaseId)
 	if err != nil {
 		fmt.Println("query done err")
 		log.Println(err)
@@ -600,7 +634,16 @@ func SitesAsOmeka(databaseId int, chronoId int, isoCode string, tx *sqlx.Tx) (si
 				// champs : Source de la base
 				// type : individuel
 				// Source de la base de donnée déclarée dans ArkeoGIS.
-				translate.GetTranslatedFromTr(database.Database_trs, "fr", "Source_relation"),
+				//
+				// => column updated
+				//
+				// champs : Cadre(s) de réalisation, Précision Cadre(s) de réalisation
+				// type : concatenation
+				// séparateur visuel entre champs  : ,
+				// nota il peut y avoir plusieurs cadre de réalisation pour la même base de données si c'est le cas séparateur : ,
+				// Travail universitaire, Contrat, Équipe de recherche, Autres
+				joinContexts(database.Database_contexts) + ", " +
+				translate.GetTranslatedFromTr(database.Database_trs, "fr", "Context_description"),
 				
 				// Dublin core:Coverage
 				// champs : Site Name # Main City Name # STARTING_PERIOD # ENDING_PERIOD # Debut Periode # Fin Periode
@@ -714,7 +757,23 @@ func SitesAsOmeka(databaseId int, chronoId int, isoCode string, tx *sqlx.Tx) (si
 				// type : concatenation
 				// séparateur visuel entre champs  : ,
 				// nota il peut y avoir plusieurs cadre de réalisation si c'est le cas séparateur : ,
-				"", //-TODO: not sure
+				//
+				// update :
+				//
+				// "champs : Source de la base
+				//
+				// type : individuel
+				// Source de la base de données déclarée dans ArkeoGIS.
+				//
+				//
+				// champs : Cadre(s) de réalisation, Précision Cadre(s) de réalisation
+				//
+				// type : concatenation
+				// séparateur visuel entre champs  : ,
+				// nota il peut y avoir plusieurs cadre de réalisation pour la même base de données si c'est le cas séparateur : ,
+				// Travail universitaire, Contrat, Équipe de recherche, Autres
+				joinContexts(database.Database_contexts) + ", " +
+				translate.GetTranslatedFromTr(database.Database_trs, "fr", "Context_description"),
 				
 				// Nom Site
 				// champs : SITE_NAME
