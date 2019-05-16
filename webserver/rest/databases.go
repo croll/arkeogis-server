@@ -738,7 +738,7 @@ func DatabaseExportZIPOmeka(w http.ResponseWriter, r *http.Request, proute route
 	t := time.Now()
 	filename := dbName + "-" + fmt.Sprintf("%.4d-%.2d-%.2d %.2d:%.2d:%.2d",
 		t.Year(), t.Month(), t.Day(),
-		t.Hour(), t.Minute(), t.Second()) + ".zip"
+		t.Hour(), t.Minute(), t.Second())
 	filename = strings.ReplaceAll(filename, "\"", "_")
 
 			// Create a buffer to write our archive to.
@@ -751,13 +751,9 @@ func DatabaseExportZIPOmeka(w http.ResponseWriter, r *http.Request, proute route
 	var files = []struct {
 		Name, Body string
 	}{
-		{"sites.csv", csvSitesContent},
-		{"caracs.csv", csvCaracsContent},
+		{"sites-"+filename+".csv", csvSitesContent},
+		{"caracs-"+filename+".csv", csvCaracsContent},
 	}
-
-	log.Println("sites.csv size : ", len(csvSitesContent))
-	log.Println("caracs.csv size : ", len(csvCaracsContent))
-
 
 	for _, file := range files {
 		f, err := wZip.Create(file.Name)
@@ -785,7 +781,7 @@ func DatabaseExportZIPOmeka(w http.ResponseWriter, r *http.Request, proute route
 
 
 	w.Header().Set("Content-Type", "application/zip")
-	w.Header().Set("Content-Disposition", "attachment; filename=\""+filename+"\"")
+	w.Header().Set("Content-Disposition", "attachment; filename=\""+filename+".zip\"")
 	w.Header().Set("Content-Length", strconv.Itoa(buf.Len()))
 
 	hackb := make([]byte, buf.Len())
