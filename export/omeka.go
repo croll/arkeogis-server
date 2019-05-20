@@ -239,8 +239,8 @@ func SitesAsOmeka(databaseId int, chronoId int, isoCode string, tx *sqlx.Tx) (si
 
 	isoCode = "fr" // only fr is supported actually
 
-	var cachedCharacs = getCachedCharacs("fr", ",", tx)
-	var cachedChronology = getCachedChronology(chronoId, "fr", ",", tx)
+	var cachedCharacs = getCachedCharacs("fr", ", ", tx)
+	var cachedChronology = getCachedChronology(chronoId, "fr", ", ", tx)
 
 	var buffSites bytes.Buffer
  
@@ -961,11 +961,10 @@ func SitesAsOmeka(databaseId int, chronoId int, isoCode string, tx *sqlx.Tx) (si
 						// Il peut donc être multiple le séparateur est un #
 						joinusers(database.Authors),
 						
-						//-TODO: TOOODOOO
 						// Dublin Core:Subject
 						// champs : CARAC_NAME # CARAC_LVL1 # CARAC_LVL2 # CARAC_LVL3 # CARAC_LVL4
 						// Uniquement celui de la ligne de la caractérisation.
-						joinCharacs(&cachedCharacs, caracsIds),
+						strings.ReplaceAll(caracStr, ", ", " # "),
 						
 						// Dublin Core:Description
 						// champs : COMMENTS
@@ -990,7 +989,7 @@ func SitesAsOmeka(databaseId int, chronoId int, isoCode string, tx *sqlx.Tx) (si
 						// Titre Caracterisations
 						// SITE_NAME, MAIN_CITY_NAME, CARAC_NAME, CARAC_LVL1, CARAC_LVL2, CARAC_LVL3, CARAC_LVL4 
 						// de la ligne de la caractérisation
-						"",
+						site.Name+", "+site.City_name+", "+caracStr,
 						
 						// Bibliographie Caractérisation
 						// champs : BIBLIOGRAPHY 
