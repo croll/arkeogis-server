@@ -951,7 +951,7 @@ func SitesAsOmeka(databaseId int, chronoId int, isoCode string, tx *sqlx.Tx) (si
 						
 						// Dublin Core:Title
 						// champs : SITE_NAME, MAIN_CITY_NAME, CARAC_NAME, CARAC_LVL1, CARAC_LVL2, CARAC_LVL3, CARAC_LVL4
-						site.Name+", "+site.City_name,
+						site.Name+", "+site.City_name+", "+caracStr,
 						
 						// Dublin Core:Creator
 						// champs : Prénom Nom
@@ -994,12 +994,12 @@ func SitesAsOmeka(databaseId int, chronoId int, isoCode string, tx *sqlx.Tx) (si
 						// Bibliographie Caractérisation
 						// champs : BIBLIOGRAPHY 
 						// celui de la ligne de la caractérisation
-						"",
+						translate.GetTranslatedFromTr(srcharac.Site_range__charac_trs, "fr", "Bibliography"),
 						
 						// Commentaires
 						// champs : COMMENTS 
 						// Celui de la ligne de la caractérisation.
-						"",
+						translate.GetTranslatedFromTr(srcharac.Site_range__charac_trs, "fr", "Comment"),
 						
 						// Licence Caracterisation
 						// champs : 'Licence' 
