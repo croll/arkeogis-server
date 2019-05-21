@@ -258,7 +258,7 @@ func SitesAsOmeka(databaseId int, chronoId int, isoCode string, tx *sqlx.Tx) (si
 		"Type Données",
 		"Nombre Caracterisations",
 		"Dublin Core:Title",
-		"Dublin Core:Identifier",
+		"Dublin Core:Relation",
 		"Dublin Core:Creator",
 		"Dublin Core:Subject",
 		"Dublin Core:Date",
