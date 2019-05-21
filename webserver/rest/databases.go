@@ -736,7 +736,7 @@ func DatabaseExportZIPOmeka(w http.ResponseWriter, r *http.Request, proute route
 		return
 	}
 	t := time.Now()
-	filename := dbName + "-" + fmt.Sprintf("%.4d-%.2d-%.2d %.2d:%.2d:%.2d",
+	filename := dbName + "-" + fmt.Sprintf("%.4d-%.2d-%.2d_%.2d-%.2d-%.2d",
 		t.Year(), t.Month(), t.Day(),
 		t.Hour(), t.Minute(), t.Second())
 	filename = strings.ReplaceAll(filename, "\"", "_")
@@ -751,8 +751,8 @@ func DatabaseExportZIPOmeka(w http.ResponseWriter, r *http.Request, proute route
 	var files = []struct {
 		Name, Body string
 	}{
-		{"sites-"+filename+".csv", csvSitesContent},
-		{"caracs-"+filename+".csv", csvCaracsContent},
+		{"akg2omk-sites_"+filename+".csv", csvSitesContent},
+		{"akg2omk-caracterisations_"+filename+".csv", csvCaracsContent},
 	}
 
 	for _, file := range files {
@@ -784,14 +784,15 @@ func DatabaseExportZIPOmeka(w http.ResponseWriter, r *http.Request, proute route
 	w.Header().Set("Content-Disposition", "attachment; filename=\""+filename+".zip\"")
 	w.Header().Set("Content-Length", strconv.Itoa(buf.Len()))
 
+	/*
 	hackb := make([]byte, buf.Len())
 	var readed int
 	readed, err = buf.Read(hackb)
 	log.Println("readed: ", readed, err)
 	w.Write(hackb)
 	err = ioutil.WriteFile("/tmp/dat1.zip", hackb, 0644)
-
-	//buf.WriteTo(w)
+	*/
+	buf.WriteTo(w)
 }
 
 
