@@ -631,8 +631,8 @@ func SitesAsOmeka(databaseId int, chronoId int, isoCode string, tx *sqlx.Tx) (si
 				// type : individuel
 				// Description de la base de données dans ArkeoGIS.
 				// Les deux informations sont présentées séparées par un : #
-				translate.GetTranslatedFromTr(database.Database_trs, "fr", "Description"),
-				
+				firstSiteRangeCharacComment + " # " + translate.GetTranslatedFromTr(database.Database_trs, "fr", "Description"),
+
 				// Dublin Core:Source
 				// champs : Source de la base
 				// type : individuel
