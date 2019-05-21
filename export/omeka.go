@@ -1016,22 +1016,22 @@ func SitesAsOmeka(databaseId int, chronoId int, isoCode string, tx *sqlx.Tx) (si
 						// Periode Debut
 						// champs : STARTING_PERIOD
 						// Celui de la ligne de la caractérisation
-						humanYear(leftPeriodStart)+" : "+humanYear(leftPeriodEnd),
+						humanYear(sr.Start_date1)+" : "+humanYear(sr.Start_date2),
 						
 						// Debut Periode
 						// Equivalent de la période dans la chronologie choisie par l'utilisateur. 
 						// Si pas d'equivalent reprise des bornes définies par l'utilisateur, la date ou le terme indéterminé.
-						getChronoName(&cachedChronology, leftPeriodStart, leftPeriodEnd),
+						getChronoName(&cachedChronology, sr.Start_date1, sr.Start_date2),
 						
 						// Periode Fin
 						// champs : ENDING_PERIOD
 						// Celui de la ligne de la caractérisation.
-						humanYear(rightPeriodStart)+" : "+humanYear(rightPeriodEnd),
+						humanYear(sr.End_date1)+" : "+humanYear(sr.End_date2),
 						
 						// Fin Periode
 						// Equivalent de la période dans la chronologie choisie par l'utilisateur. 
 						// Si pas d'equivalent reprise des bornes définies par l'utilisateur, la date ou le terme indéterminé.
-						getChronoName(&cachedChronology, rightPeriodStart, rightPeriodEnd),
+						getChronoName(&cachedChronology, sr.End_date1, sr.End_date2),
 						
 						// Nom Caracterisation
 						// champs : CARAC NAME
