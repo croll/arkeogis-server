@@ -679,7 +679,7 @@ func SitesAsOmeka(databaseId int, chronoId int, isoCode string, tx *sqlx.Tx) (si
 				// source_id
 				// ID unique du site bdd origine : SITE_SOURCE_ID
 				// type : individuel
-				strconv.Itoa(site.Id),
+				strconv.Itoa(site.Id)+"_s",
 				
 				// Titre Site
 				// champs : SITE_NAME, MAIN_CITY_NAME
