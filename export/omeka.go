@@ -255,7 +255,7 @@ func SitesAsOmeka(databaseId int, chronoId int, isoCode string, tx *sqlx.Tx) (si
 	wCaracs.UseCRLF = false
 
 	err = wSites.Write([]string{
-		"Type Données",
+		"Type Donnees",
 		"Nombre Caracterisations",
 		"Dublin Core:Title",
 		"Dublin Core:Relation",
@@ -268,8 +268,8 @@ func SitesAsOmeka(databaseId int, chronoId int, isoCode string, tx *sqlx.Tx) (si
 		"Dublin core:Coverage",
 		"Dublin Core:Rights",
 		"URI Site",
-		"ID-site",
-		"source_id",
+		"ID Site",
+		"Source ID",
 		"Titre Site",
 		"Nom Base",
 		"Auteur Base",
@@ -277,7 +277,7 @@ func SitesAsOmeka(databaseId int, chronoId int, isoCode string, tx *sqlx.Tx) (si
 		"Sujet Base",
 		"Date Realisation Base",
 		"Langue Base",
-		"Description site et base",
+		"Description Site et Base",
 		"Source Base",
 		"Nom Site",
 		"Nom Commune",
