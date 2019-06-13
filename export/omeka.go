@@ -245,14 +245,14 @@ func SitesAsOmeka(databaseId int, chronoId int, isoCode string, tx *sqlx.Tx) (si
 	var buffSites bytes.Buffer
  
 	wSites := csv.NewWriter(&buffSites)
-	wSites.Comma = ';'
-	wSites.UseCRLF = true
+	wSites.Comma = '\t'
+	wSites.UseCRLF = false
 
 	var buffCaracs bytes.Buffer
  
 	wCaracs := csv.NewWriter(&buffCaracs)
-	wCaracs.Comma = ';'
-	wCaracs.UseCRLF = true
+	wCaracs.Comma = '\t';
+	wCaracs.UseCRLF = false
 
 	err = wSites.Write([]string{
 		"Type Données",
