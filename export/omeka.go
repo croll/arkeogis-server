@@ -308,16 +308,16 @@ func SitesAsOmeka(databaseId int, chronoId int, isoCode string, tx *sqlx.Tx) (si
 	wSites.Flush()
 
 	err = wCaracs.Write([]string{
-		"Type Données",
+		"Type Donnees",
 		"Dublin Core:Title",
 		"Dublin Core:Creator",
 		"Dublin core:Subject",
 		"Dublin Core:Description",
 		"Dublin Core:Rights",
-		"ID-site",
-		"ID-caracterisation",
+		"ID Site",
+		"ID Caracterisation",
 		"Titre Caracterisations",
-		"Bibliographie Caractérisation",
+		"Bibliographie Caracterisation",
 		"Commentaires",
 		"Licence Caracterisation",
 		"Etat Connaissances",
