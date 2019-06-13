@@ -89,7 +89,7 @@ func joinusers(objs []MyUser) string {
 	var r=""
 	for i, obj := range objs {
 		if i > 0 {
-			r += " # "
+			r += " | "
 		}
 		r += obj.Firstname + " " + obj.Lastname
 	}
@@ -101,7 +101,7 @@ func joinuserscompanies(users []MyUser) string {
 	for _, u := range users {
 		for _, c := range u.Companies {
 			if r != "" {
-				r += " # "
+				r += " | "
 			}
 			r += c.Name
 		}
@@ -122,7 +122,7 @@ func joinCharacs(cachedCharacs *map[int]string, characIds []int) string {
 	var r=""
 	for i, characId := range characIds {
 		if i > 0 {
-			r += " # "
+			r += " | "
 		}
 		r += (*cachedCharacs)[characId]
 	}
@@ -596,7 +596,7 @@ func SitesAsOmeka(databaseId int, chronoId int, isoCode string, tx *sqlx.Tx) (si
 				// séparateur entre champs  : rien
 				// Tous les auteurs de la base de données déclarés dans ArkeoGIS.
 				// Il peut donc être multiple
-				// séparateur entre les auteurs : #
+				// séparateur entre les auteurs : |
 				//database.OwnerUser.Firstname+" "+database.OwnerUser.Lastname,
 				joinusers(database.Authors),
 				
@@ -604,10 +604,10 @@ func SitesAsOmeka(databaseId int, chronoId int, isoCode string, tx *sqlx.Tx) (si
 				// champs : CARAC_NAME, CARAC_LVL1, CARAC_LVL2, CARAC_LVL3, CARAC_LVL4
 				// type : concaténation 
 				// séparateur visuel entre champs  : ,
-				// séparateur informatique à la fin du dernier champs non vide : #
+				// séparateur informatique à la fin du dernier champs non vide : |
 				// La liste de toutes les caractérisations ayant le même SITE_SOURCE_ID
 				// Il peut donc être multiple, elles sont listées dans l'ordre de l'importation de la base source ArkeoGIS
-				// séparateur entre les caractérisations : #
+				// séparateur entre les caractérisations : |
 				joinCharacs(&cachedCharacs, caracsIds),
 				
 				// Dublin Core:Date
@@ -630,8 +630,8 @@ func SitesAsOmeka(databaseId int, chronoId int, isoCode string, tx *sqlx.Tx) (si
 				// champs : Description
 				// type : individuel
 				// Description de la base de données dans ArkeoGIS.
-				// Les deux informations sont présentées séparées par un : #
-				firstSiteRangeCharacComment + " # " + translate.GetTranslatedFromTr(database.Database_trs, "fr", "Description"),
+				// Les deux informations sont présentées séparées par un : |
+				firstSiteRangeCharacComment + " | " + translate.GetTranslatedFromTr(database.Database_trs, "fr", "Description"),
 
 				// Dublin Core:Source
 				// champs : Source de la base
@@ -649,15 +649,15 @@ func SitesAsOmeka(databaseId int, chronoId int, isoCode string, tx *sqlx.Tx) (si
 				translate.GetTranslatedFromTr(database.Database_trs, "fr", "Context_description"),
 				
 				// Dublin core:Coverage
-				// champs : Site Name # Main City Name # STARTING_PERIOD # ENDING_PERIOD # Debut Periode # Fin Periode
+				// champs : Site Name | Main City Name | STARTING_PERIOD | ENDING_PERIOD | Debut Periode | Fin Periode
 				// type : concaténation 
-				// séparateur entre champs  : #
+				// séparateur entre champs  : |
 				site.Name+
-				" # "+site.City_name+
-				" # "+getChronoName(&cachedChronology, leftPeriodStart, leftPeriodEnd)+
-				" # "+getChronoName(&cachedChronology, rightPeriodStart, rightPeriodEnd)+
-				" # "+humanYear(leftPeriodStart)+" : "+humanYear(leftPeriodEnd)+
-				" # "+humanYear(rightPeriodStart)+" : "+humanYear(rightPeriodEnd),
+				" | "+site.City_name+
+				" | "+getChronoName(&cachedChronology, leftPeriodStart, leftPeriodEnd)+
+				" | "+getChronoName(&cachedChronology, rightPeriodStart, rightPeriodEnd)+
+				" | "+humanYear(leftPeriodStart)+" : "+humanYear(leftPeriodEnd)+
+				" | "+humanYear(rightPeriodStart)+" : "+humanYear(rightPeriodEnd),
 				
 				// Dublin Core:Rights
 				// champs : Licence de la base
@@ -702,7 +702,7 @@ func SitesAsOmeka(databaseId int, chronoId int, isoCode string, tx *sqlx.Tx) (si
 				// Tous les auteurs de la base de données déclarés dans ArkeoGIS.
 				//
 				// Il peut donc être multiple
-				// séparateur entre les auteurs : #
+				// séparateur entre les auteurs : |
 				joinusers(database.Authors),
 				
 				// Structure Editrice Base
@@ -752,8 +752,8 @@ func SitesAsOmeka(databaseId int, chronoId int, isoCode string, tx *sqlx.Tx) (si
 				// type : individuel
 				// Description de la base de données dans ArkeoGIS.
 				//
-				// Les deux informations sont présentées concaténées séparées par un : #
-				firstSiteRangeCharacComment + " # " + translate.GetTranslatedFromTr(database.Database_trs, "fr", "Description"),
+				// Les deux informations sont présentées concaténées séparées par un : |
+				firstSiteRangeCharacComment + " | " + translate.GetTranslatedFromTr(database.Database_trs, "fr", "Description"),
 				
 				// Source Base
 				// champs : Cadre(s) de réalisation, Précision Cadre(s) de réalisation
@@ -793,12 +793,12 @@ func SitesAsOmeka(databaseId int, chronoId int, isoCode string, tx *sqlx.Tx) (si
 				//
 				// type : concaténation 
 				// séparateur visuel entre champs  : ,
-				// séparateur informatique à la fin du dernier champs non vide : #
+				// séparateur informatique à la fin du dernier champs non vide : |
 				//
 				// La liste de toutes les caractérisations ayant le même SITE_SOURCE_ID
 				//
 				// Il peut donc être multiple, elles sont listées dans l'ordre de l'importation de la base source ArkeoGIS
-				// séparateur entre les caractérisations : #
+				// séparateur entre les caractérisations : |
 				joinCharacs(&cachedCharacs, caracsIds),
 				
 				// Bibliographie Site
@@ -958,13 +958,13 @@ func SitesAsOmeka(databaseId int, chronoId int, isoCode string, tx *sqlx.Tx) (si
 						//
 						// Tous les auteurs de la base de données déclarés dans ArkeoGIS.
 						//
-						// Il peut donc être multiple le séparateur est un #
+						// Il peut donc être multiple le séparateur est un |
 						joinusers(database.Authors),
 						
 						// Dublin Core:Subject
-						// champs : CARAC_NAME # CARAC_LVL1 # CARAC_LVL2 # CARAC_LVL3 # CARAC_LVL4
+						// champs : CARAC_NAME | CARAC_LVL1 | CARAC_LVL2 | CARAC_LVL3 | CARAC_LVL4
 						// Uniquement celui de la ligne de la caractérisation.
-						strings.ReplaceAll(caracStr, ", ", " # "),
+						strings.ReplaceAll(caracStr, ", ", " | "),
 						
 						// Dublin Core:Description
 						// champs : COMMENTS
