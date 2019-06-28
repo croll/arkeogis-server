@@ -265,7 +265,7 @@ func SitesAsOmeka(databaseId int, chronoId int, isoCode string, tx *sqlx.Tx) (si
 		"Dublin Core:Language",
 		"Dublin Core:Description",
 		"Dublin Core:Source",
-		"Dublin core:Coverage",
+		"Dublin Core:Coverage",
 		"Dublin Core:Rights",
 		"URI Site",
 		"ID Site",
@@ -311,7 +311,7 @@ func SitesAsOmeka(databaseId int, chronoId int, isoCode string, tx *sqlx.Tx) (si
 		"Type Donnees",
 		"Dublin Core:Title",
 		"Dublin Core:Creator",
-		"Dublin core:Subject",
+		"Dublin Core:Subject",
 		"Dublin Core:Description",
 		"Dublin Core:Rights",
 		"ID Site",
@@ -648,7 +648,7 @@ func SitesAsOmeka(databaseId int, chronoId int, isoCode string, tx *sqlx.Tx) (si
 				joinContexts(database.Database_contexts) + ", " +
 				translate.GetTranslatedFromTr(database.Database_trs, "fr", "Context_description"),
 				
-				// Dublin core:Coverage
+				// Dublin Core:Coverage
 				// champs : Site Name | Main City Name | STARTING_PERIOD | ENDING_PERIOD | Debut Periode | Fin Periode
 				// type : concaténation 
 				// séparateur entre champs  : |
