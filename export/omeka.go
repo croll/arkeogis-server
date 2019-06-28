@@ -935,7 +935,7 @@ func SitesAsOmeka(databaseId int, chronoId int, isoCode string, tx *sqlx.Tx) (si
 					
 					caracStr := cachedCharacs[srcharac.Charac.Id]
 					var caracsStr []string
-					caracsStr = strings.Split(caracStr, ",")
+					caracsStr = strings.Split(caracStr, ", ")
 					for i:=0; i<5; i++ {
 						if i >= len(caracsStr) {
 							caracsStr = append(caracsStr, "")
