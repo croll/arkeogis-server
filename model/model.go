@@ -1,3 +1,4 @@
+ArkeoGIS launched in PROD mode
 package model
 
 import (
@@ -420,7 +421,7 @@ type Site struct {
 	Database_id	int	`db:"database_id" json:"database_id"`	// Database.Id
 	Created_at	time.Time	`db:"created_at" json:"created_at"`
 	Updated_at	time.Time	`db:"updated_at" json:"updated_at"`
-	Altitude	DOUBLE	`db:"altitude" json:"altitude"`
+	Altitude	float64	`db:"altitude" json:"altitude"`
 	Start_date1	int	`db:"start_date1" json:"start_date1"`
 	Start_date2	int	`db:"start_date2" json:"start_date2"`
 	End_date1	int	`db:"end_date1" json:"end_date1"`
