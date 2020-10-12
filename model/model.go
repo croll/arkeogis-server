@@ -1,4 +1,3 @@
-ArkeoGIS launched in PROD mode
 package model
 
 import (
