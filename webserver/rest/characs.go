@@ -908,7 +908,7 @@ func CharacSetHiddens(w http.ResponseWriter, r *http.Request, proute routes.Prou
 
 func CharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	params := proute.Params.(*CharacListCsvParams)
-	q := "WITH RECURSIVE nodes_cte(id, path) AS (SELECT id, cat.name::::TEXT AS path FROM charac AS ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON cat.lang_isocode = lang.isocode WHERE lang.isocode = :isocode AND ca.id = (SELECT ca.id FROM charac ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON lang.isocode = cat.lang_isocode WHERE lang.isocode = :isocode AND lower(cat.name) = lower(:name) AND ca.parent_id = 0) UNION ALL SELECT ca.id, (p.path || ';' || cat.name) FROM nodes_cte AS p, charac AS ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON cat.lang_isocode = lang.isocode WHERE lang.isocode = :isocode AND ca.parent_id = p.id) SELECT * FROM nodes_cte AS n ORDER BY n.id ASC;"
+	q := "WITH RECURSIVE nodes_cte(id, ark_id, path) AS (SELECT id, ark_id, cat.name::::TEXT AS path FROM charac AS ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON cat.lang_isocode = lang.isocode WHERE lang.isocode = :isocode AND ca.id = (SELECT ca.id FROM charac ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON lang.isocode = cat.lang_isocode WHERE lang.isocode = :isocode AND lower(cat.name) = lower(:name) AND ca.parent_id = 0) UNION ALL SELECT ca.id, ca.ark_id, (p.path || ';' || cat.name) FROM nodes_cte AS p, charac AS ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON cat.lang_isocode = lang.isocode WHERE lang.isocode = :isocode AND ca.parent_id = p.id) SELECT * FROM nodes_cte AS n ORDER BY n.id ASC;"
 	if params.Name == "" {
 		http.Error(w, "Please provide a charac name in url", 500)
 		return
@@ -919,23 +919,24 @@ func CharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 	}
 	list := []struct {
 		Id   int
+		Ark_id string
 		Path string
 	}{}
 	stmt, err := db.DB.PrepareNamed(q)
 	outp := ""
 	if err != nil {
-		log.Println(err)
+		log.Println("error while preparing query", err)
 		http.Error(w, "INTERNAL SERVER ERROR", 500)
 	}
 	err = stmt.Select(&list, params)
 	if err != nil {
-		log.Println(err)
+		log.Println("error in select", err)
 		http.Error(w, "INTERNAL SERVER ERROR", 500)
 	}
 	for _, charac := range list {
 		num := 4 - strings.Count(charac.Path, ";")
 		if num < 4 {
-			outp += charac.Path + strings.Repeat(";", num) + "\n"
+			outp += strconv.Itoa(charac.Id) + ";" + charac.Ark_id + ";" + charac.Path + strings.Repeat(";", num) + "\n"
 		}
 	}
 
