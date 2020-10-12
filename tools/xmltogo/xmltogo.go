@@ -112,6 +112,7 @@ func mysqlToPsqlType(row Row) string {
 		return "string"
 	}
 
+	fmt.Fprintf(os.Stderr, "datatype '"+row.Datatype+"' doest not exists");
 	return row.Datatype
 }
 
