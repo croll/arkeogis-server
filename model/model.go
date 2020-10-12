@@ -10,6 +10,7 @@ type Charac struct {
 	Parent_id	int	`db:"parent_id" json:"parent_id" xmltopsql:"ondelete:cascade"`	// Charac.Id
 	Order	int	`db:"order" json:"order"`
 	Author_user_id	int	`db:"author_user_id" json:"author_user_id"`	// User.Id
+	Ark_id	string	`db:"ark_id" json:"ark_id"`
 	Created_at	time.Time	`db:"created_at" json:"created_at"`
 	Updated_at	time.Time	`db:"updated_at" json:"updated_at"`
 }
@@ -25,7 +26,6 @@ type Charac_root struct {
 type Charac_tr struct {
 	Lang_isocode	string	`db:"lang_isocode" json:"lang_isocode"`	// Lang.Isocode
 	Charac_id	int	`db:"charac_id" json:"charac_id" xmltopsql:"ondelete:cascade"`	// Charac.Id
-	Ark_id	string	`db:"ark_id" json:"ark_id"`
 	Name	string	`db:"name" json:"name"`
 	Description	string	`db:"description" json:"description"`
 }
@@ -549,12 +549,12 @@ const Site_range__charac_tr_UpdateStr = "\"comment\" = :comment, \"bibliography\
 const City_tr_InsertStr = "\"name\", \"name_ascii\""
 const City_tr_InsertValuesStr = ":name, :name_ascii"
 const City_tr_UpdateStr = "\"name\" = :name, \"name_ascii\" = :name_ascii"
-const Charac_tr_InsertStr = "\"ark_id\", \"name\", \"description\""
-const Charac_tr_InsertValuesStr = ":ark_id, :name, :description"
-const Charac_tr_UpdateStr = "\"ark_id\" = :ark_id, \"name\" = :name, \"description\" = :description"
-const Charac_InsertStr = "\"parent_id\", \"order\", \"author_user_id\", \"created_at\", \"updated_at\""
-const Charac_InsertValuesStr = ":parent_id, :order, :author_user_id, now(), now()"
-const Charac_UpdateStr = "\"parent_id\" = :parent_id, \"order\" = :order, \"author_user_id\" = :author_user_id, \"updated_at\" = now()"
+const Charac_tr_InsertStr = "\"name\", \"description\""
+const Charac_tr_InsertValuesStr = ":name, :description"
+const Charac_tr_UpdateStr = "\"name\" = :name, \"description\" = :description"
+const Charac_InsertStr = "\"parent_id\", \"order\", \"author_user_id\", \"ark_id\", \"created_at\", \"updated_at\""
+const Charac_InsertValuesStr = ":parent_id, :order, :author_user_id, :ark_id, now(), now()"
+const Charac_UpdateStr = "\"parent_id\" = :parent_id, \"order\" = :order, \"author_user_id\" = :author_user_id, \"ark_id\" = :ark_id, \"updated_at\" = now()"
 const Map_layer_InsertStr = "\"creator_user_id\", \"type\", \"url\", \"identifier\", \"min_scale\", \"max_scale\", \"start_date\", \"end_date\", \"image_format\", \"geographical_extent_geom\", \"published\", \"license\", \"license_id\", \"max_usage_date\", \"created_at\", \"updated_at\", \"tile_matrix_set\", \"tile_matrix_string\", \"use_proxy\""
 const Map_layer_InsertValuesStr = ":creator_user_id, :type, :url, :identifier, :min_scale, :max_scale, :start_date, :end_date, :image_format, :geographical_extent_geom, :published, :license, :license_id, :max_usage_date, now(), now(), :tile_matrix_set, :tile_matrix_string, :use_proxy"
 const Map_layer_UpdateStr = "\"creator_user_id\" = :creator_user_id, \"type\" = :type, \"url\" = :url, \"identifier\" = :identifier, \"min_scale\" = :min_scale, \"max_scale\" = :max_scale, \"start_date\" = :start_date, \"end_date\" = :end_date, \"image_format\" = :image_format, \"geographical_extent_geom\" = :geographical_extent_geom, \"published\" = :published, \"license\" = :license, \"license_id\" = :license_id, \"max_usage_date\" = :max_usage_date, \"updated_at\" = now(), \"tile_matrix_set\" = :tile_matrix_set, \"tile_matrix_string\" = :tile_matrix_string, \"use_proxy\" = :use_proxy"
