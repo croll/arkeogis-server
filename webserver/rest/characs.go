@@ -923,7 +923,7 @@ func CharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 		Path string
 	}{}
 	stmt, err := db.DB.PrepareNamed(q)
-	outp := ""
+	outp := "IDArkeoGIS;IdArk;CARAC_NAME;CARAC_LVL1;CARAC_LVL2;CARAC_LVL3;CARAC_LVL4\n"
 	if err != nil {
 		log.Println("error while preparing query", err)
 		http.Error(w, "INTERNAL SERVER ERROR", 500)
