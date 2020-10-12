@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- SQL XML created by WWW SQL Designer, https://github.com/ondras/wwwsqldesigner/ -->
-<!-- Active URL: https://www.croll.fr/sqldesigner/ -->
+<!-- Active URL: https://croll.fr/sqldesigner/ -->
 <sql>
 <datatypes db="postgresql">
 	<group label="Numeric" color="rgb(238,238,170)">
@@ -554,6 +554,9 @@
 <relation table="charac" row="id" />
 <comment>xmltopsql:"ondelete:cascade"</comment>
 </row>
+<row name="ark_id" null="0" autoincrement="0">
+<datatype>VARCHAR(255)</datatype>
+</row>
 <row name="name" null="0" autoincrement="0">
 <datatype>VARCHAR(255)</datatype>
 </row>
@@ -678,7 +681,7 @@
 <datatype>TEXT</datatype>
 </row>
 <row name="copyright" null="0" autoincrement="0">
-<datatype>VARCHAR(255)</datatype>
+<datatype>TEXT</datatype>
 </row>
 <row name="description" null="0" autoincrement="0">
 <datatype>TEXT</datatype>
