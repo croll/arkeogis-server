@@ -400,7 +400,7 @@ func DatabaseExportList(w http.ResponseWriter, r *http.Request, proute routes.Pr
 	// do not show unpublished
 	q += " AND published = 't'"
 
-	q += " ORDER BY d.Id DESC"
+	q += " ORDER BY d.updated_at DESC"
 
 	// fmt.Println(q)
 
