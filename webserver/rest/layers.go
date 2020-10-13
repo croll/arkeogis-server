@@ -585,6 +585,9 @@ func GetExportLayers(w http.ResponseWriter, r *http.Request, proute routes.Prout
 
 	csvW.Write([]string{
 		translate.T(paramsExport.Lang, "MAP.EXPORT_NAME.T_HEADER"),
+		translate.T(paramsExport.Lang, "MAP.EXPORT_AUTHOR.T_HEADER"),
+		translate.T(paramsExport.Lang, "MAP.EXPORT_UPDATED_AT.T_HEADER"),
+		translate.T(paramsExport.Lang, "MAP.EXPORT_CREATED_AT.T_HEADER"),
 		translate.T(paramsExport.Lang, "MAP.EXPORT_LICENSE.T_HEADER"),
 		translate.T(paramsExport.Lang, "MAP.EXPORT_START_DATE.T_HEADER"),
 		translate.T(paramsExport.Lang, "MAP.EXPORT_END_DATE.T_HEADER"),
@@ -593,9 +596,22 @@ func GetExportLayers(w http.ResponseWriter, r *http.Request, proute routes.Prout
 		translate.T(paramsExport.Lang, "MAP.EXPORT_DESCRIPTION.T_HEADER"),
 	})
 
+	tnotupdated, err := time.Parse(time.UnixDate, "Thu Feb 06 11:06:39 PST 1975")
+	if err != nil {
+		panic(err)
+	}
+
 	for _, line := range result {
+		updatedat := line.Updated_at;
+		updatedatstr := "";
+		if (tnotupdated.Before(updatedat)) {
+			updatedatstr = line.Updated_at.Local().Format("2006-01-02 15:04");
+		}
 		csvW.Write([]string{
 			translate.GetTranslated(line.Name, paramsExport.Lang),
+			line.Author,
+			updatedatstr,
+			line.Created_at.Local().Format("2006-01-02 15:04"),
 			translate.GetTranslated(line.Copyright, paramsExport.Lang),
 			dateToDate(paramsExport.Lang, line.Start_date),
 			dateToDate(paramsExport.Lang, line.End_date),

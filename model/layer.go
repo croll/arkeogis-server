@@ -32,6 +32,7 @@ type LayerFullInfos struct {
 	Geographical_extent_geom string            `json:"geographical_extent_geom"`
 	Creator_user_id          int               `json:"creator_user_id"`
 	Published                bool              `json:"published"`
+	Updated_at               time.Time         `json:"updated_at"`
 	Created_at               time.Time         `json:"created_at"`
 	Author                   string            `json:"author"`
 	Type                     string            `json:"type"`
