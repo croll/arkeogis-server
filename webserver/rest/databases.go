@@ -357,7 +357,16 @@ func DatabaseExportList(w http.ResponseWriter, r *http.Request, proute routes.Pr
 		params.Lang = user.First_lang_isocode
 	}
 
-	q := "SELECT d.*, ST_AsGeoJSON(d.geographical_extent_geom) as geographical_extent_geom, l.name as license, (SELECT count(*) from site WHERE database_id = d.id) AS number_of_sites, (SELECT number_of_lines FROM import WHERE database_id = d.id ORDER BY id DESC LIMIT 1) AS number_of_lines, u.firstname || ' ' || u.lastname as author FROM \"database\" d LEFT JOIN \"user\" u ON d.owner = u.id LEFT JOIN license l ON l.id = d.license_id WHERE 1 = 1"
+	q := `SELECT d.*,
+			ST_AsGeoJSON(d.geographical_extent_geom) as geographical_extent_geom,
+			l.name as license,
+			(SELECT count(*) from site WHERE database_id = d.id) AS number_of_sites,
+			(SELECT number_of_lines FROM import WHERE database_id = d.id ORDER BY id DESC LIMIT 1) AS number_of_lines,
+			u.firstname || ' ' || u.lastname as author
+		  FROM "database" d
+		  LEFT JOIN "user" u ON d.owner = u.id
+		  LEFT JOIN license l ON l.id = d.license_id
+		  WHERE 1 = 1`
 
 	type dbInfos struct {
 		model.Database
@@ -514,19 +523,22 @@ func DatabaseExportList(w http.ResponseWriter, r *http.Request, proute routes.Pr
 	// LANG;NAME;AUTHORS;SUBJET;TYPE;LINES;SITES;SCALE;START_DATE;END_DATE;STATE;GEOGRAPHICAL_EXTENT;LICENSE;DESCRIPTION
 
 	csvW.Write([]string{
-		translate.TWeb(params.Lang, "DATABASE.EXPORT_LANG.T_HEADER"),
 		translate.TWeb(params.Lang, "DATABASE.EXPORT_NAME.T_HEADER"),
 		translate.TWeb(params.Lang, "DATABASE.EXPORT_AUTHORS.T_HEADER"),
 		translate.TWeb(params.Lang, "DATABASE.EXPORT_SUBJECT.T_HEADER"),
-		translate.TWeb(params.Lang, "DATABASE.EXPORT_TYPE.T_HEADER"),
-		translate.TWeb(params.Lang, "DATABASE.EXPORT_LINES.T_HEADER"),
-		translate.TWeb(params.Lang, "DATABASE.EXPORT_SITES.T_HEADER"),
-		translate.TWeb(params.Lang, "DATABASE.EXPORT_SCALE.T_HEADER"),
+		translate.TWeb(params.Lang, "DATABASE.EXPORT_DATE_UPDATED.T_HEADER"),
+		translate.TWeb(params.Lang, "DATABASE.EXPORT_DATE_CREATED.T_HEADER"),
+		translate.TWeb(params.Lang, "DATABASE.EXPORT_LICENSE.T_HEADER"),
 		translate.TWeb(params.Lang, "DATABASE.EXPORT_START_DATE.T_HEADER"),
 		translate.TWeb(params.Lang, "DATABASE.EXPORT_END_DATE.T_HEADER"),
+		translate.TWeb(params.Lang, "DATABASE.EXPORT_LINES.T_HEADER"),
+		translate.TWeb(params.Lang, "DATABASE.EXPORT_SITES.T_HEADER"),
+		translate.TWeb(params.Lang, "DATABASE.EXPORT_TYPE.T_HEADER"),
 		translate.TWeb(params.Lang, "DATABASE.EXPORT_STATE.T_HEADER"),
 		translate.TWeb(params.Lang, "DATABASE.EXPORT_GEOGRAPHICAL_EXTENT.T_HEADER"),
-		translate.TWeb(params.Lang, "DATABASE.EXPORT_LICENSE.T_HEADER"),
+		translate.TWeb(params.Lang, "DATABASE.EXPORT_GEOGRAPHICAL_EXTENT_GEOM.T_HEADER"),
+		translate.TWeb(params.Lang, "DATABASE.EXPORT_SCALE.T_HEADER"),
+		translate.TWeb(params.Lang, "DATABASE.EXPORT_LANG.T_HEADER"),
 		translate.TWeb(params.Lang, "DATABASE.EXPORT_DESCRIPTION.T_HEADER"),
 	})
 
@@ -538,19 +550,22 @@ func DatabaseExportList(w http.ResponseWriter, r *http.Request, proute routes.Pr
 		}
 
 		csvW.Write([]string{
-			line.Default_language,
 			line.Name,
 			strings.Join(authors, " - "),
 			translate.GetTranslated(line.Subject, params.Lang),
-			translate.TWeb(params.Lang, "DATABASE"+"."+"TYPE_"+strings.ToUpper(strings.Replace(line.Type, "-", "", 1))+"."+"T"+"_TITLE"),
-			strconv.Itoa(line.Number_of_lines),
-			strconv.Itoa(line.Number_of_sites),
-			translate.TWeb(params.Lang, "DATABASE"+"."+"SCALE_RESOLUTION_"+strings.ToUpper(strings.Replace(line.Scale_resolution, "-", "", 1))+"."+"T"+"_TITLE"),
+			line.Updated_at.String(),
+			line.Created_at.String(),
+			line.License,
 			dateToDate(params.Lang, line.Start_date),
 			dateToDate(params.Lang, line.End_date),
+			strconv.Itoa(line.Number_of_lines),
+			strconv.Itoa(line.Number_of_sites),
+			translate.TWeb(params.Lang, "DATABASE"+"."+"TYPE_"+strings.ToUpper(strings.Replace(line.Type, "-", "", 1))+"."+"T"+"_TITLE"),
 			translate.TWeb(params.Lang, "DATABASE"+"."+"STATE_"+strings.ToUpper(strings.Replace(line.State, "-", "", 1))+"."+"T"+"_TITLE"),
 			translate.TWeb(params.Lang, "DATABASE"+"."+"GEOGRAPHICAL_EXTENT_"+strings.ToUpper(strings.Replace(line.Geographical_extent, "-", "", 1))+"."+"T"+"_TITLE"),
-			line.License,
+			line.Geographical_extent_geom,
+			translate.TWeb(params.Lang, "DATABASE"+"."+"SCALE_RESOLUTION_"+strings.ToUpper(strings.Replace(line.Scale_resolution, "-", "", 1))+"."+"T"+"_TITLE"),
+			line.Default_language,
 			translate.GetTranslated(line.Description, params.Lang),
 		})
 	}
