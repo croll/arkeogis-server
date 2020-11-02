@@ -22,6 +22,8 @@
 package rest
 
 import (
+	"archive/zip"
+	"bytes"
 	"encoding/csv"
 	"encoding/json"
 	"errors"
@@ -34,8 +36,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"bytes"
-	"archive/zip"
 
 	db "github.com/croll/arkeogis-server/db"
 	export "github.com/croll/arkeogis-server/export"
@@ -51,10 +51,9 @@ type DatabaseInfosParams struct {
 }
 
 type DatabaseExportOmekaParams struct {
-	Id       int `min:"0" error:"Database Id is mandatory"`
+	Id           int `min:"0" error:"Database Id is mandatory"`
 	ChronologyId int `min:"0" error:"chronology is mandatory"`
 }
-
 
 func init() {
 	Routes := []*routes.Route{
@@ -518,6 +517,7 @@ func DatabaseExportList(w http.ResponseWriter, r *http.Request, proute routes.Pr
 	}
 
 	w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+	//w.Header().Set("Content-Disposition", "attachment; filename=\"databases.csv\"")
 	var csvW = csv.NewWriter(w)
 
 	// LANG;NAME;AUTHORS;SUBJET;TYPE;LINES;SITES;SCALE;START_DATE;END_DATE;STATE;GEOGRAPHICAL_EXTENT;LICENSE;DESCRIPTION
@@ -709,7 +709,6 @@ func DatabaseExportCSVArkeogis(w http.ResponseWriter, r *http.Request, proute ro
 	w.Write([]byte(csvContent))
 }
 
-
 func DatabaseExportZIPOmeka(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	params := proute.Params.(*DatabaseExportOmekaParams)
 	tx, err := db.DB.Beginx()
@@ -756,7 +755,7 @@ func DatabaseExportZIPOmeka(w http.ResponseWriter, r *http.Request, proute route
 		t.Hour(), t.Minute(), t.Second())
 	filename = strings.ReplaceAll(filename, "\"", "_")
 
-			// Create a buffer to write our archive to.
+	// Create a buffer to write our archive to.
 	buf := new(bytes.Buffer)
 
 	// Create a new zip archive.
@@ -766,8 +765,8 @@ func DatabaseExportZIPOmeka(w http.ResponseWriter, r *http.Request, proute route
 	var files = []struct {
 		Name, Body string
 	}{
-		{"akg2omk-sites_"+filename+".csv", csvSitesContent},
-		{"akg2omk-caracterisations_"+filename+".csv", csvCaracsContent},
+		{"akg2omk-sites_" + filename + ".csv", csvSitesContent},
+		{"akg2omk-caracterisations_" + filename + ".csv", csvCaracsContent},
 	}
 
 	for _, file := range files {
@@ -794,22 +793,20 @@ func DatabaseExportZIPOmeka(w http.ResponseWriter, r *http.Request, proute route
 		log.Fatal(err)
 	}
 
-
 	w.Header().Set("Content-Type", "application/zip")
 	w.Header().Set("Content-Disposition", "attachment; filename=\""+filename+".zip\"")
 	w.Header().Set("Content-Length", strconv.Itoa(buf.Len()))
 
 	/*
-	hackb := make([]byte, buf.Len())
-	var readed int
-	readed, err = buf.Read(hackb)
-	log.Println("readed: ", readed, err)
-	w.Write(hackb)
-	err = ioutil.WriteFile("/tmp/dat1.zip", hackb, 0644)
+		hackb := make([]byte, buf.Len())
+		var readed int
+		readed, err = buf.Read(hackb)
+		log.Println("readed: ", readed, err)
+		w.Write(hackb)
+		err = ioutil.WriteFile("/tmp/dat1.zip", hackb, 0644)
 	*/
 	buf.WriteTo(w)
 }
-
 
 func DatabaseDelete(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	params := proute.Json.(*DatabaseInfosParams)
