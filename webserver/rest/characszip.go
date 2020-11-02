@@ -338,7 +338,7 @@ func csvzipDoTheMix(actual *CharacsUpdateStruct, newcontent map[string]ZipConten
 			pactolsIds[lang] = zipContent.Decoded[linenum][CharacCsvColumnPactolsId]
 			path := []string{}
 
-			for y, val := range zipContent.Decoded[linenum][CharacCsvColumnPath0:] {
+			for y, val := range zipContent.Decoded[linenum][CharacCsvColumnPath0 : CharacCsvColumnPath4+1] {
 				if len(val) == 0 {
 					break
 				}
@@ -427,6 +427,12 @@ func csvzipDoTheMix(actual *CharacsUpdateStruct, newcontent map[string]ZipConten
 				if parent != nil && levelsize != len(paths[firstlang]) { // found
 					subelem.Charac.Parent_id = parent.Id
 				} else {
+					fmt.Println("can't insert: ", subelem)
+					fmt.Println("paths["+firstlang+"]: ", paths[firstlang])
+					fmt.Println("Parent element of line " + strconv.Itoa(linenum) + " not found")
+					fmt.Println("parent: ", parent)
+					fmt.Println("levelsize: ", levelsize)
+
 					return errors.New("Parent element of line " + strconv.Itoa(linenum) + " not found")
 				}
 
