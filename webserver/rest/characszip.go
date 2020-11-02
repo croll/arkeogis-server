@@ -151,7 +151,7 @@ func CharacsUpdateZip(w http.ResponseWriter, r *http.Request, proute routes.Prou
 	contents, err := readZipCharacs(c.ZipContent)
 	if err != nil {
 		log.Println("CharacsUpdateZip: can't load zip...", err)
-		fmt.Println("zip content : ", c.ZipContent)
+		//fmt.Println("zip content : ", c.ZipContent)
 		_ = tx.Rollback()
 		routes.FieldError(w, "json.zipcontent", "zipcontent", err.Error())
 		return
@@ -396,7 +396,7 @@ func csvzipDoTheMix(actual *CharacsUpdateStruct, newcontent map[string]ZipConten
 				if _, ok := elem.Name[lang]; ok {
 
 					if elem.Name[lang] != paths[lang][len(paths[lang])-1] {
-						fmt.Println("update["+lang+"] : ", elem.Name[lang], " => ", paths[lang][len(paths[lang])-1])
+						//fmt.Println("update["+lang+"] : ", elem.Name[lang], " => ", paths[lang][len(paths[lang])-1])
 					}
 
 					elem.Name[lang] = paths[lang][len(paths[lang])-1] // this is the update
@@ -427,21 +427,15 @@ func csvzipDoTheMix(actual *CharacsUpdateStruct, newcontent map[string]ZipConten
 				if parent != nil && levelsize != len(paths[firstlang]) { // found
 					subelem.Charac.Parent_id = parent.Id
 				} else {
-					fmt.Println("can't insert: ", subelem)
-					fmt.Println("paths["+firstlang+"]: ", paths[firstlang])
-					fmt.Println("Parent element of line " + strconv.Itoa(linenum) + " not found")
-					fmt.Println("parent: ", parent)
-					fmt.Println("levelsize: ", levelsize)
-
 					return errors.New("Parent element of line " + strconv.Itoa(linenum) + " not found")
 				}
 
-				fmt.Println("INSERT: ", subelem)
+				//fmt.Println("INSERT: ", subelem)
 
 				parent.Content = append(parent.Content, subelem)
 			} else {
 
-				fmt.Println("INSERT ROOT: ", subelem)
+				//fmt.Println("INSERT ROOT: ", subelem)
 
 				actual.Content = append(actual.Content, subelem)
 			}
