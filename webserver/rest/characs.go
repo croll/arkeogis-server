@@ -52,6 +52,7 @@ type CharacListCsvParams struct {
 	Id      int    `min:"1" error:"Charac Id is mandatory"`
 	Isocode string `json:"isocode"`
 	Dl      string `json:"dl"`
+	Html    int    `json:"html"`
 }
 
 type CharacSetHiddensParams struct {
@@ -957,6 +958,10 @@ func CharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 			lvl1Name = name
 		}
 
+		if params.Html == 1 && len(lvl1.Pactols_id) > 0 {
+			lvl1.Pactols_id = "<a href=\"" + lvl1.Pactols_id + "\">" + lvl1.Pactols_id + "</a>"
+		}
+
 		table = append(table, []string{
 			strconv.Itoa(lvl1.Id),
 			lvl0Name,
@@ -972,6 +977,10 @@ func CharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 			lvl2Name := "LANGNOTFOUND"
 			if name, ok := lvl2.Name[params.Isocode]; ok {
 				lvl2Name = name
+			}
+
+			if params.Html == 1 && len(lvl2.Pactols_id) > 0 {
+				lvl2.Pactols_id = "<a href=\"" + lvl2.Pactols_id + "\">" + lvl2.Pactols_id + "</a>"
 			}
 
 			table = append(table, []string{
@@ -991,6 +1000,10 @@ func CharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 					lvl3Name = name
 				}
 
+				if params.Html == 1 && len(lvl3.Pactols_id) > 0 {
+					lvl3.Pactols_id = "<a href=\"" + lvl3.Pactols_id + "\">" + lvl3.Pactols_id + "</a>"
+				}
+
 				table = append(table, []string{
 					strconv.Itoa(lvl3.Id),
 					lvl0Name,
@@ -1006,6 +1019,10 @@ func CharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 					lvl4Name := "LANGNOTFOUND"
 					if name, ok := lvl4.Name[params.Isocode]; ok {
 						lvl4Name = name
+					}
+
+					if params.Html == 1 && len(lvl4.Pactols_id) > 0 {
+						lvl4.Pactols_id = "<a href=\"" + lvl4.Pactols_id + "\">" + lvl4.Pactols_id + "</a>"
 					}
 
 					table = append(table, []string{
