@@ -936,13 +936,13 @@ func CharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 	table := [][]string{}
 	table = append(table, []string{
 		"IDArkeoGIS",
-		"IdArk",
-		"Order",
 		"CARAC_NAME",
 		"CARAC_LVL1",
 		"CARAC_LVL2",
 		"CARAC_LVL3",
 		"CARAC_LVL4",
+		"IdArk",
+		"IdPactols",
 	})
 
 	lvl0 := answer.CharacTreeStruct
@@ -959,13 +959,13 @@ func CharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 
 		table = append(table, []string{
 			strconv.Itoa(lvl1.Id),
-			lvl1.Ark_id,
-			strconv.Itoa(lvl1.Order),
 			lvl0Name,
 			lvl1Name,
 			"",
 			"",
 			"",
+			lvl1.Ark_id,
+			lvl1.Pactols_id,
 		})
 
 		for _, lvl2 := range lvl1.Content {
@@ -976,13 +976,13 @@ func CharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 
 			table = append(table, []string{
 				strconv.Itoa(lvl2.Id),
-				lvl2.Ark_id,
-				strconv.Itoa(lvl2.Order),
 				lvl0Name,
 				lvl1Name,
 				lvl2Name,
 				"",
 				"",
+				lvl2.Ark_id,
+				lvl2.Pactols_id,
 			})
 
 			for _, lvl3 := range lvl2.Content {
@@ -993,13 +993,13 @@ func CharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 
 				table = append(table, []string{
 					strconv.Itoa(lvl3.Id),
-					lvl3.Ark_id,
-					strconv.Itoa(lvl3.Order),
 					lvl0Name,
 					lvl1Name,
 					lvl2Name,
 					lvl3Name,
 					"",
+					lvl3.Ark_id,
+					lvl3.Pactols_id,
 				})
 
 				for _, lvl4 := range lvl3.Content {
@@ -1010,13 +1010,13 @@ func CharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 
 					table = append(table, []string{
 						strconv.Itoa(lvl4.Id),
-						lvl4.Ark_id,
-						strconv.Itoa(lvl4.Order),
 						lvl0Name,
 						lvl1Name,
 						lvl2Name,
 						lvl3Name,
 						lvl4Name,
+						lvl4.Ark_id,
+						lvl4.Pactols_id,
 					})
 
 				}
