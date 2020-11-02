@@ -44,14 +44,14 @@ import (
 )
 
 const CharacCsvColumnId = 0
-const CharacCsvColumnArkId = 1
-const CharacCsvColumnOrder = 2
-const CharacCsvColumnName = 3
-const CharacCsvColumnPath0 = 3
-const CharacCsvColumnPath1 = 4
-const CharacCsvColumnPath2 = 5
-const CharacCsvColumnPath3 = 6
-const CharacCsvColumnPath4 = 7
+const CharacCsvColumnName = 1
+const CharacCsvColumnPath0 = 1
+const CharacCsvColumnPath1 = 2
+const CharacCsvColumnPath2 = 3
+const CharacCsvColumnPath3 = 4
+const CharacCsvColumnPath4 = 5
+const CharacCsvColumnArkId = 6
+const CharacCsvColumnPactolsId = 7
 
 type CharacsZipUpdateStruct struct {
 	CharacId   int    `json:"characId"`
@@ -329,13 +329,13 @@ func csvzipDoTheMix(actual *CharacsUpdateStruct, newcontent map[string]ZipConten
 	for linenum := 1; linenum < totalcount; linenum++ {
 		ids := map[string]string{}
 		arkIds := map[string]string{}
-		orders := map[string]string{}
+		pactolsIds := map[string]string{}
 		paths := map[string][]string{}
 
 		for lang, zipContent := range newcontent {
 			ids[lang] = zipContent.Decoded[linenum][CharacCsvColumnId]
 			arkIds[lang] = zipContent.Decoded[linenum][CharacCsvColumnArkId]
-			orders[lang] = zipContent.Decoded[linenum][CharacCsvColumnOrder]
+			pactolsIds[lang] = zipContent.Decoded[linenum][CharacCsvColumnPactolsId]
 			path := []string{}
 
 			for y, val := range zipContent.Decoded[linenum][CharacCsvColumnPath0:] {
@@ -362,9 +362,9 @@ func csvzipDoTheMix(actual *CharacsUpdateStruct, newcontent map[string]ZipConten
 		}
 
 		// check if every arkIds are identical
-		for _, order := range orders {
-			if order != orders[firstlang] {
-				return errors.New("orders on line " + strconv.Itoa(linenum) + " are not identical on all languages : '" + orders[firstlang] + "' != '" + order + "'")
+		for _, pactolsId := range pactolsIds {
+			if pactolsId != pactolsIds[firstlang] {
+				return errors.New("pactolsIds on line " + strconv.Itoa(linenum) + " are not identical on all languages : '" + pactolsIds[firstlang] + "' != '" + pactolsId + "'")
 			}
 		}
 
@@ -376,10 +376,6 @@ func csvzipDoTheMix(actual *CharacsUpdateStruct, newcontent map[string]ZipConten
 		}
 
 		// do the update/insert
-		order, err := strconv.Atoi(orders[firstlang])
-		if err != nil {
-			return errors.New("bad order on line " + strconv.Itoa(linenum))
-		}
 		if len(ids[firstlang]) > 0 {
 			// we have an id, so it's an update action
 			id, err := strconv.Atoi(ids[firstlang])
@@ -392,6 +388,8 @@ func csvzipDoTheMix(actual *CharacsUpdateStruct, newcontent map[string]ZipConten
 				return errors.New("characs on line " + strconv.Itoa(linenum) + " have a different level count from what exists actually in database " + strconv.Itoa(len(paths[firstlang])) + " != " + strconv.Itoa(levelsize))
 			}
 
+			elem.Charac.Order = linenum * 10
+
 			for lang, _ := range newcontent {
 				if _, ok := elem.Name[lang]; ok {
 
@@ -402,12 +400,13 @@ func csvzipDoTheMix(actual *CharacsUpdateStruct, newcontent map[string]ZipConten
 					elem.Name[lang] = paths[lang][len(paths[lang])-1] // this is the update
 				}
 			}
+
 		} else {
 			// we no not have an id, so it's an insert action
 
 			// create a new element
 			subelem := CharacTreeStruct{}
-			subelem.Charac.Order = order
+			subelem.Charac.Order = linenum * 10
 			subelem.Charac.Ark_id = arkIds[firstlang]
 
 			for lang, _ := range newcontent {
