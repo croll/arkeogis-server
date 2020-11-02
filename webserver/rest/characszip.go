@@ -389,6 +389,8 @@ func csvzipDoTheMix(actual *CharacsUpdateStruct, newcontent map[string]ZipConten
 			}
 
 			elem.Charac.Order = linenum * 10
+			elem.Charac.Ark_id = arkIds[firstlang]
+			elem.Charac.Pactols_id = pactolsIds[firstlang]
 
 			for lang, _ := range newcontent {
 				if _, ok := elem.Name[lang]; ok {
@@ -408,6 +410,7 @@ func csvzipDoTheMix(actual *CharacsUpdateStruct, newcontent map[string]ZipConten
 			subelem := CharacTreeStruct{}
 			subelem.Charac.Order = linenum * 10
 			subelem.Charac.Ark_id = arkIds[firstlang]
+			subelem.Charac.Pactols_id = pactolsIds[firstlang]
 
 			for lang, _ := range newcontent {
 				subelem.Name[lang] = paths[lang][len(paths[lang])-1]
