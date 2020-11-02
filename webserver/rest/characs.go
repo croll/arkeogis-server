@@ -22,12 +22,12 @@
 package rest
 
 import (
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"log"
 	"reflect"
 	"strconv"
-	"strings"
 
 	"net/http"
 
@@ -49,8 +49,8 @@ type CharacRootsParams struct {
 }
 
 type CharacListCsvParams struct {
+	Id      int    `min:"1" error:"Charac Id is mandatory"`
 	Isocode string `json:"isocode"`
-	Name    string `json:"name"`
 	Dl      string `json:"dl"`
 }
 
@@ -908,7 +908,178 @@ func CharacSetHiddens(w http.ResponseWriter, r *http.Request, proute routes.Prou
 
 func CharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	params := proute.Params.(*CharacListCsvParams)
-	q := "WITH RECURSIVE nodes_cte(id, ark_id, path) AS (SELECT id, ark_id, cat.name::::TEXT AS path FROM charac AS ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON cat.lang_isocode = lang.isocode WHERE lang.isocode = :isocode AND ca.id = (SELECT ca.id FROM charac ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON lang.isocode = cat.lang_isocode WHERE lang.isocode = :isocode AND lower(cat.name) = lower(:name) AND ca.parent_id = 0) UNION ALL SELECT ca.id, ca.ark_id, (p.path || ';' || cat.name) FROM nodes_cte AS p, charac AS ca LEFT JOIN charac_tr cat ON ca.id = cat.charac_id LEFT JOIN lang ON cat.lang_isocode = lang.isocode WHERE lang.isocode = :isocode AND ca.parent_id = p.id) SELECT * FROM nodes_cte AS n ORDER BY n.id ASC;"
+
+	// transaction begin...
+	tx, err := db.DB.Beginx()
+	if err != nil {
+		userSqlError(w, err)
+		return
+	}
+
+	// get the user
+	_user, ok := proute.Session.Get("user")
+	if !ok {
+		log.Println("CharacsUpdate: can't get user in session...", _user)
+		_ = tx.Rollback()
+		return
+	}
+
+	user, ok := _user.(model.User)
+	if !ok {
+		log.Println("CharacsUpdate: can't cast user...", _user)
+		_ = tx.Rollback()
+		return
+	}
+
+	answer, err := characsGetTree(w, tx, params.Id, 0, user)
+
+	table := [][]string{}
+	table = append(table, []string{
+		"IDArkeoGIS",
+		"IdArk",
+		"Order",
+		"CARAC_NAME",
+		"CARAC_LVL1",
+		"CARAC_LVL2",
+		"CARAC_LVL3",
+		"CARAC_LVL4",
+	})
+
+	lvl0 := answer.CharacTreeStruct
+	lvl0Name := "LANGNOTFOUND"
+	if name, ok := lvl0.Name[params.Isocode]; ok {
+		lvl0Name = name
+	}
+
+	for _, lvl1 := range lvl0.Content {
+		lvl1Name := "LANGNOTFOUND"
+		if name, ok := lvl1.Name[params.Isocode]; ok {
+			lvl1Name = name
+		}
+
+		table = append(table, []string{
+			strconv.Itoa(lvl1.Id),
+			lvl1.Ark_id,
+			strconv.Itoa(lvl1.Order),
+			lvl0Name,
+			lvl1Name,
+			"",
+			"",
+			"",
+		})
+
+		for _, lvl2 := range lvl1.Content {
+			lvl2Name := "LANGNOTFOUND"
+			if name, ok := lvl2.Name[params.Isocode]; ok {
+				lvl2Name = name
+			}
+
+			table = append(table, []string{
+				strconv.Itoa(lvl2.Id),
+				lvl2.Ark_id,
+				strconv.Itoa(lvl2.Order),
+				lvl0Name,
+				lvl1Name,
+				lvl2Name,
+				"",
+				"",
+			})
+
+			for _, lvl3 := range lvl2.Content {
+				lvl3Name := "LANGNOTFOUND"
+				if name, ok := lvl3.Name[params.Isocode]; ok {
+					lvl3Name = name
+				}
+
+				table = append(table, []string{
+					strconv.Itoa(lvl3.Id),
+					lvl3.Ark_id,
+					strconv.Itoa(lvl3.Order),
+					lvl0Name,
+					lvl1Name,
+					lvl2Name,
+					lvl3Name,
+					"",
+				})
+
+				for _, lvl4 := range lvl3.Content {
+					lvl4Name := "LANGNOTFOUND"
+					if name, ok := lvl4.Name[params.Isocode]; ok {
+						lvl4Name = name
+					}
+
+					table = append(table, []string{
+						strconv.Itoa(lvl4.Id),
+						lvl4.Ark_id,
+						strconv.Itoa(lvl4.Order),
+						lvl0Name,
+						lvl1Name,
+						lvl2Name,
+						lvl3Name,
+						lvl4Name,
+					})
+
+				}
+
+			}
+
+		}
+	}
+
+	// commit...
+	err = tx.Commit()
+	if err != nil {
+		log.Println("commit failed")
+		userSqlError(w, err)
+		_ = tx.Rollback()
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+	csvW := csv.NewWriter(w)
+	csvW.WriteAll(table)
+	csvW.Flush()
+}
+
+/*
+func OldCharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+	params := proute.Params.(*CharacListCsvParams)
+	q := `WITH RECURSIVE
+	nodes_cte(id, ark_id, "order", path)
+	AS (
+	  SELECT id, ark_id, "order", cat.name::::TEXT AS path
+	  FROM charac AS ca
+	  LEFT JOIN charac_tr cat
+		ON ca.id = cat.charac_id
+	  LEFT JOIN lang
+	  ON cat.lang_isocode = lang.isocode
+	  WHERE lang.isocode = :isocode
+	  AND ca.id = (
+		SELECT ca.id
+		FROM charac ca
+		LEFT JOIN charac_tr cat
+		ON ca.id = cat.charac_id
+		LEFT JOIN lang
+		ON lang.isocode = cat.lang_isocode
+		  WHERE lang.isocode = :isocode
+		  AND lower(cat.name) = lower(:name)
+		  AND ca.parent_id = 0
+	  )
+	  UNION ALL
+	  SELECT ca.id, ca.ark_id, ca."order", (p.path || ';' || cat.name)
+	  FROM
+		nodes_cte AS p,
+		charac AS ca
+	  LEFT JOIN charac_tr cat
+		ON ca.id = cat.charac_id
+	  LEFT JOIN lang
+		ON cat.lang_isocode = lang.isocode
+		WHERE lang.isocode = :isocode
+		AND ca.parent_id = p.id
+	)
+	SELECT * FROM nodes_cte AS n ORDER BY n.Order ASC
+	`
+
 	if params.Name == "" {
 		http.Error(w, "Please provide a charac name in url", 500)
 		return
@@ -918,12 +1089,13 @@ func CharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 		return
 	}
 	list := []struct {
-		Id   int
+		Id     int
 		Ark_id string
-		Path string
+		Order  int
+		Path   string
 	}{}
 	stmt, err := db.DB.PrepareNamed(q)
-	outp := "IDArkeoGIS;IdArk;CARAC_NAME;CARAC_LVL1;CARAC_LVL2;CARAC_LVL3;CARAC_LVL4\n"
+	outp := "IDArkeoGIS;IdArk;Order;CARAC_NAME;CARAC_LVL1;CARAC_LVL2;CARAC_LVL3;CARAC_LVL4\n"
 	if err != nil {
 		log.Println("error while preparing query", err)
 		http.Error(w, "INTERNAL SERVER ERROR", 500)
@@ -936,13 +1108,14 @@ func CharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 	for _, charac := range list {
 		num := 4 - strings.Count(charac.Path, ";")
 		if num < 4 {
-			outp += strconv.Itoa(charac.Id) + ";" + charac.Ark_id + ";" + charac.Path + strings.Repeat(";", num) + "\n"
+			outp += strconv.Itoa(charac.Id) + ";" + charac.Ark_id + ";" + strconv.Itoa(charac.Order) + ";" + charac.Path + strings.Repeat(";", num) + "\n"
 		}
 	}
 
 	if params.Dl != "" {
-		w.Header().Set("Content-Type", "text/csv")
+		w.Header().Set("Content-Type", "text/csv; charset=utf-8")
 	}
 
 	w.Write([]byte(outp))
 }
+*/
