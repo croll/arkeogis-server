@@ -581,6 +581,7 @@ func GetExportLayers(w http.ResponseWriter, r *http.Request, proute routes.Prout
 	})
 
 	w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+	//w.Header().Set("Content-Disposition", "attachment; filename=\"layers.csv\"")
 	var csvW = csv.NewWriter(w)
 
 	csvW.Write([]string{
@@ -602,10 +603,10 @@ func GetExportLayers(w http.ResponseWriter, r *http.Request, proute routes.Prout
 	}
 
 	for _, line := range result {
-		updatedat := line.Updated_at;
-		updatedatstr := "";
-		if (tnotupdated.Before(updatedat)) {
-			updatedatstr = line.Updated_at.Local().Format("2006-01-02 15:04");
+		updatedat := line.Updated_at
+		updatedatstr := ""
+		if tnotupdated.Before(updatedat) {
+			updatedatstr = line.Updated_at.Local().Format("2006-01-02 15:04")
 		}
 		csvW.Write([]string{
 			translate.GetTranslated(line.Name, paramsExport.Lang),
