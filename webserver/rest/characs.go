@@ -958,8 +958,8 @@ func CharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 			lvl1Name = name
 		}
 
-		if params.Html == 1 && len(lvl1.Pactols_id) > 0 {
-			lvl1.Pactols_id = "<a href=\"" + lvl1.Pactols_id + "\">" + lvl1.Pactols_id + "</a>"
+		if params.Html == 1 && len(lvl1.Ark_id) > 0 {
+			lvl1.Ark_id = "<a href=\"" + lvl1.Ark_id + "\">" + lvl1.Ark_id + "</a>"
 		}
 
 		table = append(table, []string{
@@ -979,8 +979,8 @@ func CharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 				lvl2Name = name
 			}
 
-			if params.Html == 1 && len(lvl2.Pactols_id) > 0 {
-				lvl2.Pactols_id = "<a href=\"" + lvl2.Pactols_id + "\">" + lvl2.Pactols_id + "</a>"
+			if params.Html == 1 && len(lvl2.Ark_id) > 0 {
+				lvl2.Ark_id = "<a href=\"" + lvl2.Ark_id + "\">" + lvl2.Ark_id + "</a>"
 			}
 
 			table = append(table, []string{
@@ -1000,8 +1000,8 @@ func CharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 					lvl3Name = name
 				}
 
-				if params.Html == 1 && len(lvl3.Pactols_id) > 0 {
-					lvl3.Pactols_id = "<a href=\"" + lvl3.Pactols_id + "\">" + lvl3.Pactols_id + "</a>"
+				if params.Html == 1 && len(lvl3.Ark_id) > 0 {
+					lvl3.Ark_id = "<a href=\"" + lvl3.Ark_id + "\">" + lvl3.Ark_id + "</a>"
 				}
 
 				table = append(table, []string{
@@ -1021,8 +1021,8 @@ func CharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 						lvl4Name = name
 					}
 
-					if params.Html == 1 && len(lvl4.Pactols_id) > 0 {
-						lvl4.Pactols_id = "<a href=\"" + lvl4.Pactols_id + "\">" + lvl4.Pactols_id + "</a>"
+					if params.Html == 1 && len(lvl4.Ark_id) > 0 {
+						lvl4.Ark_id = "<a href=\"" + lvl4.Ark_id + "\">" + lvl4.Ark_id + "</a>"
 					}
 
 					table = append(table, []string{
