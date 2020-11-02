@@ -412,6 +412,9 @@ func csvzipDoTheMix(actual *CharacsUpdateStruct, newcontent map[string]ZipConten
 			subelem.Charac.Ark_id = arkIds[firstlang]
 			subelem.Charac.Pactols_id = pactolsIds[firstlang]
 
+			subelem.Name = map[string]string{}
+			subelem.Description = map[string]string{}
+
 			for lang, _ := range newcontent {
 				subelem.Name[lang] = paths[lang][len(paths[lang])-1]
 				subelem.Description[lang] = ""
