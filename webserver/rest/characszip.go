@@ -270,7 +270,7 @@ func readZipCharacs(zipContent []byte) (map[string]ZipContent, error) {
 
 func csvDecodeCharacs(in string) ([][]string, error) {
 	r := csv.NewReader(strings.NewReader(in))
-	//r.Comma = ';'
+	r.Comma = ';'
 	records, err := r.ReadAll()
 	if err != nil {
 		return nil, err

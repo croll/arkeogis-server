@@ -1054,6 +1054,7 @@ func CharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 
 	w.Header().Set("Content-Type", "text/csv; charset=utf-8")
 	csvW := csv.NewWriter(w)
+	csvW.Comma = ';'
 	csvW.WriteAll(table)
 	csvW.Flush()
 }
