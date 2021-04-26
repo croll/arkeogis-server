@@ -298,6 +298,12 @@
 <row name="declared_creation_date" null="0" autoincrement="0">
 <datatype>TIMESTAMP</datatype>
 </row>
+<row name="re_use" null="0" autoincrement="0">
+<datatype>TEXT</datatype>
+</row>
+<row name="public" null="0" autoincrement="0">
+<datatype>BOOLEAN</datatype>
+<default>'false'</default></row>
 <row name="created_at" null="0" autoincrement="0">
 <datatype>TIMESTAMP</datatype>
 </row>
@@ -466,7 +472,7 @@
 <part>lang_isocode</part>
 </key>
 </table>
-<table x="910" y="458" name="site_range">
+<table x="902" y="413" name="site_range">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
