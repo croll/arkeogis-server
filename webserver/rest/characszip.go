@@ -65,7 +65,9 @@ func init() {
 			Func:        CharacsUpdateZip,
 			Method:      "POST",
 			Json:        reflect.TypeOf(CharacsZipUpdateStruct{}),
-			Permissions: []string{},
+			Permissions: []string{
+				"request map",
+			},
 		},
 	}
 	routes.RegisterMultiple(Routes)

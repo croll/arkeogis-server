@@ -632,7 +632,7 @@ func getShpLayers(params *LayersParams, viewUnpublished bool, tx *sqlx.Tx) (laye
 
 	layers = []*model.LayerFullInfos{}
 
-	q := "SELECT m.id, m.start_date, m.end_date, ST_AsGeoJSON(m.geographical_extent_geom) as geographical_extent_geom, m.published, m.created_at, m.creator_user_id, u.firstname || ' ' || u.lastname as author, 'shp' AS type FROM shapefile m LEFT JOIN \"user\" u ON m.creator_user_id = u.id WHERE m.id > 0"
+	q := "SELECT m.id, m.start_date, m.end_date, ST_AsGeoJSON(m.geographical_extent_geom) as geographical_extent_geom, m.published, m.created_at, m.updated_at, m.creator_user_id, u.firstname || ' ' || u.lastname as author, 'shp' AS type FROM shapefile m LEFT JOIN \"user\" u ON m.creator_user_id = u.id WHERE m.id > 0"
 
 	if params.Author > 0 {
 		q += " AND u.id = :author"
@@ -689,7 +689,7 @@ func getWmLayers(params *LayersParams, viewUnpublished bool, tx *sqlx.Tx) (layer
 
 	layers = []*model.LayerFullInfos{}
 
-	q := "SELECT m.id, m.type, m.start_date, m.end_date, m.min_scale, m.max_scale, m.tile_matrix_set, m.tile_matrix_string, m.use_proxy, ST_AsGeoJSON(m.geographical_extent_geom) as geographical_extent_geom, m.published, m.created_at, m.creator_user_id, u.firstname || ' ' || u.lastname as author FROM map_layer m LEFT JOIN \"user\" u ON m.creator_user_id = u.id WHERE m.id > 0"
+	q := "SELECT m.id, m.type, m.start_date, m.end_date, m.min_scale, m.max_scale, m.tile_matrix_set, m.tile_matrix_string, m.use_proxy, ST_AsGeoJSON(m.geographical_extent_geom) as geographical_extent_geom, m.published, m.created_at, m.updated_at, m.creator_user_id, u.firstname || ' ' || u.lastname as author FROM map_layer m LEFT JOIN \"user\" u ON m.creator_user_id = u.id WHERE m.id > 0"
 
 	if params.Author > 0 {
 		q += " AND u.id = :author"

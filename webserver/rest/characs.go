@@ -89,7 +89,9 @@ func init() {
 			Func:        CharacsUpdate,
 			Method:      "POST",
 			Json:        reflect.TypeOf(CharacsUpdateStruct{}),
-			Permissions: []string{},
+			Permissions: []string{
+				"request map",
+			},
 		},
 		&routes.Route{
 			Path:        "/api/characs/{id:[0-9]+}",
@@ -115,6 +117,9 @@ func init() {
 			Method:      "POST",
 			Params:      reflect.TypeOf(CharacSetHiddensParams{}),
 			Json:        reflect.TypeOf(CharacSetHiddensStruct{}),
+			Permissions: []string{
+				"request map",
+			},
 		},
 	}
 	routes.RegisterMultiple(Routes)
