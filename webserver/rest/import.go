@@ -394,6 +394,7 @@ type ImportStep3T struct {
 	State                  string   `min:"1" error:"State is mandatory"`
 	Project_ID             int      `min:"1" error:"Project id is mandatory"`
 	Published              bool
+	Public                 bool
 	Description            []struct {
 		Lang_Isocode string
 		Text         string
@@ -414,7 +415,7 @@ func ImportStep3(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	fmt.Println("DATABASE", d)
 	d.Get(tx)
 
-	err = d.UpdateFields(tx, params, "type", "declared_creation_date", "license_id", "scale_resolution", "state", "published")
+	err = d.UpdateFields(tx, params, "type", "declared_creation_date", "license_id", "scale_resolution", "state", "published", "public")
 
 	if err != nil {
 		log.Println("Error updating database fields: ", err)
