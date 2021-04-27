@@ -298,9 +298,6 @@
 <row name="declared_creation_date" null="0" autoincrement="0">
 <datatype>TIMESTAMP</datatype>
 </row>
-<row name="re_use" null="0" autoincrement="0">
-<datatype>TEXT</datatype>
-</row>
 <row name="public" null="0" autoincrement="0">
 <datatype>BOOLEAN</datatype>
 <default>'false'</default></row>
@@ -391,7 +388,7 @@
 <part>end_date2</part>
 </key>
 </table>
-<table x="273" y="512" name="database_tr">
+<table x="265" y="503" name="database_tr">
 <row name="database_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="database" row="id" />
@@ -423,6 +420,9 @@
 <datatype>TEXT</datatype>
 </row>
 <row name="subject" null="0" autoincrement="0">
+<datatype>TEXT</datatype>
+</row>
+<row name="re_use" null="0" autoincrement="0">
 <datatype>TEXT</datatype>
 </row>
 <key type="PRIMARY" name="">
@@ -571,7 +571,7 @@
 <part>lang_isocode</part>
 </key>
 </table>
-<table x="1363" y="488" name="charac">
+<table x="1365" y="492" name="charac">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 <comment>xmltopsql:"ondelete:cascade"</comment>
@@ -1098,7 +1098,7 @@
 <part>id</part>
 </key>
 </table>
-<table x="464" y="763" name="database__country">
+<table x="479" y="685" name="database__country">
 <row name="database_id" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="database" row="id" />
