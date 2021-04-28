@@ -580,12 +580,19 @@ func (d *Database) LinkToUserProject(tx *sqlx.Tx, project_ID int) (err error) {
 func (d *Database) ExportCSV(tx *sqlx.Tx, siteIDs ...[]int) (outp string, err error) {
 
 	var buff bytes.Buffer
+	exportMode := 1
 
 	w := csv.NewWriter(&buff)
 	w.Comma = ';'
 	w.UseCRLF = true
 
-	err = w.Write([]string{"SITE_SOURCE_ID", "SITE_NAME", "MAIN_CITY_NAME", "GEONAME_ID", "PROJECTION_SYSTEM", "LONGITUDE", "LATITUDE", "ALTITUDE", "CITY_CENTROID", "STATE_OF_KNOWLEDGE", "OCCUPATION", "STARTING_PERIOD", "ENDING_PERIOD", "CARAC_NAME", "CARAC_LVL1", "CARAC_LVL2", "CARAC_LVL3", "CARAC_LVL4", "CARAC_EXP", "BIBLIOGRAPHY", "COMMENTS"})
+	if exportMode == 1 {
+		err = w.Write([]string{"SITE_SOURCE_ID", "SITE_NAME", "MAIN_CITY_NAME", "GEONAME_ID", "PROJECTION_SYSTEM", "LONGITUDE", "LATITUDE", "ALTITUDE", "CITY_CENTROID", "STATE_OF_KNOWLEDGE", "OCCUPATION", "STARTING_PERIOD", "ENDING_PERIOD", "CARAC_NAME", "CARAC_LVL1", "CARAC_LVL2", "CARAC_LVL3", "CARAC_LVL4", "CARAC_EXP", "BIBLIOGRAPHY", "COMMENTS"})
+	} else if exportMode == 2 {
+		err = w.Write([]string{"ARK_SITE_ID", "SITE_SOURCE_ID", "SITE_NAME", "MAIN_CITY_NAME", "GEONAME_ID", "PROJECTION_SYSTEM", "LONGITUDE", "ALTITUDE", "CITY_CENTROID", "STATE_OF_KNOWLEDGE", "OCCUPATION", "STARTING_PERIOD", "ENDING_PERIOD", "CARAC_NAME", "CARAC_LVL1", "CARAC_LVL2", "CARAC_LVL3", "CARAC_LVL4", "CARAC_EXP", "ARK_CARAC_ID", "Ark PACTOLS", "URI_SITE", "BIBLIOGRAPHY", "COMMENTS"})
+	} else {
+		err = errors.New("bad exportMode")
+	}
 	if err != nil {
 		log.Println("database::ExportCSV : ", err.Error())
 	}
@@ -621,7 +628,7 @@ func (d *Database) ExportCSV(tx *sqlx.Tx, siteIDs ...[]int) (outp string, err er
 		characs[id] = path
 	}
 
-	q = "SELECT s.code, s.name, s.city_name, s.city_geonameid, ST_X(s.geom::geometry) as longitude, ST_Y(s.geom::geometry) as latitude, ST_X(s.geom_3d::geometry) as longitude_3d, ST_Y(s.geom_3d::geometry) as latitude3d, ST_Z(s.geom_3d::geometry) as altitude, s.centroid, s.occupation, sr.start_date1, sr.start_date2, sr.end_date1, sr.end_date2, src.exceptional, src.knowledge_type, srctr.bibliography, srctr.comment, c.id as charac_id FROM site s LEFT JOIN site_range sr ON s.id = sr.site_id LEFT JOIN site_tr str ON s.id = str.site_id LEFT JOIN site_range__charac src ON sr.id = src.site_range_id LEFT JOIN site_range__charac_tr srctr ON src.id = srctr.site_range__charac_id LEFT JOIN charac c ON src.charac_id = c.id WHERE s.database_id = $1 AND str.lang_isocode IS NULL OR str.lang_isocode = $2 ORDER BY s.id, sr.id"
+	q = "SELECT s.id, s.code, s.name, s.city_name, s.city_geonameid, ST_X(s.geom::geometry) as longitude, ST_Y(s.geom::geometry) as latitude, ST_X(s.geom_3d::geometry) as longitude_3d, ST_Y(s.geom_3d::geometry) as latitude3d, ST_Z(s.geom_3d::geometry) as altitude, s.centroid, s.occupation, sr.start_date1, sr.start_date2, sr.end_date1, sr.end_date2, src.exceptional, src.knowledge_type, srctr.bibliography, srctr.comment, c.id as charac_id, c.ark_id, c.pactols_id FROM site s LEFT JOIN site_range sr ON s.id = sr.site_id LEFT JOIN site_tr str ON s.id = str.site_id LEFT JOIN site_range__charac src ON sr.id = src.site_range_id LEFT JOIN site_range__charac_tr srctr ON src.id = srctr.site_range__charac_id LEFT JOIN charac c ON src.charac_id = c.id WHERE s.database_id = $1 AND str.lang_isocode IS NULL OR str.lang_isocode = $2 ORDER BY s.id, sr.id"
 
 	rows2, err := tx.Query(q, d.Id, d.Default_language)
 	if err != nil {
@@ -630,6 +637,7 @@ func (d *Database) ExportCSV(tx *sqlx.Tx, siteIDs ...[]int) (outp string, err er
 	}
 	for rows2.Next() {
 		var (
+			id_site        int      // "ARK_SITE_ID"
 			code           string
 			name           string
 			city_name      string
@@ -663,8 +671,11 @@ func (d *Database) ExportCSV(tx *sqlx.Tx, siteIDs ...[]int) (outp string, err er
 			scharac_lvl4   string
 			sexceptional   string
 			// description    string
+			arkid          string   // "ARK_CARAC_ID
+			arkpactols     string   // "Ark PACTOLS"
+			uri_site       string   // "URI_SITE"
 		)
-		if err = rows2.Scan(&code, &name, &city_name, &city_geonameid, &longitude, &latitude, &longitude3d, &latitude3d, &altitude3d, &centroid, &occupation, &start_date1, &start_date2, &end_date1, &end_date2, &exceptional, &knowledge_type, &bibliography, &comment, &charac_id); err != nil {
+		if err = rows2.Scan(&id_site, &code, &name, &city_name, &city_geonameid, &longitude, &latitude, &longitude3d, &latitude3d, &altitude3d, &centroid, &occupation, &start_date1, &start_date2, &end_date1, &end_date2, &exceptional, &knowledge_type, &bibliography, &comment, &charac_id, &arkid, &arkpactols); err != nil {
 			log.Println(err)
 			rows2.Close()
 			return
@@ -794,7 +805,12 @@ func (d *Database) ExportCSV(tx *sqlx.Tx, siteIDs ...[]int) (outp string, err er
 			sexceptional = translate.T(d.Default_language, "IMPORT.CSVFIELD_ALL.T_LABEL_NO")
 		}
 
-		line := []string{code, name, city_name, cgeonameid, "4326", slongitude, slatitude, saltitude, scentroid, knowledge_type, soccupation, startingPeriod, endingPeriod, scharac_name, scharac_lvl1, scharac_lvl2, scharac_lvl3, scharac_lvl4, sexceptional, bibliography, comment}
+		line := []string{}
+		if exportMode == 1 {
+			line = []string{code, name, city_name, cgeonameid, "4326", slongitude, slatitude, saltitude, scentroid, knowledge_type, soccupation, startingPeriod, endingPeriod, scharac_name, scharac_lvl1, scharac_lvl2, scharac_lvl3, scharac_lvl4, sexceptional, bibliography, comment}
+		} else if exportMode == 2 {
+			line = []string{id_site, code, name, city_name, cgeonameid, "4326", slongitude, slatitude, saltitude, scentroid, knowledge_type, soccupation, startingPeriod, endingPeriod, scharac_name, scharac_lvl1, scharac_lvl2, scharac_lvl3, scharac_lvl4, sexceptional, arkid, arkpactols, uri_site, bibliography, comment}
+		}
 
 		err := w.Write(line)
 		w.Flush()
