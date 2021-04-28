@@ -86,6 +86,7 @@ type DatabaseFullInfos struct {
 	Description         map[string]string  `json:"description"`
 	Geographical_limit  map[string]string  `json:"geographical_limit"`
 	Bibliography        map[string]string  `json:"bibliography"`
+	Re_use		        map[string]string  `json:"re_use"`
 	Context_description map[string]string  `json:"context_description"`
 	Source_description  map[string]string  `json:"source_description"`
 	Source_relation     map[string]string  `json:"source_relation"`
@@ -464,7 +465,7 @@ func (d *Database) SetTranslations(tx *sqlx.Tx, field string, translations []str
 	for _, tr := range translations {
 		err = tx.QueryRow("SELECT count(database_id) FROM database_tr WHERE database_id = $1 AND lang_isocode = $2", d.Id, tr.Lang_Isocode).Scan(&transID)
 		if transID == 0 {
-			_, err = tx.Exec("INSERT INTO database_tr (database_id, lang_isocode, description, geographical_limit, bibliography, context_description, source_description, source_relation, copyright, subject) VALUES ($1, $2, '', '', '', '', '', '', '', '')", d.Id, tr.Lang_Isocode)
+			_, err = tx.Exec("INSERT INTO database_tr (database_id, lang_isocode, description, geographical_limit, bibliography, re_use, context_description, source_description, source_relation, copyright, subject) VALUES ($1, $2, '', '', '', '', '', '', '', '', '')", d.Id, tr.Lang_Isocode)
 			if err != nil {
 				err = errors.New("database::SetTranslations: " + err.Error())
 			}
@@ -815,6 +816,7 @@ func (d *DatabaseFullInfos) GetTranslations(tx *sqlx.Tx) (err error) {
 	d.Description = MapSqlTranslations(tr, "Lang_isocode", "Description")
 	d.Geographical_limit = MapSqlTranslations(tr, "Lang_isocode", "Geographical_limit")
 	d.Bibliography = MapSqlTranslations(tr, "Lang_isocode", "Bibliography")
+	d.Re_use = MapSqlTranslations(tr, "Lang_isocode", "Re_use")
 	d.Context_description = MapSqlTranslations(tr, "Lang_isocode", "Context_description")
 	d.Source_description = MapSqlTranslations(tr, "Lang_isocode", "Source_description")
 	d.Source_relation = MapSqlTranslations(tr, "Lang_isocode", "Source_relation")
