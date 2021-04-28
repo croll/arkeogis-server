@@ -167,6 +167,7 @@ func DatabaseList(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 		Description         map[string]string `json:"description"`
 		Geographical_limit  map[string]string `json:"geographical_limit"`
 		Bibliography        map[string]string `json:"bibliography"`
+		Re_use        		map[string]string `json:"re_use"`
 		Context_description map[string]string `json:"context_description"`
 		Source_description  map[string]string `json:"source_description"`
 		Source_relation     map[string]string `json:"source_relation"`
@@ -301,6 +302,7 @@ func DatabaseList(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 		database.Description = model.MapSqlTranslations(tr, "Lang_isocode", "Description")
 		database.Geographical_limit = model.MapSqlTranslations(tr, "Lang_isocode", "Geographical_limit")
 		database.Bibliography = model.MapSqlTranslations(tr, "Lang_isocode", "Bibliography")
+		database.Re_use = model.MapSqlTranslations(tr, "Lang_isocode", "Re_use")
 		database.Context_description = model.MapSqlTranslations(tr, "Lang_isocode", "Context_description")
 		database.Source_description = model.MapSqlTranslations(tr, "Lang_isocode", "Source_description")
 		database.Source_relation = model.MapSqlTranslations(tr, "Lang_isocode", "Source_relation")
@@ -373,6 +375,7 @@ func DatabaseExportList(w http.ResponseWriter, r *http.Request, proute routes.Pr
 		Description         map[string]string `json:"description"`
 		Geographical_limit  map[string]string `json:"geographical_limit"`
 		Bibliography        map[string]string `json:"bibliography"`
+		Re_use		        map[string]string `json:"re_use"`
 		Context_description map[string]string `json:"context_description"`
 		Source_description  map[string]string `json:"source_description"`
 		Source_relation     map[string]string `json:"source_relation"`
@@ -494,6 +497,7 @@ func DatabaseExportList(w http.ResponseWriter, r *http.Request, proute routes.Pr
 		database.Description = model.MapSqlTranslations(tr, "Lang_isocode", "Description")
 		database.Geographical_limit = model.MapSqlTranslations(tr, "Lang_isocode", "Geographical_limit")
 		database.Bibliography = model.MapSqlTranslations(tr, "Lang_isocode", "Bibliography")
+		database.Re_use = model.MapSqlTranslations(tr, "Lang_isocode", "Re_use")
 		database.Context_description = model.MapSqlTranslations(tr, "Lang_isocode", "Context_description")
 		database.Source_description = model.MapSqlTranslations(tr, "Lang_isocode", "Source_description")
 		database.Source_relation = model.MapSqlTranslations(tr, "Lang_isocode", "Source_relation")
