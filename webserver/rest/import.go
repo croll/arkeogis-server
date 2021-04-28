@@ -524,6 +524,10 @@ type ImportStep4T struct {
 		Lang_Isocode string
 		Text         string
 	}
+	Re_use []struct {
+		Lang_Isocode string
+		Text         string
+	}
 }
 
 func ImportStep4(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
@@ -603,6 +607,14 @@ func ImportStep4(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	err = d.SetTranslations(tx, "bibliography", params.Bibliography)
 	if err != nil {
 		log.Println("Error setting bibliography: ", err)
+		userSqlError(w, err)
+		_ = tx.Rollback()
+		return
+	}
+
+	err = d.SetTranslations(tx, "re_use", params.Re_use)
+	if err != nil {
+		log.Println("Error setting re_use: ", err)
 		userSqlError(w, err)
 		_ = tx.Rollback()
 		return
