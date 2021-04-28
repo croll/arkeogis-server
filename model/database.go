@@ -339,7 +339,7 @@ func (d *Database) GetLastHandle(tx *sqlx.Tx) (handle *Database_handle, err erro
 // GetHandles lists all handles linked to a database
 func (d *Database) GetHandles(tx *sqlx.Tx) (handles []Database_handle, err error) {
 	handles = []Database_handle{}
-	err = tx.Select(&handles, "SELECT import_id, identifier, url, declared_creation_date, created_at FROM database_handle WHERE database_id = $1", d.Id)
+	err = tx.Select(&handles, "SELECT import_id, identifier, url, declared_creation_date, created_at FROM database_handle WHERE database_id = $1 ORDER by id DESC", d.Id)
 	if err != nil {
 		err = errors.New("database::GetHandles: " + err.Error())
 	}
@@ -637,7 +637,7 @@ func (d *Database) ExportCSV(tx *sqlx.Tx, siteIDs ...[]int) (outp string, err er
 	}
 	for rows2.Next() {
 		var (
-			id_site        int      // "ARK_SITE_ID"
+			id_site        string      // "ARK_SITE_ID"
 			code           string
 			name           string
 			city_name      string
@@ -673,7 +673,6 @@ func (d *Database) ExportCSV(tx *sqlx.Tx, siteIDs ...[]int) (outp string, err er
 			// description    string
 			arkid          string   // "ARK_CARAC_ID
 			arkpactols     string   // "Ark PACTOLS"
-			uri_site       string   // "URI_SITE"
 		)
 		if err = rows2.Scan(&id_site, &code, &name, &city_name, &city_geonameid, &longitude, &latitude, &longitude3d, &latitude3d, &altitude3d, &centroid, &occupation, &start_date1, &start_date2, &end_date1, &end_date2, &exceptional, &knowledge_type, &bibliography, &comment, &charac_id, &arkid, &arkpactols); err != nil {
 			log.Println(err)
@@ -805,11 +804,17 @@ func (d *Database) ExportCSV(tx *sqlx.Tx, siteIDs ...[]int) (outp string, err er
 			sexceptional = translate.T(d.Default_language, "IMPORT.CSVFIELD_ALL.T_LABEL_NO")
 		}
 
+		var handle *Database_handle
+		handle, err = d.GetLastHandle(tx)
+		if err != nil {
+			return "", err
+		}
+
 		line := []string{}
 		if exportMode == 1 {
 			line = []string{code, name, city_name, cgeonameid, "4326", slongitude, slatitude, saltitude, scentroid, knowledge_type, soccupation, startingPeriod, endingPeriod, scharac_name, scharac_lvl1, scharac_lvl2, scharac_lvl3, scharac_lvl4, sexceptional, bibliography, comment}
 		} else if exportMode == 2 {
-			line = []string{id_site, code, name, city_name, cgeonameid, "4326", slongitude, slatitude, saltitude, scentroid, knowledge_type, soccupation, startingPeriod, endingPeriod, scharac_name, scharac_lvl1, scharac_lvl2, scharac_lvl3, scharac_lvl4, sexceptional, arkid, arkpactols, uri_site, bibliography, comment}
+			line = []string{id_site, code, name, city_name, cgeonameid, "4326", slongitude, slatitude, saltitude, scentroid, knowledge_type, soccupation, startingPeriod, endingPeriod, scharac_name, scharac_lvl1, scharac_lvl2, scharac_lvl3, scharac_lvl4, sexceptional, arkid, arkpactols, handle.Url, bibliography, comment}
 		}
 
 		err := w.Write(line)
