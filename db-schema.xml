@@ -265,6 +265,9 @@
 <row name="editor" null="0" autoincrement="0">
 <datatype>TEXT</datatype>
 </row>
+<row name="editor_url" null="0" autoincrement="0">
+<datatype>VARCHAR(255)</datatype>
+</row>
 <row name="contributor" null="0" autoincrement="0">
 <datatype>TEXT</datatype>
 </row>
@@ -571,7 +574,7 @@
 <part>lang_isocode</part>
 </key>
 </table>
-<table x="1365" y="492" name="charac">
+<table x="1352" y="486" name="charac">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 <comment>xmltopsql:"ondelete:cascade"</comment>
@@ -1113,7 +1116,7 @@
 <part>country_geonameid</part>
 </key>
 </table>
-<table x="693" y="117" name="database_handle">
+<table x="694" y="114" name="database_handle">
 <row name="id" null="1" autoincrement="1">
 <datatype>INTEGER</datatype>
 <default>NULL</default></row>
