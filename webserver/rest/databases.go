@@ -50,6 +50,12 @@ type DatabaseInfosParams struct {
 	ImportID int
 }
 
+type DatabaseExportInfosParams struct {
+	Id       int `min:"0" error:"Database Id is mandatory"`
+	ImportID int
+	IncludeSiteId bool
+}
+
 type DatabaseExportOmekaParams struct {
 	Id           int `min:"0" error:"Database Id is mandatory"`
 	ChronologyId int `min:"0" error:"chronology is mandatory"`
@@ -93,7 +99,7 @@ func init() {
 			Permissions: []string{
 				"request map",
 			},
-			Params: reflect.TypeOf(DatabaseInfosParams{}),
+			Params: reflect.TypeOf(DatabaseExportInfosParams{}),
 		},
 		&routes.Route{
 			Path:        "/api/database/{id:[0-9]+}/exportOmeka",
@@ -655,7 +661,7 @@ func DatabaseInfos(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 }
 
 func DatabaseExportCSVArkeogis(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
-	params := proute.Params.(*DatabaseInfosParams)
+	params := proute.Params.(*DatabaseExportInfosParams)
 	tx, err := db.DB.Beginx()
 	if err != nil {
 		log.Println("can't start transaction")
@@ -689,7 +695,7 @@ func DatabaseExportCSVArkeogis(w http.ResponseWriter, r *http.Request, proute ro
 		return
 	}
 
-	csvContent, err := export.SitesAsCSV(sites, user.First_lang_isocode, false, tx)
+	csvContent, err := export.SitesAsCSV(sites, user.First_lang_isocode, false, params.IncludeSiteId, tx)
 
 	if err != nil {
 		log.Println("Unable to export database")
