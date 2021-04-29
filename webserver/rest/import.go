@@ -509,6 +509,7 @@ type ImportStep4T struct {
 	Id                            int
 	Import_ID                     int
 	Editor                        string
+	Editor_url	                  string
 	Contributor                   string
 	Source_description            string
 	Context_description           string
@@ -543,7 +544,7 @@ func ImportStep4(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	d := &model.Database{Id: params.Id}
 	d.Get(tx)
 
-	err = d.UpdateFields(tx, params, "editor", "contributor")
+	err = d.UpdateFields(tx, params, "editor", "editor_url", "contributor")
 	if err != nil {
 		log.Println("Error updating database fields: ", err)
 		userSqlError(w, err)
