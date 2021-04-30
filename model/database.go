@@ -22,17 +22,10 @@
 package model
 
 import (
-	"bytes"
 	"database/sql"
-	"encoding/csv"
 	"errors"
-	"log"
-	"math"
-	"strconv"
-	"strings"
 	"time"
 
-	"github.com/croll/arkeogis-server/translate"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -577,6 +570,7 @@ func (d *Database) LinkToUserProject(tx *sqlx.Tx, project_ID int) (err error) {
 }
 
 // ExportCSV exports database and sites as as csv file
+/*
 func (d *Database) ExportCSV(tx *sqlx.Tx, siteIDs ...[]int) (outp string, err error) {
 
 	var buff bytes.Buffer
@@ -826,6 +820,7 @@ func (d *Database) ExportCSV(tx *sqlx.Tx, siteIDs ...[]int) (outp string, err er
 
 	return buff.String(), nil
 }
+*/
 
 // GetTranslations lists all translated fields from database
 func (d *DatabaseFullInfos) GetTranslations(tx *sqlx.Tx) (err error) {
