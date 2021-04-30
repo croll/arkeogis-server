@@ -639,7 +639,7 @@ func mapSearch(w http.ResponseWriter, r *http.Request, proute routes.Proute, toc
 	if tocsv {
 		fmt.Println("ICI")
 		w.Header().Set("Content-Type", "text/csv")
-		csvContent, err := export.SitesAsCSV(site_ids, user.First_lang_isocode, true, false, tx)
+		csvContent, err := export.SitesAsCSV(site_ids, user.First_lang_isocode, true, true, tx)
 		if err != nil {
 			log.Println("can't export query as csv")
 			userSqlError(w, err)
