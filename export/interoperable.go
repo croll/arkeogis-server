@@ -122,6 +122,8 @@ func InteroperableExportXml(tx *sqlx.Tx, w io.Writer, databaseId int, lang strin
 		DcCoverage			[]XsiTyped		`xml:"dc:coverage"`
 		DcTermsSpatial		XsiTyped		`xml:"dcterms:spatial,omitempty"`
 		DcTermsTemporal		XsiTyped		`xml:"dcterms:temporal"`
+		DcRights			string			`xml:"dc:rights`
+		DcTermsLicense		XsiTyped		`xml:"dcterms:license`
 		//Dc			    string		`xml:"dc:"`
 
 
@@ -235,6 +237,9 @@ func InteroperableExportXml(tx *sqlx.Tx, w io.Writer, databaseId int, lang strin
 	}
 
 	v.DcTermsTemporal = XsiTyped{"start="+dcYear(dbInfos.Start_date)+";end="+dcYear(dbInfos.End_date)+";", "dcterms:Period", ""}
+
+	v.DcRights = dbInfos.License
+	v.DcTermsLicense = XsiTyped{dbInfos.License_uri, "dcterms:URI", ""}
 
 	w.Write([]byte(`<?xml version="1.0" encoding="UTF-8"?>`+"\n"))
 	w.Write([]byte(`<?xml-stylesheet href="https://arkeogis.org/css/dataset-dublin-core.xsl" type="text/xsl"?>`+"\n"))
