@@ -171,6 +171,10 @@ func InteroperableExportXml(tx *sqlx.Tx, w io.Writer, databaseId int, lang strin
 		v.DcCoverage = append(v.DcCoverage, XsiTyped{"Continent", "", ""})
 	}
 
+	for isocode, geolim := range dbInfos.Geographical_limit {
+		v.DcCoverage = append(v.DcCoverage, XsiTyped{geolim, "", isocode})
+	}
+
 
 	//v.DcCreator = strings.Split(dbInfos.Editor, ",")
 
