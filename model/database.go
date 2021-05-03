@@ -87,6 +87,14 @@ type DatabaseFullInfos struct {
 	Subject             map[string]string  `json:"subject"`
 }
 
+func (dfi *DatabaseFullInfos) GetAuthorsStrings() []string {
+	var authors []string
+	for _, author := range dfi.Authors {
+		authors = append(authors, author.Fullname)
+	}
+	return authors
+}
+
 // DoesExist check if database exist with a name and an owner
 func (d *Database) DoesExist(tx *sqlx.Tx) (exists bool, err error) {
 	exists = false
