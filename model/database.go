@@ -76,6 +76,7 @@ type DatabaseFullInfos struct {
 	Contexts            []Database_context `json:"contexts"`
 	Owner_name          string             `json:"owner_name"`
 	License             string             `json:"license"`
+	License_uri			string			   `json:"license_uri"`
 	Description         map[string]string  `json:"description"`
 	Geographical_limit  map[string]string  `json:"geographical_limit"`
 	Bibliography        map[string]string  `json:"bibliography"`
@@ -149,7 +150,7 @@ func (d *Database) GetFullInfos(tx *sqlx.Tx, langIsocode string) (db DatabaseFul
 
 	// err = tx.Get(&db, "SELECT name, scale_resolution, geographical_extent, type, declared_creation_date, owner, editor, contributor, default_language, state, license_id, published, soft_deleted, d.created_at, d.updated_at, firstname || ' ' || lastname as owner_name FROM \"database\" d LEFT JOIN \"user\" u ON d.owner = u.id WHERE d.id = $1", d.Id)
 
-	err = tx.Get(&db, "SELECT d.*, ST_AsGeoJSON(d.geographical_extent_geom) as geographical_extent_geom, firstname || ' ' || lastname as owner_name, l.name AS license FROM \"database\" d LEFT JOIN \"user\" u ON d.owner = u.id LEFT JOIN \"license\" l ON d.license_id = l.id WHERE d.id = $1", d.Id)
+	err = tx.Get(&db, "SELECT d.*, ST_AsGeoJSON(d.geographical_extent_geom) as geographical_extent_geom, firstname || ' ' || lastname as owner_name, l.name AS license, l.url as license_uri FROM \"database\" d LEFT JOIN \"user\" u ON d.owner = u.id LEFT JOIN \"license\" l ON d.license_id = l.id WHERE d.id = $1", d.Id)
 	if err != nil {
 		return
 	}
