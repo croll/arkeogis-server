@@ -25,7 +25,7 @@
 	"fmt"
 	"log"
 	//"math"
-	//"strconv"
+	"strconv"
 	"strings"
  	model "github.com/croll/arkeogis-server/model"
 	//"github.com/croll/arkeogis-server/translate"
@@ -58,6 +58,7 @@ func readMappedToStringL(mapped map[string]string) []StringL {
 type XsiTyped struct {
 	Content				string		`xml:",innerxml"`
 	Xsitype				string		`xml:"xsi:type,attr,omitempty"`
+	Lang				string		`xml:"xml:lang,attr,omitempty"`
 }
 
 func InteroperableExportXml(tx *sqlx.Tx, w io.Writer, databaseId int, lang string) (err error) {
@@ -83,10 +84,12 @@ func InteroperableExportXml(tx *sqlx.Tx, w io.Writer, databaseId int, lang strin
 		DcIdentifier        []XsiTyped		`xml:"dc:identifier"`
 		DcBibliographicCitation			    []StringL		`xml:"dc:bibliographicCitation"`
 		DcSource	        XsiTyped		`xml:"dc:source,omitempty"`
-		//Dc			    string		`xml:"dc:"`
 		DcRelation			[]string		`xml:"dc:relation"`
 		DcLanguage			XsiTyped		`xml:"dc:language"`
 		DcTermsConformsTo   []XsiTyped	    `xml:"dcterms:conformsTo"` // @TODO: check if this is ok
+		DcCoverage			[]XsiTyped		`xml:"dc:coverage"`
+		//Dc			    string		`xml:"dc:"`
+
 
 	}
 
@@ -101,6 +104,8 @@ func InteroperableExportXml(tx *sqlx.Tx, w io.Writer, databaseId int, lang strin
 		return err
 	}
 
+	log.Printf("%+v\n", dbInfos)
+
 	v := &Metadata{}
 	v.Xmlns = "http://www.w3.org/1999/xhtml"
 	v.Xmlnsxsi = "http://www.w3.org/2001/XMLSchema-instance"
@@ -113,26 +118,26 @@ func InteroperableExportXml(tx *sqlx.Tx, w io.Writer, databaseId int, lang strin
 	v.DcSubject = readMappedToStringL(dbInfos.Subject)
 	v.DcDescription = readMappedToStringL(dbInfos.Description)
 	v.DcPublishers = []XsiTyped{
-		XsiTyped{dbInfos.Editor, ""},
-		XsiTyped{dbInfos.Editor_url, "dcterms:URI"},
+		XsiTyped{dbInfos.Editor, "", ""},
+		XsiTyped{dbInfos.Editor_url, "dcterms:URI", ""},
 	}
 	v.DcContributors = strings.Split(dbInfos.Contributor, ", ")
-	v.DcDate = XsiTyped{dbInfos.Declared_creation_date.Format("2006-01-02"), "dcterms:W3CDTF"}
-	v.DctermsIssued = XsiTyped{dbInfos.Created_at.Format("2006-01-02"), "dcterms:W3CDTF"}
-	v.DctermsModified = XsiTyped{dbInfos.Updated_at.Format("2006-01-02"), "dcterms:W3CDTF"}
-	v.DcType = XsiTyped{"dataset", "dcterms:DCMIType"}
+	v.DcDate = XsiTyped{dbInfos.Declared_creation_date.Format("2006-01-02"), "dcterms:W3CDTF", ""}
+	v.DctermsIssued = XsiTyped{dbInfos.Created_at.Format("2006-01-02"), "dcterms:W3CDTF", ""}
+	v.DctermsModified = XsiTyped{dbInfos.Updated_at.Format("2006-01-02"), "dcterms:W3CDTF", ""}
+	v.DcType = XsiTyped{"dataset", "dcterms:DCMIType", ""}
 	v.DcFormat = "text/csv"
 
 	if len(dbInfos.Handles) > 0 {
 		v.DcIdentifier = []XsiTyped{
-			XsiTyped{dbInfos.Handles[0].Url, "dcterms:URI"},
+			XsiTyped{dbInfos.Handles[0].Url, "dcterms:URI", ""},
 		}
 	}
 
 	v.DcBibliographicCitation = readMappedToStringL(dbInfos.Bibliography)
 
 	if source, ok := dbInfos.Source_description[dbInfos.Default_language]; ok {
-		v.DcSource = XsiTyped{source, "dcterms:URI"}
+		v.DcSource = XsiTyped{source, "dcterms:URI", ""}
 	}
 
 	if relations, ok := dbInfos.Source_relation[dbInfos.Default_language]; ok {
@@ -148,12 +153,22 @@ func InteroperableExportXml(tx *sqlx.Tx, w io.Writer, databaseId int, lang strin
 		"es": "spa",
 		"en": "eng",
 	}
-	v.DcLanguage = XsiTyped{langs[dbInfos.Default_language], "dcterms:ISO639-3"}
+	v.DcLanguage = XsiTyped{langs[dbInfos.Default_language], "dcterms:ISO639-3", ""}
 
 	v.DcTermsConformsTo = []XsiTyped{
-		XsiTyped{"https://www.frantiq.fr/pactols/le-thesaurus", "dcterms:URI"},
-		XsiTyped{"https://epsg.org/", "dcterms:URI"},
-		XsiTyped{"https://tools.ietf.org/id/draft-kunze-ark-21.html", "dcterms:URI"},
+		XsiTyped{"https://www.frantiq.fr/pactols/le-thesaurus", "dcterms:URI", ""},
+		XsiTyped{"https://epsg.org/", "dcterms:URI", ""},
+		XsiTyped{"https://tools.ietf.org/id/draft-kunze-ark-21.html", "dcterms:URI", ""},
+	}
+
+	if len(dbInfos.Countries) > 0 {
+		v.DcCoverage = append(v.DcCoverage, XsiTyped{"Pays", "", ""})
+		v.DcCoverage = append(v.DcCoverage, XsiTyped{"https://www.geonames.org/"+strconv.Itoa(dbInfos.Countries[0].Geonameid), "dcterms:URI", ""})
+		log.Printf("Countries : %+v\n", dbInfos.Countries)
+
+	}
+	if len(dbInfos.Continents) > 0 {
+		v.DcCoverage = append(v.DcCoverage, XsiTyped{"Continent", "", ""})
 	}
 
 
