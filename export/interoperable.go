@@ -124,7 +124,7 @@ func InteroperableExportXml(tx *sqlx.Tx, w io.Writer, databaseId int, lang strin
 		DcTermsTemporal		XsiTyped		`xml:"dcterms:temporal"`
 		DcRights			string			`xml:"dc:rights"`
 		DcTermsLicense		XsiTyped		`xml:"dcterms:license"`
-		DctermsIM			string			`xml:"dcterms:instructionalmethod"`
+		DctermsIM			string			`xml:"dcterms:instructionalmethod"` // @TODO: check if this is ok
 		DcAudience			[]StringL		`xml:"dc:audience"`
 		DcTermsMediator		XsiTyped		`xml:"dcterms:mediator"`
 	}
