@@ -86,6 +86,7 @@ func InteroperableExportXml(tx *sqlx.Tx, w io.Writer, databaseId int, lang strin
 		//Dc			    string		`xml:"dc:"`
 		DcRelation			[]string		`xml:"dc:relation"`
 		DcLanguage			XsiTyped		`xml:"dc:language"`
+		DcTermsConformsTo   []XsiTyped	    `xml:"dcterms:conformsTo"` // @TODO: check if this is ok
 
 	}
 
@@ -148,6 +149,12 @@ func InteroperableExportXml(tx *sqlx.Tx, w io.Writer, databaseId int, lang strin
 		"en": "eng",
 	}
 	v.DcLanguage = XsiTyped{langs[dbInfos.Default_language], "dcterms:ISO639-3"}
+
+	v.DcTermsConformsTo = []XsiTyped{
+		XsiTyped{"https://www.frantiq.fr/pactols/le-thesaurus", "dcterms:URI"},
+		XsiTyped{"https://epsg.org/", "dcterms:URI"},
+		XsiTyped{"https://tools.ietf.org/id/draft-kunze-ark-21.html", "dcterms:URI"},
+	}
 
 
 	//v.DcCreator = strings.Split(dbInfos.Editor, ",")
