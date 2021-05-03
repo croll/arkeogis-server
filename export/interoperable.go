@@ -121,6 +121,7 @@ func InteroperableExportXml(tx *sqlx.Tx, w io.Writer, databaseId int, lang strin
 		DcTermsConformsTo   []XsiTyped	    `xml:"dcterms:conformsTo"` // @TODO: check if this is ok
 		DcCoverage			[]XsiTyped		`xml:"dc:coverage"`
 		DcTermsSpatial		XsiTyped		`xml:"dcterms:spatial,omitempty"`
+		DcTermsTemporal		XsiTyped		`xml:"dcterms:temporal"`
 		//Dc			    string		`xml:"dc:"`
 
 
@@ -233,7 +234,7 @@ func InteroperableExportXml(tx *sqlx.Tx, w io.Writer, databaseId int, lang strin
 		v.DcTermsSpatial = XsiTyped{"northlimit="+northlimit+";eastlimit="+eastlimit+";southlimit="+southlimit+";westlimit="+westlimit+";projection=EPSG4326;", "dcterms:Box", ""}
 	}
 
-	//v.DcCreator = strings.Split(dbInfos.Editor, ",")
+	v.DcTermsTemporal = XsiTyped{"start="+dcYear(dbInfos.Start_date)+";end="+dcYear(dbInfos.End_date)+";", "dcterms:Period", ""}
 
 	w.Write([]byte(`<?xml version="1.0" encoding="UTF-8"?>`+"\n"))
 	w.Write([]byte(`<?xml-stylesheet href="https://arkeogis.org/css/dataset-dublin-core.xsl" type="text/xsl"?>`+"\n"))
@@ -248,4 +249,13 @@ func InteroperableExportXml(tx *sqlx.Tx, w io.Writer, databaseId int, lang strin
 	return nil
 }
 
+func dcYear(year int) string {
+	if year == -2147483648 || year == 2147483647 {
+		return "undefined"
+	}
+	if year <= 0 {
+		return strconv.Itoa(year - 1)
+	}
+	return strconv.Itoa(year)
+}
 
