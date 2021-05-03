@@ -169,6 +169,7 @@ func InteroperableExportXml(tx *sqlx.Tx, w io.Writer, databaseId int, lang strin
 	}
 	if len(dbInfos.Continents) > 0 {
 		v.DcCoverage = append(v.DcCoverage, XsiTyped{"Continent", "", ""})
+		v.DcCoverage = append(v.DcCoverage, XsiTyped{"https://www.geonames.org/"+strconv.Itoa(dbInfos.Continents[0].Geonameid), "dcterms:URI", ""})
 	}
 
 	for isocode, geolim := range dbInfos.Geographical_limit {
