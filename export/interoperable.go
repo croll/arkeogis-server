@@ -33,6 +33,7 @@
 	"encoding/xml"
 	"encoding/json"
 	"io"
+	"errors"
 )
 
 /*
@@ -64,7 +65,7 @@ type XsiTyped struct {
 
 type Geom struct {
 	Type				string
-	Coordinates			[][]float64
+	Coordinates			[][][]float64
 }
 
 func miniBounds(geom Geom) (north float64, south float64, east float64, west float64) {
@@ -73,19 +74,21 @@ func miniBounds(geom Geom) (north float64, south float64, east float64, west flo
 	west = -math.MaxFloat64
 	east = math.MaxFloat64
 
-	for _, point := range geom.Coordinates {
-		if point[1] > north {
-			north = point[1]
-		} 
-		if point[1] < south {
-			south = point[1]
-		} 
-		if point[0] > west {
-			west = point[0]
-		} 
-		if point[0] > east {
-			east = point[0]
-		} 
+	for _, obj := range geom.Coordinates {
+		for _, point := range obj {
+			if point[1] > north {
+				north = point[1]
+			} 
+			if point[1] < south {
+				south = point[1]
+			} 
+			if point[0] > west {
+				west = point[0]
+			} 
+			if point[0] < east {
+				east = point[0]
+			} 
+		}	
 	}
 	return north, south, east, west
 }
@@ -217,6 +220,10 @@ func InteroperableExportXml(tx *sqlx.Tx, w io.Writer, databaseId int, lang strin
 	if dbInfos.Geographical_extent_geom != "" {
 		var geom Geom
 		json.Unmarshal([]byte(dbInfos.Geographical_extent_geom), &geom)
+
+		if (geom.Type != "Polygon") {
+			return errors.New("geom not recognised for Geographical_extent_geom")
+		}
 
 		north, south, east, west := miniBounds(geom)
 		northlimit := fmt.Sprintf("%f", north)
