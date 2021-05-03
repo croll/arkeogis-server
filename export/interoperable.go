@@ -126,9 +126,7 @@ func InteroperableExportXml(tx *sqlx.Tx, w io.Writer, databaseId int, lang strin
 		DcTermsLicense		XsiTyped		`xml:"dcterms:license"`
 		DctermsIM			string			`xml:"dcterms:instructionalmethod"`
 		DcAudience			[]StringL		`xml:"dc:audience"`
-		//Dc			    string		`xml:"dc:"`
-
-
+		DcTermsMediator		XsiTyped		`xml:"dcterms:mediator"`
 	}
 
 	d := model.Database{}
@@ -241,6 +239,7 @@ func InteroperableExportXml(tx *sqlx.Tx, w io.Writer, databaseId int, lang strin
 	v.DcTermsLicense = XsiTyped{dbInfos.License_uri, "dcterms:URI", ""}
 	v.DctermsIM = "protocole de vérification des données et meta-données obligatoires texte a mieu ecrire"
 	v.DcAudience = readMappedToStringL(dbInfos.Re_use)
+	v.DcTermsMediator = XsiTyped{"https://arkeogis.org/contact/", "dcterms:URI", ""}
 
 	w.Write([]byte(`<?xml version="1.0" encoding="UTF-8"?>`+"\n"))
 	w.Write([]byte(`<?xml-stylesheet href="https://arkeogis.org/css/dataset-dublin-core.xsl" type="text/xsl"?>`+"\n"))
