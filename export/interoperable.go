@@ -82,6 +82,7 @@ func InteroperableExportXml(tx *sqlx.Tx, w io.Writer, databaseId int, lang strin
 		DcFormat			string			`xml:"dc:format"` // @TODO: check if this is ok
 		DcIdentifier        []XsiTyped		`xml:"dc:identifier"`
 		DcBibliographicCitation			    []StringL		`xml:"dc:bibliographicCitation"`
+		DcSource	        XsiTyped		`xml:"dc:source,omitempty"`
 		//Dc			    string		`xml:"dc:"`
 	}
 
@@ -120,12 +121,16 @@ func InteroperableExportXml(tx *sqlx.Tx, w io.Writer, databaseId int, lang strin
 
 	if len(dbInfos.Handles) > 0 {
 		v.DcIdentifier = []XsiTyped{
-			XsiTyped{dbInfos.Handles[0], "dcterms:URI"}
+			XsiTyped{dbInfos.Handles[0].Url, "dcterms:URI"},
 		}
 	}
 
 	v.DcBibliographicCitation = readMappedToStringL(dbInfos.Bibliography)
-	
+
+	if source, ok := dbInfos.Source_description[dbInfos.Default_language]; ok {
+		v.DcSource = XsiTyped{source, "dcterms:URI"}
+	}
+
 
 
 	//v.DcCreator = strings.Split(dbInfos.Editor, ",")
