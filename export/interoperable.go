@@ -84,6 +84,9 @@ func InteroperableExportXml(tx *sqlx.Tx, w io.Writer, databaseId int, lang strin
 		DcBibliographicCitation			    []StringL		`xml:"dc:bibliographicCitation"`
 		DcSource	        XsiTyped		`xml:"dc:source,omitempty"`
 		//Dc			    string		`xml:"dc:"`
+		DcRelation			[]string		`xml:"dc:relation"`
+		DcLanguage			XsiTyped		`xml:"dc:language"`
+
 	}
 
 	d := model.Database{}
@@ -131,6 +134,20 @@ func InteroperableExportXml(tx *sqlx.Tx, w io.Writer, databaseId int, lang strin
 		v.DcSource = XsiTyped{source, "dcterms:URI"}
 	}
 
+	if relations, ok := dbInfos.Source_relation[dbInfos.Default_language]; ok {
+		// split using ','
+		for _, relation := range strings.Split(relations, ",") {
+			v.DcRelation = append(v.DcRelation, relation)
+		}
+	}
+
+	langs := map[string]string{
+		"fr": "fra",
+		"de": "deu",
+		"es": "spa",
+		"en": "eng",
+	}
+	v.DcLanguage = XsiTyped{langs[dbInfos.Default_language], "dcterms:ISO639-3"}
 
 
 	//v.DcCreator = strings.Split(dbInfos.Editor, ",")
