@@ -24,13 +24,14 @@
  import (
 	"fmt"
 	"log"
-	//"math"
+	"math"
 	"strconv"
 	"strings"
  	model "github.com/croll/arkeogis-server/model"
 	//"github.com/croll/arkeogis-server/translate"
 	"github.com/jmoiron/sqlx"
 	"encoding/xml"
+	"encoding/json"
 	"io"
 )
 
@@ -61,6 +62,34 @@ type XsiTyped struct {
 	Lang				string		`xml:"xml:lang,attr,omitempty"`
 }
 
+type Geom struct {
+	Type				string
+	Coordinates			[][]float64
+}
+
+func miniBounds(geom Geom) (north float64, south float64, east float64, west float64) {
+	north = -math.MaxFloat64
+	south = math.MaxFloat64
+	west = -math.MaxFloat64
+	east = math.MaxFloat64
+
+	for _, point := range geom.Coordinates {
+		if point[1] > north {
+			north = point[1]
+		} 
+		if point[1] < south {
+			south = point[1]
+		} 
+		if point[0] > west {
+			west = point[0]
+		} 
+		if point[0] > east {
+			east = point[0]
+		} 
+	}
+	return north, south, east, west
+}
+
 func InteroperableExportXml(tx *sqlx.Tx, w io.Writer, databaseId int, lang string) (err error) {
 	type Metadata struct {
 		XMLName   			xml.Name 		`xml:"metadata"`
@@ -88,6 +117,7 @@ func InteroperableExportXml(tx *sqlx.Tx, w io.Writer, databaseId int, lang strin
 		DcLanguage			XsiTyped		`xml:"dc:language"`
 		DcTermsConformsTo   []XsiTyped	    `xml:"dcterms:conformsTo"` // @TODO: check if this is ok
 		DcCoverage			[]XsiTyped		`xml:"dc:coverage"`
+		DcTermsSpatial		XsiTyped		`xml:"dcterms:spatial,omitempty"`
 		//Dc			    string		`xml:"dc:"`
 
 
@@ -161,21 +191,40 @@ func InteroperableExportXml(tx *sqlx.Tx, w io.Writer, databaseId int, lang strin
 		XsiTyped{"https://tools.ietf.org/id/draft-kunze-ark-21.html", "dcterms:URI", ""},
 	}
 
+	// if dbInfos.Geographical_extent == "country" {
 	if len(dbInfos.Countries) > 0 {
 		v.DcCoverage = append(v.DcCoverage, XsiTyped{"Pays", "", ""})
 		v.DcCoverage = append(v.DcCoverage, XsiTyped{"https://www.geonames.org/"+strconv.Itoa(dbInfos.Countries[0].Geonameid), "dcterms:URI", ""})
-		log.Printf("Countries : %+v\n", dbInfos.Countries)
 
 	}
-	if len(dbInfos.Continents) > 0 {
+
+	// if dbInfos.Geographical_extent == "continent" {
+		if len(dbInfos.Continents) > 0 {
 		v.DcCoverage = append(v.DcCoverage, XsiTyped{"Continent", "", ""})
 		v.DcCoverage = append(v.DcCoverage, XsiTyped{"https://www.geonames.org/"+strconv.Itoa(dbInfos.Continents[0].Geonameid), "dcterms:URI", ""})
 	}
+
+	// if dbInfos.Geographical_extent == "?" {
+	//}
 
 	for isocode, geolim := range dbInfos.Geographical_limit {
 		v.DcCoverage = append(v.DcCoverage, XsiTyped{geolim, "", isocode})
 	}
 
+	log.Printf("Geographical_extent : %+v\n", dbInfos.Geographical_extent)
+	log.Printf("Geographical_extent_geom : %+v\n", dbInfos.Geographical_extent_geom)
+
+	if dbInfos.Geographical_extent_geom != "" {
+		var geom Geom
+		json.Unmarshal([]byte(dbInfos.Geographical_extent_geom), &geom)
+
+		north, south, east, west := miniBounds(geom)
+		northlimit := fmt.Sprintf("%f", north)
+		eastlimit := fmt.Sprintf("%f", east)
+		southlimit := fmt.Sprintf("%f", south)
+		westlimit := fmt.Sprintf("%f", west)
+		v.DcTermsSpatial = XsiTyped{"northlimit="+northlimit+";eastlimit="+eastlimit+";southlimit="+southlimit+";westlimit="+westlimit+";projection=EPSG4326;", "dcterms:Box", ""}
+	}
 
 	//v.DcCreator = strings.Split(dbInfos.Editor, ",")
 
