@@ -122,8 +122,10 @@ func InteroperableExportXml(tx *sqlx.Tx, w io.Writer, databaseId int, lang strin
 		DcCoverage			[]XsiTyped		`xml:"dc:coverage"`
 		DcTermsSpatial		XsiTyped		`xml:"dcterms:spatial,omitempty"`
 		DcTermsTemporal		XsiTyped		`xml:"dcterms:temporal"`
-		DcRights			string			`xml:"dc:rights`
-		DcTermsLicense		XsiTyped		`xml:"dcterms:license`
+		DcRights			string			`xml:"dc:rights"`
+		DcTermsLicense		XsiTyped		`xml:"dcterms:license"`
+		DctermsIM			string			`xml:"dcterms:instructionalmethod"`
+		DcAudience			[]StringL		`xml:"dc:audience"`
 		//Dc			    string		`xml:"dc:"`
 
 
@@ -217,9 +219,6 @@ func InteroperableExportXml(tx *sqlx.Tx, w io.Writer, databaseId int, lang strin
 		v.DcCoverage = append(v.DcCoverage, XsiTyped{geolim, "", isocode})
 	}
 
-	log.Printf("Geographical_extent : %+v\n", dbInfos.Geographical_extent)
-	log.Printf("Geographical_extent_geom : %+v\n", dbInfos.Geographical_extent_geom)
-
 	if dbInfos.Geographical_extent_geom != "" {
 		var geom Geom
 		json.Unmarshal([]byte(dbInfos.Geographical_extent_geom), &geom)
@@ -240,6 +239,8 @@ func InteroperableExportXml(tx *sqlx.Tx, w io.Writer, databaseId int, lang strin
 
 	v.DcRights = dbInfos.License
 	v.DcTermsLicense = XsiTyped{dbInfos.License_uri, "dcterms:URI", ""}
+	v.DctermsIM = "protocole de vérification des données et meta-données obligatoires texte a mieu ecrire"
+	v.DcAudience = readMappedToStringL(dbInfos.Re_use)
 
 	w.Write([]byte(`<?xml version="1.0" encoding="UTF-8"?>`+"\n"))
 	w.Write([]byte(`<?xml-stylesheet href="https://arkeogis.org/css/dataset-dublin-core.xsl" type="text/xsl"?>`+"\n"))
