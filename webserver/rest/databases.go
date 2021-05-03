@@ -112,6 +112,16 @@ func init() {
 			Params: reflect.TypeOf(DatabaseExportOmekaParams{}),
 		},
 		&routes.Route{
+			Path:        "/api/database/{id:[0-9]+}/exportxml",
+			Description: "Export database informations as XML",
+			Func:        DatabaseExportXML,
+			Method:      "GET",
+			Permissions: []string{
+				"request map",
+			},
+			Params: reflect.TypeOf(DatabaseInfosParams{}),
+		},
+		&routes.Route{
 			Path:        "/api/database/{id:[0-9]+}/csv/{importid:[0-9]{0,}}",
 			Description: "Get the csv used at import",
 			Func:        DatabaseGetImportedCSV,
@@ -658,6 +668,38 @@ func DatabaseInfos(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 	// w.Write([]byte(dbInfos))
 	l, _ := json.Marshal(dbInfos)
 	w.Write(l)
+}
+
+func DatabaseExportXML(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
+	params := proute.Params.(*DatabaseInfosParams)
+	tx, err := db.DB.Beginx()
+	if err != nil {
+		log.Println("can't start transaction")
+		userSqlError(w, err)
+		return
+	}
+
+	buf := bytes.NewBufferString("")
+	err = export.InteroperableExportXml(tx, buf, params.Id, proute.Lang1.Isocode)
+	if err != nil {
+		log.Println("Error creating Interoperable Export XML", err)
+		userSqlError(w, err)
+		return
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		log.Println("Error getting database infos", err)
+		userSqlError(w, err)
+		return
+	}
+
+	filename := "plop"
+	w.Header().Set("Content-Type", "application/xml")
+	w.Header().Set("Content-Disposition", "attachment; filename=\""+filename+".xml\"")
+	w.Header().Set("Content-Length", strconv.Itoa(buf.Len()))
+
+	buf.WriteTo(w)
 }
 
 func DatabaseExportCSVArkeogis(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
