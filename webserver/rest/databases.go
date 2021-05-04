@@ -36,6 +36,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"net/url"
 
 	db "github.com/croll/arkeogis-server/db"
 	export "github.com/croll/arkeogis-server/export"
@@ -54,6 +55,7 @@ type DatabaseExportInfosParams struct {
 	Id       int `min:"0" error:"Database Id is mandatory"`
 	ImportID int
 	IncludeSiteId bool
+	IncludeInterop bool
 }
 
 type DatabaseExportOmekaParams struct {
@@ -716,9 +718,11 @@ func DatabaseExportCSVArkeogis(w http.ResponseWriter, r *http.Request, proute ro
 	_user, _ := proute.Session.Get("user")
 	user := _user.(model.User)
 
-	dbName := ""
+	d := model.Database{}
+	d.Id = params.Id
+	dbInfos, err := d.GetFullInfos(tx, proute.Lang1.Isocode)
 
-	err = tx.Get(&dbName, "SELECT name FROM \"database\" WHERE id = $1", params.Id)
+	//err = tx.Get(&dbName, "SELECT name FROM \"database\" WHERE id = $1", params.Id)
 
 	if err != nil {
 		log.Println("Unable to export database")
@@ -737,7 +741,7 @@ func DatabaseExportCSVArkeogis(w http.ResponseWriter, r *http.Request, proute ro
 		return
 	}
 
-	csvContent, err := export.SitesAsCSV(sites, user.First_lang_isocode, false, params.IncludeSiteId, tx)
+	csvContent, err := export.SitesAsCSV(sites, user.First_lang_isocode, false, params.IncludeSiteId, params.IncludeInterop, tx)
 
 	if err != nil {
 		log.Println("Unable to export database")
@@ -753,11 +757,18 @@ func DatabaseExportCSVArkeogis(w http.ResponseWriter, r *http.Request, proute ro
 		return
 	}
 	t := time.Now()
+	/*
 	filename := dbName + "-" + fmt.Sprintf("%d-%d-%d %d:%d:%d",
 		t.Year(), t.Month(), t.Day(),
 		t.Hour(), t.Minute(), t.Second()) + ".csv"
+	*/	
+	filename := fmt.Sprintf("ArkeoGIS-export-%d-%d-%d-%s-%s.csv",
+							t.Year(), t.Month(), t.Day(),
+							dbInfos.Name,
+							dbInfos.GetAuthorsString())
+							
 	w.Header().Set("Content-Type", "text/csv")
-	w.Header().Set("Content-Disposition", "attachment; filename="+filename)
+	w.Header().Set("Content-Disposition", "attachment; filename*=utf-8''"+url.PathEscape(filename))
 	w.Write([]byte(csvContent))
 }
 

@@ -25,6 +25,7 @@ import (
 	"database/sql"
 	"errors"
 	"time"
+	"strings"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -95,6 +96,15 @@ func (dfi *DatabaseFullInfos) GetAuthorsStrings() []string {
 	}
 	return authors
 }
+
+func (dfi *DatabaseFullInfos) GetAuthorsString() string {
+	var authors []string
+	for _, author := range dfi.Authors {
+		authors = append(authors, author.Fullname)
+	}
+	return strings.Join(authors, ", ")
+}
+
 
 // DoesExist check if database exist with a name and an owner
 func (d *Database) DoesExist(tx *sqlx.Tx) (exists bool, err error) {
