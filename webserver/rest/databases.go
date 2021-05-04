@@ -741,7 +741,7 @@ func DatabaseExportCSVArkeogis(w http.ResponseWriter, r *http.Request, proute ro
 		return
 	}
 
-	csvContent, err := export.SitesAsCSV(sites, user.First_lang_isocode, false, params.IncludeSiteId, params.IncludeInterop, tx)
+	csvContent, err := export.SitesAsCSV(&dbInfos, sites, user.First_lang_isocode, false, params.IncludeSiteId, params.IncludeInterop, tx)
 
 	if err != nil {
 		log.Println("Unable to export database")

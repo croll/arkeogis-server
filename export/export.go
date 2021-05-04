@@ -29,16 +29,29 @@ import (
 	"math"
 	"strconv"
 	"strings"
+	"errors"
 
 	model "github.com/croll/arkeogis-server/model"
 	"github.com/croll/arkeogis-server/translate"
-	"github.com/jmoiron/sqlx"
+	"github.com/jmoiron/sqlx"	
 )
 
 // SitesAsCSV exports database and sites as as csv file
-func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, includeSiteId bool, includeInterop bool, tx *sqlx.Tx) (outp string, err error) {
+func SitesAsCSV(dbInfos *model.DatabaseFullInfos, siteIDs []int, isoCode string, includeDbName bool, includeSiteId bool, includeInterop bool, tx *sqlx.Tx) (outp string, err error) {
 
 	var buff bytes.Buffer
+
+	var uri_site=""
+	if includeInterop {
+		if dbInfos == nil {
+			return "", errors.New("includeInterop need dbInfos")
+		}
+		lasthandle, err := dbInfos.GetLastHandle(tx)
+		if err != nil {
+			return "", err
+		}
+		uri_site = lasthandle.Url
+	}
 
 	w := csv.NewWriter(&buff)
 	w.Comma = ';'
@@ -154,7 +167,6 @@ func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, includeSiteId
 			// description    string
 			arkid          string   // "ARK_CARAC_ID
 			arkpactols     string   // "Ark PACTOLS"
-			urisite		   string
 		)
 		if err = rows2.Scan(&site_id, &dbname, &code, &name, &city_name, &city_geonameid, &longitude, &latitude, &longitude3d, &latitude3d, &altitude3d, &centroid, &occupation, &start_date1, &start_date2, &end_date1, &end_date2, &exceptional, &knowledge_type, &bibliography, &comment, &charac_id, &arkid, &arkpactols); err != nil {
 			log.Println(err)
@@ -316,7 +328,7 @@ func SitesAsCSV(siteIDs []int, isoCode string, includeDbName bool, includeSiteId
 		if includeInterop {
 			line = append(line, arkid)
 			line = append(line, arkpactols)
-			line = append(line, urisite)
+			line = append(line, uri_site)
 		}
 		line = append(line, bibliography)
 		line = append(line, comment)
