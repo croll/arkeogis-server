@@ -682,7 +682,7 @@ func DatabaseExportXML(w http.ResponseWriter, r *http.Request, proute routes.Pro
 	}
 
 	buf := bytes.NewBufferString("")
-	err = export.InteroperableExportXml(tx, buf, params.Id, proute.Lang1.Isocode)
+	dbInfos, err := export.InteroperableExportXml(tx, buf, params.Id, proute.Lang1.Isocode)
 	if err != nil {
 		log.Println("Error creating Interoperable Export XML", err)
 		userSqlError(w, err)
@@ -696,9 +696,13 @@ func DatabaseExportXML(w http.ResponseWriter, r *http.Request, proute routes.Pro
 		return
 	}
 
-	filename := "plop"
+	t := time.Now()
+	filename := fmt.Sprintf("ArkeoGIS-export-%d-%d-%d-%s-%s.xml",
+							t.Year(), t.Month(), t.Day(),
+							dbInfos.Name,
+							dbInfos.GetAuthorsString())
 	w.Header().Set("Content-Type", "application/xml")
-	w.Header().Set("Content-Disposition", "attachment; filename=\""+filename+".xml\"")
+	w.Header().Set("Content-Disposition", "attachment; filename*=utf-8''"+url.PathEscape(filename))
 	w.Header().Set("Content-Length", strconv.Itoa(buf.Len()))
 
 	buf.WriteTo(w)

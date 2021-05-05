@@ -93,7 +93,7 @@ func miniBounds(geom Geom) (north float64, south float64, east float64, west flo
 	return north, south, east, west
 }
 
-func InteroperableExportXml(tx *sqlx.Tx, w io.Writer, databaseId int, lang string) (err error) {
+func InteroperableExportXml(tx *sqlx.Tx, w io.Writer, databaseId int, lang string) (dbInfos_ *model.DatabaseFullInfos, err error) {
 	type Metadata struct {
 		XMLName   			xml.Name 		`xml:"metadata"`
 		Xmlns				string   		`xml:"xmlns,attr"`
@@ -137,7 +137,7 @@ func InteroperableExportXml(tx *sqlx.Tx, w io.Writer, databaseId int, lang strin
 	if err != nil {
 		log.Println("Error getting database infos", err)
 		tx.Rollback()
-		return err
+		return nil, err
 	}
 
 	log.Printf("%+v\n", dbInfos)
@@ -222,7 +222,7 @@ func InteroperableExportXml(tx *sqlx.Tx, w io.Writer, databaseId int, lang strin
 		json.Unmarshal([]byte(dbInfos.Geographical_extent_geom), &geom)
 
 		if (geom.Type != "Polygon") {
-			return errors.New("geom not recognised for Geographical_extent_geom")
+			return nil, errors.New("geom not recognised for Geographical_extent_geom")
 		}
 
 		north, south, east, west := miniBounds(geom)
@@ -248,10 +248,10 @@ func InteroperableExportXml(tx *sqlx.Tx, w io.Writer, databaseId int, lang strin
 	enc.Indent("  ", "    ")
 	if err := enc.Encode(v); err != nil {
 		fmt.Printf("error: %v\n", err)
-		return err
+		return nil, err
 	}
 
-	return nil
+	return &dbInfos, nil
 }
 
 func dcYear(year int) string {
