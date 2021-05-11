@@ -697,7 +697,7 @@ func DatabaseExportXML(w http.ResponseWriter, r *http.Request, proute routes.Pro
 	}
 
 	t := time.Now()
-	filename := fmt.Sprintf("ArkeoGIS-export-%d-%d-%d-%s-%s.xml",
+	filename := fmt.Sprintf("ArkeoGIS-metadata-export-%d-%d-%d-%s-%s.xml",
 							t.Year(), t.Month(), t.Day(),
 							dbInfos.Name,
 							dbInfos.GetAuthorsString())
@@ -766,7 +766,7 @@ func DatabaseExportCSVArkeogis(w http.ResponseWriter, r *http.Request, proute ro
 		t.Year(), t.Month(), t.Day(),
 		t.Hour(), t.Minute(), t.Second()) + ".csv"
 	*/	
-	filename := fmt.Sprintf("ArkeoGIS-export-%d-%d-%d-%s-%s.csv",
+	filename := fmt.Sprintf("ArkeoGIS-dataset-export-%d-%d-%d-%s-%s.csv",
 							t.Year(), t.Month(), t.Day(),
 							dbInfos.Name,
 							dbInfos.GetAuthorsString())
