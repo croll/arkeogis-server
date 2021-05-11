@@ -52,13 +52,15 @@ type StringL struct {
 func readMappedToStringL(mapped map[string]string, separator string) []StringL {
 	var lines []StringL
 	for l, s := range mapped {
-		if separator != "" {
-			nl := strings.Split(s, ",")
-			for _, nll := range nl {
-				lines = append(lines, StringL{strings.Trim(nll, " "), l})
-			}
-		} else {
-			lines = append(lines, StringL{s, l})
+		if s != "" {
+			if separator != "" {
+				nl := strings.Split(s, ",")
+				for _, nll := range nl {
+					lines = append(lines, StringL{strings.Trim(nll, " "), l})
+				}
+			} else {
+				lines = append(lines, StringL{s, l})
+			}	
 		}
 	}
 	return lines
@@ -207,18 +209,22 @@ func InteroperableExportXml(tx *sqlx.Tx, w io.Writer, databaseId int, lang strin
 	}
 
 	// if dbInfos.Geographical_extent == "country" {
-	if len(dbInfos.Countries) > 0 {
-		v.DcCoverage = append(v.DcCoverage, XsiTyped{"Pays", "", ""})
-		v.DcCoverage = append(v.DcCoverage, XsiTyped{"https://www.geonames.org/"+strconv.Itoa(dbInfos.Countries[0].Geonameid), "dcterms:URI", ""})
-
+	for i, country := range dbInfos.Countries {
+		if i == 0 {
+			v.DcCoverage = append(v.DcCoverage, XsiTyped{"Pays", "", ""})
+		}
+		v.DcCoverage = append(v.DcCoverage, XsiTyped{"https://www.geonames.org/"+strconv.Itoa(country.Geonameid), "dcterms:URI", ""})
 	}
 
 	// if dbInfos.Geographical_extent == "continent" {
-		if len(dbInfos.Continents) > 0 {
-		v.DcCoverage = append(v.DcCoverage, XsiTyped{"Continent", "", ""})
-		v.DcCoverage = append(v.DcCoverage, XsiTyped{"https://www.geonames.org/"+strconv.Itoa(dbInfos.Continents[0].Geonameid), "dcterms:URI", ""})
-	}
 
+	for i, continent := range dbInfos.Continents {
+		if i == 0 {
+			v.DcCoverage = append(v.DcCoverage, XsiTyped{"Continent", "", ""})
+		}
+		v.DcCoverage = append(v.DcCoverage, XsiTyped{"https://www.geonames.org/"+strconv.Itoa(continent.Geonameid), "dcterms:URI", ""})
+	}
+	
 	// if dbInfos.Geographical_extent == "?" {
 	//}
 
