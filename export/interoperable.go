@@ -252,7 +252,7 @@ func InteroperableExportXml(tx *sqlx.Tx, w io.Writer, databaseId int, lang strin
 
 	v.DcRights = dbInfos.License
 	v.DcTermsLicense = XsiTyped{dbInfos.License_uri, "dcterms:URI", ""}
-	v.DctermsIM = "protocole de vérification des données et meta-données obligatoires texte a mieu ecrire"
+	v.DctermsIM = "Lors de l'importation et l'exportation, ArkeoGIS impose un protocole strict de vérification du format des données et métadonnées pour garantir le respect des normes énoncées."
 	v.DcAudience = readMappedToStringL(dbInfos.Re_use, "")
 	v.DcTermsMediator = XsiTyped{"https://arkeogis.org/contact/", "dcterms:URI", ""}
 
