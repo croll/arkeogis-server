@@ -190,7 +190,7 @@ func InteroperableExportXml(tx *sqlx.Tx, w io.Writer, databaseId int, lang strin
 	if relations, ok := dbInfos.Source_relation[dbInfos.Default_language]; ok {
 		// split using ','
 		for _, relation := range strings.Split(relations, ",") {
-			v.DcRelation = append(v.DcRelation, relation)
+			v.DcRelation = append(v.DcRelation, strings.Trim(relation, " \n"))
 		}
 	}
 
