@@ -59,11 +59,11 @@ func SitesAsCSV(dbInfos *model.DatabaseFullInfos, siteIDs []int, isoCode string,
 
 	columns := []string{}
 
-	if includeDbName {
-		columns = append(columns, "DATABASE_NAME")
-	}
 	if includeSiteId {
 		columns = append(columns, "SITE_AKG_ID")
+	}
+	if includeDbName {
+		columns = append(columns, "DATABASE_NAME")
 	}
 	columns = append(columns, "SITE_SOURCE_ID")
 	columns = append(columns, "SITE_NAME")
@@ -300,11 +300,11 @@ func SitesAsCSV(dbInfos *model.DatabaseFullInfos, siteIDs []int, isoCode string,
 
 		var line []string
 
-		if includeDbName {
-			line = append(line, dbname)
-		}
 		if includeSiteId {
 			line = append(line, site_id)
+		}
+		if includeDbName {
+			line = append(line, dbname)
 		}
 		line = append(line, code)
 		line = append(line, name)
