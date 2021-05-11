@@ -49,12 +49,19 @@ type StringL struct {
 	Lang				string		`xml:"xml:lang,attr"`
 }
 
-func readMappedToStringL(mapped map[string]string) []StringL {
-	var strings []StringL
+func readMappedToStringL(mapped map[string]string, separator string) []StringL {
+	var lines []StringL
 	for l, s := range mapped {
-		strings = append(strings, StringL{s, l})
+		if separator != "" {
+			nl := strings.Split(s, ",")
+			for _, nll := range nl {
+				lines = append(lines, StringL{strings.Trim(nll, " "), l})
+			}
+		} else {
+			lines = append(lines, StringL{s, l})
+		}
 	}
-	return strings
+	return lines
 }
 
 type XsiTyped struct {
@@ -101,6 +108,7 @@ func InteroperableExportXml(tx *sqlx.Tx, w io.Writer, databaseId int, lang strin
 		XsischemaLocation	string   		`xml:"xsi:schemaLocation,attr"`
 		Xmlnsdc				string			`xml:"xmlns:dc,attr"`
 		Xmlnsdcterms		string			`xml:"xmlns:dcterms,attr"`
+		Xmlnsdcx		    string			`xml:"xmlns:dcx,attr"`
 
 		DcTitle			    string			`xml:"dc:title"`
 		DcCreator			[]string		`xml:"dc:creator"`
@@ -148,11 +156,12 @@ func InteroperableExportXml(tx *sqlx.Tx, w io.Writer, databaseId int, lang strin
 	v.XsischemaLocation = "http://www.w3.org/1999/xhtml http://www.w3.org/1999/xhtml.xsd"
 	v.Xmlnsdc = "http://purl.org/dc/elements/1.1/"
 	v.Xmlnsdcterms = "http://purl.org/dc/terms/"
+	v.Xmlnsdcx = "http://purl.org/dc/xml/"
 
 	v.DcTitle = dbInfos.Name
 	v.DcCreator = dbInfos.GetAuthorsStrings()
-	v.DcSubject = readMappedToStringL(dbInfos.Subject)
-	v.DcDescription = readMappedToStringL(dbInfos.Description)
+	v.DcSubject = readMappedToStringL(dbInfos.Subject, ",")
+	v.DcDescription = readMappedToStringL(dbInfos.Description, "")
 	v.DcPublishers = []XsiTyped{
 		XsiTyped{dbInfos.Editor, "", ""},
 		XsiTyped{dbInfos.Editor_url, "dcterms:URI", ""},
@@ -170,7 +179,7 @@ func InteroperableExportXml(tx *sqlx.Tx, w io.Writer, databaseId int, lang strin
 		}
 	}
 
-	v.DcBibliographicCitation = readMappedToStringL(dbInfos.Bibliography)
+	v.DcBibliographicCitation = readMappedToStringL(dbInfos.Bibliography, "")
 
 	if source, ok := dbInfos.Source_description[dbInfos.Default_language]; ok {
 		v.DcSource = XsiTyped{source, "dcterms:URI", ""}
@@ -238,7 +247,7 @@ func InteroperableExportXml(tx *sqlx.Tx, w io.Writer, databaseId int, lang strin
 	v.DcRights = dbInfos.License
 	v.DcTermsLicense = XsiTyped{dbInfos.License_uri, "dcterms:URI", ""}
 	v.DctermsIM = "protocole de vérification des données et meta-données obligatoires texte a mieu ecrire"
-	v.DcAudience = readMappedToStringL(dbInfos.Re_use)
+	v.DcAudience = readMappedToStringL(dbInfos.Re_use, "")
 	v.DcTermsMediator = XsiTyped{"https://arkeogis.org/contact/", "dcterms:URI", ""}
 
 	w.Write([]byte(`<?xml version="1.0" encoding="UTF-8"?>`+"\n"))
