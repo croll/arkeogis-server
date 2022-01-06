@@ -51,6 +51,7 @@ const CharacCsvColumnPath3 = 4
 const CharacCsvColumnPath4 = 5
 const CharacCsvColumnArkId = 6
 const CharacCsvColumnPactolsId = 7
+const CharacCsvColumnAatId = 8
 
 type CharacsZipUpdateStruct struct {
 	CharacId   int    `json:"characId"`
@@ -331,12 +332,14 @@ func csvzipDoTheMix(actual *CharacsUpdateStruct, newcontent map[string]ZipConten
 		ids := map[string]string{}
 		arkIds := map[string]string{}
 		pactolsIds := map[string]string{}
+		aatIds := map[string]string{}
 		paths := map[string][]string{}
 
 		for lang, zipContent := range newcontent {
 			ids[lang] = zipContent.Decoded[linenum][CharacCsvColumnId]
 			arkIds[lang] = zipContent.Decoded[linenum][CharacCsvColumnArkId]
 			pactolsIds[lang] = zipContent.Decoded[linenum][CharacCsvColumnPactolsId]
+			aatIds[lang] = zipContent.Decoded[linenum][CharacCsvColumnAatId]
 			path := []string{}
 
 			for y, val := range zipContent.Decoded[linenum][CharacCsvColumnPath0 : CharacCsvColumnPath4+1] {
@@ -362,10 +365,17 @@ func csvzipDoTheMix(actual *CharacsUpdateStruct, newcontent map[string]ZipConten
 			}
 		}
 
-		// check if every arkIds are identical
+		// check if every pactolsIds are identical
 		for _, pactolsId := range pactolsIds {
 			if pactolsId != pactolsIds[firstlang] {
 				return errors.New("pactolsIds on line " + strconv.Itoa(linenum) + " are not identical on all languages : '" + pactolsIds[firstlang] + "' != '" + pactolsId + "'")
+			}
+		}
+
+		// check if every arkIds are identical
+		for _, aatId := range aatIds {
+			if aatId != aatIds[firstlang] {
+				return errors.New("aatIds on line " + strconv.Itoa(linenum) + " are not identical on all languages : '" + aatIds[firstlang] + "' != '" + aatId + "'")
 			}
 		}
 
@@ -392,6 +402,7 @@ func csvzipDoTheMix(actual *CharacsUpdateStruct, newcontent map[string]ZipConten
 			elem.Charac.Order = linenum * 10
 			elem.Charac.Ark_id = arkIds[firstlang]
 			elem.Charac.Pactols_id = pactolsIds[firstlang]
+			elem.Charac.Aat_id = aatIds[firstlang]
 
 			for lang, _ := range newcontent {
 				if _, ok := elem.Name[lang]; ok {
@@ -412,6 +423,7 @@ func csvzipDoTheMix(actual *CharacsUpdateStruct, newcontent map[string]ZipConten
 			subelem.Charac.Order = linenum * 10
 			subelem.Charac.Ark_id = arkIds[firstlang]
 			subelem.Charac.Pactols_id = pactolsIds[firstlang]
+			subelem.Charac.Aat_id = aatIds[firstlang]
 
 			subelem.Name = map[string]string{}
 			subelem.Description = map[string]string{}
