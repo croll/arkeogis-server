@@ -949,6 +949,7 @@ func CharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 		"CARAC_LVL4",
 		"IdArk",
 		"IdPactols",
+		"IdAat",
 	})
 
 	lvl0 := answer.CharacTreeStruct
@@ -967,6 +968,10 @@ func CharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 			lvl1.Ark_id = "<a href=\"" + lvl1.Ark_id + "\">" + lvl1.Ark_id + "</a>"
 		}
 
+		if params.Html == 1 && len(lvl1.Aat_id) > 0 {
+			lvl1.Aat_id = "<a href=\"" + lvl1.Aat_id + "\">" + lvl1.Aat_id + "</a>"
+		}
+
 		table = append(table, []string{
 			strconv.Itoa(lvl1.Id),
 			lvl0Name,
@@ -976,6 +981,7 @@ func CharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 			"",
 			lvl1.Ark_id,
 			lvl1.Pactols_id,
+			lvl1.Aat_id,
 		})
 
 		for _, lvl2 := range lvl1.Content {
@@ -988,6 +994,10 @@ func CharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 				lvl2.Ark_id = "<a href=\"" + lvl2.Ark_id + "\">" + lvl2.Ark_id + "</a>"
 			}
 
+			if params.Html == 1 && len(lvl2.Aat_id) > 0 {
+				lvl2.Aat_id = "<a href=\"" + lvl2.Aat_id + "\">" + lvl2.Aat_id + "</a>"
+			}
+
 			table = append(table, []string{
 				strconv.Itoa(lvl2.Id),
 				lvl0Name,
@@ -997,6 +1007,7 @@ func CharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 				"",
 				lvl2.Ark_id,
 				lvl2.Pactols_id,
+				lvl2.Aat_id,
 			})
 
 			for _, lvl3 := range lvl2.Content {
@@ -1009,6 +1020,10 @@ func CharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 					lvl3.Ark_id = "<a href=\"" + lvl3.Ark_id + "\">" + lvl3.Ark_id + "</a>"
 				}
 
+				if params.Html == 1 && len(lvl3.Aat_id) > 0 {
+					lvl3.Aat_id = "<a href=\"" + lvl3.Aat_id + "\">" + lvl3.Aat_id + "</a>"
+				}
+
 				table = append(table, []string{
 					strconv.Itoa(lvl3.Id),
 					lvl0Name,
@@ -1018,6 +1033,7 @@ func CharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 					"",
 					lvl3.Ark_id,
 					lvl3.Pactols_id,
+					lvl3.Aat_id,
 				})
 
 				for _, lvl4 := range lvl3.Content {
@@ -1030,6 +1046,10 @@ func CharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 						lvl4.Ark_id = "<a href=\"" + lvl4.Ark_id + "\">" + lvl4.Ark_id + "</a>"
 					}
 
+					if params.Html == 1 && len(lvl4.Aat_id) > 0 {
+						lvl4.Aat_id = "<a href=\"" + lvl4.Aat_id + "\">" + lvl4.Aat_id + "</a>"
+					}
+
 					table = append(table, []string{
 						strconv.Itoa(lvl4.Id),
 						lvl0Name,
@@ -1039,6 +1059,7 @@ func CharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 						lvl4Name,
 						lvl4.Ark_id,
 						lvl4.Pactols_id,
+						lvl4.Aat_id,
 					})
 
 				}
