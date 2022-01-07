@@ -22,6 +22,7 @@
 package rest
 
 import (
+	"fmt"
 	"archive/zip"
 	"bytes"
 	"encoding/csv"
@@ -317,6 +318,10 @@ func csvzipSearchCharacByID(elem *CharacTreeStruct, id int, levelsize int) (*Cha
 	return nil, 0
 }
 
+func printSlice(s []string) {
+	fmt.Printf("len=%d cap=%d %v\n", len(s), cap(s), s)
+}
+
 func csvzipDoTheMix(actual *CharacsUpdateStruct, newcontent map[string]ZipContent) error {
 
 	//fmt.Println("actual: ", actual)
@@ -336,6 +341,16 @@ func csvzipDoTheMix(actual *CharacsUpdateStruct, newcontent map[string]ZipConten
 		paths := map[string][]string{}
 
 		for lang, zipContent := range newcontent {
+			if (len(zipContent.Decoded[linenum]) != (CharacCsvColumnAatId + 1)) {
+				fmt.Println("line : ", zipContent.Decoded[linenum])
+				printSlice(zipContent.Decoded[linenum])
+				return errors.New(
+					"Line " + strconv.Itoa(linenum) +
+					" for language " + lang +
+					" have " + strconv.Itoa(len(zipContent.Decoded[linenum])) +
+					" columns instead of " + strconv.Itoa(CharacCsvColumnAatId + 1))
+			}
+
 			ids[lang] = zipContent.Decoded[linenum][CharacCsvColumnId]
 			arkIds[lang] = zipContent.Decoded[linenum][CharacCsvColumnArkId]
 			pactolsIds[lang] = zipContent.Decoded[linenum][CharacCsvColumnPactolsId]
