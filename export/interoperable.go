@@ -203,6 +203,7 @@ func InteroperableExportXml(tx *sqlx.Tx, w io.Writer, databaseId int, lang strin
 	v.DcLanguage = XsiTyped{langs[dbInfos.Default_language], "dcterms:ISO639-3", ""}
 
 	v.DcTermsConformsTo = []XsiTyped{
+		XsiTyped{"https://www.getty.edu/research/tools/vocabularies/aat/", "dcterms:URI", ""},
 		XsiTyped{"https://www.frantiq.fr/pactols/le-thesaurus", "dcterms:URI", ""},
 		XsiTyped{"https://epsg.org/", "dcterms:URI", ""},
 		XsiTyped{"https://tools.ietf.org/id/draft-kunze-ark-21.html", "dcterms:URI", ""},
