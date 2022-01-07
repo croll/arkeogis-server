@@ -283,6 +283,7 @@ type CharacTreeStruct struct {
 	Description map[string]string  `json:"description"`
 	Content     []CharacTreeStruct `json:"content"`
 	Hidden      bool               `json:"hidden"`
+	UsageCount  int                `json:"usageCount"`
 }
 
 // CharacsUpdateStruct structure (json)
@@ -586,9 +587,23 @@ func getCharacRecursive(tx *sqlx.Tx, charac *CharacTreeStruct, project_id int) e
 		tx.Get(&hiddenCount, "SELECT count(*) FROM project_hidden_characs WHERE project_id = "+strconv.Itoa(project_id)+" AND charac_id = "+strconv.Itoa(charac.Id))
 		if hiddenCount > 0 {
 			charac.Hidden = true
-			log.Println("found hidden : ", charac.Id)
+			//log.Println("found hidden : ", charac.Id)
 		}
 	}
+
+	// get count of characs usage
+	// select count(*) from site_range__charac left join site_range on site_range__charac.site_range_id=site_range.id left join site on site.id=site_range.site_id left join database on site.database_id = database.id where database.published='t' AND site_range__charac.charac_id = 12;
+	err = tx.Get(&charac.UsageCount, "select count(*) from site_range__charac left join site_range on site_range__charac.site_range_id=site_range.id left join site on site.id=site_range.site_id left join database on site.database_id = database.id where database.published='t' AND site_range__charac.charac_id = "+strconv.Itoa(charac.Id))
+	if err != nil {
+		return err
+	}
+
+	// pour evolution, avoir les bases ;
+	// select count(*) from site_range__charac left join site_range on site_range__charac.site_range_id=site_range.id left join site on site.id=site_range.site_id left join database on site.database_id = database.id where database.published='t' AND site_range__charac.charac_id = 12
+	//
+	// les bases avec le nombre d'utilisation par base :
+	// select database.name,count(site_range__charac.id) from site_range__charac left join site_range on site_range__charac.site_range_id=site_range.id left join site on site.id=site_range.site_id left join database on site.database_id = database.id where database.published='t' AND site_range__charac.charac_id = 12 GROUP BY database.id;
+
 
 	// get the childs of this charac from the db
 	childs, err := charac.Charac.Childs(tx)
@@ -938,6 +953,10 @@ func CharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 	}
 
 	answer, err := characsGetTree(w, tx, params.Id, 0, user)
+	if err != nil {
+		userSqlError(w, err)
+		return
+	}
 
 	table := [][]string{}
 	table = append(table, []string{
@@ -950,6 +969,7 @@ func CharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 		"IdArk",
 		"IdPactols",
 		"IdAat",
+		"UsageCount",
 	})
 
 	lvl0 := answer.CharacTreeStruct
@@ -982,6 +1002,7 @@ func CharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 			lvl1.Ark_id,
 			lvl1.Pactols_id,
 			lvl1.Aat_id,
+			strconv.Itoa(lvl1.UsageCount),
 		})
 
 		for _, lvl2 := range lvl1.Content {
@@ -1008,6 +1029,7 @@ func CharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 				lvl2.Ark_id,
 				lvl2.Pactols_id,
 				lvl2.Aat_id,
+				strconv.Itoa(lvl2.UsageCount),
 			})
 
 			for _, lvl3 := range lvl2.Content {
@@ -1034,6 +1056,7 @@ func CharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 					lvl3.Ark_id,
 					lvl3.Pactols_id,
 					lvl3.Aat_id,
+					strconv.Itoa(lvl3.UsageCount),
 				})
 
 				for _, lvl4 := range lvl3.Content {
@@ -1060,6 +1083,7 @@ func CharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 						lvl4.Ark_id,
 						lvl4.Pactols_id,
 						lvl4.Aat_id,
+						strconv.Itoa(lvl4.UsageCount),
 					})
 
 				}
