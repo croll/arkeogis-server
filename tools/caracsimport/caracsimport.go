@@ -57,6 +57,12 @@ var caracsRootByLang map[string]map[string]string = map[string]map[string]string
 		"de": "Befunde",
 		"es": "Inmobiliario",
 	},
+	"Analysis": map[string]string{
+		"en": "Realestate",
+		"fr": "Analyses",
+		"de": "Befunde",
+		"es": "Inmobiliario",
+	},
 }
 
 func main() {
@@ -75,7 +81,12 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	for i, f := range []string{"../datas/csv/Furniture_fr-de-en-es.csv", "../datas/csv/Landscape_fr-de-en-es.csv", "../datas/csv/Production_fr-de-en-es.csv", "../datas/csv/Realestate_fr-de-en-es.csv"} {
+	for i, f := range []string{
+		"../datas/csv/Furniture_fr-de-en-es.csv",
+		"../datas/csv/Landscape_fr-de-en-es.csv",
+		"../datas/csv/Production_fr-de-en-es.csv",
+		"../datas/csv/Realestate_fr-de-en-es.csv",
+		"../datas/csv/Analysis_fr-de-en-es.csv"} {
 		err := processFile(f, i)
 		if err != nil {
 			log.Println(err)
