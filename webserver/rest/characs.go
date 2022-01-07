@@ -33,6 +33,7 @@ import (
 
 	db "github.com/croll/arkeogis-server/db"
 	"github.com/croll/arkeogis-server/model"
+	"github.com/croll/arkeogis-server/translate"
 
 	routes "github.com/croll/arkeogis-server/webserver/routes"
 	"github.com/jmoiron/sqlx"
@@ -978,7 +979,7 @@ func CharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 	})
 
 	if params.Html == 1 {
-		table[0] = append(table[0], "UsageCount")
+		table[0] = append(table[0], translate.T(params.Isocode, "CHARACEDITOR.CSVEXPORT.T_USAGECOUNT"))
 	}
 
 
