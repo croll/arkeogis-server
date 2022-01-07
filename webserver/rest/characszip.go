@@ -171,7 +171,7 @@ func CharacsUpdateZip(w http.ResponseWriter, r *http.Request, proute routes.Prou
 
 	/************************************/
 
-	answer, err := characsGetTree(w, tx, c.CharacId, 0, user)
+	answer, err := characsGetTree(w, tx, c.CharacId, 0, false, user)
 	if err != nil {
 		log.Println("CharacsUpdateZip: characsGetTree failed...", err)
 		_ = tx.Rollback()

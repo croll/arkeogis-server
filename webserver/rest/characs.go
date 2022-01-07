@@ -550,7 +550,7 @@ func CharacsUpdate(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 		}
 	}
 
-	answer, err := characsGetTree(w, tx, c.Id, 0, user)
+	answer, err := characsGetTree(w, tx, c.Id, 0, false, user)
 
 	// commit...
 	err = tx.Commit()
@@ -569,7 +569,7 @@ func CharacsUpdate(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 	w.Write(j)
 }
 
-func getCharacRecursive(tx *sqlx.Tx, charac *CharacTreeStruct, project_id int) error {
+func getCharacRecursive(tx *sqlx.Tx, charac *CharacTreeStruct, project_id int, getUsageCount bool) error {
 	var err error = nil
 
 	// load translations
@@ -591,18 +591,20 @@ func getCharacRecursive(tx *sqlx.Tx, charac *CharacTreeStruct, project_id int) e
 		}
 	}
 
-	// get count of characs usage
-	// select count(*) from site_range__charac left join site_range on site_range__charac.site_range_id=site_range.id left join site on site.id=site_range.site_id left join database on site.database_id = database.id where database.published='t' AND site_range__charac.charac_id = 12;
-	err = tx.Get(&charac.UsageCount, "select count(*) from site_range__charac left join site_range on site_range__charac.site_range_id=site_range.id left join site on site.id=site_range.site_id left join database on site.database_id = database.id where database.published='t' AND site_range__charac.charac_id = "+strconv.Itoa(charac.Id))
-	if err != nil {
-		return err
-	}
+	if getUsageCount {
+		// get count of characs usage
+		// select count(*) from site_range__charac left join site_range on site_range__charac.site_range_id=site_range.id left join site on site.id=site_range.site_id left join database on site.database_id = database.id where database.published='t' AND site_range__charac.charac_id = 12;
+		err = tx.Get(&charac.UsageCount, "select count(*) from site_range__charac left join site_range on site_range__charac.site_range_id=site_range.id left join site on site.id=site_range.site_id left join database on site.database_id = database.id where database.published='t' AND site_range__charac.charac_id = "+strconv.Itoa(charac.Id))
+		if err != nil {
+			return err
+		}
 
-	// pour evolution, avoir les bases ;
-	// select count(*) from site_range__charac left join site_range on site_range__charac.site_range_id=site_range.id left join site on site.id=site_range.site_id left join database on site.database_id = database.id where database.published='t' AND site_range__charac.charac_id = 12
-	//
-	// les bases avec le nombre d'utilisation par base :
-	// select database.name,count(site_range__charac.id) from site_range__charac left join site_range on site_range__charac.site_range_id=site_range.id left join site on site.id=site_range.site_id left join database on site.database_id = database.id where database.published='t' AND site_range__charac.charac_id = 12 GROUP BY database.id;
+		// pour evolution, avoir les bases ;
+		// select count(*) from site_range__charac left join site_range on site_range__charac.site_range_id=site_range.id left join site on site.id=site_range.site_id left join database on site.database_id = database.id where database.published='t' AND site_range__charac.charac_id = 12
+		//
+		// les bases avec le nombre d'utilisation par base :
+		// select database.name,count(site_range__charac.id) from site_range__charac left join site_range on site_range__charac.site_range_id=site_range.id left join site on site.id=site_range.site_id left join database on site.database_id = database.id where database.published='t' AND site_range__charac.charac_id = 12 GROUP BY database.id;
+	}
 
 
 	// get the childs of this charac from the db
@@ -615,7 +617,7 @@ func getCharacRecursive(tx *sqlx.Tx, charac *CharacTreeStruct, project_id int) e
 	charac.Content = make([]CharacTreeStruct, len(childs))
 	for i, child := range childs {
 		charac.Content[i].Charac = child
-		err = getCharacRecursive(tx, &charac.Content[i], project_id)
+		err = getCharacRecursive(tx, &charac.Content[i], project_id, getUsageCount)
 		if err != nil {
 			return err
 		}
@@ -624,7 +626,7 @@ func getCharacRecursive(tx *sqlx.Tx, charac *CharacTreeStruct, project_id int) e
 	return nil
 }
 
-func characsGetTree(w http.ResponseWriter, tx *sqlx.Tx, id int, project_id int, user model.User) (answer *CharacsUpdateStruct, err error) {
+func characsGetTree(w http.ResponseWriter, tx *sqlx.Tx, id int, project_id int, getUsageCount bool, user model.User) (answer *CharacsUpdateStruct, err error) {
 
 	// answer structure that will be printed when everything is done
 	answer = &CharacsUpdateStruct{}
@@ -648,7 +650,7 @@ func characsGetTree(w http.ResponseWriter, tx *sqlx.Tx, id int, project_id int, 
 	}
 
 	// now get the charac translations and all childrens
-	err = getCharacRecursive(tx, &answer.CharacTreeStruct, project_id)
+	err = getCharacRecursive(tx, &answer.CharacTreeStruct, project_id, getUsageCount)
 	if err != nil {
 		userSqlError(w, err)
 		_ = tx.Rollback()
@@ -721,7 +723,7 @@ func CharacsGetTree(w http.ResponseWriter, r *http.Request, proute routes.Proute
 		return
 	}
 
-	answer, err := characsGetTree(w, tx, params.Id, params.Project_id, user)
+	answer, err := characsGetTree(w, tx, params.Id, params.Project_id, false, user)
 
 	// commit...
 	err = tx.Commit()
@@ -795,7 +797,7 @@ func CharacsDelete(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 	}
 
 	// get the full characlogie tree
-	answer, err := characsGetTree(w, tx, params.Id, 0, user)
+	answer, err := characsGetTree(w, tx, params.Id, 0, false, user)
 
 	// delete charac_root
 	err = answer.Charac_root.Delete(tx)
@@ -952,7 +954,11 @@ func CharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 		return
 	}
 
-	answer, err := characsGetTree(w, tx, params.Id, 0, user)
+	getUsageCount := false
+	if params.Html == 1 {
+		getUsageCount = true
+	}
+	answer, err := characsGetTree(w, tx, params.Id, 0, getUsageCount, user)
 	if err != nil {
 		userSqlError(w, err)
 		return
@@ -969,8 +975,12 @@ func CharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 		"IdArk",
 		"IdPactols",
 		"IdAat",
-		"UsageCount",
 	})
+
+	if params.Html == 1 {
+		table[0] = append(table[0], "UsageCount")
+	}
+
 
 	lvl0 := answer.CharacTreeStruct
 	lvl0Name := "LANGNOTFOUND"
@@ -1002,9 +1012,11 @@ func CharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 			lvl1.Ark_id,
 			lvl1.Pactols_id,
 			lvl1.Aat_id,
-			strconv.Itoa(lvl1.UsageCount),
 		})
-
+		if params.Html == 1 {
+			table[len(table)-1] = append(table[len(table)-1], strconv.Itoa(lvl1.UsageCount))
+		}
+	
 		for _, lvl2 := range lvl1.Content {
 			lvl2Name := "LANGNOTFOUND"
 			if name, ok := lvl2.Name[params.Isocode]; ok {
@@ -1029,9 +1041,11 @@ func CharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 				lvl2.Ark_id,
 				lvl2.Pactols_id,
 				lvl2.Aat_id,
-				strconv.Itoa(lvl2.UsageCount),
 			})
-
+			if params.Html == 1 {
+				table[len(table)-1] = append(table[len(table)-1], strconv.Itoa(lvl2.UsageCount))
+			}
+	
 			for _, lvl3 := range lvl2.Content {
 				lvl3Name := "LANGNOTFOUND"
 				if name, ok := lvl3.Name[params.Isocode]; ok {
@@ -1056,9 +1070,11 @@ func CharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 					lvl3.Ark_id,
 					lvl3.Pactols_id,
 					lvl3.Aat_id,
-					strconv.Itoa(lvl3.UsageCount),
 				})
-
+				if params.Html == 1 {
+					table[len(table)-1] = append(table[len(table)-1], strconv.Itoa(lvl3.UsageCount))
+				}
+	
 				for _, lvl4 := range lvl3.Content {
 					lvl4Name := "LANGNOTFOUND"
 					if name, ok := lvl4.Name[params.Isocode]; ok {
@@ -1083,9 +1099,11 @@ func CharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 						lvl4.Ark_id,
 						lvl4.Pactols_id,
 						lvl4.Aat_id,
-						strconv.Itoa(lvl4.UsageCount),
 					})
-
+					if params.Html == 1 {
+						table[len(table)-1] = append(table[len(table)-1], strconv.Itoa(lvl4.UsageCount))
+					}
+	
 				}
 
 			}
