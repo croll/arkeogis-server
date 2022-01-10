@@ -86,7 +86,8 @@ func SitesAsCSV(dbInfos *model.DatabaseFullInfos, siteIDs []int, isoCode string,
 	columns = append(columns, "CARAC_EXP")
 	if includeInterop {
 		columns = append(columns, "ARK_CARAC_ID")
-		columns = append(columns, "Ark PACTOLS")
+		//columns = append(columns, "Ark PACTOLS")
+		columns = append(columns, "AAT_ID")
 		columns = append(columns, "URI_SITE")
 	}
 	columns = append(columns, "BIBLIOGRAPHY")
@@ -121,7 +122,7 @@ func SitesAsCSV(dbInfos *model.DatabaseFullInfos, siteIDs []int, isoCode string,
 		characs[id] = path
 	}
 
-	q = "SELECT s.id as site_id, db.name as dbname, s.code, s.name, s.city_name, s.city_geonameid, ST_X(s.geom::geometry) as longitude, ST_Y(s.geom::geometry) as latitude, ST_X(s.geom_3d::geometry) as longitude_3d, ST_Y(s.geom_3d::geometry) as latitude3d, ST_Z(s.geom_3d::geometry) as altitude, s.centroid, s.occupation, sr.start_date1, sr.start_date2, sr.end_date1, sr.end_date2, src.exceptional, src.knowledge_type, srctr.bibliography, srctr.comment, c.id as charac_id, c.ark_id, c.pactols_id FROM site s LEFT JOIN database db ON s.database_id = db.id LEFT JOIN site_range sr ON s.id = sr.site_id LEFT JOIN site_tr str ON s.id = str.site_id LEFT JOIN site_range__charac src ON sr.id = src.site_range_id LEFT JOIN site_range__charac_tr srctr ON src.id = srctr.site_range__charac_id LEFT JOIN charac c ON src.charac_id = c.id WHERE s.id in (" + model.IntJoin(siteIDs, true) + ") AND str.lang_isocode IS NULL OR str.lang_isocode = db.default_language ORDER BY s.id, sr.id"
+	q = "SELECT s.id as site_id, db.name as dbname, s.code, s.name, s.city_name, s.city_geonameid, ST_X(s.geom::geometry) as longitude, ST_Y(s.geom::geometry) as latitude, ST_X(s.geom_3d::geometry) as longitude_3d, ST_Y(s.geom_3d::geometry) as latitude3d, ST_Z(s.geom_3d::geometry) as altitude, s.centroid, s.occupation, sr.start_date1, sr.start_date2, sr.end_date1, sr.end_date2, src.exceptional, src.knowledge_type, srctr.bibliography, srctr.comment, c.id as charac_id, c.ark_id, c.aat_id FROM site s LEFT JOIN database db ON s.database_id = db.id LEFT JOIN site_range sr ON s.id = sr.site_id LEFT JOIN site_tr str ON s.id = str.site_id LEFT JOIN site_range__charac src ON sr.id = src.site_range_id LEFT JOIN site_range__charac_tr srctr ON src.id = srctr.site_range__charac_id LEFT JOIN charac c ON src.charac_id = c.id WHERE s.id in (" + model.IntJoin(siteIDs, true) + ") AND str.lang_isocode IS NULL OR str.lang_isocode = db.default_language ORDER BY s.id, sr.id"
 
 	rows2, err := tx.Query(q)
 	if err != nil {
@@ -166,9 +167,10 @@ func SitesAsCSV(dbInfos *model.DatabaseFullInfos, siteIDs []int, isoCode string,
 			sexceptional   string
 			// description    string
 			arkid          string   // "ARK_CARAC_ID
-			arkpactols     string   // "Ark PACTOLS"
+			//arkpactols     string   // "Ark PACTOLS"
+			aatid          string   // "AAT ID"
 		)
-		if err = rows2.Scan(&site_id, &dbname, &code, &name, &city_name, &city_geonameid, &longitude, &latitude, &longitude3d, &latitude3d, &altitude3d, &centroid, &occupation, &start_date1, &start_date2, &end_date1, &end_date2, &exceptional, &knowledge_type, &bibliography, &comment, &charac_id, &arkid, &arkpactols); err != nil {
+		if err = rows2.Scan(&site_id, &dbname, &code, &name, &city_name, &city_geonameid, &longitude, &latitude, &longitude3d, &latitude3d, &altitude3d, &centroid, &occupation, &start_date1, &start_date2, &end_date1, &end_date2, &exceptional, &knowledge_type, &bibliography, &comment, &charac_id, &arkid, &aatid); err != nil {
 			log.Println(err)
 			rows2.Close()
 			return
@@ -327,7 +329,8 @@ func SitesAsCSV(dbInfos *model.DatabaseFullInfos, siteIDs []int, isoCode string,
 		line = append(line, sexceptional)
 		if includeInterop {
 			line = append(line, arkid)
-			line = append(line, arkpactols)
+			//line = append(line, arkpactols)
+			line = append(line, aatid)
 			line = append(line, uri_site)
 		}
 		line = append(line, bibliography)
