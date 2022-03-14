@@ -237,7 +237,7 @@ func readZipCharacs(zipContent []byte) (map[string]ZipContent, error) {
 		re := regexp.MustCompile(`-([a-z]{2})\.csv$`)
 		matches := re.FindStringSubmatch(file.Name)
 		if len(matches) != 2 {
-			return nil, errors.New("Bad file name")
+			return nil, errors.New("Bad file name inside zip. Must be for example : \"Something-en.csv\" for english, etc.")
 		}
 		content.IsoCode = matches[1]
 
