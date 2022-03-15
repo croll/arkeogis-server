@@ -382,6 +382,12 @@ func setCharacRecursive(tx *sqlx.Tx, charac *CharacTreeStruct, parent *CharacTre
 		return err
 	}
 
+	// delete hiddens characs from project, if any
+	_, err = tx.Exec("DELETE FROM project_hidden_characs WHERE charac_id IN (" + model.IntJoin(ids_to_delete, true) + ")")
+	if err != nil {
+		return err
+	}
+
 	// delete characs itselfs...
 	_, err = tx.Exec("DELETE FROM charac WHERE id IN (" + model.IntJoin(ids_to_delete, true) + ")")
 	if err != nil {
