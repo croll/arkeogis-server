@@ -350,6 +350,8 @@ func csvzipDoTheMix(actual *CharacsUpdateStruct, newcontent map[string]ZipConten
 	}
 	totalcount := len(newcontent[firstlang].Decoded)
 
+	toremove := CharacTreeStruct{}
+
 	for linenum := 1; linenum < totalcount; linenum++ {
 		ids := map[string]string{}
 		arkIds := map[string]string{}
@@ -429,9 +431,19 @@ func csvzipDoTheMix(actual *CharacsUpdateStruct, newcontent map[string]ZipConten
 			// if id < 0, this is a delete action
 			if id < 0 { // DELETE ACTION
 				found := csvzipRemoveCharacByID(&actual.CharacTreeStruct, -id, nil, -1)
-				if found == nil {
-					return errors.New("characs on line " + strconv.Itoa(linenum) + " with id "+strconv.Itoa(-id)+" was not found for removing")
+				if found != nil {
+					toremove.Content = append(toremove.Content, *found)
+				} else {
+					leaffound := csvzipRemoveCharacByID(&toremove, -id, nil, -1)
+					if leaffound != nil {
+						toremove.Content = append(toremove.Content, *leaffound)
+					} else {
+						return errors.New("characs on line " + strconv.Itoa(linenum) + " with id "+strconv.Itoa(-id)+" was not found for removing")	
+					}	
 				}
+				//if found == nil {
+				//	return errors.New("characs on line " + strconv.Itoa(linenum) + " with id "+strconv.Itoa(-id)+" was not found for removing")
+				//}
 			} else { // UPDATE ACTION
 				elem, levelsize := csvzipSearchCharacByID(&actual.CharacTreeStruct, id, 0)
 				if elem != nil && levelsize != len(paths[firstlang]) {
