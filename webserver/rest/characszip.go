@@ -309,13 +309,30 @@ func csvzipSearchCharacByID(elem *CharacTreeStruct, id int, levelsize int) (*Cha
 	}
 
 	for i, _ := range elem.Content {
-		search, newlevelsize := csvzipSearchCharacByID(&elem.Content[i], id, levelsize+1)
-		if search != nil {
-			return search, newlevelsize
+		found, foundlevelsize := csvzipSearchCharacByID(&elem.Content[i], id, levelsize+1)
+		if found != nil {
+			return found, foundlevelsize
 		}
 	}
 
 	return nil, 0
+}
+
+func csvzipRemoveCharacByID(elem *CharacTreeStruct, id int, parent *CharacTreeStruct, parentidx int) (*CharacTreeStruct) {
+	if elem.Id == id {
+		// remove from parent
+		parent.Content = append(parent.Content[:parentidx], parent.Content[parentidx+1:]...)
+		return elem
+	}
+
+	for i, _ := range elem.Content {
+		found := csvzipRemoveCharacByID(&elem.Content[i], id, elem, i)
+		if found != nil {
+			return found
+		}
+	}
+
+	return nil
 }
 
 func printSlice(s []string) {
@@ -409,27 +426,34 @@ func csvzipDoTheMix(actual *CharacsUpdateStruct, newcontent map[string]ZipConten
 				return errors.New("bad ID on line " + strconv.Itoa(linenum))
 			}
 
-			elem, levelsize := csvzipSearchCharacByID(&actual.CharacTreeStruct, id, 0)
-			if elem != nil && levelsize != len(paths[firstlang]) {
-				return errors.New("characs on line " + strconv.Itoa(linenum) + " have a different level count from what exists actually in database " + strconv.Itoa(len(paths[firstlang])) + " != " + strconv.Itoa(levelsize))
-			}
-
-			elem.Charac.Order = linenum * 10
-			elem.Charac.Ark_id = arkIds[firstlang]
-			elem.Charac.Pactols_id = pactolsIds[firstlang]
-			elem.Charac.Aat_id = aatIds[firstlang]
-
-			for lang, _ := range newcontent {
-				if _, ok := elem.Name[lang]; ok {
-
-					if elem.Name[lang] != paths[lang][len(paths[lang])-1] {
-						//fmt.Println("update["+lang+"] : ", elem.Name[lang], " => ", paths[lang][len(paths[lang])-1])
+			// if id < 0, this is a delete action
+			if id < 0 { // DELETE ACTION
+				found := csvzipRemoveCharacByID(&actual.CharacTreeStruct, -id, nil, -1)
+				if found == nil {
+					return errors.New("characs on line " + strconv.Itoa(linenum) + " with id "+strconv.Itoa(-id)+" was not found for removing")
+				}
+			} else { // UPDATE ACTION
+				elem, levelsize := csvzipSearchCharacByID(&actual.CharacTreeStruct, id, 0)
+				if elem != nil && levelsize != len(paths[firstlang]) {
+					return errors.New("characs on line " + strconv.Itoa(linenum) + " have a different level count from what exists actually in database " + strconv.Itoa(len(paths[firstlang])) + " != " + strconv.Itoa(levelsize))
+				}
+	
+				elem.Charac.Order = linenum * 10
+				elem.Charac.Ark_id = arkIds[firstlang]
+				elem.Charac.Pactols_id = pactolsIds[firstlang]
+				elem.Charac.Aat_id = aatIds[firstlang]
+	
+				for lang, _ := range newcontent {
+					if _, ok := elem.Name[lang]; ok {
+	
+						if elem.Name[lang] != paths[lang][len(paths[lang])-1] {
+							//fmt.Println("update["+lang+"] : ", elem.Name[lang], " => ", paths[lang][len(paths[lang])-1])
+						}
+	
+						elem.Name[lang] = paths[lang][len(paths[lang])-1] // this is the update
 					}
-
-					elem.Name[lang] = paths[lang][len(paths[lang])-1] // this is the update
 				}
 			}
-
 		} else {
 			// we no not have an id, so it's an insert action
 
