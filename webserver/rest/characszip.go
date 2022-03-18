@@ -508,5 +508,12 @@ func csvzipDoTheMix(actual *CharacsUpdateStruct, newcontent map[string]ZipConten
 
 	}
 
+	// check that toremove does not contain leafs anymore
+	for _, elem := range toremove.Content {
+		if len(elem.Content) > 0 {
+			return errors.New("You are trying to remove a line without removing all it's leafs. id : " + strconv.Itoa(elem.Id))
+		}
+	}
+
 	return nil // no error !
 }
