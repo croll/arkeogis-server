@@ -39,6 +39,7 @@ import (
 
 	db "github.com/croll/arkeogis-server/db"
 	"github.com/croll/arkeogis-server/model"
+	"github.com/lib/pq"
 
 	routes "github.com/croll/arkeogis-server/webserver/routes"
 )
@@ -183,7 +184,7 @@ func CharacsUpdateZip(w http.ResponseWriter, r *http.Request, proute routes.Prou
 	if err != nil {
 		log.Println("CharacsUpdateZip: csvzipDoTheMix failed...", err)
 		_ = tx.Rollback()
-		routes.FieldError(w, "json.zipcontent", "internal error", err.Error())
+		characzipError(w, err)
 		return
 	}
 
@@ -199,7 +200,7 @@ func CharacsUpdateZip(w http.ResponseWriter, r *http.Request, proute routes.Prou
 	err = tx.Commit()
 	if err != nil {
 		log.Println("commit failed")
-		userSqlError(w, err)
+		characzipError(w, err)
 		_ = tx.Rollback()
 		return
 	}
@@ -211,6 +212,25 @@ func CharacsUpdateZip(w http.ResponseWriter, r *http.Request, proute routes.Prou
 	//log.Println("result: ", string(j))
 	w.Write(j)
 }
+
+func characzipError(w http.ResponseWriter, err error) {
+	log.Printf("paf: %#v\n", err)
+	if pgerr, ok := err.(*pq.Error); ok {
+		log.Printf("pgerr: %#v\n", pgerr.Code.Name())
+		switch pgerr.Code.Name() {
+		case "foreign_key_violation":
+			routes.FieldError(w, "json.zipcontent", "error", "Unable to update or delete a row, the row may be in use by a database")
+			break
+		default:
+			log.Printf("unhandled postgresql error ! : %#v\n", pgerr)
+			routes.FieldError(w, "json.zipcontent", "database error", err.Error())
+		}
+	} else {
+		log.Println("not a postgresql error !", err)
+		routes.FieldError(w, "json.zipcontent", "internal error", err.Error())
+	}
+}
+
 
 type ZipContent struct {
 	IsoCode string
