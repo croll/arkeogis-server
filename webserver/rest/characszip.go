@@ -469,6 +469,9 @@ func csvzipDoTheMix(actual *CharacsUpdateStruct, newcontent map[string]ZipConten
 				if elem != nil && levelsize != len(paths[firstlang]) {
 					return errors.New("characs on line " + strconv.Itoa(linenum) + " have a different level count from what exists actually in database " + strconv.Itoa(len(paths[firstlang])) + " != " + strconv.Itoa(levelsize))
 				}
+				if elem == nil {
+					return errors.New("characs on line " + strconv.Itoa(linenum) + " with id "+strconv.Itoa(id)+" was not found for updating")
+				}
 	
 				elem.Charac.Order = linenum * 10
 				elem.Charac.Ark_id = arkIds[firstlang]
