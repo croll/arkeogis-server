@@ -338,11 +338,21 @@ func csvzipSearchCharacByID(elem *CharacTreeStruct, id int, levelsize int) (*Cha
 	return nil, 0
 }
 
+/*
+func printC(str string, c *CharacTreeStruct) {
+	log.Println(str)
+	for i, elem := range c.Content {
+		log.Printf("%d : id %d\n", i, elem.Id)
+	}
+}
+*/
+
 func csvzipRemoveCharacByID(elem *CharacTreeStruct, id int, parent *CharacTreeStruct, parentidx int) (*CharacTreeStruct) {
 	if elem.Id == id {
+		copy := *elem
 		// remove from parent
 		parent.Content = append(parent.Content[:parentidx], parent.Content[parentidx+1:]...)
-		return elem
+		return &copy
 	}
 
 	for i, _ := range elem.Content {
@@ -452,14 +462,16 @@ func csvzipDoTheMix(actual *CharacsUpdateStruct, newcontent map[string]ZipConten
 			if id < 0 { // DELETE ACTION
 				found := csvzipRemoveCharacByID(&actual.CharacTreeStruct, -id, nil, -1)
 				if found != nil {
+					log.Println("removed " + strconv.Itoa(found.Id))
 					toremove.Content = append(toremove.Content, *found)
 				} else {
 					leaffound := csvzipRemoveCharacByID(&toremove, -id, nil, -1)
 					if leaffound != nil {
+						log.Println("removed2 " + strconv.Itoa(leaffound.Id))
 						toremove.Content = append(toremove.Content, *leaffound)
 					} else {
-						return errors.New("characs on line " + strconv.Itoa(linenum) + " with id "+strconv.Itoa(-id)+" was not found for removing")	
-					}	
+						return errors.New("characs on line " + strconv.Itoa(linenum) + " with id "+strconv.Itoa(-id)+" was not found for removing")
+					}
 				}
 				//if found == nil {
 				//	return errors.New("characs on line " + strconv.Itoa(linenum) + " with id "+strconv.Itoa(-id)+" was not found for removing")
