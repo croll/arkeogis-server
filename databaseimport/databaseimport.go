@@ -115,7 +115,7 @@ type DatabaseImport struct {
 }
 
 // New creates a new import process
-func (di *DatabaseImport) New(parser *Parser, uid int, databaseName string, langIsocode string, filehash string) error {
+func (di *DatabaseImport) New(parser *Parser, uid int, databaseName string, langIsocode string, filehash string, tx *sqlx.Tx) error {
 	var err error
 	di.Database = &DatabaseInfos{}
 	di.Uid = uid
@@ -128,10 +128,14 @@ func (di *DatabaseImport) New(parser *Parser, uid int, databaseName string, lang
 	di.SitesWithError = map[string]bool{}
 	di.Md5sum = filehash
 
-	// Start database transaction
-	di.Tx, err = db.DB.Beginx()
-	if err != nil {
-		return errors.New("Can't start transaction for database import")
+	if tx == nil {
+		// Start database transaction
+		di.Tx, err = db.DB.Beginx()
+		if err != nil {
+			return errors.New("Can't start transaction for database import")
+		}
+	} else {
+		di.Tx = tx
 	}
 
 	// Cache characs defined in Arkeogis
@@ -154,7 +158,7 @@ func (di *DatabaseImport) New(parser *Parser, uid int, databaseName string, lang
 	if di.Database.Name == "" {
 		if databaseName != "" {
 			if di.Database.Init == false {
-				if err = di.processDatabaseName(databaseName); err != nil {
+				if err = di.ProcessDatabaseName(databaseName); err != nil {
 					di.AddError(databaseName, "IMPORT.CSVFIELD_DATABASE_SOURCE_NAME.T_CHECK_INVALID", "DATABASE_SOURCE_NAME")
 					return err
 				}
@@ -263,7 +267,7 @@ func (di *DatabaseImport) ProcessRecord(f *Fields) {
 
 // processDatabaseName verifies if a database name already exist for a user and
 // create or update the sql entry
-func (di *DatabaseImport) processDatabaseName(name string) error {
+func (di *DatabaseImport) ProcessDatabaseName(name string) error {
 	var err error
 
 	// Store database name

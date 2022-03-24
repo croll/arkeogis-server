@@ -157,7 +157,7 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 
 	// Init import
 	dbImport = new(databaseimport.DatabaseImport)
-	err = dbImport.New(parser, user.Id, params.Name, params.Default_language, filehash)
+	err = dbImport.New(parser, user.Id, params.Name, params.Default_language, filehash, nil)
 	if err != nil {
 		parser.AddError(err.Error())
 		sendError(w, parser.Errors)
@@ -269,6 +269,8 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 // ImportStep1UpdateT struct holds information provided by user
 type ImportStep1UpdateT struct {
 	Id                  int
+	Name                string `min:"3" max:"50" error:"Wrong length for database name"`
+	Default_language    string `min:"2" max:"2" error:"Wrong lang"`
 	Geographical_extent string
 	Continents          []model.Continent
 	Countries           []model.Country
@@ -279,6 +281,9 @@ func ImportStep1Update(w http.ResponseWriter, r *http.Request, proute routes.Pro
 
 	params := proute.Json.(*ImportStep1UpdateT)
 
+	_user, _ := proute.Session.Get("user")
+	user := _user.(model.User)
+
 	tx, err := db.DB.Beginx()
 	if err != nil {
 		http.Error(w, "Error updating step1 informations: "+err.Error(), http.StatusBadRequest)
@@ -288,8 +293,18 @@ func ImportStep1Update(w http.ResponseWriter, r *http.Request, proute routes.Pro
 	var d = &model.Database{}
 	d.Id = params.Id
 
+	// Init import
+	dbImport := new(databaseimport.DatabaseImport)
+	err = dbImport.New(nil, user.Id, params.Name, params.Default_language, "", tx)
+	if err != nil {
+		tx.Rollback()
+		//parser.AddError(err.Error())
+		//sendError(w, parser.Errors)
+		return
+	}
+
 	// Update datatabase name and geographical extent
-	err = d.UpdateFields(tx, params, "geographical_extent")
+	err = d.UpdateFields(tx, params, "geographical_extent", "name")
 	if err != nil {
 		log.Println("Error updating database fields: ", err)
 		tx.Rollback()
