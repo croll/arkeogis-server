@@ -108,8 +108,8 @@ func initproxy(router *mux.Router) {
 		}
 
 		// hack
-		perm_proxy = true
-		perm_fullproxy = true
+		//perm_proxy = true
+		//perm_fullproxy = true
 
 		if !perm_proxy {
 			routes.ServerError(w, 403, "No permission to use proxy")
