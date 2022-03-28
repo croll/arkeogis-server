@@ -74,6 +74,10 @@ func initproxy(router *mux.Router) {
 	anyproxy = newAnyHostReverseProxy()
 
 	router.HandleFunc("/proxy/", func(w http.ResponseWriter, r *http.Request) {
+		if len(r.RequestURI) <= 8 {
+			routes.ServerError(w, 400, "Bad request")
+			return
+		}
 		url := r.RequestURI[8:] // parsed url, we remove /proxy/? from the beggining
 		fmt.Println("uri: ", url)
 
