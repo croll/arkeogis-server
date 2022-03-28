@@ -278,6 +278,11 @@ func CharacsRoots(w http.ResponseWriter, r *http.Request, proute routes.Proute) 
 	w.Write(j)
 }
 
+type CharacTreeStructCounts struct {
+	Name        string             `json:"name"`
+	UsageCount  int                `json:"usagecount"`
+}
+
 type CharacTreeStruct struct {
 	model.Charac
 	Name        map[string]string  `json:"name"`
@@ -285,6 +290,7 @@ type CharacTreeStruct struct {
 	Content     []CharacTreeStruct `json:"content"`
 	Hidden      bool               `json:"hidden"`
 	UsageCount  int                `json:"usageCount"`
+	Usages      []CharacTreeStructCounts `json:"usages"`
 }
 
 // CharacsUpdateStruct structure (json)
@@ -606,11 +612,16 @@ func getCharacRecursive(tx *sqlx.Tx, charac *CharacTreeStruct, project_id int, g
 			return err
 		}
 
+		err = tx.Select(&charac.Usages, "select database.name,count(site_range__charac.id) as usagecount from site_range__charac left join site_range on site_range__charac.site_range_id=site_range.id left join site on site.id=site_range.site_id left join database on site.database_id = database.id where database.published='t' AND site_range__charac.charac_id = "+strconv.Itoa(charac.Id)+" GROUP BY database.id order by usagecount desc")
+		if err != nil {
+			return err
+		}
+
 		// pour evolution, avoir les bases ;
 		// select count(*) from site_range__charac left join site_range on site_range__charac.site_range_id=site_range.id left join site on site.id=site_range.site_id left join database on site.database_id = database.id where database.published='t' AND site_range__charac.charac_id = 12
 		//
 		// les bases avec le nombre d'utilisation par base :
-		// select database.name,count(site_range__charac.id) from site_range__charac left join site_range on site_range__charac.site_range_id=site_range.id left join site on site.id=site_range.site_id left join database on site.database_id = database.id where database.published='t' AND site_range__charac.charac_id = 12 GROUP BY database.id;
+		// select database.name,count(site_range__charac.id) from site_range__charac left join site_range on site_range__charac.site_range_id=site_range.id left join site on site.id=site_range.site_id left join database on site.database_id = database.id where database.published='t' AND site_range__charac.charac_id = 12 GROUP BY database.id order by count desc;
 	}
 
 
@@ -936,6 +947,17 @@ func CharacSetHiddens(w http.ResponseWriter, r *http.Request, proute routes.Prou
 	}
 }
 
+func usagesToString(usages *[]CharacTreeStructCounts) string {
+	res := "";
+	for _, usage := range *usages {
+		if res != "" {
+			res = res + ", "
+		}
+		res = res + usage.Name + " (" + strconv.Itoa(usage.UsageCount) + ")"
+	}
+	return res
+}
+
 func CharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 	params := proute.Params.(*CharacListCsvParams)
 
@@ -986,6 +1008,7 @@ func CharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 
 	if params.Html == 1 {
 		table[0] = append(table[0], translate.T(params.Isocode, "CHARACEDITOR.CSVEXPORT.T_USAGECOUNT"))
+		table[0] = append(table[0], "DATASET")
 	}
 
 
@@ -1022,6 +1045,7 @@ func CharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 		})
 		if params.Html == 1 {
 			table[len(table)-1] = append(table[len(table)-1], strconv.Itoa(lvl1.UsageCount))
+			table[len(table)-1] = append(table[len(table)-1], usagesToString(&lvl1.Usages))
 		}
 	
 		for _, lvl2 := range lvl1.Content {
@@ -1051,6 +1075,7 @@ func CharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 			})
 			if params.Html == 1 {
 				table[len(table)-1] = append(table[len(table)-1], strconv.Itoa(lvl2.UsageCount))
+				table[len(table)-1] = append(table[len(table)-1], usagesToString(&lvl2.Usages))
 			}
 	
 			for _, lvl3 := range lvl2.Content {
@@ -1080,6 +1105,7 @@ func CharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 				})
 				if params.Html == 1 {
 					table[len(table)-1] = append(table[len(table)-1], strconv.Itoa(lvl3.UsageCount))
+					table[len(table)-1] = append(table[len(table)-1], usagesToString(&lvl3.Usages))
 				}
 	
 				for _, lvl4 := range lvl3.Content {
@@ -1109,6 +1135,7 @@ func CharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 					})
 					if params.Html == 1 {
 						table[len(table)-1] = append(table[len(table)-1], strconv.Itoa(lvl4.UsageCount))
+						table[len(table)-1] = append(table[len(table)-1], usagesToString(&lvl4.Usages))
 					}
 	
 				}
