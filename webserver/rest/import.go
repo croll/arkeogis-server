@@ -92,7 +92,7 @@ func init() {
 
 // ImportStep1T struct holds information provided by user
 type ImportStep1T struct {
-	Name                string `min:"3" max:"50" error:"Wrong length for database name"`
+	Name                string `min:"3" max:"75" error:"Wrong length for database name"`
 	Geographical_extent string `enum:"undefined,country,continent,international_waters,world" error:"Wrong geographical extent"`
 	Default_language    string `min:"2" max:"2" error:"Wrong lang"`
 	Continents          []model.Continent
@@ -269,7 +269,7 @@ func ImportStep1(w http.ResponseWriter, r *http.Request, proute routes.Proute) {
 // ImportStep1UpdateT struct holds information provided by user
 type ImportStep1UpdateT struct {
 	Id                  int
-	Name                string `min:"3" max:"50" error:"Wrong length for database name"`
+	Name                string `min:"3" max:"75" error:"Wrong length for database name"`
 	Default_language    string `min:"2" max:"2" error:"Wrong lang"`
 	Geographical_extent string
 	Continents          []model.Continent
@@ -298,9 +298,19 @@ func ImportStep1Update(w http.ResponseWriter, r *http.Request, proute routes.Pro
 	err = dbImport.New(nil, user.Id, params.Name, params.Default_language, "", tx)
 	if err != nil {
 		tx.Rollback()
+		log.Println("Error updating step1 informations: "+dbImport.Errors[0].ErrMsg)
+		//sendUpdateError(w, dbImport.Errors)
+		//userSqlError(w, err)
+		http.Error(w, "Error updating step1 informations: "+dbImport.Errors[0].ErrMsg, http.StatusBadRequest)
 		//parser.AddError(err.Error())
 		//sendError(w, parser.Errors)
 		return
+	}
+	if len(dbImport.Errors) > 0 {
+		tx.Rollback()
+		//userSqlError(w, dbImport.Errors[0])
+		log.Println("Error updating step1 informations: "+dbImport.Errors[0].ErrMsg)
+		http.Error(w, "Error updating step1 informations: "+dbImport.Errors[0].ErrMsg, http.StatusBadRequest)
 	}
 
 	// Update datatabase name and geographical extent
@@ -367,6 +377,19 @@ func sendError(w http.ResponseWriter, errors []*databaseimport.ParserError) {
 	// Prepare response
 	response := struct {
 		Errors []*databaseimport.ParserError `json:"errors"`
+	}{
+		errors,
+	}
+	l, _ := json.Marshal(response)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(l)
+	return
+}
+
+func sendUpdateError(w http.ResponseWriter, errors []*databaseimport.ImportError) {
+	// Prepare response
+	response := struct {
+		Errors []*databaseimport.ImportError `json:"errors"`
 	}{
 		errors,
 	}

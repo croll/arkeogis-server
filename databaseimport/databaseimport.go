@@ -77,20 +77,27 @@ func (e *ImportError) Error() string {
 // AddError structures errors to be logged or returned to client
 func (di *DatabaseImport) AddError(value string, errMsg string, columns ...string) {
 
+	line := 0
+	if di.Parser != nil {
+		line = di.Parser.Line
+	}
+
 	di.Errors = append(di.Errors, &ImportError{
-		Line:     di.Parser.Line,
+		Line:     line,
 		SiteCode: di.CurrentSite.Code,
 		Columns:  columns,
 		Value:    value,
-		ErrMsg:   translate.T(di.Parser.UserLang, errMsg),
+		ErrMsg:   translate.T(di.UserLang, errMsg),
 	})
 
-	di.CurrentSite.HasError = true
+	if di.CurrentSite != nil {
+		di.CurrentSite.HasError = true
 
-	// Store site as containing error
-	if di.CurrentSite.Code != "" {
-		if _, ok := di.SitesWithError[di.CurrentSite.Code]; !ok {
-			di.SitesWithError[di.CurrentSite.Code] = true
+		// Store site as containing error
+		if di.CurrentSite.Code != "" {
+			if _, ok := di.SitesWithError[di.CurrentSite.Code]; !ok {
+				di.SitesWithError[di.CurrentSite.Code] = true
+			}
 		}
 	}
 }
@@ -112,6 +119,7 @@ type DatabaseImport struct {
 	CachedSiteRanges map[string]int
 	Errors           []*ImportError
 	Md5sum           string
+	UserLang         string
 }
 
 // New creates a new import process
@@ -127,6 +135,12 @@ func (di *DatabaseImport) New(parser *Parser, uid int, databaseName string, lang
 	di.NumberOfSites = 0
 	di.SitesWithError = map[string]bool{}
 	di.Md5sum = filehash
+
+	if parser != nil {
+		di.UserLang = parser.UserLang
+	} else {
+		di.UserLang = langIsocode
+	}
 
 	if tx == nil {
 		// Start database transaction
@@ -274,7 +288,7 @@ func (di *DatabaseImport) ProcessDatabaseName(name string) error {
 	di.Database.Name = name
 
 	// Check database name length
-	if len(name) > 50 {
+	if len(name) > 75 {
 		di.AddError("", "IMPORT.FORM_DATABASE_NAME.T_CHECK_TOO_LONG", "DATABASE_NAME")
 		return errors.New("Database name too long")
 	}
