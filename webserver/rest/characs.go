@@ -1007,7 +1007,8 @@ func CharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 	})
 
 	if params.Html == 1 {
-		table[0] = append(table[0], translate.T(params.Isocode, "CHARACEDITOR.CSVEXPORT.T_USAGECOUNT"))
+		table[0] = append(table[0][:2+1], table[0][2:]...)
+		table[0][2] = translate.T(params.Isocode, "CHARACEDITOR.CSVEXPORT.T_USAGECOUNT")
 		table[0] = append(table[0], "DATASET")
 	}
 
@@ -1044,7 +1045,8 @@ func CharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 			lvl1.Aat_id,
 		})
 		if params.Html == 1 {
-			table[len(table)-1] = append(table[len(table)-1], strconv.Itoa(lvl1.UsageCount))
+			table[len(table)-1] = append(table[len(table)-1][:2+1], table[len(table)-1][2:]...)
+			table[len(table)-1][2] = strconv.Itoa(lvl1.UsageCount)
 			table[len(table)-1] = append(table[len(table)-1], usagesToString(&lvl1.Usages))
 		}
 	
@@ -1074,7 +1076,8 @@ func CharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 				lvl2.Aat_id,
 			})
 			if params.Html == 1 {
-				table[len(table)-1] = append(table[len(table)-1], strconv.Itoa(lvl2.UsageCount))
+				table[len(table)-1] = append(table[len(table)-1][:2+1], table[len(table)-1][2:]...)
+				table[len(table)-1][2] = strconv.Itoa(lvl2.UsageCount)
 				table[len(table)-1] = append(table[len(table)-1], usagesToString(&lvl2.Usages))
 			}
 	
@@ -1104,7 +1107,8 @@ func CharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 					lvl3.Aat_id,
 				})
 				if params.Html == 1 {
-					table[len(table)-1] = append(table[len(table)-1], strconv.Itoa(lvl3.UsageCount))
+					table[len(table)-1] = append(table[len(table)-1][:2+1], table[len(table)-1][2:]...)
+					table[len(table)-1][2] = strconv.Itoa(lvl3.UsageCount)
 					table[len(table)-1] = append(table[len(table)-1], usagesToString(&lvl3.Usages))
 				}
 	
@@ -1134,10 +1138,10 @@ func CharacListCsv(w http.ResponseWriter, r *http.Request, proute routes.Proute)
 						lvl4.Aat_id,
 					})
 					if params.Html == 1 {
-						table[len(table)-1] = append(table[len(table)-1], strconv.Itoa(lvl4.UsageCount))
+						table[len(table)-1] = append(table[len(table)-1][:2+1], table[len(table)-1][2:]...)
+						table[len(table)-1][2] = strconv.Itoa(lvl4.UsageCount)
 						table[len(table)-1] = append(table[len(table)-1], usagesToString(&lvl4.Usages))
-					}
-	
+					}	
 				}
 
 			}
